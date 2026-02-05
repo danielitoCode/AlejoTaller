@@ -21,7 +21,7 @@ fun LoginScreen(
     ) {
         Button(
             onClick = {
-                onNavigateTo(MainRoutesKey.Home("Usuario de Prueba"))
+                onNavigateTo(MainRoutesKey.MainHome("Usuario de Prueba"))
             }
         ) {
             Text(

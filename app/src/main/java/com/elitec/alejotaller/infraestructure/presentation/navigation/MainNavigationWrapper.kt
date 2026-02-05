@@ -14,7 +14,6 @@ import androidx.navigation3.ui.NavDisplay
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
 import com.elitec.alejotaller.infraestructure.presentation.screens.DetailScreen
-import com.elitec.alejotaller.infraestructure.presentation.screens.HomeScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.LoginScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.SplashScreen
 
@@ -61,8 +60,8 @@ fun MainNavigationWrapper(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            entry<MainRoutesKey.Home> { key ->
-                HomeScreen(
+            entry<MainRoutesKey.MainHome> { key ->
+                InternalNavigationWrapper(
                     onNavigateBack = { backStack.navigateBack() },
                     userId = key.userId,
                     modifier = Modifier.fillMaxSize()

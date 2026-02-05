@@ -15,7 +15,7 @@ sealed class MainRoutesKey: NavKey {
     object Login: MainRoutesKey()
 
     @Serializable
-    data class Home(val userId: String): MainRoutesKey()
+    data class MainHome(val userId: String): MainRoutesKey()
 
     @Serializable
     object Register: MainRoutesKey()

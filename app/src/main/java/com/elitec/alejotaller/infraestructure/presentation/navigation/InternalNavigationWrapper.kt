@@ -14,6 +14,8 @@ import androidx.navigation3.ui.NavDisplay
 
 @Composable
 fun InternalNavigationWrapper(
+    onNavigateBack: () -> Unit,
+    userId: String,
     modifier: Modifier = Modifier
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
