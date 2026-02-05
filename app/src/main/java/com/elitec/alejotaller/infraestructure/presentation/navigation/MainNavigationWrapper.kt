@@ -14,6 +14,8 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.elitec.alejotaller.infraestructure.extention.presentation.navigateBack
+import com.elitec.alejotaller.infraestructure.extention.presentation.navigateTo
 import com.elitec.alejotaller.infraestructure.presentation.screens.DetailScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.HomeScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.LoginScreen
@@ -58,13 +60,13 @@ fun MainNavigationWrapper(
         entryProvider = entryProvider {
             entry<MainRoutesKey.Splash> {
                 SplashScreen(
-                    onInitChargeReady = { backStack.add(MainRoutesKey.Login) },
+                    onInitChargeReady = { backStack.navigateTo(MainRoutesKey.Login) },
                     modifier = Modifier.fillMaxSize()
                 )
             }
             entry<MainRoutesKey.Home> { key ->
                 HomeScreen(
-                    onNavigateBack = { backStack.removeLastOrNull() },
+                    onNavigateBack = { backStack.navigateBack() },
                     userId = key.userId,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -74,13 +76,13 @@ fun MainNavigationWrapper(
             }
             entry<MainRoutesKey.Login> {
                 LoginScreen(
-                    onNavigateTo = { route -> backStack.add(route) },
+                    onNavigateTo = { route -> backStack.navigateTo(route) },
                     modifier = Modifier.fillMaxSize()
                 )
             }
             entry<MainRoutesKey.Details> { key ->
                 DetailScreen(
-                    onNavigateBack = { backStack.removeLastOrNull() },
+                    onNavigateBack = { backStack.navigateBack() },
                     id = key.id,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -89,5 +91,5 @@ fun MainNavigationWrapper(
                 Text(text = "Error")
             }
         },
-        )
+    )
 }
