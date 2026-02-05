@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 android {
@@ -53,4 +54,39 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+    // Toast
+    implementation(libs.multiplatform.toast)
+    // HttpClient
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.serialization.kotlinx.json) { //Esto es para evitar conflictos con el R8
+        exclude(group = "com.fasterxml.jackson.core")
+        exclude(group = "com.fasterxml.jackson.dataformat", module = "jackson-dataformat-xml")
+    }
+    implementation(libs.ktor.client.logs)
+    implementation(libs.ktor.client.websocket)
+    implementation(libs.ktor.client.test)
+    // Lotties
+    implementation(libs.lotties.compose)
+    // Icons
+    implementation(libs.androidx.icons.extended)
+    // Di
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.androidx.compose.navigation)
+    implementation(libs.koin.test)
+    // Google Identity
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    // Permission
+    implementation(libs.compose.permission)
+    // DataStore Preferences
+    implementation(libs.androidx.datastore.preferences)
+    // Shimmer effect
+    implementation(libs.shimer.compose)
+    //ConnectionStatus
+    implementation(libs.konnection.status)
+
 }
