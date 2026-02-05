@@ -1,5 +1,9 @@
 package com.elitec.alejotaller.infraestructure.presentation.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +28,33 @@ fun MainNavigationWrapper(
         modifier = modifier,
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
+        transitionSpec = {
+            slideInHorizontally(
+                initialOffsetX = { it },
+                animationSpec = tween(250)
+            ) togetherWith slideOutHorizontally(
+                targetOffsetX = { -it },
+                animationSpec = tween(250)
+            )
+        },
+        popTransitionSpec = {
+            slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(250)
+            ) togetherWith slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(250)
+            )
+        },
+        predictivePopTransitionSpec = {
+            slideInHorizontally(
+                initialOffsetX = { -it },
+                animationSpec = tween(250)
+            ) togetherWith slideOutHorizontally(
+                targetOffsetX = { it },
+                animationSpec = tween(250)
+            )
+        },
         entryProvider = entryProvider {
             entry<MainRoutesKey.Splash> {
                 SplashScreen(
@@ -57,6 +88,6 @@ fun MainNavigationWrapper(
             entry<MainRoutesKey.Error> {
                 Text(text = "Error")
             }
-        }
-    )
+        },
+        )
 }
