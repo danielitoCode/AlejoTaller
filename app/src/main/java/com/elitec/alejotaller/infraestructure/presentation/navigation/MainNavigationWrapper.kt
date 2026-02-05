@@ -7,15 +7,12 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.elitec.alejotaller.infraestructure.extention.presentation.navigateBack
-import com.elitec.alejotaller.infraestructure.extention.presentation.navigateTo
+import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
+import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
 import com.elitec.alejotaller.infraestructure.presentation.screens.DetailScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.HomeScreen
 import com.elitec.alejotaller.infraestructure.presentation.screens.LoginScreen
