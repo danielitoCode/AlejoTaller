@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.elitec.alejotaller.infraestructure.presentation.navigation.MainNvigationWrapper
+import com.elitec.alejotaller.infraestructure.presentation.navigation.MainNavigationWrapper
 import com.elitec.alejotaller.infraestructure.presentation.theme.AlejoTallerTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             AlejoTallerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MainNvigationWrapper(
+                    MainNavigationWrapper(
                         modifier = Modifier.fillMaxSize().padding(innerPadding)
                     )
                 }

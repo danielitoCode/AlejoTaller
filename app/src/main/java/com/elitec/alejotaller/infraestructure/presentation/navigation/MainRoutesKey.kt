@@ -1,9 +1,10 @@
 package com.elitec.alejotaller.infraestructure.presentation.navigation
 
+import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed class MainRoutesKey {
+sealed class MainRoutesKey: NavKey {
     @Serializable
     object Splash: MainRoutesKey()
 
@@ -21,4 +22,8 @@ sealed class MainRoutesKey {
 
     @Serializable
     object Error: MainRoutesKey()
+
+    // From Test only
+    @Serializable
+    data class Details(val id: String): MainRoutesKey()
 }
