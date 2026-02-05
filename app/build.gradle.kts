@@ -88,5 +88,6 @@ dependencies {
     implementation(libs.shimer.compose)
     //ConnectionStatus
     implementation(libs.konnection.status)
+    // Nav3
 
 }

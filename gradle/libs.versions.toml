@@ -2,7 +2,7 @@
 agp = "9.0.0"
 coreKtx = "1.17.0"
 junit = "4.13.2"
-junitVersion = "1.1.5"
+junitVersion = "1.3.0"
 espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.3"
@@ -11,31 +11,37 @@ composeBom = "2026.01.01"
 # Toast
 sonner = "0.3.9"
 #animaciones lotties
-lotties = "6.6.9"
+lotties = "6.7.1"
 # Iconos
 icons = "1.7.8"
 # Koin
 koin = "4.1.1"
 #Network
-ktor = "3.3.0"
+ktor = "3.4.0"
 # Google credential
 credential = "1.5.0"
-googleId = "1.1.1"
+googleId = "1.2.0"
 # Permission
 permission = "0.37.3"
 # Data Store
-datastorePreferences = "1.1.7"
+datastorePreferences = "1.2.0"
 # Ksp
 ksp = "2.2.20-2.0.4"
 # Room
-room = "2.8.3"
+room = "2.8.4"
 # SqliteCipher
-roomCipher = "4.11.0"
+roomCipher = "4.13.0"
 # Shimmer
 shimer = "1.3.3"
 animationCore = "1.9.5"
 #ConnectionStatus
-konnection = "1.4.3"
+konnection = "1.4.5"
+# Navigation
+nav3Core = "1.0.0"
+lifecycleViewmodelNav3 = "2.10.0"
+kotlinxSerializationCore = "1.9.0"
+material3AdaptiveNav3 = "1.3.0-alpha07"
+kotlinSerialization = "1.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -93,6 +99,11 @@ room-cipher = { module = "net.zetetic:sqlcipher-android", version.ref = "roomCip
 shimer-compose = { module = "com.valentinilk.shimmer:compose-shimmer", version.ref = "shimer" }
 # Connection Status
 konnection-status = { module = "dev.tmapps:konnection", version.ref = "konnection" }
+# Core Navigation 3 libraries
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinSerialization" }
+androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3AdaptiveNav3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
