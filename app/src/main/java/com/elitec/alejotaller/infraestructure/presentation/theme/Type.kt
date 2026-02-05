@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.ui.theme
+package com.elitec.alejotaller.infraestructure.presentation.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
