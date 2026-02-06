@@ -8,35 +8,78 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+val DarkColorScheme = darkColorScheme(
+    primary = Color(0xFF81C784),
+    onPrimary = Color(0xFF0F2F18),
+
+    primaryContainer = Color(0xFF1B5E20),
+    onPrimaryContainer = Color(0xFFA5D6A7),
+
+    secondary = Color(0xFF66BB6A),
+    onSecondary = Color(0xFF0C2E16),
+
+    secondaryContainer = Color(0xFF2E7D32),
+    onSecondaryContainer = Color(0xFFA5D6A7),
+
+    tertiary = Color(0xFF4CAF50),
+    onTertiary = Color(0xFF0B2A14),
+
+    background = Color(0xFF121412),
+    onBackground = Color(0xFFE2E3DE),
+
+    surface = Color(0xFF1A1C19),
+    onSurface = Color(0xFFE2E3DE),
+
+    surfaceVariant = Color(0xFF44483E),
+    onSurfaceVariant = Color(0xFFC4C8BE),
+
+    outline = Color(0xFF8E9287),
+    outlineVariant = Color(0xFF44483E),
+
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005)
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+val LightColorScheme = lightColorScheme(
+    primary = Color(0xFF388E3C),
+    onPrimary = Color(0xFFFFFFFF),
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primaryContainer = Color(0xFFC8E6C9),
+    onPrimaryContainer = Color(0xFF102015),
+
+    secondary = Color(0xFF4CAF50),
+    onSecondary = Color(0xFFFFFFFF),
+
+    secondaryContainer = Color(0xFFD8F3DC),
+    onSecondaryContainer = Color(0xFF0F1F13),
+
+    tertiary = Color(0xFF2E7D32),
+    onTertiary = Color(0xFFFFFFFF),
+
+    background = Color(0xFFF6F8F5),
+    onBackground = Color(0xFF1A1C19),
+
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF1A1C19),
+
+    surfaceVariant = Color(0xFFE0E3DD),
+    onSurfaceVariant = Color(0xFF44483E),
+
+    outline = Color(0xFF74796E),
+    outlineVariant = Color(0xFFC4C8BE),
+
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF)
 )
 
 @Composable
 fun AlejoTallerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

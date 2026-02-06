@@ -19,4 +19,7 @@ sealed class InternalRoutesKey: NavKey {
 
     @Serializable
     object BuyConfirm: InternalRoutesKey()
+
+    @Serializable
+    object Settings: InternalRoutesKey()
 }
