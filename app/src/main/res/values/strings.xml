@@ -26,4 +26,5 @@
     <string name="old_price">$669.00</string>
     <string name="new_price">$570.00</string>
     <string name="add_to_cart">Add to Cart</string>
+    <string name="select_product_to_view_details">Seleccione el producto para ver los detalles</string>
 </resources>

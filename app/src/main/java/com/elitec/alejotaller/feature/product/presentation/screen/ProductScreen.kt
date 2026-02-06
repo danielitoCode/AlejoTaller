@@ -1,8 +1,11 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -10,12 +13,16 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -25,78 +32,37 @@ import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.materials.HazeMaterials
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun ProductScreen(
+    navigateToDetails: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val products = remember {
         productTestList
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = {
-            BottomNavigationBar()
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .fillMaxSize()
-        ) {
-            HeaderSection()
-            Spacer(modifier = Modifier.height(16.dp))
-            SearchBar()
-            Spacer(modifier = Modifier.height(16.dp))
-            BannerSection()
-            Spacer(modifier = Modifier.height(24.dp))
-            CategoriesSection()
-            Spacer(modifier = Modifier.height(16.dp))
-            ProductGrid(products = products)
-        }
-    }
-}
-
-@Composable
-fun HeaderSection(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+            .fillMaxSize()
     ) {
-        Text(
-            text = stringResource(id = R.string.discover),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
+        Spacer(modifier = Modifier.height(16.dp))
+        SearchBar()
+        Spacer(modifier = Modifier.height(16.dp))
+        BannerSection()
+        Spacer(modifier = Modifier.height(16.dp))
+        CategoriesSection()
+        Spacer(modifier = Modifier.height(16.dp))
+        ProductGrid(
+            onProductClick =  navigateToDetails,
+            products = products
         )
-        Box {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .border(1.dp, Color.LightGray, CircleShape)
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                IconPlaceholder(modifier = Modifier.size(24.dp))
-            }
-            Box(
-                modifier = Modifier
-                    .size(18.dp)
-                    .background(Color(0xFF4CAF50), CircleShape)
-                    .align(Alignment.TopEnd)
-                    .offset(x = 4.dp, y = (-4).dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "3",
-                    color = Color.White,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
     }
 }
 
@@ -170,7 +136,11 @@ fun BannerSection(modifier: Modifier = Modifier) {
                     .background(Color.Gray.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = "Image", color = Color.White)
+                Image(
+                    contentScale = ContentScale.Crop,
+                    painter = painterResource(R.drawable.echoflow_transparent),
+                    contentDescription = "Banner Image"
+                )
             }
         }
     }
@@ -231,7 +201,11 @@ fun CategoriesSection(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ProductGrid(products: List<Product>, modifier: Modifier = Modifier) {
+fun ProductGrid(
+    onProductClick: (String) -> Unit,
+    products: List<Product>,
+    modifier: Modifier = Modifier
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -239,23 +213,87 @@ fun ProductGrid(products: List<Product>, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxSize()
     ) {
         items(products) { product ->
-            ProductItem(product = product)
+            ProductItem(
+                onClick = { onProductClick(product.id) },
+                product = product
+            )
         }
     }
 }
 
+@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
-fun ProductItem(product: Product, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
+fun ProductItem(
+    onClick: () -> Unit,
+    product: Product,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()
+        .clickable {
+            onClick()
+        }
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Color(0xFFF5F5F5)),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.BottomStart
         ) {
-            Text(text = "Product Image", color = Color.Gray, fontSize = 12.sp)
+            Image(
+                contentScale = ContentScale.Crop,
+                painter = painterResource(product.photoLocalResource?:0),
+                contentDescription = "Product Image",
+            )
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .hazeEffect(style = HazeMaterials.ultraThin())
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth().padding(
+                        top = 5.dp,
+                        bottom = 5.dp,
+                        end = 10.dp,
+                        start = 10.dp
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.HeartBroken,
+                        contentDescription = "Favorite",
+                        tint = Color.White
+                    )
+                    Text(
+                        text = "$${String.format("%.2f", product.price)}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+            }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth().padding(
+                    top = 5.dp,
+                    bottom = 5.dp,
+                    end = 10.dp,
+                    start = 10.dp
+                )
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.HeartBroken,
+                    contentDescription = "Favorite",
+                    tint = Color.Black
+                )
+                Text(
+                    text = "$${String.format("%.2f", product.price)}",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Row(
@@ -269,59 +307,8 @@ fun ProductItem(product: Product, modifier: Modifier = Modifier) {
                 color = Color.Gray,
                 maxLines = 1
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconPlaceholder(modifier = Modifier.size(12.dp), color = Color(0xFFFFB300))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = product.rating.toString(),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
-        Text(
-            text = "$${String.format("%.2f", product.price)}",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold
-        )
-    }
-}
 
-@Composable
-fun BottomNavigationBar(modifier: Modifier = Modifier) {
-    NavigationBar(
-        modifier = modifier,
-        containerColor = Color.White,
-        tonalElevation = 8.dp
-    ) {
-        NavigationBarItem(
-            icon = { IconPlaceholder(modifier = Modifier.size(24.dp), color = Color(0xFF4CAF50)) },
-            label = { Text(stringResource(id = R.string.home), color = Color(0xFF4CAF50)) },
-            selected = true,
-            onClick = { },
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFF4CAF50),
-                indicatorColor = Color.Transparent
-            )
-        )
-        NavigationBarItem(
-            icon = { IconPlaceholder(modifier = Modifier.size(24.dp), color = Color.Gray) },
-            label = { Text(stringResource(id = R.string.search), color = Color.Gray) },
-            selected = false,
-            onClick = { }
-        )
-        NavigationBarItem(
-            icon = { IconPlaceholder(modifier = Modifier.size(24.dp), color = Color.Gray) },
-            label = { Text(stringResource(id = R.string.favorites), color = Color.Gray) },
-            selected = false,
-            onClick = { }
-        )
-        NavigationBarItem(
-            icon = { IconPlaceholder(modifier = Modifier.size(24.dp), color = Color.Gray) },
-            label = { Text(stringResource(id = R.string.profile), color = Color.Gray) },
-            selected = false,
-            onClick = { }
-        )
     }
 }
 
@@ -341,6 +328,6 @@ fun IconPlaceholder(
 @Composable
 private fun ProductScreenPreview() {
     AlejoTallerTheme {
-        ProductScreen()
+        ProductScreen({})
     }
 }

@@ -97,4 +97,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.core)
     // Network Images
     implementation(libs.coil.compose)
+    // Blur effect
+    implementation(libs.compose.blurEffect.core)
+    implementation(libs.compose.blurEffect.materials)
 }

@@ -46,6 +46,8 @@ kotlinSerializationCore = "1.10.0"
 coil = "2.7.0"
 okhttp = "4.11.0"
 okio = "3.3.0"
+# Blur effect
+haze = "1.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -110,6 +112,10 @@ kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3AdaptiveNav3" }
 # Coil
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+# Blur Effect
+compose-blurEffect-core = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
+compose-blurEffect-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

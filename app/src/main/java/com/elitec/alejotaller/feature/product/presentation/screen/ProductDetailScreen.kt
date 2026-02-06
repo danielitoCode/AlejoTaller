@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -8,12 +9,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -22,11 +28,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.feature.product.data.test.productTestList
+import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 
 @Composable
 fun ProductDetailScreen(
     modifier: Modifier = Modifier,
+    product: Product,
     onBackClick: () -> Unit = {},
     onFavoriteClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
@@ -35,7 +44,10 @@ fun ProductDetailScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
-            PriceAndAddToCartSection(onAddToCartClick = onAddToCartClick)
+            PriceAndAddToCartSection(
+                productPrice = product.price,
+                onAddToCartClick = onAddToCartClick
+            )
         }
     ) { innerPadding ->
         Column(
@@ -49,8 +61,14 @@ fun ProductDetailScreen(
                 onFavoriteClick = onFavoriteClick,
                 onShareClick = onShareClick
             )
-            ProductImageSection()
-            ProductInfoSection()
+            ProductImageSection(
+                photoUrl = product.photoUrl,
+                photoLocalResource = product.photoLocalResource
+            )
+            ProductInfoSection(
+                productName = product.name,
+                productDescription = product.description
+            )
         }
     }
 }
@@ -76,9 +94,10 @@ private fun HeaderSection(
                 .border(1.dp, Color.LightGray.copy(alpha = 0.5f), CircleShape)
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder for back arrow
+                imageVector = Icons.Default.ArrowBack, // Placeholder for back arrow
                 contentDescription = "Back",
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
 
@@ -90,23 +109,10 @@ private fun HeaderSection(
                     .background(Color.White, CircleShape)
                     .border(1.dp, Color.LightGray.copy(alpha = 0.5f), CircleShape)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color.Red, CircleShape)
-                )
-            }
-            IconButton(
-                onClick = onShareClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color.White, CircleShape)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f), CircleShape)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(16.dp)
-                        .background(Color.Gray, CircleShape)
+                Icon(
+                    imageVector = Icons.Default.Handshake,
+                    contentDescription = "like",
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         }
@@ -115,6 +121,8 @@ private fun HeaderSection(
 
 @Composable
 private fun ProductImageSection(
+    photoUrl: String,
+    photoLocalResource: Int? = null,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -125,16 +133,19 @@ private fun ProductImageSection(
         contentAlignment = Alignment.Center
     ) {
         // Placeholder for the Xbox image
-        Box(
-            modifier = Modifier
-                .size(240.dp)
-                .background(Color.DarkGray, RoundedCornerShape(16.dp))
+        Image(
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize(),
+            painter = painterResource(photoLocalResource?:2),
+            contentDescription = "Product Image"
         )
     }
 }
 
 @Composable
 private fun ProductInfoSection(
+    productName: String,
+    productDescription: String = "",
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -150,7 +161,7 @@ private fun ProductInfoSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.product_name_xbox),
+                text = productName,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black
@@ -166,7 +177,7 @@ private fun ProductInfoSection(
                 ) {
                     Box(modifier = Modifier.size(12.dp).background(Color(0xFFE57373), CircleShape))
                     Text(
-                        text = stringResource(R.string.on_sale),
+                        text = "En oferta",
                         color = Color(0xFFE57373),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
@@ -200,19 +211,11 @@ private fun ProductInfoSection(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = stringResource(R.string.product_description),
+            text = productDescription,
             color = Color.Gray,
             fontSize = 14.sp,
             lineHeight = 20.sp
         )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            StorageOption(text = stringResource(R.string.storage_1tb), isSelected = true)
-            StorageOption(text = stringResource(R.string.storage_825gb), isSelected = false)
-            StorageOption(text = stringResource(R.string.storage_512gb), isSelected = false)
-        }
     }
 }
 
@@ -272,6 +275,7 @@ private fun StorageOption(
 
 @Composable
 private fun PriceAndAddToCartSection(
+    productPrice: Double,
     onAddToCartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -289,13 +293,13 @@ private fun PriceAndAddToCartSection(
         ) {
             Column {
                 Text(
-                    text = stringResource(R.string.old_price),
+                    text = "$ 130.00",
                     color = Color.Gray,
                     fontSize = 12.sp,
                     textDecoration = TextDecoration.LineThrough
                 )
                 Text(
-                    text = stringResource(R.string.new_price),
+                    text = "$ $productPrice",
                     color = Color.Black,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
@@ -327,6 +331,6 @@ private fun PriceAndAddToCartSection(
 @Composable
 private fun ProductDetailScreenPreview() {
     AlejoTallerTheme {
-        ProductDetailScreen()
+        ProductDetailScreen(product = productTestList[3])
     }
 }
