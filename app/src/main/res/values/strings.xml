@@ -1,3 +1,29 @@
 <resources>
     <string name="app_name">AlejoTaller</string>
+    <string name="discover">Discover</string>
+    <string name="search_placeholder">Search</string>
+    <string name="clearance_sales">Clearance\nSales</string>
+    <string name="up_to_50">Up to 50%</string>
+    <string name="categories">Categories</string>
+    <string name="see_all">See all</string>
+    <string name="all">All</string>
+    <string name="smartphones">Smartphones</string>
+    <string name="headphones">Headphones</string>
+    <string name="laptops">Laptops</string>
+    <string name="home">Home</string>
+    <string name="search">Search</string>
+    <string name="favorites">Favorites</string>
+    <string name="profile">Profile</string>
+    <string name="product_name_xbox">Xbox series X</string>
+    <string name="on_sale">On sale</string>
+    <string name="rating_value">4.8</string>
+    <string name="recommendation_percentage">94%</string>
+    <string name="reviews_count">117 reviews</string>
+    <string name="product_description">The Microsoft Xbox Series X gaming console is capable of impressing with minimal boot times and mesmerizing visual effects when playing games at up to 120 frames per second</string>
+    <string name="storage_1tb">1 TB</string>
+    <string name="storage_825gb">825 GB</string>
+    <string name="storage_512gb">512 GB</string>
+    <string name="old_price">$669.00</string>
+    <string name="new_price">$570.00</string>
+    <string name="add_to_cart">Add to Cart</string>
 </resources>

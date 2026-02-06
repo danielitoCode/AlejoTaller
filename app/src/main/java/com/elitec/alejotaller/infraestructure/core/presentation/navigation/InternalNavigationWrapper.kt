@@ -6,11 +6,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.nested.HomeScreen
 
 @Composable
@@ -30,7 +32,9 @@ fun InternalNavigationWrapper(
         predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
         entryProvider = entryProvider {
             entry<InternalRoutesKey.Home> {
-                HomeScreen({}, "")
+                ProductScreen(
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             entry<InternalRoutesKey.ProductDetail> { key ->
 

@@ -14,10 +14,12 @@ data class Product(
     @SerialName("photo_url")
     val photoUrl: String,
     @SerialName("categoria_id")
-    val categoriaId: String
+    val categoriaId: String,
+    val rating: Double = 0.0,
+    val photoLocalResource: Int? = null
 ): CoreEntity {
     init {
         require(id != "") { "The value of product identifier cant not by empty" }
-        require(price < 0.0) { "The price of product identifier cant not by a negative" }
+        require(price >= 0.0) { "The price of product identifier cant not by a negative" }
     }
 }
