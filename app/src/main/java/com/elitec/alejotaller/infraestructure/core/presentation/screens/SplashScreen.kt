@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.screens
+package com.elitec.alejotaller.infraestructure.core.presentation.screens
 
 import android.window.SplashScreen
 import androidx.compose.material3.Text

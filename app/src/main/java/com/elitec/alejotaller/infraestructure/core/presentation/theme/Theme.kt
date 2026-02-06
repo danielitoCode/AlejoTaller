@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.theme
+package com.elitec.alejotaller.infraestructure.core.presentation.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

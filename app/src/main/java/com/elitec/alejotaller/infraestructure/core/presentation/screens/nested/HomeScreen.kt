@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.screens.nested
+package com.elitec.alejotaller.infraestructure.core.presentation.screens.nested
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

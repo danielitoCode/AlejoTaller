@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.navigation
+package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable

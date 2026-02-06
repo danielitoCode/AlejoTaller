@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.screens
+package com.elitec.alejotaller.infraestructure.core.presentation.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

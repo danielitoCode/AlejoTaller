@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.screens
+package com.elitec.alejotaller.infraestructure.core.presentation.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,7 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.elitec.alejotaller.infraestructure.presentation.navigation.MainRoutesKey
+import com.elitec.alejotaller.infraestructure.core.presentation.navigation.MainRoutesKey
 
 @Composable
 fun LoginScreen(

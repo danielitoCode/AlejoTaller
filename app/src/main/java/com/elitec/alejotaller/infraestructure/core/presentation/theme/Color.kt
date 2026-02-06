@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.theme
+package com.elitec.alejotaller.infraestructure.core.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

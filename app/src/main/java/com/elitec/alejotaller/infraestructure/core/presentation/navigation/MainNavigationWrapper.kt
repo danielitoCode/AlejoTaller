@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.presentation.navigation
+package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -11,11 +11,12 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailScreen
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.LoginScreen
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.RegisterScreen
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.SplashScreen
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
-import com.elitec.alejotaller.infraestructure.presentation.screens.DetailScreen
-import com.elitec.alejotaller.infraestructure.presentation.screens.LoginScreen
-import com.elitec.alejotaller.infraestructure.presentation.screens.SplashScreen
 
 @Composable
 fun MainNavigationWrapper(
@@ -25,7 +26,7 @@ fun MainNavigationWrapper(
     NavDisplay(
         modifier = modifier,
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = { backStack.navigateBack() },
         transitionSpec = {
             slideInHorizontally(
                 initialOffsetX = { it },
@@ -80,6 +81,13 @@ fun MainNavigationWrapper(
                 DetailScreen(
                     onNavigateBack = { backStack.navigateBack() },
                     id = key.id,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            entry<MainRoutesKey.Register> {
+                RegisterScreen(
+                    onNavigateBack = { backStack.navigateBack() },
+                    onRegisterReady = { userId -> backStack.navigateTo(MainRoutesKey.MainHome(userId)) },
                     modifier = Modifier.fillMaxSize()
                 )
             }
