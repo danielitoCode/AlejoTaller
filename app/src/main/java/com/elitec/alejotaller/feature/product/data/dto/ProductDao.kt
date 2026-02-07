@@ -20,9 +20,9 @@ interface ProductDao {
     suspend fun insertAll(items: List<Product>)
 
     @Transaction
-    suspend fun replaceAll(joyas: List<Product>) {
+    suspend fun replaceAll(products: List<Product>) {
         deleteAll()
-        insertAll(joyas)
+        insertAll(products)
     }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.infraestructure.core.data.bd
 
 import androidx.room.Database
+import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
 import com.elitec.alejotaller.feature.category.domain.entity.Category
@@ -21,7 +22,7 @@ import com.elitec.alejotaller.infraestructure.core.data.converters.DateTimeConve
 @TypeConverters(
     DateTimeConverter::class
 )
-abstract class AppBD {
+abstract class AppBD: RoomDatabase() {
     abstract fun categoriesDao(): CategoryDao
     abstract fun productsDao(): ProductDao
     abstract fun saleDao(): SaleDto
