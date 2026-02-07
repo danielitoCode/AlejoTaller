@@ -13,9 +13,6 @@ interface CategoryDao {
     @Query("SELECT * FROM category")
     fun observeAll(): Flow<List<Category>>
 
-    @Query("SELECT * FROM category")
-    fun getAll(): List<Category>
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<Category>)
 
@@ -29,7 +26,7 @@ interface CategoryDao {
     suspend fun insert(items: Category)
 
     @Query("SELECT * FROM category WHERE id = :id")
-    suspend fun getById(id: String): Category
+    suspend fun getById(id: String): Category?
 
     @Query("DELETE FROM category WHERE id = :id")
     suspend fun deleteById(id: String)
