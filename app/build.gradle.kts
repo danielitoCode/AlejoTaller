@@ -107,4 +107,6 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
+    // Datetime
+    implementation(libs.kotlinx.datetime)
 }

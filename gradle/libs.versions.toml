@@ -26,7 +26,7 @@ permission = "0.37.3"
 # Data Store
 datastorePreferences = "1.2.0"
 # Ksp
-ksp = "2.3.5"
+ksp = "2.3.4"
 # Room
 room = "2.8.4"
 # SqliteCipher
@@ -50,6 +50,8 @@ okio = "3.3.0"
 haze = "1.7.1"
 # Persistence
 appwrite = "12.0.0"
+# DateTime
+kotlinxDatetime = "0.7.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -119,6 +121,8 @@ compose-blurEffect-core = { module = "dev.chrisbanes.haze:haze", version.ref = "
 compose-blurEffect-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
 # Persistence
 sdk-for1-android = { module = "io.appwrite:sdk-for-android", version.ref = "appwrite" }
+# DateTime
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

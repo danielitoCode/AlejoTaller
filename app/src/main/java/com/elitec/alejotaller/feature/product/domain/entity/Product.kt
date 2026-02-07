@@ -1,13 +1,15 @@
 package com.elitec.alejotaller.feature.product.domain.entity
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.elitec.alejotaller.infraestructure.core.domain.CoreEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+@Entity
 @Serializable
 data class Product(
-    // @PrimaryKey val id: String,
-    override val id: String,
+    @PrimaryKey override val id: String,
     val name: String,
     val description: String,
     val price: Double,
