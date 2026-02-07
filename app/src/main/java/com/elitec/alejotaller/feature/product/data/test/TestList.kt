@@ -10,7 +10,7 @@ val productTestList = listOf(
         description = "Baterias de litio a 3.25 AH,perfecta para reparacion de unidades de acumulacion en mal estado o el montaje personalizado de sistemas de respaldo de alta capacidad",
         price = 45.50,
         photoUrl = "https://example.com/photos/aceite.jpg",
-        categoriaId = "baterias",
+        categoryId = "baterias",
         photoLocalResource = R.drawable.li3_2a
     ),
     Product(
@@ -19,7 +19,7 @@ val productTestList = listOf(
         description = "BMS para baterias de 5v, dele a su bateria la energia necesaria, ni mas ni menos",
         price = 18.25,
         photoUrl = "https://example.com/photos/filtro_aire.jpg",
-        categoriaId = "bms",
+        categoryId = "bms",
         photoLocalResource = R.drawable.bms5v
     ),
     Product(
@@ -28,7 +28,7 @@ val productTestList = listOf(
         description = "Unidad de respaldo inteligente de alta eficiencia, bateria LifPo4 con una capacidad de carga de 2800Wh , y un pico de 3600W",
         price = 65.00,
         photoUrl = "https://example.com/photos/pastillas_freno.jpg",
-        categoriaId = "equipos",
+        categoryId = "equipos",
         photoLocalResource = R.drawable.echoflow_deltamax
     ),
     Product(
@@ -37,7 +37,7 @@ val productTestList = listOf(
         description = "Bateria hecha para sus dispositivos que ocupen poco espacio o espacio reducido, con una capacidad suficiente para uso promedio",
         price = 110.99,
         photoUrl = "https://example.com/photos/bateria.jpg",
-        categoriaId = "baterias",
+        categoryId = "baterias",
         photoLocalResource = R.drawable.li1a
     ),
     Product(
@@ -46,7 +46,7 @@ val productTestList = listOf(
         description = "Transistos NPN, para uso promedio",
         price = 12.50,
         photoUrl = "https://example.com/photos/bujia.jpg",
-        categoriaId = "componentes",
+        categoryId = "componentes",
         photoLocalResource = R.drawable.t2n3904
     ),
 )

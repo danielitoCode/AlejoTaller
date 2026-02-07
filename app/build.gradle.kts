@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.devtools.ksp)
 }
 
 android {
@@ -100,4 +101,10 @@ dependencies {
     // Blur effect
     implementation(libs.compose.blurEffect.core)
     implementation(libs.compose.blurEffect.materials)
+    // Persistence
+    implementation(libs.sdk.for1.android)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    implementation(libs.room.paging)
+    ksp(libs.room.compiler)
 }

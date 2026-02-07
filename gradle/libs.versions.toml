@@ -26,7 +26,7 @@ permission = "0.37.3"
 # Data Store
 datastorePreferences = "1.2.0"
 # Ksp
-ksp = "2.2.20-2.0.4"
+ksp = "2.3.5"
 # Room
 room = "2.8.4"
 # SqliteCipher
@@ -48,6 +48,8 @@ okhttp = "4.11.0"
 okio = "3.3.0"
 # Blur effect
 haze = "1.7.1"
+# Persistence
+appwrite = "12.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -115,11 +117,12 @@ coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
 # Blur Effect
 compose-blurEffect-core = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 compose-blurEffect-materials = { module = "dev.chrisbanes.haze:haze-materials", version.ref = "haze" }
-
+# Persistence
+sdk-for1-android = { module = "io.appwrite:sdk-for-android", version.ref = "appwrite" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 

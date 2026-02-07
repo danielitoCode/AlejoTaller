@@ -13,8 +13,8 @@ data class Product(
     val price: Double,
     @SerialName("photo_url")
     val photoUrl: String,
-    @SerialName("categoria_id")
-    val categoriaId: String,
+    @SerialName("category_id")
+    val categoryId: String,
     val rating: Double = 0.0,
     val photoLocalResource: Int? = null
 ): CoreEntity {
