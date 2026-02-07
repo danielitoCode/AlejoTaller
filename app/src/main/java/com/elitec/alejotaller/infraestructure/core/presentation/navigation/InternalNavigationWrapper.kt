@@ -1,21 +1,14 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.GifBox
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -24,7 +17,6 @@ import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
@@ -34,9 +26,7 @@ import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
-import com.elitec.alejotaller.infraestructure.core.presentation.components.BottomNavigationBar
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.nested.HomeScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
