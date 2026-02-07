@@ -1,4 +1,6 @@
 import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
+import java.io.FileInputStream
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -6,8 +8,24 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
-    alias(libs.plugins.kotzilla)
+    // alias(libs.plugins.kotzilla)
 }
+
+// Leer local.properties
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(FileInputStream(localPropertiesFile))
+    }
+}
+
+val versionMajor = 0
+val versionMinor = 13
+val versionPatch = 0
+
+val appVersionName = "$versionMajor.$versionMinor.$versionPatch"
+val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+
 
 android {
     namespace = "com.elitec.alejotaller"
@@ -19,15 +37,21 @@ android {
         applicationId = "com.elitec.alejotaller"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = appVersionCode
+        versionName = appVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
+        }
         release {
             isMinifyEnabled = false
+
+            buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
+
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -40,6 +64,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     room {
@@ -48,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotzilla.sdk)
+    // implementation(libs.kotzilla.sdk)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -91,7 +116,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     // Permission
-    implementation(libs.compose.permission)
+    // implementation(libs.compose.permission)
     // DataStore Preferences
     implementation(libs.androidx.datastore.preferences)
     // Shimmer effect

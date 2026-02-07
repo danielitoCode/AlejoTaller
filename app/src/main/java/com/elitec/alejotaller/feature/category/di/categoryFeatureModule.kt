@@ -11,11 +11,11 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val categoryFeatureModule = module {
-    // infrastructure instances
+    // Infrastructure instances
     single { get<AppBD>().categoriesDao() }
 
     // Data layer
-    single { CategoriesNetRepositoryImpl() }
+    single { CategoriesNetRepositoryImpl(get()) }
     single<CategoriesRepository> { CategoriesOfflineFirstRepository(get(), get()) }
 
     // Domain layer
