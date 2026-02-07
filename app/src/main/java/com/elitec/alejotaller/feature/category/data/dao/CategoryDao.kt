@@ -6,9 +6,13 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.elitec.alejotaller.feature.category.domain.entity.Category
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
+    @Query("SELECT * FROM category")
+    fun observeAll(): Flow<List<Category>>
+
     @Query("SELECT * FROM category")
     fun getAll(): List<Category>
 

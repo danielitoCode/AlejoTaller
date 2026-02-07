@@ -1,31 +1,22 @@
 package com.elitec.alejotaller.feature.category.data.repository
 
+import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.domain.repository.CategoriesRepository
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
+import kotlinx.coroutines.flow.Flow
 
 class CategoriesOfflineFirstRepository(
-    private val categoryNetRepository: CategoriesNetRepositoryImpl,
-    private val bd: AppBD
+    private val net: CategoriesNetRepositoryImpl,
+    private val bd: CategoryDao
 ): CategoriesRepository {
-    private val categoryDao by lazy { bd.categoriesDao() }
 
-    suspend fun syncProductOfCloud(): Result<Unit> = runCatching {
-        val categories = categoryNetRepository.getAll()
-        categoryDao.replaceAll(categories)
-    }
+    override fun observeAll(): Flow<List<Category>> = bd.observeAll()
 
-    override suspend fun getAll(): List<Category>  = categoryDao.getAll()
+    override suspend fun getById(id: String): Category? = bd.getById(id)
 
-    suspend fun replaceAll(items: List<Category>) {
-        TODO()
-    }
-
-    suspend fun insert(item: Category) {
-        TODO()
-    }
-
-    suspend fun insertAll(items: List<Category>) {
-        TODO()
+    override suspend fun sync(): Result<Unit> = runCatching {
+        val remote = net.getAll()
+        bd.replaceAll(remote)
     }
 }
