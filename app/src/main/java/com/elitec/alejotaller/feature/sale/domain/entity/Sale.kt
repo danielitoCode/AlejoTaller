@@ -5,14 +5,13 @@ import androidx.room.PrimaryKey
 import com.elitec.alejotaller.infraestructure.core.domain.CoreEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 @Entity
 @Serializable
 data class Sale(
     @PrimaryKey override val id: String,
-    val date: String,
-    // val date: LocalDate,
+    val date: LocalDate,
     val amount: Double,
     val products: List<String>,
     @SerialName("user_id")
