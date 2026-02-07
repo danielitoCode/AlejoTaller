@@ -1,10 +1,11 @@
 package com.elitec.alejotaller.feature.product.data.repository
 
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.alejotaller.infraestructure.core.domain.Repository
 import io.ktor.client.HttpClient
 
-class ProductRepositoryImpl: Repository<Product> {
+class ProductRepositoryImpl: ProductRepository {
     override suspend fun getAll(): List<Product> {
         TODO("Not yet implemented")
     }
