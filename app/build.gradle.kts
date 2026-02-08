@@ -46,11 +46,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
+            buildConfigField("String", "CATEGORIA_TABLE_ID", "\"${localProperties.getProperty("CATEGORIA_TABLE_ID")}\"")
         }
         release {
             isMinifyEnabled = false
 
             buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
+            buildConfigField("String", "CATEGORIA_TABLE_ID", "\"${localProperties.getProperty("CATEGORIA_TABLE_ID")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -67,9 +69,7 @@ android {
         buildConfig = true
     }
 
-    room {
-        schemaDirectory("$projectDir/schemas")
-    }
+
 }
 
 dependencies {
@@ -145,4 +145,8 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     // Browser
     implementation("androidx.browser:browser:1.9.0")
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
