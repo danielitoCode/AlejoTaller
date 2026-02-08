@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.infraestructure.di
 
 import androidx.room.Room
+import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessionManager
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
@@ -16,8 +17,8 @@ val infrastructureModule = module {
     // AppWrite SDK
     single {
         Client(context = androidContext())
-            .setEndpoint("https://nyc.cloud.appwrite.io/v1")
-            .setProject("68f990d4002b6960ecf9") // Change in other versions
+            .setEndpoint(BuildConfig.APPWRITE_PROJECT_ENDPOINT)
+            .setProject(BuildConfig.APPWRITE_PROJECT_ID)
             // .setDevKey(getApiKey())
             .setSelfSigned(false)
     }

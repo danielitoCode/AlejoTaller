@@ -46,6 +46,8 @@ android {
             buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
             buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
             buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
+            buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
+            buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -54,6 +56,8 @@ android {
             buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
             buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
             buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
+            buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
+            buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
