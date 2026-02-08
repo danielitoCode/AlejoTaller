@@ -6,6 +6,6 @@ import io.appwrite.models.Document
 fun Document<Category>.toCategory(): Category =
     Category(
         id = this.id,
-        name = this.data.id,
+        name = this.data.name,
         photoUrl = this.data.photoUrl
     )
