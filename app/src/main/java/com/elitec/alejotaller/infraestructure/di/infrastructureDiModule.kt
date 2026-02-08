@@ -2,7 +2,12 @@ package com.elitec.alejotaller.infraestructure.di
 
 import androidx.room.Room
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
+import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessionManager
+import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
+import com.elitec.alejotaller.infraestructure.core.domain.repositories.GoogleAuthProvider
+import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
 import io.appwrite.Client
+import io.appwrite.services.Account
 import io.appwrite.services.Databases
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -17,6 +22,7 @@ val infrastructureModule = module {
             .setSelfSigned(false)
     }
     single { Databases(get()) }
+    single { Account(get()) }
 
     // Database
     single {
@@ -27,4 +33,9 @@ val infrastructureModule = module {
         )
             .build()
     }
+
+    // GoogleSingInProvider
+    single<GoogleAuthProvider> { GoogleAuthProviderImpl(androidContext()) }
+    single<SessionManager> { AppwriteSessionManager(get()) }
+
 }

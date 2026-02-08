@@ -1,6 +1,7 @@
 package com.elitec.alejotaller
 
 import android.app.Application
+import com.elitec.alejotaller.feature.auth.di.authFeatureDiModule
 import com.elitec.alejotaller.feature.category.di.categoryFeatureModule
 import com.elitec.alejotaller.feature.product.di.productFeatureModule
 import com.elitec.alejotaller.feature.sale.di.saleFeatureModule
@@ -13,8 +14,8 @@ class TallerAlejoApp : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@TallerAlejoApp)
-
             infrastructureModule
+            authFeatureDiModule
             categoryFeatureModule
             productFeatureModule
             saleFeatureModule
