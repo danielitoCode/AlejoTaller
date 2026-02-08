@@ -1,6 +1,5 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
-import android.nfc.FormatException
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 
