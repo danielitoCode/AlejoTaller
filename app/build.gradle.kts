@@ -43,13 +43,17 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
-            buildConfigField("String", "CATEGORIA_TABLE_ID", "\"${localProperties.getProperty("CATEGORIA_TABLE_ID")}\"")
+            buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
+            buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
+            buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
         }
         release {
             isMinifyEnabled = false
 
             buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
-            buildConfigField("String", "CATEGORIA_TABLE_ID", "\"${localProperties.getProperty("CATEGORIA_TABLE_ID")}\"")
+            buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
+            buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
+            buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

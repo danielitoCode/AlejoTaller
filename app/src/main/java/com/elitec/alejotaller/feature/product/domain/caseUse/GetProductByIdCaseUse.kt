@@ -6,7 +6,6 @@ import com.elitec.alejotaller.feature.product.domain.repository.ProductRepositor
 class GetProductByIdCaseUse(
     private val repository: ProductRepository
 ) {
-    // Cuando se le agregue offline first se debe devolver el flow
     suspend operator fun invoke(id: String): Result<Product> = runCatching {
         repository.getById(id)
     }

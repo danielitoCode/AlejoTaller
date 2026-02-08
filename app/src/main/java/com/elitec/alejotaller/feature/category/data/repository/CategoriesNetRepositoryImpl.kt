@@ -8,12 +8,10 @@ import io.appwrite.services.Databases
 class CategoriesNetRepositoryImpl(
     private val netDB: Databases
 ) {
-    private val CATEGORIA_TABLE_ID = BuildConfig.APPWRITE_DATABASE_ID
-
     suspend fun getAll(): List<CategoryDto> {
         val response = netDB.listDocuments(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
-            collectionId = CATEGORIA_TABLE_ID
+            collectionId = BuildConfig.CATEGORY_TABLE_ID
         )
         return  response.documents.map { document -> document.toCategoryDto() }
     }
