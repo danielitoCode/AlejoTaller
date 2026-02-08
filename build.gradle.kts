@@ -4,6 +4,6 @@ plugins {
     alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.devtools.ksp) apply false
     alias(libs.plugins.androidx.room) apply false
-    alias(libs.plugins.kotzilla) apply false
+    // alias(libs.plugins.kotzilla) apply false
     alias(libs.plugins.jetbrains.kotlin.jvm) apply false
 }

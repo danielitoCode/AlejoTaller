@@ -55,10 +55,10 @@ appwrite = "12.0.0"
 kotlinxDatetime = "0.7.1"
 # Browser
 browser = "1.9.0"
-kotzilla = "1.3.0"
+kotzilla = "2.0.3"
 # Generation
-kotlinpoet = "1.16.0"
-jetbrainsKotlinJvm = "2.3.10"
+kotlinpoet = "2.2.0"
+jetbrainsKotlinJvm = "2.3.20-Beta2"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -136,6 +136,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotzilla-sdk = { group = "io.kotzilla", name = "kotzilla-sdk", version.ref = "kotzilla" }
 # Generation
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

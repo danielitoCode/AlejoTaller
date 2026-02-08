@@ -11,3 +11,9 @@ kotlin {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
     }
 }
+
+dependencies {
+    implementation("com.google.devtools.ksp:symbol-processing-api:2.3.4")
+    implementation(libs.kotlinpoet)
+    implementation(libs.kotlinpoet.ksp)
+}

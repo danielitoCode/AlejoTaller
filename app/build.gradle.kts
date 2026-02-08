@@ -1,4 +1,3 @@
-import org.gradle.kotlin.dsl.support.kotlinCompilerOptions
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -8,7 +7,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
-    alias(libs.plugins.kotzilla)
+    // alias(libs.plugins.kotzilla)
 }
 
 // Leer local.properties
@@ -29,14 +28,12 @@ val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
 android {
     namespace = "com.elitec.alejotaller"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.elitec.alejotaller"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = appVersionCode
         versionName = appVersionName
 
@@ -73,7 +70,7 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotzilla.sdk)
+    // implementation(libs.kotzilla.sdk)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
