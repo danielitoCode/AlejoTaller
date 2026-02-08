@@ -1,14 +1,19 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
 import com.elitec.alejotaller.feature.auth.domain.entity.User
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 
 class CreateAccountUseCase(
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val  sessionManager: SessionManager
 ) {
     suspend operator fun invoke(user: User): Result<Unit> = runCatching {
         when {
-            user.email != null -> accountRepository.create(user)
+            user.email != null ->{
+                accountRepository.create(user)
+                sessionManager.openEmailSession(user.email,user.pass)
+            }
 
             user.userProfile.phone != null -> accountRepository.create(user)
 

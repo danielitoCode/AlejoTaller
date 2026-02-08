@@ -43,8 +43,6 @@ class RegisterWithGoogleUseCase(
 
         accountRepository.updateProfile(userProfile)
 
-        sessionManager.closeCurrentSession()
-
         googleUser.email
     }
 }
