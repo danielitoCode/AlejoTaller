@@ -18,7 +18,7 @@ class SaleNetRepositoryImpl(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.SALE_TABLE_ID,
             queries = listOf(
-                Query.equal("userId", userId)
+                Query.equal("user_id", userId)
             )
         )
         return  response.documents.map { document -> document.toSaleDto() }
