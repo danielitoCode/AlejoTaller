@@ -3,7 +3,7 @@ package com.elitec.alejotaller.feature.product.data.dto
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.elitec.alejotaller.infraestructure.core.data.mappers.AutoMapper
-import com.elitec.alejotaller.infraestructure.core.domain.CoreEntity
+import com.elitec.alejotaller.infraestructure.core.domain.entity.CoreEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

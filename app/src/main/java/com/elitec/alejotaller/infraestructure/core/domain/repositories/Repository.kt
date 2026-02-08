@@ -1,4 +1,6 @@
-package com.elitec.alejotaller.infraestructure.core.domain
+package com.elitec.alejotaller.infraestructure.core.domain.repositories
+
+import com.elitec.alejotaller.infraestructure.core.domain.entity.CoreEntity
 
 interface Repository<T: CoreEntity> {
     suspend fun getAll(): List<T>
