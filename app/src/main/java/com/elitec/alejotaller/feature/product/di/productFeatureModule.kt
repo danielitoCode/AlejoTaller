@@ -25,5 +25,5 @@ val productFeatureModule = module {
     factory { SyncProductCaseUse(get()) }
 
     // Presentation Layer
-    viewModel { ProductViewModel(get(), get()) }
+    viewModel { ProductViewModel(get(), get(), get()) }
 }

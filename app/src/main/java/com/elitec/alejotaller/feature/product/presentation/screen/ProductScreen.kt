@@ -4,19 +4,37 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HeartBroken
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,10 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
@@ -35,7 +51,6 @@ import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTalle
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
-import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun ProductScreen(
@@ -73,13 +88,20 @@ fun SearchBar(modifier: Modifier = Modifier) {
         value = text,
         onValueChange = { text = it },
         modifier = modifier.fillMaxWidth(),
-        placeholder = { Text(stringResource(id = R.string.search_placeholder), color = Color.Gray) },
-        trailingIcon = { IconPlaceholder(modifier = Modifier.size(24.dp)) },
+        placeholder = {
+            Text(
+                text = stringResource(id = R.string.search_placeholder),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
+        trailingIcon = {
+            IconPlaceholder(
+                modifier = Modifier.size(24.dp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        },
         shape = RoundedCornerShape(12.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color.LightGray,
-            focusedBorderColor = Color.LightGray
-        ),
+        colors = OutlinedTextFieldDefaults.colors(),
         singleLine = true
     )
 }
@@ -91,7 +113,7 @@ fun BannerSection(modifier: Modifier = Modifier) {
             .fillMaxWidth()
             .height(160.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF388E3C))
+            .background(MaterialTheme.colorScheme.primary)
     ) {
         Row(
             modifier = Modifier
@@ -105,26 +127,26 @@ fun BannerSection(modifier: Modifier = Modifier) {
             ) {
                 Text(
                     text = stringResource(id = R.string.clearance_sales),
-                    color = Color.White,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    style = MaterialTheme.typography.titleLarge
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Row(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .background(Color.White.copy(alpha = 0.2f))
+                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconPlaceholder(modifier = Modifier.size(14.dp), color = Color.White)
+                    IconPlaceholder(
+                        modifier = Modifier.size(14.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = stringResource(id = R.string.up_to_50),
-                        color = Color.White,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
@@ -133,7 +155,7 @@ fun BannerSection(modifier: Modifier = Modifier) {
                     .weight(1f)
                     .fillMaxHeight()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color.Gray.copy(alpha = 0.3f)),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -162,13 +184,13 @@ fun CategoriesSection(modifier: Modifier = Modifier) {
         ) {
             Text(
                 text = stringResource(id = R.string.categories),
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = stringResource(id = R.string.see_all),
-                color = Color(0xFF4CAF50),
-                fontSize = 14.sp
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
         Spacer(modifier = Modifier.height(12.dp))
@@ -180,19 +202,23 @@ fun CategoriesSection(modifier: Modifier = Modifier) {
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
-                        .background(if (isSelected) Color(0xFF4CAF50) else Color.Transparent)
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surface
+                        )
                         .border(
                             width = 1.dp,
-                            color = if (isSelected) Color(0xFF4CAF50) else Color.Black,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(10.dp)
                         )
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
                         text = category,
-                        color = if (isSelected) Color.White else Color.Black,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelLarge
                     )
                 }
             }
@@ -238,17 +264,17 @@ fun ProductItem(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Color(0xFFF5F5F5)),
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.BottomStart
         ) {
             Image(
                 contentScale = ContentScale.Crop,
-                painter = painterResource(product.photoLocalResource?:0),
+                painter = painterResource(product.photoLocalResource ?: R.drawable.echoflow_transparent),
                 contentDescription = "Product Image",
             )
             Box(
                 modifier = Modifier.fillMaxWidth()
-                    .hazeEffect(style = HazeMaterials.ultraThin())
+                    .background(MaterialTheme.colorScheme.background.copy(0.5f))
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
                 contentAlignment = Alignment.BottomEnd
             ) {
@@ -264,35 +290,14 @@ fun ProductItem(
                     Icon(
                         imageVector = Icons.Outlined.HeartBroken,
                         contentDescription = "Favorite",
-                        tint = Color.White
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                     Text(
                         text = "$${String.format("%.2f", product.price)}",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
-
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth().padding(
-                    top = 5.dp,
-                    bottom = 5.dp,
-                    end = 10.dp,
-                    start = 10.dp
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.HeartBroken,
-                    contentDescription = "Favorite",
-                    tint = Color.Black
-                )
-                Text(
-                    text = "$${String.format("%.2f", product.price)}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -303,8 +308,8 @@ fun ProductItem(
         ) {
             Text(
                 text = product.name,
-                fontSize = 14.sp,
-                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1
             )
         }
@@ -315,7 +320,7 @@ fun ProductItem(
 @Composable
 fun IconPlaceholder(
     modifier: Modifier = Modifier,
-    color: Color = Color.Black
+    color: Color = MaterialTheme.colorScheme.onSurface
 ) {
     Box(
         modifier = modifier

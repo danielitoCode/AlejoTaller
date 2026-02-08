@@ -4,29 +4,41 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Handshake
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
@@ -91,7 +103,11 @@ private fun HeaderSection(
             onClick = onBackClick,
             modifier = Modifier
                 .size(40.dp)
-                .border(1.dp, Color.LightGray.copy(alpha = 0.5f), CircleShape)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                    CircleShape
+                )
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBack, // Placeholder for back arrow
@@ -106,8 +122,12 @@ private fun HeaderSection(
                 onClick = onFavoriteClick,
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color.White, CircleShape)
-                    .border(1.dp, Color.LightGray.copy(alpha = 0.5f), CircleShape)
+                    .background(MaterialTheme.colorScheme.surface, CircleShape)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        CircleShape
+                    )
             ) {
                 Icon(
                     imageVector = Icons.Default.Handshake,
@@ -136,7 +156,7 @@ private fun ProductImageSection(
         Image(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
-            painter = painterResource(photoLocalResource?:2),
+            painter = painterResource(photoLocalResource ?: R.drawable.echoflow_transparent),
             contentDescription = "Product Image"
         )
     }
@@ -152,7 +172,7 @@ private fun ProductInfoSection(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.surface)
             .padding(24.dp)
     ) {
         Row(
@@ -162,12 +182,11 @@ private fun ProductInfoSection(
         ) {
             Text(
                 text = productName,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Surface(
-                color = Color(0xFFFDECEC),
+                color = MaterialTheme.colorScheme.errorContainer,
                 shape = RoundedCornerShape(8.dp)
             ) {
                 Row(
@@ -175,12 +194,15 @@ private fun ProductInfoSection(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Box(modifier = Modifier.size(12.dp).background(Color(0xFFE57373), CircleShape))
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .background(MaterialTheme.colorScheme.error, CircleShape)
+                    )
                     Text(
                         text = "En oferta",
-                        color = Color(0xFFE57373),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
@@ -194,17 +216,16 @@ private fun ProductInfoSection(
         ) {
             RatingBadge(
                 value = stringResource(R.string.rating_value),
-                iconColor = Color(0xFFFFB74D)
+                iconColor = MaterialTheme.colorScheme.tertiary
             )
             RatingBadge(
                 value = stringResource(R.string.recommendation_percentage),
-                iconColor = Color(0xFF4CAF50),
-                isThumbsUp = true
+                iconColor = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = stringResource(R.string.reviews_count),
-                color = Color.Gray,
-                fontSize = 12.sp
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
             )
         }
 
@@ -212,9 +233,8 @@ private fun ProductInfoSection(
 
         Text(
             text = productDescription,
-            color = Color.Gray,
-            fontSize = 14.sp,
-            lineHeight = 20.sp
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
         )
     }
 }
@@ -222,12 +242,11 @@ private fun ProductInfoSection(
 @Composable
 private fun RatingBadge(
     value: String,
-    iconColor: Color,
-    modifier: Modifier = Modifier,
-    isThumbsUp: Boolean = false
+    iconColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color(0xFFF5F5F5),
+        color = MaterialTheme.colorScheme.surfaceVariant,
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
     ) {
@@ -239,9 +258,8 @@ private fun RatingBadge(
             Box(modifier = Modifier.size(12.dp).background(iconColor, CircleShape))
             Text(
                 text = value,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = Color.Black
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
@@ -254,9 +272,9 @@ private fun StorageOption(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = if (isSelected) Color(0xFF2ECC71) else Color.Transparent,
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(12.dp),
-        border = if (isSelected) null else BorderStroke(1.dp, Color.LightGray),
+        border = if (isSelected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.height(40.dp)
     ) {
         Box(
@@ -265,9 +283,9 @@ private fun StorageOption(
         ) {
             Text(
                 text = text,
-                color = if (isSelected) Color.White else Color.Gray,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge
             )
         }
     }
@@ -281,7 +299,7 @@ private fun PriceAndAddToCartSection(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color.White,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp
     ) {
         Row(
@@ -294,15 +312,14 @@ private fun PriceAndAddToCartSection(
             Column {
                 Text(
                     text = "$ 130.00",
-                    color = Color.Gray,
-                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
                     textDecoration = TextDecoration.LineThrough
                 )
                 Text(
                     text = "$ $productPrice",
-                    color = Color.Black,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.headlineSmall
                 )
             }
 
@@ -312,15 +329,14 @@ private fun PriceAndAddToCartSection(
                     .height(56.dp)
                     .fillMaxWidth(0.7f),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF2ECC71)
+                    containerColor = MaterialTheme.colorScheme.primary
                 ),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Text(
                     text = stringResource(R.string.add_to_cart),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
