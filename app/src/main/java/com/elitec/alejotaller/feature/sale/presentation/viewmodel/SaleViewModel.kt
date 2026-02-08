@@ -2,26 +2,38 @@ package com.elitec.alejotaller.feature.sale.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.elitec.alejotaller.feature.sale.domain.caseUse.GetAllBuyCaseUse
+import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.GetSalesByIdCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SaleViewModel(
-    private val getAllBuyCaseUse: GetAllBuyCaseUse,
+    observeProductsCaseUse: ObserveAllSalesCaseUse,
+    private val syncSalesCaseUse: SyncSalesCaseUse,
+    private val getSaleByIdCaseUse: GetSalesByIdCaseUse,
     private val registerNewSaleCauseUse: RegisterNewSaleCauseUse
 ): ViewModel() {
 
-    fun getUserSale(userId: String, onSaleReady: (List<Sale>) -> Unit) {
+    val salesFlow = observeProductsCaseUse().stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000),
+        emptyList()
+    )
+    fun sync(userId: String) {
         viewModelScope.launch {
-            getAllBuyCaseUse(userId)
-                .onSuccess { sales ->
-                    onSaleReady(sales)
-                }
-                .onFailure {
-                    onSaleReady(listOf())
+            syncSalesCaseUse(userId)
+        }
+    }
+
+    fun getSaleById(id: String,onSaleCharge: (Sale?) -> Unit) {
+        viewModelScope.launch {
+            getSaleByIdCaseUse(id)
+                .onSuccess {
+                    onSaleCharge(it)
                 }
         }
     }
