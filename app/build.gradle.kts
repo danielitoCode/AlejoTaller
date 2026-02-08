@@ -28,12 +28,12 @@ val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
 android {
     namespace = "com.elitec.alejotaller"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.elitec.alejotaller"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
 

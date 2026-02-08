@@ -2,12 +2,16 @@ package com.elitec.alejotaller.feature.product.data.dto
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.elitec.alejotaller.infraestructure.core.data.mappers.AutoMapper
 import com.elitec.alejotaller.infraestructure.core.domain.CoreEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Entity
 @Serializable
+@AutoMapper(
+    domain = "com.elitec.alejotaller.feature.product.domain.entity.Product"
+)
 data class ProductDto(
     @PrimaryKey override val id: String,
     val name: String,

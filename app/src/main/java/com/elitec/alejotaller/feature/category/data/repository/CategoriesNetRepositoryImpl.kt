@@ -2,7 +2,7 @@ package com.elitec.alejotaller.feature.category.data.repository
 
 import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
-import com.elitec.alejotaller.feature.category.data.mapper.toCategory
+import com.elitec.alejotaller.feature.category.data.mapper.toCategoryDto
 import io.appwrite.services.Databases
 
 class CategoriesNetRepositoryImpl(
@@ -15,6 +15,6 @@ class CategoriesNetRepositoryImpl(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = CATEGORIA_TABLE_ID
         )
-        return  response.documents.map { document -> document.toCategory() }
+        return  response.documents.map { document -> document.toCategoryDto() }
     }
 }

@@ -8,6 +8,7 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -54,10 +55,21 @@ class AutoMapperProcessor(
 
             val dtoProperties = dtoClass.getAllProperties().associateBy { it.simpleName.asString() }
             val domainProperties = domainClass.getAllProperties().associateBy { it.simpleName.asString() }
+            val renameMap = extractRenames(annotation)
 
-            if (dtoProperties.keys != domainProperties.keys) {
+            val mappedDtoKeys = dtoProperties.keys.map { renameMap[it] ?: it }.toSet()
+
+            if (mappedDtoKeys != domainProperties.keys) {
                 logger.error(
-                    "AutoMapper requires matching property names for DTO and domain.",
+                    "AutoMapper requires matching property names for DTO and domain (after renames).",
+                    dtoClass
+                )
+                return@forEach
+            }
+
+            if (!typesAreCompatible(dtoProperties, domainProperties, renameMap)) {
+                logger.error(
+                    "AutoMapper requires matching property types for DTO and domain (after renames).",
                     dtoClass
                 )
                 return@forEach
@@ -69,8 +81,12 @@ class AutoMapperProcessor(
                 dtoClass.packageName.asString(),
                 "${dtoClass.simpleName.asString()}AutoMapper"
             )
-                .addFunction(buildToDomain(dtoProperties, domainProperties, dtoClassName, domainClassName))
-                .addFunction(buildToDto(dtoProperties, domainProperties, dtoClassName, domainClassName))
+                .addFunction(
+                    buildToDomain(dtoProperties, domainProperties, renameMap, dtoClassName, domainClassName)
+                )
+                .addFunction(
+                    buildToDto(dtoProperties, domainProperties, renameMap, dtoClassName, domainClassName)
+                )
                 .build()
 
             mapperFile.writeTo(
@@ -85,10 +101,14 @@ class AutoMapperProcessor(
     private fun buildToDomain(
         dtoProperties: Map<String, KSPropertyDeclaration>,
         domainProperties: Map<String, KSPropertyDeclaration>,
+        renameMap: Map<String, String>,
         dtoClassName: com.squareup.kotlinpoet.ClassName,
         domainClassName: com.squareup.kotlinpoet.ClassName
     ): FunSpec {
-        val args = domainProperties.keys.joinToString(", ") { key -> "$key = $key" }
+        val args = domainProperties.keys.joinToString(", ") { key ->
+            val dtoKey = renameMap.entries.firstOrNull { it.value == key }?.key ?: key
+            "$key = $dtoKey"
+        }
 
         return FunSpec.builder("toDomain")
             .receiver(dtoClassName)
@@ -100,10 +120,14 @@ class AutoMapperProcessor(
     private fun buildToDto(
         dtoProperties: Map<String, KSPropertyDeclaration>,
         domainProperties: Map<String, KSPropertyDeclaration>,
+        renameMap: Map<String, String>,
         dtoClassName: com.squareup.kotlinpoet.ClassName,
         domainClassName: com.squareup.kotlinpoet.ClassName
     ): FunSpec {
-        val args = dtoProperties.keys.joinToString(", ") { key -> "$key = $key" }
+        val args = dtoProperties.keys.joinToString(", ") { key ->
+            val domainKey = renameMap[key] ?: key
+            "$key = $domainKey"
+        }
 
         return FunSpec.builder("toDto")
             .receiver(domainClassName)
@@ -112,4 +136,42 @@ class AutoMapperProcessor(
             .build()
     }
 
+    private fun extractRenames(annotation: com.google.devtools.ksp.symbol.KSAnnotation?): Map<String, String> {
+        val renamesArg = annotation
+            ?.arguments
+            ?.firstOrNull { it.name?.asString() == "renames" }
+            ?.value as? List<*>
+            ?: emptyList<Any>()
+
+        return renamesArg
+            .mapNotNull { it as? com.google.devtools.ksp.symbol.KSAnnotation }
+            .mapNotNull { rename ->
+                val from = rename.arguments.firstOrNull { it.name?.asString() == "from" }?.value as? String
+                val to = rename.arguments.firstOrNull { it.name?.asString() == "to" }?.value as? String
+                if (from != null && to != null) from to to else null
+            }
+            .toMap()
+    }
+
+    private fun typesAreCompatible(
+        dtoProperties: Map<String, KSPropertyDeclaration>,
+        domainProperties: Map<String, KSPropertyDeclaration>,
+        renameMap: Map<String, String>
+    ): Boolean {
+        return dtoProperties.all { (dtoKey, dtoProp) ->
+            val domainKey = renameMap[dtoKey] ?: dtoKey
+            val domainProp = domainProperties[domainKey] ?: return@all false
+            val dtoType = dtoProp.type.resolve()
+            val domainType = domainProp.type.resolve()
+            areSameType(dtoType, domainType)
+        }
+    }
+
+    private fun areSameType(dtoType: KSType, domainType: KSType): Boolean {
+        if (dtoType.isMarkedNullable != domainType.isMarkedNullable) {
+            return false
+        }
+        return dtoType.declaration.qualifiedName?.asString() ==
+                domainType.declaration.qualifiedName?.asString()
+    }
 }
