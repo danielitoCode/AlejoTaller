@@ -13,7 +13,7 @@ class ProductOfflineFirstRepository(
     private val net: ProductNetRepositoryImpl,
     private val bd: ProductDao
 ): ProductRepository {
-    override suspend fun observeAll(): Flow<List<Product>> =
+    override fun observeAll(): Flow<List<Product>> =
         bd.getAllFlow().map { productDtoList ->
             productDtoList.map { productDto ->
                 productDto.toDomain()

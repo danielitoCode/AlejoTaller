@@ -10,5 +10,5 @@ import kotlinx.coroutines.flow.Flow
 class ObserveProductsCaseUse(
     private val repository: ProductRepository
 ) {
-    suspend operator fun invoke(): Flow<List<Product>> = repository.observeAll()
+    operator fun invoke(): Flow<List<Product>> = repository.observeAll()
 }

@@ -5,36 +5,33 @@ import androidx.compose.material.icons.filled.SyncDisabled
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
+import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ProductViewModel(
+    observeProductsCaseUse: ObserveProductsCaseUse,
     private val syncProductCaseUse: SyncProductCaseUse,
     private val getProductByIdCaseUse: GetProductByIdCaseUse
 ): ViewModel() {
-    private var _productFlow = MutableStateFlow(listOf<Product>())
-    val productFlow get() = _productFlow.asStateFlow()
+
+    val productFlow = observeProductsCaseUse().stateIn(
+        viewModelScope, SharingStarted.WhileSubscribed(5_000),
+        emptyList()
+    )
 
     init {
-        productSync()
-    }
-
-    private fun productSync() {
         viewModelScope.launch {
             syncProductCaseUse()
-                .onSuccess { product ->
-                    _productFlow.value = product
-                }
-                .onFailure {
-                    _productFlow.value = listOf()
-                }
         }
     }
 
-    private fun getProductById(id: String,onProductCharge: (Product?) -> Unit) {
+    fun getProductById(id: String,onProductCharge: (Product?) -> Unit) {
         viewModelScope.launch {
             getProductByIdCaseUse(id)
                 .onSuccess { product ->
