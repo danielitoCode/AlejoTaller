@@ -116,7 +116,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     // Permission
-    // implementation(libs.compose.permission)
+    implementation(libs.compose.permission)
     // DataStore Preferences
     implementation(libs.androidx.datastore.preferences)
     // Shimmer effect
@@ -134,11 +134,15 @@ dependencies {
     implementation(libs.compose.blurEffect.core)
     implementation(libs.compose.blurEffect.materials)
     // Persistence
-    implementation(libs.sdk.for1.android)
+    implementation(libs.sdk.for1.android) {
+        exclude(group = "androidx.browser", module = "browser")
+    }
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
     // Datetime
     implementation(libs.kotlinx.datetime)
+    // Browser
+    implementation("androidx.browser:browser:1.9.0")
 }

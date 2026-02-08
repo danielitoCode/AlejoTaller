@@ -52,6 +52,8 @@ haze = "1.7.1"
 appwrite = "12.0.0"
 # DateTime
 kotlinxDatetime = "0.7.1"
+# Browser
+browser = "1.9.0"
 # kotzilla = "1.3.0"
 
 [libraries]
@@ -124,6 +126,8 @@ compose-blurEffect-materials = { module = "dev.chrisbanes.haze:haze-materials", 
 sdk-for1-android = { module = "io.appwrite:sdk-for-android", version.ref = "appwrite" }
 # DateTime
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+# Browser
+# androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 # kotzilla-sdk = { group = "io.kotzilla", name = "kotzilla-sdk", version.ref = "kotzilla" }
 
 [plugins]
