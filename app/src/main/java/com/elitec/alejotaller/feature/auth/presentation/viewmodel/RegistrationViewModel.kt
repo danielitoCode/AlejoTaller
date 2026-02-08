@@ -1,6 +1,27 @@
 package com.elitec.alejotaller.feature.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.elitec.alejotaller.feature.auth.domain.caseuse.CustomRegisterCaseUse
+import com.elitec.alejotaller.feature.auth.domain.caseuse.RegisterWithGoogleUseCase
+import kotlinx.coroutines.launch
 
-class RegistrationViewModel: ViewModel() {
+class RegistrationViewModel(
+    private val registerUserCaseUse: RegisterWithGoogleUseCase,
+    private val customRegisterCaseUse: CustomRegisterCaseUse
+): ViewModel() {
+    fun registerWithGoogle(onUserRegister: () -> Unit, onFail: () -> Unit) {
+        viewModelScope.launch {
+            registerUserCaseUse()
+                .onSuccess { onUserRegister() }
+                .onFailure { onFail() }
+        }
+    }
+    fun customRegister(email: String, password: String, name: String, onUserRegister: () -> Unit, onFail: () -> Unit) {
+        viewModelScope.launch {
+            customRegisterCaseUse(email, password, name)
+                .onSuccess { onUserRegister() }
+                .onFailure { onFail() }
+        }
+    }
 }

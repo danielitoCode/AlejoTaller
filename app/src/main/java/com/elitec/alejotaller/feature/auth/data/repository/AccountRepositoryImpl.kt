@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.feature.auth.data
+package com.elitec.alejotaller.feature.auth.data.repository
 
 import com.elitec.alejotaller.feature.auth.data.mappers.toDomain
 import com.elitec.alejotaller.feature.auth.data.mappers.toDto
@@ -14,10 +14,21 @@ class AccountRepositoryImpl(
     override suspend fun create(user: User)  {
         val dto = user.toDto()
         account.create(
-            userId = ID.unique(),
+            userId = ID.Companion.unique(),
             email = dto.email,
             password = dto.pass,
             name = dto.name
+        )
+    }
+
+    override suspend fun updateProfile(userProfile: UserProfile) {
+        account.updatePrefs(
+            prefs = mapOf(
+                "sub" to userProfile.sub,
+                "phone" to userProfile.phone,
+                "photoUrl" to userProfile.photoUrl,
+                "verification" to userProfile.verification
+            )
         )
     }
 
@@ -29,14 +40,15 @@ class AccountRepositoryImpl(
         account.updatePassword(newPass)
     }
 
-    override suspend fun updateProfile(profile: UserProfile) {
+    override suspend fun updatePhone(newPhone: String) {
         account.updatePrefs(
-            prefs = mapOf(
-                "photoUrl" to profile.photoUrl,
-                "sub" to profile.sub,
-                "phone" to profile.phone,
-                "verification" to profile.verification
-            )
+            prefs = mapOf("phone" to newPhone)
+        )
+    }
+
+    override suspend fun updatePhotoUrl(photoUrl: String) {
+        account.updatePrefs(
+            prefs = mapOf("photoUrl" to photoUrl)
         )
     }
 
