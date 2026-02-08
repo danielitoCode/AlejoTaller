@@ -12,8 +12,10 @@ class AppwriteSessionManager(
     }
 
     override suspend fun isAnySessionAlive(): Boolean {
-        val sessions = account.listSessions()
-        return sessions.sessions.isNotEmpty()
+        return runCatching {
+            val sessions = account.listSessions()
+            sessions.sessions.isNotEmpty()
+        }.getOrDefault(false)
     }
 
     override suspend fun closeCurrentSession() {
