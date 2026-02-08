@@ -13,7 +13,7 @@ class CreateAccountUseCase(
 
             user.userProfile.phone != null -> accountRepository.create(user)
 
-            else -> throw FormatException("Datos inválidos")
+            else -> throw IllegalArgumentException("Datos inválidos")
         }
     }
 }
