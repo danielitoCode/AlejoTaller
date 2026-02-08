@@ -2,7 +2,7 @@ package com.elitec.alejotaller.feature.sale.data.dto
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.elitec.alejotaller.infraestructure.core.domain.entity.CoreEntity
+import com.elitec.alejotaller.feature.auth.domain.entity.CoreEntity
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

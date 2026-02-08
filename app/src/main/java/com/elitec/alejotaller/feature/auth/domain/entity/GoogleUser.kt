@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.core.domain.entity
+package com.elitec.alejotaller.feature.auth.domain.entity
 
 data class GoogleUser(
     val email: String,
