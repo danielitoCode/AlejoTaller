@@ -1,11 +1,11 @@
 package com.elitec.alejotaller.feature.category.data.mapper
 
-import com.elitec.alejotaller.feature.category.domain.entity.Category
+import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
 import io.appwrite.models.Document
 
-fun Document<Category>.toCategory(): Category =
-    Category(
-        id = this.id,
-        name = this.data.name,
-        photoUrl = this.data.photoUrl
+fun  Document<Map<String, Any>>.toCategory(): CategoryDto =
+    CategoryDto(
+        id = this.id, // Manejar null con valor por defecto
+        name = (data["name"] as? String) ?: "Sin nombre",
+        photoUrl = (data["photo_url"] as? String) ?: ""
     )

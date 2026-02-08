@@ -1,11 +1,10 @@
 package com.elitec.alejotaller.feature.category.data.mapper
 
-import com.elitec.alejotaller.feature.category.domain.entity.Category
-import io.appwrite.models.Document
+import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
 
-fun Category.toDocument(): Map<String, Any?> =
+fun CategoryDto.toDocument(): Map<String, Any?> =
     mapOf(
         "id" to id,
         "name" to name,
-        "photoUrl" to photoUrl
+        "photo_url" to photoUrl
     )

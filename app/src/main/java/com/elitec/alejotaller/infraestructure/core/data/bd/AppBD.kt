@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
+import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.product.data.dto.ProductDao
 import com.elitec.alejotaller.feature.product.domain.entity.Product
@@ -13,11 +14,11 @@ import com.elitec.alejotaller.infraestructure.core.data.converters.DateTimeConve
 
 @Database(
     entities = [
-        Category::class,
+        CategoryDto::class,
         Product::class,
         Sale::class
     ],
-    version = 1,
+    version = 2,
 )
 @TypeConverters(
     DateTimeConverter::class

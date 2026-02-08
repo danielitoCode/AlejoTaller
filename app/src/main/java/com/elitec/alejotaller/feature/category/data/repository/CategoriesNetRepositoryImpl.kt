@@ -1,21 +1,20 @@
 package com.elitec.alejotaller.feature.category.data.repository
 
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.category.domain.entity.Category
-import com.elitec.alejotaller.feature.category.domain.repository.CategoriesRepository
-import io.appwrite.ID
+import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
+import com.elitec.alejotaller.feature.category.data.mapper.toCategory
 import io.appwrite.services.Databases
-import io.appwrite.services.TablesDB
 
 class CategoriesNetRepositoryImpl(
     private val netDB: Databases
 ) {
     private val CATEGORIA_TABLE_ID = BuildConfig.APPWRITE_DATABASE_ID
 
-    suspend fun getAll(): List<Category> {
+    suspend fun getAll(): List<CategoryDto> {
         val response = netDB.listDocuments(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = CATEGORIA_TABLE_ID
         )
+        return  response.documents.map { document -> document.toCategory() }
     }
 }
