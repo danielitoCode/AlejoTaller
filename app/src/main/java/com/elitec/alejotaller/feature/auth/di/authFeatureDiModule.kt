@@ -1,6 +1,8 @@
 package com.elitec.alejotaller.feature.auth.di
 
 import com.elitec.alejotaller.feature.auth.data.AccountRepositoryImpl
+import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthUserCaseUse
+import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CreateAccountUseCase
 import com.elitec.alejotaller.feature.auth.domain.caseuse.GetCurrentUserInfoCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.IsUserVerifiedUseCase
@@ -28,6 +30,8 @@ val authFeatureDiModule = module {
     factory { UpdateUserNameUseCase(get()) }
     factory { UpdateUserPassCaseUse(get()) }
     factory { VerifyUserUseCase(get()) }
+    factory { AuthUserCaseUse(get()) }
+    factory { CloseSessionCaseUse(get()) }
 
     // Presentation layer
 }
