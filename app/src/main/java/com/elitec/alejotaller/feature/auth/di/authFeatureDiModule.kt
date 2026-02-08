@@ -26,7 +26,7 @@ val authFeatureDiModule = module {
     single<AccountRepository> { AccountRepositoryImpl(get()) }
 
     // Domain layer
-    factory { CreateAccountUseCase(get()) }
+    factory { CreateAccountUseCase(get(), get()) }
     factory { GetCurrentUserInfoCaseUse(get()) }
     factory { IsUserVerifiedUseCase(get()) }
     factory {
@@ -42,7 +42,7 @@ val authFeatureDiModule = module {
     factory { VerifyUserUseCase(get()) }
     factory { AuthUserCaseUse(get()) }
     factory { CloseSessionCaseUse(get()) }
-    factory { AuthWithGoogleCaseUse(get(), get()) }
+    factory { AuthWithGoogleCaseUse(get(), get(), get()) }
     factory { CustomRegisterCaseUse(get()) }
 
     // Presentation layer
