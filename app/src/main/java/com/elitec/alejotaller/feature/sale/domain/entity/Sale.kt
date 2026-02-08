@@ -7,13 +7,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.datetime.LocalDate
 
-@Entity
-@Serializable
 data class Sale(
-    @PrimaryKey override val id: String,
+    override val id: String,
     val date: LocalDate,
     val amount: Double,
     val products: List<String>,
-    @SerialName("user_id")
     val userId: String
 ): CoreEntity

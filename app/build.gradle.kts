@@ -8,7 +8,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
-    // alias(libs.plugins.kotzilla)
+    alias(libs.plugins.kotzilla)
 }
 
 // Leer local.properties
@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    // implementation(libs.kotzilla.sdk)
+    implementation(libs.kotzilla.sdk)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -144,7 +144,9 @@ dependencies {
     // Datetime
     implementation(libs.kotlinx.datetime)
     // Browser
-    implementation("androidx.browser:browser:1.9.0")
+    implementation(libs.androidx.browser)
+    // Generations
+    implementation(libs.kotlinpoet)
 }
 
 room {

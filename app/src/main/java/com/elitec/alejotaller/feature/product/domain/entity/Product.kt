@@ -6,16 +6,12 @@ import com.elitec.alejotaller.infraestructure.core.domain.CoreEntity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-@Entity
-@Serializable
 data class Product(
-    @PrimaryKey override val id: String,
+    override val id: String,
     val name: String,
     val description: String,
     val price: Double,
-    @SerialName("photo_url")
     val photoUrl: String,
-    @SerialName("category_id")
     val categoryId: String,
     val rating: Double = 0.0,
     val photoLocalResource: Int? = null

@@ -13,26 +13,4 @@ class ProductRepositoryImpl: ProductRepository {
     override suspend fun getById(itemId: String): Product {
         TODO("Not yet implemented")
     }
-
-    override suspend fun save(
-        item: Product,
-        onSave: () -> Unit,
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun delete(
-        item: Product,
-        onDelete: () -> Unit,
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun modify(
-        itemId: String,
-        item: Product,
-        onModify: () -> Unit,
-    ) {
-        TODO("Not yet implemented")
-    }
 }
