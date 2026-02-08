@@ -21,4 +21,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "AlejoTaller"
 include(":app")
- 
+include(":app:mapper-processor")
+include(":mapper-processor")
+include(":mapper-processor")

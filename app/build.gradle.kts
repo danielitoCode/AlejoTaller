@@ -147,6 +147,7 @@ dependencies {
     implementation(libs.androidx.browser)
     // Generations
     implementation(libs.kotlinpoet)
+    ksp(project(":mapper-processor"))
 }
 
 room {
