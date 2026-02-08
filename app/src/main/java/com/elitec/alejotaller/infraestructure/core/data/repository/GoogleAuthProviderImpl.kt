@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CredentialManager
+import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.auth.domain.entity.GoogleUser
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
@@ -17,7 +18,7 @@ class GoogleAuthProviderImpl(
 
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
             .setFilterByAuthorizedAccounts(false) // Query all google accounts on the device
-            .setServerClientId("339467923021-iu6o7uv9p7a1d7mpt26bon6mnhf9h902.apps.googleusercontent.com") // Web client
+            .setServerClientId(BuildConfig.GOOGLE_CLOUD_WEBCLIENT) // Web client
             .setNonce(hashNonce)
             .build()
 

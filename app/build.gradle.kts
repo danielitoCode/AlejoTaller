@@ -48,6 +48,9 @@ android {
             buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
             buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
             buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -58,6 +61,9 @@ android {
             buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
             buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
             buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
+            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
