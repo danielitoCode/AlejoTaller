@@ -4,8 +4,8 @@ import androidx.room.Room
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessionManager
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.GoogleAuthProvider
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
+import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases

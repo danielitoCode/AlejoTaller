@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 
 class AuthUserCaseUse(
     private val sessionManager: SessionManager

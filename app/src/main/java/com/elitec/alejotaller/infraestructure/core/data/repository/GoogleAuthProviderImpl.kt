@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CredentialManager
 import com.elitec.alejotaller.infraestructure.core.domain.entity.GoogleUser
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.GoogleAuthProvider
+import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 

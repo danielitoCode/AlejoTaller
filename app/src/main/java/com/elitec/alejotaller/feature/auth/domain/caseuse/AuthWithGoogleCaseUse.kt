@@ -1,8 +1,8 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
 import com.elitec.alejotaller.feature.auth.domain.caseuse.util.hashEmailWithSub
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.GoogleAuthProvider
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
+import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 
 class AuthWithGoogleCaseUse(
     private val googleAuthProvider: GoogleAuthProvider,

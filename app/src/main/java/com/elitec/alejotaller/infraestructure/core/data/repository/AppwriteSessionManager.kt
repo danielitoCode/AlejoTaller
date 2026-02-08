@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.data.repository
 
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import io.appwrite.services.Account
 
 class AppwriteSessionManager(

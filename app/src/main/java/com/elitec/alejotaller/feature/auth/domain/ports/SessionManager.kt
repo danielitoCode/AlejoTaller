@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.core.domain.repositories
+package com.elitec.alejotaller.feature.auth.domain.ports
 
 interface SessionManager {
     suspend fun openEmailSession(email: String, password: String)

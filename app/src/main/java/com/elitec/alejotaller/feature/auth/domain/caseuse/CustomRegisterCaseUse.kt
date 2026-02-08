@@ -3,7 +3,6 @@ package com.elitec.alejotaller.feature.auth.domain.caseuse
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.entity.UserProfile
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
-import com.elitec.alejotaller.infraestructure.core.domain.repositories.SessionManager
 
 class CustomRegisterCaseUse(
     private val accountRepository: AccountRepository
