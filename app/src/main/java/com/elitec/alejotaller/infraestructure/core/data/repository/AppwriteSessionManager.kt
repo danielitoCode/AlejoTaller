@@ -11,6 +11,11 @@ class AppwriteSessionManager(
         account.createEmailPasswordSession(email, password)
     }
 
+    override suspend fun isAnySessionAlive(): Boolean {
+        val sessions = account.listSessions()
+        return sessions.sessions.isNotEmpty()
+    }
+
     override suspend fun closeCurrentSession() {
         account.deleteSession("current")
     }

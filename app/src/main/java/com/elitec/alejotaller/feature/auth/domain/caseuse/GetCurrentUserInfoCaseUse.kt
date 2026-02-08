@@ -1,11 +1,12 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
+import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 
-class VerifyUserUseCase(
+class GetCurrentUserInfoCaseUse(
     private val accountRepository: AccountRepository
 ) {
-    suspend operator fun invoke(): Result<Unit> = runCatching {
-        accountRepository.verifyEmail()
+    suspend operator fun invoke(): Result<User> = runCatching {
+        accountRepository.getCurrentUserInfo()
     }
 }

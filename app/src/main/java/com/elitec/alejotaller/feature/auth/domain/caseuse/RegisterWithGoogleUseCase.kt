@@ -39,7 +39,11 @@ class RegisterWithGoogleUseCase(
             )
         )
 
-        sessionManager.openEmailSession(googleUser.email)
+        sessionManager.openEmailSession(googleUser.email, password)
+
+        accountRepository.updateProfile(userProfile)
+
+        sessionManager.closeCurrentSession()
 
         googleUser.email
     }

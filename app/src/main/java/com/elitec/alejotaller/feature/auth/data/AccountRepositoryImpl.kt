@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.auth.data
 
+import com.elitec.alejotaller.feature.auth.data.mappers.toDomain
 import com.elitec.alejotaller.feature.auth.data.mappers.toDto
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.entity.UserProfile
@@ -37,6 +38,11 @@ class AccountRepositoryImpl(
                 "verification" to profile.verification
             )
         )
+    }
+
+    override suspend fun getCurrentUserInfo(): User {
+        val currentUser = account.get().toDto()
+        return currentUser.toDomain()
     }
 
     override suspend fun verifyEmail() {

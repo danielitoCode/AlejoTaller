@@ -7,15 +7,13 @@ import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 class CreateAccountUseCase(
     private val accountRepository: AccountRepository
 ) {
-    suspend operator fun invoke(user: User): Result<Unit> =
+    suspend operator fun invoke(user: User): Result<Unit> = runCatching {
         when {
-            user.email != null ->
-                accountRepository.createWithEmail(user)
+            user.email != null -> accountRepository.create(user)
 
-            user.phone != null ->
-                accountRepository.createWithPhone(user)
+            user.userProfile.phone != null -> accountRepository.create(user)
 
-            else ->
-                Result.failure(FormatException("Datos inválidos"))
+            else -> throw FormatException("Datos inválidos")
         }
+    }
 }
