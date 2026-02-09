@@ -20,11 +20,11 @@ class AuthViewModel(
         }
     }
 
-    fun authWithGoogle(onUserLogIn: (String) -> Unit, onFail: () -> Unit) {
+    fun authWithGoogle(onUserLogIn: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             authWhitGoogleUseCase()
                 .onSuccess { userId -> onUserLogIn(userId) }
-                .onFailure { onFail() }
+                .onFailure { error -> onFail(error.message ?: "") }
         }
     }
 

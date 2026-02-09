@@ -171,11 +171,28 @@ fun LoginScreen(
                     }
                     Button(
                         onClick = {
+                            toasterViewModel.showMessage(
+                                "Autenticando usuario en Google",
+                                ToastType.Normal,
+                                "Google Account Charge"
+                            )
                             loginViewModel.authWithGoogle(
                                 onUserLogIn = { userIdLogged ->
+                                    toasterViewModel.dismissMessage("Google Account Charge")
+                                    toasterViewModel.showMessage(
+                                        "Bienvenido $userIdLogged",
+                                        ToastType.Success
+                                    )
                                     onNavigateTo(MainRoutesKey.MainHome(userIdLogged))
                                 },
-                                onFail = {}
+                                onFail = { error ->
+                                    toasterViewModel.dismissMessage("Google Account Charge")
+                                    toasterViewModel.showMessage(
+                                        "No se pudo iniciar sesión en Google: $error",
+                                        ToastType.Error
+                                    )
+
+                                }
                             )
                         },
                         modifier = Modifier
