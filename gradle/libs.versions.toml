@@ -59,6 +59,7 @@ kotzilla = "2.0.3"
 # Generation
 kotlinpoet = "2.2.0"
 jetbrainsKotlinJvm = "2.3.20-Beta2"
+material3 = "1.4.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -137,6 +138,7 @@ kotzilla-sdk = { group = "io.kotzilla", name = "kotzilla-sdk", version.ref = "ko
 # Generation
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

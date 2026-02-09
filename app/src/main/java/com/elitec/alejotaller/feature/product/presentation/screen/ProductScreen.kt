@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,16 +25,19 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +65,8 @@ fun ProductScreen(
         productTestList
     }
 
+    var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -70,7 +76,42 @@ fun ProductScreen(
         Spacer(modifier = Modifier.height(16.dp))
         SearchBar()
         Spacer(modifier = Modifier.height(16.dp))
-        BannerSection()
+        Box(
+            contentAlignment = Alignment.TopEnd
+        ) {
+            BannerSection(
+                visible = isBannerVisible
+            )
+            Surface(
+                onClick = { isBannerVisible = false },
+                modifier = Modifier.padding(
+                    top = 5.dp,
+                    end = 10.dp
+                ),
+                shadowElevation = 5.dp,
+                tonalElevation = 3.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = RoundedCornerShape(15.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement
+                        .spacedBy(3.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        modifier = Modifier.size(15.dp),
+                        tint = MaterialTheme.colorScheme.surface
+                    )
+                    Text(
+                        color = MaterialTheme.colorScheme.surface,
+                        text = "Cerrar"
+                    )
+                }
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
         CategoriesSection()
         Spacer(modifier = Modifier.height(16.dp))
@@ -107,62 +148,69 @@ fun SearchBar(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BannerSection(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(160.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(MaterialTheme.colorScheme.primary)
+fun BannerSection(
+    visible: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    AnimatedVisibility(
+        visible = visible
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(160.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.primary)
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    text = stringResource(id = R.string.clearance_sales),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    IconPlaceholder(
-                        modifier = Modifier.size(14.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stringResource(id = R.string.up_to_50),
+                        text = stringResource(id = R.string.clearance_sales),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconPlaceholder(
+                            modifier = Modifier.size(14.dp),
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(id = R.string.up_to_50),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        contentScale = ContentScale.Crop,
+                        painter = painterResource(R.drawable.echoflow_transparent),
+                        contentDescription = "Banner Image"
                     )
                 }
-            }
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    contentScale = ContentScale.Crop,
-                    painter = painterResource(R.drawable.echoflow_transparent),
-                    contentDescription = "Banner Image"
-                )
             }
         }
     }

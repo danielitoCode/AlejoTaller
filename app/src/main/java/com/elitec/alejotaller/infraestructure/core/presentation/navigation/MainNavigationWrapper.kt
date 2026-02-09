@@ -12,8 +12,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailScreen
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.LoginScreen
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.RegisterScreen
+import com.elitec.alejotaller.feature.auth.presentation.screen.LoginScreen
+import com.elitec.alejotaller.feature.auth.presentation.screen.RegisterScreen
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.SplashScreen
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
 import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
@@ -57,7 +58,7 @@ fun MainNavigationWrapper(
         entryProvider = entryProvider {
             entry<MainRoutesKey.Splash> {
                 SplashScreen(
-                    onInitChargeReady = { backStack.navigateTo(MainRoutesKey.Login) },
+                    onInitChargeReady = { backStack.navigateTo(MainRoutesKey.Landing) },
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -69,7 +70,11 @@ fun MainNavigationWrapper(
                 )
             }
             entry<MainRoutesKey.Landing> {
-                Text("Error")
+                LandScreen(
+                    modifier = Modifier.fillMaxSize(),
+                    onSignInClick = { backStack.navigateTo(MainRoutesKey.Login) },
+                    onSignUpClick = { backStack.navigateTo(MainRoutesKey.Register) }
+                )
             }
             entry<MainRoutesKey.Login> {
                 LoginScreen(

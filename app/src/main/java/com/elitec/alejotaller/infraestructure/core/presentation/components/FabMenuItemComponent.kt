@@ -26,6 +26,7 @@ fun FabMenuItemComponent(
     ) {
 
         Surface(
+            onClick = onClick,
             shape = RoundedCornerShape(16.dp),
             tonalElevation = 6.dp,
             shadowElevation = 6.dp

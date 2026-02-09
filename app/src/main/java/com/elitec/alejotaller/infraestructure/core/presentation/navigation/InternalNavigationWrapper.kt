@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
@@ -86,7 +87,13 @@ fun InternalNavigationWrapper(
                 )
             }
             entry<InternalRoutesKey.Profile> {
-                Text(text = "PERFIL")
+                ProfileScreen(
+                    name = "Usuario de pruebas",
+                    email = "email@test.com",
+                    onLogout = {},
+                    onEditProfile = {},
+                    modifier = Modifier.fillMaxSize()
+                )
             }
             entry<InternalRoutesKey.Buy> {
                 Text(text = "COMPRAS")
