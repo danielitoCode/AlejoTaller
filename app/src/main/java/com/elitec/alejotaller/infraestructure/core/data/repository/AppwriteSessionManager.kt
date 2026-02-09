@@ -7,8 +7,8 @@ class AppwriteSessionManager(
     private val account: Account
 ) : SessionManager {
 
-    override suspend fun openEmailSession(email: String, password: String) {
-        account.createEmailPasswordSession(email, password)
+    override suspend fun openEmailSession(email: String, password: String): String {
+        return account.createEmailPasswordSession(email, password).userId
     }
 
     override suspend fun isAnySessionAlive(): Boolean {

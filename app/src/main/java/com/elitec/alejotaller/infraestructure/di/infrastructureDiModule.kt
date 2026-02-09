@@ -7,10 +7,12 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessi
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val infrastructureModule = module {
@@ -39,4 +41,6 @@ val infrastructureModule = module {
     single<GoogleAuthProvider> { GoogleAuthProviderImpl(androidContext()) }
     single<SessionManager> { AppwriteSessionManager(get()) }
 
+    // ViewModels
+    viewModel { ToasterViewModel() }
 }

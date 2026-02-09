@@ -14,11 +14,13 @@ class TallerAlejoApp : Application() {
         super.onCreate()
         startKoin {
             androidContext(this@TallerAlejoApp)
-            infrastructureModule
-            authFeatureDiModule
-            categoryFeatureModule
-            productFeatureModule
-            saleFeatureModule
+            modules(
+                infrastructureModule,
+                authFeatureDiModule,
+                categoryFeatureModule,
+                productFeatureModule,
+                saleFeatureModule
+            )
         }
     }
 }

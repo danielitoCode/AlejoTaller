@@ -16,8 +16,8 @@ import com.elitec.alejotaller.feature.auth.presentation.screen.LoginScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.RegisterScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.SplashScreen
-import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
-import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
+import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
+import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
 
 @Composable
 fun MainNavigationWrapper(

@@ -11,7 +11,7 @@ class AuthWithGoogleCaseUse(
     private val registerWithGoogleUseCase: RegisterWithGoogleUseCase,
     private val sessionManager: SessionManager
 ) {
-    suspend operator fun invoke(): Result<Unit> = runCatching {
+    suspend operator fun invoke(): Result<String> = runCatching {
         val googleUser = googleAuthProvider.getUser()
 
         val password = hashEmailWithSub(
@@ -19,12 +19,14 @@ class AuthWithGoogleCaseUse(
             sub = googleUser.sub
         )
 
-        try {
+        return@runCatching try {
             sessionManager.openEmailSession(googleUser.email, password)
         } catch (e: Exception) {
-            if(e is AppwriteException && e.code == 40) {
-                registerWithGoogleUseCase()
+            if((e is AppwriteException && e.code != 40)||e !is AppwriteException ) {
+                throw e
             }
+            registerWithGoogleUseCase()
+            sessionManager.openEmailSession(googleUser.email, password)
         }
     }
 }

@@ -29,8 +29,8 @@ import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetails
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
-import com.elitec.alejotaller.infraestructure.extents.presentation.navigateBack
-import com.elitec.alejotaller.infraestructure.extents.presentation.navigateTo
+import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
+import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable

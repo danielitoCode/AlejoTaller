@@ -54,12 +54,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.navigation.MainRoutesKey
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun LoginScreen(
     onNavigateTo: (MainRoutesKey) -> Unit,
+    loginViewModel: AuthViewModel = koinViewModel(),
+    toasterViewModel: ToasterViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
     val colors = MaterialTheme.colorScheme
@@ -76,6 +82,7 @@ fun LoginScreen(
         ),
         label = "loginGlow"
     )
+
 
     LaunchedEffect(Unit) {
         contentVisible = true
@@ -163,7 +170,14 @@ fun LoginScreen(
                         }
                     }
                     Button(
-                        onClick = { onNavigateTo(MainRoutesKey.MainHome("Usuario de Prueba")) },
+                        onClick = {
+                            loginViewModel.authWithGoogle(
+                                onUserLogIn = { userIdLogged ->
+                                    onNavigateTo(MainRoutesKey.MainHome(userIdLogged))
+                                },
+                                onFail = {}
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),

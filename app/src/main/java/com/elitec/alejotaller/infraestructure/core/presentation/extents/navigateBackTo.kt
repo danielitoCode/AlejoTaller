@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.extents.presentation
+package com.elitec.alejotaller.infraestructure.core.presentation.extents
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
