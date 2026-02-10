@@ -55,6 +55,7 @@ android {
             buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
             buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
             buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
+            buildConfigField("String", "TELEGRAM_API_URL", "\"${localProperties.getProperty("TELEGRAM_API_URL")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -72,6 +73,7 @@ android {
             buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
             buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
             buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
+            buildConfigField("String", "TELEGRAM_API_URL", "\"${localProperties.getProperty("TELEGRAM_API_URL")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
