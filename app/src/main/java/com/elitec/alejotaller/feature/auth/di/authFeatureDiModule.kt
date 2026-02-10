@@ -43,7 +43,7 @@ val authFeatureDiModule = module {
     factory { AuthUserCaseUse(get()) }
     factory { CloseSessionCaseUse(get()) }
     factory { AuthWithGoogleCaseUse(get(), get(), get(), get()) }
-    factory { CustomRegisterCaseUse(get()) }
+    factory { CustomRegisterCaseUse(get(), get()) }
 
     // Presentation layer
     viewModel {

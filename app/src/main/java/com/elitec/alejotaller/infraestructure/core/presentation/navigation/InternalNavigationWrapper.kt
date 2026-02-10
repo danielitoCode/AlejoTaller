@@ -16,13 +16,17 @@ import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
+import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
@@ -31,13 +35,17 @@ import com.elitec.alejotaller.infraestructure.core.presentation.components.Float
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun InternalNavigationWrapper(
     onNavigateBack: () -> Unit,
     userId: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    profileViewModel: ProfileViewModel = koinViewModel(),
+    toasterViewModel: ToasterViewModel = koinViewModel()
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
 
@@ -48,12 +56,22 @@ fun InternalNavigationWrapper(
     }
     val listDetailSceneStrategy = rememberListDetailSceneStrategy<Any>(directive = directive)
 
+    val profileInfo by profileViewModel.userProfile.collectAsStateWithLifecycle()
+
+    LaunchedEffect(null) {
+        profileViewModel.getAccountInfo(
+            onGetInfo = {},
+            onFail = {}
+        )
+    }
+
     val fabItems = listOf(
         FabMenuItem("Productos", Icons.Default.GifBox, InternalRoutesKey.Home),
         FabMenuItem("Su Compra", Icons.Default.ShoppingCart, InternalRoutesKey.Buy),
         FabMenuItem("Perfil", Icons.Default.AccountCircle, InternalRoutesKey.Profile),
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings)
     )
+
     NavDisplay(
         modifier = Modifier.fillMaxSize(),
         backStack = backStack,
@@ -88,9 +106,9 @@ fun InternalNavigationWrapper(
             }
             entry<InternalRoutesKey.Profile> {
                 ProfileScreen(
-                    name = "Usuario de pruebas",
-                    email = "email@test.com",
-                    onLogout = {},
+                    profileName = "Usuario de pruebas",
+                    profileEmail = "email@test.com",
+                    navigateBack = {},
                     onEditProfile = {},
                     modifier = Modifier.fillMaxSize()
                 )
