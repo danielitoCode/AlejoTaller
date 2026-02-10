@@ -33,12 +33,15 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -289,13 +292,14 @@ private fun AuthTextField(
         visualTransformation = visualTransformation
     )
 }
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SurfaceIcon(
     alpha: Float
 ) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer.copy(alpha),
-        shape = CircleShape,
+        shape = MaterialShapes.Cookie9Sided.toShape(),
         modifier = Modifier.size(120.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {

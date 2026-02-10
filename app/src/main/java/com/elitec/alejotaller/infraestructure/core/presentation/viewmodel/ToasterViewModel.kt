@@ -5,29 +5,34 @@ import androidx.lifecycle.viewModelScope
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.ToasterState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 
 class ToasterViewModel: ViewModel() {
-    var toasterState = MutableStateFlow<ToasterState?>(null)
-    var toasterStatePublic: ToasterState? = null
-
-    fun asignToastState(toastState: ToasterState) {
-        toasterStatePublic = toastState
-        toasterState.value = toastState
-    }
+    private val _toastActions = MutableSharedFlow<ToastAction>(
+        replay = 0,
+        extraBufferCapacity = 64
+    )
+    val toastActions = _toastActions.asSharedFlow()
 
     fun showMessage(message: String, type: ToastType, id: String? = null)  {
-        toasterState.value?.show(
+        val event = ToastEvent(
             message = message,
             type = type,
             id = id ?: Clock.System.now().toString()
         )
+        viewModelScope.launch {
+            _toastActions.emit(ToastAction.Show(event))
+        }
     }
 
     fun dismissMessage(id: String) {
-        toasterState.value?.dismiss(id)
+        viewModelScope.launch {
+            _toastActions.emit(ToastAction.Dismiss(id))
+        }
     }
 }

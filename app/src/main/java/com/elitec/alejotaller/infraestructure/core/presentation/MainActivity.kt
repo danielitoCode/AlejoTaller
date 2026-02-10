@@ -29,6 +29,7 @@ import com.dokar.sonner.rememberToasterState
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.infraestructure.core.presentation.navigation.MainNavigationWrapper
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToastAction
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -40,12 +41,19 @@ class MainActivity : ComponentActivity() {
         setContent {
             AlejoTallerTheme {
                 val toasterViewModel: ToasterViewModel = koinViewModel()
-                val toastByViewModel by toasterViewModel.toasterState.collectAsStateWithLifecycle()
-
                 val toasterState = rememberToasterState()
 
-                LaunchedEffect(null) {
-                    toasterViewModel.asignToastState(toasterState)
+                LaunchedEffect(toasterViewModel) {
+                    toasterViewModel.toastActions.collect { action ->
+                        when (action) {
+                            is ToastAction.Show -> toasterState.show(
+                                message = action.event.message,
+                                type = action.event.type,
+                                id = action.event.id
+                            )
+                            is ToastAction.Dismiss -> toasterState.dismiss(action.id)
+                        }
+                    }
                 }
                 val image = if(isSystemInDarkTheme())
                     painterResource(R.drawable.bcb)
@@ -78,12 +86,10 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize().padding(innerPadding)
                         )
                     }
-                    toastByViewModel?.let {
-                        Toaster(
-                            richColors = true,
-                            state = it
-                        )
-                    }
+                    Toaster(
+                        richColors = true,
+                        state = toasterState
+                    )
                 }
             }
         }

@@ -59,7 +59,7 @@ kotzilla = "2.0.3"
 # Generation
 kotlinpoet = "2.2.0"
 jetbrainsKotlinJvm = "2.3.20-Beta2"
-material3 = "1.4.0"
+material3 = "1.5.0-alpha13"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
