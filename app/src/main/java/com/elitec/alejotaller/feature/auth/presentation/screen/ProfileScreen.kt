@@ -57,6 +57,7 @@ fun ProfileScreen(
     profileName: String,
     profileEmail: String,
     profilePhone: String? = null,
+    isGoogleUser: Boolean,
     onEditProfile: () -> Unit,
     navigateBack: () -> Unit,
     profileViewModel: ProfileViewModel = koinNavViewModel(),
@@ -68,7 +69,6 @@ fun ProfileScreen(
     var isPassConfirmEditing by rememberSaveable { mutableStateOf(false) }
     var isPhoneEditing by rememberSaveable { mutableStateOf(false) }
     var isPassVisible by rememberSaveable { mutableStateOf(false) }
-    var isGoogleUser by rememberSaveable { mutableStateOf(true) }
     var isPassConfirmVisible by rememberSaveable { mutableStateOf(false) }
     val borderColorName =  if(isNameEditing) MaterialTheme.colorScheme.onBackground else Color.Transparent
     val borderColorPhone = if(isNameEditing) MaterialTheme.colorScheme.onBackground else Color.Transparent
@@ -409,7 +409,8 @@ fun ProfileScreenPreview() {
             profilePhone = "+57 300 123 4567",
             onEditProfile = {},
             navigateBack = {},
-            onVerifyEmail = {}
+            onVerifyEmail = {},
+            isGoogleUser = false
         )
     }
 }
