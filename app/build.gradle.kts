@@ -51,6 +51,10 @@ android {
             buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
             buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
             buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
+            buildConfigField("String", "TELEGRAM_BOT_KEY", "\"${localProperties.getProperty("TELEGRAM_BOT_KEY")}\"")
+            buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
+            buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
+            buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
         }
         release {
             isMinifyEnabled = false
@@ -64,6 +68,10 @@ android {
             buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
             buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
             buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
+            buildConfigField("String", "TELEGRAM_BOT_KEY", "\"${localProperties.getProperty("TELEGRAM_BOT_KEY")}\"")
+            buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
+            buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
+            buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
