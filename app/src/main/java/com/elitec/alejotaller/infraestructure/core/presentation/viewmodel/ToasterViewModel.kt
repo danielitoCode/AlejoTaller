@@ -19,11 +19,12 @@ class ToasterViewModel: ViewModel() {
     )
     val toastActions = _toastActions.asSharedFlow()
 
-    fun showMessage(message: String, type: ToastType, id: String? = null)  {
+    fun showMessage(message: String, type: ToastType, id: String? = null, isInfinite: Boolean = false)  {
         val event = ToastEvent(
             message = message,
             type = type,
-            id = id ?: Clock.System.now().toString()
+            id = id ?: Clock.System.now().toString(),
+            isInfinite = isInfinite
         )
         viewModelScope.launch {
             _toastActions.emit(ToastAction.Show(event))

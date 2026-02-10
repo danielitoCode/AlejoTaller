@@ -5,5 +5,6 @@ import com.dokar.sonner.ToastType
 data class ToastEvent(
     val message: String,
     val type: ToastType,
-    val id: String
+    val id: String,
+    val isInfinite: Boolean
 )

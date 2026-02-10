@@ -149,7 +149,27 @@ fun LoginScreen(
                         visualTransformation = PasswordVisualTransformation()
                     )
                     Button(
-                        onClick = { onNavigateTo(MainRoutesKey.MainHome("Usuario de Prueba")) },
+                        onClick = {
+                            loginViewModel.autUser(
+                                email = email,
+                                pass = password,
+                                onUserLogIn = { userId ->
+                                    toasterViewModel.dismissMessage("Custom Account Charge")
+                                    toasterViewModel.showMessage(
+                                        "Bienvenido",
+                                        ToastType.Success
+                                    )
+                                    onNavigateTo(MainRoutesKey.MainHome(userId))
+                                },
+                                onFail = { error ->
+                                    toasterViewModel.dismissMessage("Custom Account Charge")
+                                    toasterViewModel.showMessage(
+                                        "No se pudo iniciar sesión : $error",
+                                        ToastType.Error
+                                    )
+                                }
+                            )
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
@@ -183,7 +203,7 @@ fun LoginScreen(
                                 onUserLogIn = { userIdLogged ->
                                     toasterViewModel.dismissMessage("Google Account Charge")
                                     toasterViewModel.showMessage(
-                                        "Bienvenido $userIdLogged",
+                                        "Bienvenido",
                                         ToastType.Success
                                     )
                                     onNavigateTo(MainRoutesKey.MainHome(userIdLogged))

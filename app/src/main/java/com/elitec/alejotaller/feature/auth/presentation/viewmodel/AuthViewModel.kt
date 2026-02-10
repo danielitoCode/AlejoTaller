@@ -12,11 +12,11 @@ class AuthViewModel(
     private val authWhitGoogleUseCase: AuthWithGoogleCaseUse,
     private val logoutUserCaseUse: CloseSessionCaseUse
 ): ViewModel() {
-    fun autUser(email: String, pass: String, onUserLogIn: () -> Unit,onFail: () -> Unit) {
+    fun autUser(email: String, pass: String, onUserLogIn: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             authUserCaseUse(email, pass)
-                .onSuccess { onUserLogIn() }
-                .onFailure { onFail() }
+                .onSuccess { userId -> onUserLogIn(userId) }
+                .onFailure { error -> onFail(error.message ?: "") }
         }
     }
 
