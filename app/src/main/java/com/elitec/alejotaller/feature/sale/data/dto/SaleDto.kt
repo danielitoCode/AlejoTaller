@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.sale.data.dto
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

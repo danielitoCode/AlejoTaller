@@ -6,6 +6,6 @@ data class Sale(
     val id: String,
     val date: LocalDate,
     val amount: Double,
-    val products: List<String>,
+    val products: List<SaleItem>,
     val userId: String
 )
