@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import com.dokar.sonner.Toaster
+import com.dokar.sonner.ToasterDefaults
 import com.dokar.sonner.rememberToasterState
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.infraestructure.core.presentation.navigation.MainNavigationWrapper

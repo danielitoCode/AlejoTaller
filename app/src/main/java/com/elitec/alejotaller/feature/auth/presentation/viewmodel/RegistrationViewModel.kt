@@ -10,18 +10,18 @@ class RegistrationViewModel(
     private val registerUserCaseUse: RegisterWithGoogleUseCase,
     private val customRegisterCaseUse: CustomRegisterCaseUse
 ): ViewModel() {
-    fun registerWithGoogle(onUserRegister: () -> Unit, onFail: () -> Unit) {
+    fun registerWithGoogle(onUserRegister: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             registerUserCaseUse()
-                .onSuccess { onUserRegister() }
-                .onFailure { onFail() }
+                .onSuccess { userId -> onUserRegister(userId) }
+                .onFailure { error -> onFail(error.message ?: "") }
         }
     }
-    fun customRegister(email: String, password: String, name: String, onUserRegister: () -> Unit, onFail: () -> Unit) {
+    fun customRegister(email: String, password: String, name: String, onUserRegister: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             customRegisterCaseUse(email, password, name)
-                .onSuccess { onUserRegister() }
-                .onFailure { onFail() }
+                .onSuccess { userId -> onUserRegister(userId) }
+                .onFailure { error -> onFail(error.message ?: "") }
         }
     }
 }

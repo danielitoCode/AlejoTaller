@@ -13,7 +13,9 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,12 +28,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.dokar.sonner.ToastType
+import com.elitec.alejotaller.feature.auth.presentation.viewmodel.RegistrationViewModel
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun RegisterScreen(
     onNavigateBack: () -> Unit,
     onRegisterReady: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    registerViewModel: RegistrationViewModel = koinViewModel(),
+    toasterViewModel: ToasterViewModel = koinViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -70,32 +78,67 @@ fun RegisterScreen(
                     value = name,
                     onValueChange = { name = it },
                     label = "Nombre completo",
-                    leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Person, null) },
+                    leadingIcon = { Icon(Icons.Default.Person, null) },
                     visualTransformation = VisualTransformation.None
                 )
                 AuthTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = "Correo",
-                    leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Email, null) },
+                    leadingIcon = { Icon(Icons.Default.Email, null) },
                     visualTransformation = VisualTransformation.None
                 )
                 AuthTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = "Contraseña",
-                    leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
+                    leadingIcon = { Icon(Icons.Default.Lock, null) },
                     visualTransformation = PasswordVisualTransformation()
                 )
                 AuthTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
                     label = "Confirmar contraseña",
-                    leadingIcon = { androidx.compose.material3.Icon(Icons.Default.Lock, null) },
+                    leadingIcon = { Icon(Icons.Default.Lock, null) },
                     visualTransformation = PasswordVisualTransformation()
                 )
                 Button(
-                    onClick = { onRegisterReady("Usuario registrado") },
+                    onClick = {
+                        if(password != confirmPassword) {
+                            toasterViewModel.showMessage(
+                                message = "No coinciden las contrasenas",
+                                type = ToastType.Warning
+                            )
+                        }
+                        toasterViewModel.showMessage(
+                            "Autenticando usuario",
+                            ToastType.Normal,
+                            "Custom Account Charge"
+                        )
+                        registerViewModel.customRegister(
+                            email = email,
+                            password = password,
+                            name = name,
+                            onUserRegister = {
+                                toasterViewModel.dismissMessage("Custom Account Charge")
+                                toasterViewModel.showMessage(
+                                    "Bienvenido",
+                                    ToastType.Success,
+                                    "Custom Account Charge"
+                                )
+                                onRegisterReady("Usuario registrado")
+                            },
+                            onFail = {
+                                toasterViewModel.dismissMessage("Custom Account Charge")
+                                toasterViewModel.showMessage(
+                                    "Error al registrar usuario",
+                                    ToastType.Error,
+                                    "Custom Account Charge"
+                                )
+                            }
+                        )
+
+                    },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Registrarse")
@@ -119,7 +162,7 @@ private fun AuthTextField(
     leadingIcon: @Composable (() -> Unit)?,
     visualTransformation: VisualTransformation
 ) {
-    androidx.compose.material3.OutlinedTextField(
+    OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
