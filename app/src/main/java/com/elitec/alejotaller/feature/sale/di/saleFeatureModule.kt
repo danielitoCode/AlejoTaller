@@ -28,7 +28,7 @@ val saleFeatureModule = module {
 
     // Domain layer
     factory { ObserveAllSalesCaseUse(get()) }
-    factory { RegisterNewSaleCauseUse(get(), get()) }
+    factory { RegisterNewSaleCauseUse(get(), get(), get()) }
     factory { SyncSalesCaseUse(get()) }
     factory { GetSalesByIdCaseUse(get()) }
 

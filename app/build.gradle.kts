@@ -36,44 +36,28 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-
+        // Mejor compatibilidad y menor riesgo en previews.
+        vectorDrawables {
+            useSupportLibrary = true
+        }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // Evita conflictos con Ktor, Koin y otras libs.
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
-            buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
-            buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
-            buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
-            buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
-            buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
-            buildConfigField("String", "TELEGRAM_BOT_KEY", "\"${localProperties.getProperty("TELEGRAM_BOT_KEY")}\"")
-            buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
-            buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
-            buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
-            buildConfigField("String", "TELEGRAM_API_URL", "\"${localProperties.getProperty("TELEGRAM_API_URL")}\"")
+            injectLocalProperties()
         }
         release {
             isMinifyEnabled = false
 
-            buildConfigField("String", "APPWRITE_DATABASE_ID", "\"${localProperties.getProperty("APPWRITE_DATABASE_ID")}\"")
-            buildConfigField("String", "CATEGORY_TABLE_ID", "\"${localProperties.getProperty("CATEGORY_TABLE_ID")}\"")
-            buildConfigField("String", "PRODUCT_TABLE_ID", "\"${localProperties.getProperty("PRODUCT_TABLE_ID")}\"")
-            buildConfigField("String", "SALE_TABLE_ID", "\"${localProperties.getProperty("SALE_TABLE_ID")}\"")
-            buildConfigField("String", "APPWRITE_PROJECT_ID", "\"${localProperties.getProperty("APPWRITE_PROJECT_ID")}\"")
-            buildConfigField("String", "APPWRITE_PROJECT_ENDPOINT", "\"${localProperties.getProperty("APPWRITE_PROJECT_ENDPOINT")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_WEBCLIENT", "\"${localProperties.getProperty("GOOGLE_CLOUD_WEBCLIENT")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_DEBUG", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_DEBUG")}\"")
-            buildConfigField("String", "GOOGLE_CLOUD_ANDROID_RELEASE", "\"${localProperties.getProperty("GOOGLE_CLOUD_ANDROID_RELEASE")}\"")
-            buildConfigField("String", "TELEGRAM_BOT_KEY", "\"${localProperties.getProperty("TELEGRAM_BOT_KEY")}\"")
-            buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${localProperties.getProperty("TELEGRAM_CHAT_ID")}\"")
-            buildConfigField("String", "TELEGRAM_GROUP_NAME", "\"${localProperties.getProperty("TELEGRAM_GROUP_NAME")}\"")
-            buildConfigField("String", "TELEGRAM_GROUP_TYPE", "\"${localProperties.getProperty("TELEGRAM_GROUP_TYPE")}\"")
-            buildConfigField("String", "TELEGRAM_API_URL", "\"${localProperties.getProperty("TELEGRAM_API_URL")}\"")
+            injectLocalProperties()
 
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -82,15 +66,14 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
     }
-
-
 }
 
 dependencies {
@@ -167,11 +150,40 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     // Browser
     implementation(libs.androidx.browser)
-    // Generations
-    implementation(libs.kotlinpoet)
     ksp(project(":mapper-processor"))
+}
+
+// Mejora compilación incremental de Room
+ksp {
+    arg("room.incremental", "true")
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
+    fun prop(name: String) =
+        buildConfigField(
+            "String",
+            name,
+            "\"${localProperties.getProperty(name, "")}\""
+        )
+
+    prop("APPWRITE_DATABASE_ID")
+    prop("CATEGORY_TABLE_ID")
+    prop("PRODUCT_TABLE_ID")
+    prop("SALE_TABLE_ID")
+    prop("APPWRITE_PROJECT_ID")
+    prop("APPWRITE_PROJECT_ENDPOINT")
+    prop("APPWRITE_TELEGRAM_FUNCTION_URL")
+    prop("GOOGLE_CLOUD_WEBCLIENT")
+    prop("GOOGLE_CLOUD_ANDROID_DEBUG")
+    prop("GOOGLE_CLOUD_ANDROID_RELEASE")
+    prop("TELEGRAM_BOT_KEY")
+    prop("TELEGRAM_CHAT_ID")
+    prop("TELEGRAM_GROUP_NAME")
+    prop("TELEGRAM_GROUP_TYPE")
+    prop("TELEGRAM_API_URL")
 }
