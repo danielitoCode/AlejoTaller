@@ -8,11 +8,24 @@ import kotlinx.datetime.LocalDate
 fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
     SaleDto(
         id = id,
-        date = data["date"] as LocalDate,
-        amount = data["amount"] as Double,
+        date = data["date"].toLocalDate(),
+        amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
         products = data["products"].toSaleItems(),
-        userId = data["user_id"] as String
+        userId = data["user_id"] as? String ?: ""
     )
+
+private fun Any?.toLocalDate(): LocalDate = when (this) {
+    is LocalDate -> this
+    is String -> parseToLocalDate(this)
+    else -> LocalDate(1970, 1, 1)
+}
+
+private fun parseToLocalDate(rawDate: String): LocalDate =
+    runCatching { LocalDate.parse(rawDate) }
+        .getOrElse {
+            val normalized = rawDate.substringBefore("T")
+            runCatching { LocalDate.parse(normalized) }.getOrDefault(LocalDate(1970, 1, 1))
+        }
 
 private fun Any?.toSaleItems(): List<SaleItem> = when (this) {
     is List<*> -> this.mapNotNull { item ->

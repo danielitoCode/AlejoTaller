@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.auth.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.GetCurrentUserInfoCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserNameUseCase
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class ProfileViewModel(
     private val getProfileUseCase: GetCurrentUserInfoCaseUse,
     private val updatePhotoUrlCaseUse: UpdateUserPhotoUrlCaseUse,
+    private val closeCurrentSession: CloseSessionCaseUse,
     private val updateNameCaseUse: UpdateUserNameUseCase,
     private val updateUserPassCaseUse: UpdateUserPassCaseUse,
     private val updatePhoneCaseUse: UpdateUserPhoneCaseUse,
@@ -50,14 +52,17 @@ class ProfileViewModel(
                 .onFailure { onFail() }
         }
     }
-    fun getAccountInfo(onGetInfo: () -> Unit, onFail: () -> Unit) {
+    fun getAccountInfo(onGetInfo: (String) -> Unit, onFail: () -> Unit) {
         viewModelScope.launch {
             getProfileUseCase()
                 .onSuccess { user ->
                     _userProfile.value = user
-                    onGetInfo()
+                    onGetInfo(user.id)
                 }
-                .onFailure { onFail() }
+                .onFailure {
+                    closeCurrentSession()
+                    onFail()
+                }
         }
     }
 }

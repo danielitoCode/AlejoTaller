@@ -7,6 +7,7 @@ import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCase
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
+import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -25,5 +26,6 @@ val productFeatureModule = module {
     factory { SyncProductCaseUse(get()) }
 
     // Presentation Layer
+    viewModel { ShopCartViewModel() }
     viewModel { ProductViewModel(get(), get(), get()) }
 }

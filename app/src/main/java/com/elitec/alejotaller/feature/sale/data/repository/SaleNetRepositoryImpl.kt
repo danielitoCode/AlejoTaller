@@ -12,16 +12,14 @@ import io.appwrite.services.Databases
 
 class SaleNetRepositoryImpl(
     private val netDB: Databases
-)  {
+) {
     suspend fun getAll(userId: String): List<SaleDto> {
         val response = netDB.listDocuments(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.SALE_TABLE_ID,
-            queries = listOf(
-                Query.equal("user_id", userId)
-            )
+            queries = listOf(Query.equal("user_id", userId))
         )
-        return  response.documents.map { document -> document.toSaleDto() }
+        return response.documents.map { document -> document.toSaleDto() }
     }
 
     suspend fun getById(itemId: String): SaleDto {
@@ -30,16 +28,16 @@ class SaleNetRepositoryImpl(
             collectionId = BuildConfig.SALE_TABLE_ID,
             documentId = itemId
         )
-        return  response.toSaleDto()
+        return response.toSaleDto()
     }
 
     suspend fun save(item: SaleDto) {
-        val id = ID.unique()
+        val resolvedId = item.id.ifBlank { ID.unique() }
         netDB.createDocument(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.SALE_TABLE_ID,
-            documentId = id,
-            data = item.copy(id = id)
+            documentId = resolvedId,
+            data = item.copy(id = resolvedId)
         )
     }
 }

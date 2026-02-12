@@ -29,15 +29,25 @@ import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import com.elitec.alejotaller.feature.product.data.test.productTestList
+import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
+import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
+import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
+import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.koin.androidx.compose.koinViewModel
+import java.util.UUID
+import kotlin.time.Clock
 
 @Suppress("LambdaParameterInEffect")
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -46,6 +56,8 @@ fun InternalNavigationWrapper(
     onNavigateBack: () -> Unit,
     userId: String,
     modifier: Modifier = Modifier,
+    shopCartViewModel: ShopCartViewModel = koinViewModel(),
+    productViewModel: ProductViewModel = koinViewModel(),
     profileViewModel: ProfileViewModel = koinViewModel(),
     toasterViewModel: ToasterViewModel = koinViewModel()
 ) {
@@ -59,6 +71,8 @@ fun InternalNavigationWrapper(
     val listDetailSceneStrategy = rememberListDetailSceneStrategy<Any>(directive = directive)
 
     val profileInfo by profileViewModel.userProfile.collectAsStateWithLifecycle()
+    val products by productViewModel.productFlow.collectAsStateWithLifecycle()
+    val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
         profileViewModel.getAccountInfo(
@@ -123,7 +137,33 @@ fun InternalNavigationWrapper(
                     )
                 }
                 entry<InternalRoutesKey.Buy> {
-                    Text(text = "COMPRAS")
+                    BuyScreen(
+                        items = cartItems,
+                        totalAmount = shopCartViewModel.getTotalAmount(),
+                        onIncreaseQuantity = { productId ->
+                            cartItems.firstOrNull { it.product.id == productId }?.let { item ->
+                                shopCartViewModel.updateProductQuantity(productId, item.quantity + 1)
+                            }
+                        },
+                        onDecreaseQuantity = { productId ->
+                            cartItems.firstOrNull { it.product.id == productId }?.let { item ->
+                                shopCartViewModel.updateProductQuantity(productId, item.quantity - 1)
+                            }
+                        },
+                        onRemoveItem = { productId ->
+                            cartItems.firstOrNull { it.product.id == productId }?.let { item ->
+                                shopCartViewModel.removeProductFromShopCart(item.product)
+                            }
+                        },
+                        onConfirmClick = {
+                            if (cartItems.isNotEmpty()) {
+                                backStack.navigateTo(InternalRoutesKey.BuyConfirm)
+                            } else {
+                                toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 entry<InternalRoutesKey.BuyConfirm> {
 
@@ -138,5 +178,19 @@ fun InternalNavigationWrapper(
     FloatingActionButtonMenu(
         items = fabItems,
         onNavigate = { route -> backStack.navigateTo(route) }
+    )
+}
+
+private fun List<UiSaleItem>.toSale(userId: String): Sale {
+    val products = map { item ->
+        SaleItem(productId = item.product.id, quantity = item.quantity)
+    }
+
+    return Sale(
+        id = UUID.randomUUID().toString(),
+        date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+        amount = sumOf { item -> item.product.price * item.quantity },
+        products = products,
+        userId = userId
     )
 }

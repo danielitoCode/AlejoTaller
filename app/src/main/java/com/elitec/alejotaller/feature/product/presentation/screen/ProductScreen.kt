@@ -59,11 +59,9 @@ import dev.chrisbanes.haze.materials.HazeMaterials
 @Composable
 fun ProductScreen(
     navigateToDetails: (String) -> Unit,
+    products: List<Product> = productTestList,
     modifier: Modifier = Modifier,
 ) {
-    val products = remember {
-        productTestList
-    }
 
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
 

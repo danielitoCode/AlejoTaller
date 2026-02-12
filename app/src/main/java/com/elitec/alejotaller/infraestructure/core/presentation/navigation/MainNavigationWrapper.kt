@@ -15,7 +15,7 @@ import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailSc
 import com.elitec.alejotaller.feature.auth.presentation.screen.LoginScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.RegisterScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.SplashScreen
+import com.elitec.alejotaller.feature.auth.presentation.screen.SplashScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
 
@@ -58,7 +58,12 @@ fun MainNavigationWrapper(
         entryProvider = entryProvider {
             entry<MainRoutesKey.Splash> {
                 SplashScreen(
-                    onInitChargeReady = { backStack.navigateTo(MainRoutesKey.Landing) },
+                    onUserAuth = { userId ->
+                        backStack.navigateTo(MainRoutesKey.MainHome(userId))
+                    },
+                    onUserNotAuth = {
+                        backStack.navigateTo(MainRoutesKey.Landing)
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }

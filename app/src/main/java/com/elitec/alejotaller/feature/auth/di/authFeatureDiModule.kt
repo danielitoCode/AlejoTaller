@@ -59,6 +59,7 @@ val authFeatureDiModule = module {
             get(),
             get(),
             get(),
+            get(),
             get())
     }
 }

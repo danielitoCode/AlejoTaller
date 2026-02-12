@@ -13,17 +13,19 @@ import kotlinx.coroutines.flow.map
 class SaleOfflineFirstRepository(
     private val net: SaleNetRepositoryImpl,
     private val bd: SaleDao
-): SaleRepository {
-    override fun observeAll(): Flow<List<Sale>>  =
+) : SaleRepository {
+    override fun observeAll(): Flow<List<Sale>> =
         bd.getAllFlow().map { saleDtoList ->
-            saleDtoList.map { saleDto ->
-                saleDto.toDomain()
-            }
+            saleDtoList.map { saleDto -> saleDto.toDomain() }
         }
 
     override suspend fun getById(itemId: String): Sale = bd.getById(itemId).toDomain()
 
-    override suspend fun save(item: Sale) = bd.insert(item.toDto())
+    override suspend fun save(item: Sale) {
+        val saleDto = item.toDto()
+        bd.insert(saleDto)
+        runCatching { net.save(saleDto) }
+    }
 
     override suspend fun sync(userId: String): Result<Unit> = runCatching {
         val remote = net.getAll(userId)

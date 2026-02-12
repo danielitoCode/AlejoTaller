@@ -1,8 +1,5 @@
-package com.elitec.alejotaller.infraestructure.core.presentation.screens
+package com.elitec.alejotaller.feature.auth.presentation.screen
 
-import android.window.SplashScreen
-import androidx.compose.foundation.background
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.Box
@@ -15,17 +12,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
+import org.koin.androidx.compose.navigation.koinNavViewModel
 
 @Suppress("LambdaParameterInEffect")
 @Composable
 fun SplashScreen(
-    onInitChargeReady: () -> Unit,
+    onUserAuth: (String) -> Unit,
+    onUserNotAuth: () -> Unit,
+    profileViewModel: ProfileViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(null) {
-        delay(2000)
-        onInitChargeReady()
+        delay(1000)
+        profileViewModel.getAccountInfo(
+            onGetInfo = { userId ->
+                onUserAuth(userId)
+            },
+            onFail = { onUserNotAuth() }
+        )
     }
     Box(
         contentAlignment = Alignment.Center,
