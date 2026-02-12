@@ -22,7 +22,8 @@ import com.elitec.alejotaller.infraestructure.core.data.converters.ListConverter
 )
 @TypeConverters(
     DateTimeConverter::class,
-    ListConverter::class
+    ListConverter::class,
+
 )
 abstract class AppBD: RoomDatabase() {
     abstract fun categoriesDao(): CategoryDao

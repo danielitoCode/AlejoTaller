@@ -13,7 +13,7 @@ data class SaleDto(
     @PrimaryKey val id: String,
     val date: LocalDate,
     val amount: Double,
-    val products: List<String>,
+    val products: List<SaleItem>,
     @SerialName("user_id")
     val userId: String
 )

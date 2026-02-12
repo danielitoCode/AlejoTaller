@@ -13,29 +13,3 @@ class RegisterNewSaleCauseUse(
         repository.save(sale)
     }
 }
-
-fun Sale.toFormatedMessage(user: User): String {
-    val header = """
-        🛍️ *LISTA DE DESEOS*
-        👤 Usuario: ${user.name}
-        📧 Correo: ${user.email}
-        📱 Teléfono: ${user.userProfile.phone}
-        📝 *DETALLES DEL PEDIDO*
-    """.trimIndent()
-
-    var itemsDetails = ""
-
-    products.forEachIndexed { index, item ->
-        itemsDetails += """
-            
-            🔹 *JOYA #${index + 1}*
-            ✨ Nombre: ${item.name}
-            💰 Precio unitario: ${"%.2f".format(item.joya.price)} $
-            📦 Cantidad: ${item.cantidad}
-            🖼️ Foto: ${item.joya.photoUrl}
-            
-        """.trimIndent()
-        totalAmount += item.joya.price * item.cantidad
-    }
-    return ""
-}

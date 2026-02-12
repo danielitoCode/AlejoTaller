@@ -8,6 +8,6 @@ fun Sale.toDto(): SaleDto =
         id = id,
         date = date,
         amount = amount,
-        products = products.toListString(),
+        products = products,
         userId = userId
     )
