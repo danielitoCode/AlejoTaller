@@ -22,4 +22,6 @@ sealed class InternalRoutesKey: NavKey {
 
     @Serializable
     object Settings: InternalRoutesKey()
+
+    @Serializable object Logout: InternalRoutesKey()
 }

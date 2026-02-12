@@ -211,7 +211,8 @@ fun LoginScreen(
                             toasterViewModel.showMessage(
                                 "Autenticando usuario en Google",
                                 ToastType.Normal,
-                                "Google Account Charge"
+                                "Google Account Charge",
+                                isInfinite = true
                             )
                             loginViewModel.authWithGoogle(
                                 onUserLogIn = { userIdLogged ->

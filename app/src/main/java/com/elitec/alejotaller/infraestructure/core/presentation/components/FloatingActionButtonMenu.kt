@@ -18,9 +18,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,7 +37,9 @@ import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenu
 
 @Composable
 fun FloatingActionButtonMenu(
+    shopCartItemsCount: Int,
     items: List<FabMenuItem>,
+    onLogout: () -> Unit,
     onNavigate: (InternalRoutesKey) -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -77,7 +82,12 @@ fun FloatingActionButtonMenu(
                     items.forEach { item ->
                         FabMenuItemComponent(
                             item = item,
+                            shopCartItemsCount = shopCartItemsCount,
                             onClick = {
+                                if (item.route == InternalRoutesKey.Logout) {
+                                    onLogout()
+                                    return@FabMenuItemComponent
+                                }
                                 expanded = false
                                 onNavigate(item.route)
                             }
@@ -85,14 +95,26 @@ fun FloatingActionButtonMenu(
                     }
                 }
             }
-
-            FloatingActionButton(
-                onClick = { expanded = !expanded }
+            BadgedBox(
+                badge = {
+                    if(shopCartItemsCount > 0) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ) {
+                            Text(text = shopCartItemsCount.toString())
+                        }
+                    }
+                }
             ) {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.Close else Icons.Default.Menu,
-                    contentDescription = null
-                )
+                FloatingActionButton(
+                    onClick = { expanded = !expanded }
+                ) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.Menu,
+                        contentDescription = null
+                    )
+                }
             }
         }
     }

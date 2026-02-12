@@ -10,6 +10,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -34,8 +36,10 @@ import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToastA
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import kotlin.time.Duration
 
 class MainActivity : ComponentActivity() {
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,7 +54,9 @@ class MainActivity : ComponentActivity() {
                             is ToastAction.Show -> toasterState.show(
                                 message = action.event.message,
                                 type = action.event.type,
-                                id = action.event.id
+                                id = action.event.id,
+                                icon = if(action.event.isInfinite) "LOADING" else null,
+                                duration = if(action.event.isInfinite) Duration.INFINITE else ToasterDefaults.DurationDefault
                             )
                             is ToastAction.Dismiss -> toasterState.dismiss(action.id)
                         }
@@ -89,7 +95,16 @@ class MainActivity : ComponentActivity() {
                     }
                     Toaster(
                         richColors = true,
-                        state = toasterState
+                        state = toasterState,
+                        iconSlot = { toast ->
+                            // ICON_LOADING can be anything, it's just a mark
+                            if (toast.icon == "LOADING") {
+                                LoadingIndicator()
+                            } else {
+                                // Fallback to the default icon slot
+                                ToasterDefaults.iconSlot(toast)
+                            }
+                        },
                     )
                 }
             }

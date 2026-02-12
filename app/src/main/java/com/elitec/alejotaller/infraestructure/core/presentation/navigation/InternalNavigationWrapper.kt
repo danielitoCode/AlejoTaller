@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.GifBox
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Text
@@ -27,6 +28,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
+import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
@@ -59,7 +61,8 @@ fun InternalNavigationWrapper(
     shopCartViewModel: ShopCartViewModel = koinViewModel(),
     productViewModel: ProductViewModel = koinViewModel(),
     profileViewModel: ProfileViewModel = koinViewModel(),
-    toasterViewModel: ToasterViewModel = koinViewModel()
+    toasterViewModel: ToasterViewModel = koinViewModel(),
+    authViewModel: AuthViewModel = koinViewModel()
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
 
@@ -90,7 +93,8 @@ fun InternalNavigationWrapper(
         FabMenuItem("Productos", Icons.Default.GifBox, InternalRoutesKey.Home),
         FabMenuItem("Su Compra", Icons.Default.ShoppingCart, InternalRoutesKey.Buy),
         FabMenuItem("Perfil", Icons.Default.AccountCircle, InternalRoutesKey.Profile),
-        FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings)
+        FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
+        FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
     )
 
     profileInfo?.let { info ->
@@ -123,7 +127,11 @@ fun InternalNavigationWrapper(
                     ProductDetailScreen(
                         modifier = Modifier.fillMaxSize(),
                         product = productTestList.first { it.id == key.productId},
-                        onBackClick = { backStack.navigateBack() }
+                        onBackClick = { backStack.navigateBack() },
+                        onAddToCartClick = {
+                            val productSelected = products.first { it.id == key.productId }
+                            shopCartViewModel.addProductToACart(productSelected, 1)
+                        }
                     )
                 }
                 entry<InternalRoutesKey.Profile> {
@@ -177,7 +185,19 @@ fun InternalNavigationWrapper(
 
     FloatingActionButtonMenu(
         items = fabItems,
-        onNavigate = { route -> backStack.navigateTo(route) }
+        shopCartItemsCount = cartItems.size,
+        onNavigate = { route -> backStack.navigateTo(route) },
+        onLogout = {
+            authViewModel.logoutUser(
+                onLogout = {
+                    onNavigateBack()
+                },
+                onFail = {
+                    onNavigateBack()
+                }
+            )
+
+        }
     )
 }
 

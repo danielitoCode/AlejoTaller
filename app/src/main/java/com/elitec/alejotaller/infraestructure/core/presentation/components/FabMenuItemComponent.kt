@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
@@ -13,11 +15,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.elitec.alejotaller.infraestructure.core.presentation.navigation.InternalRoutesKey
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 
 @Composable
 fun FabMenuItemComponent(
     item: FabMenuItem,
+    shopCartItemsCount: Int,
     onClick: () -> Unit
 ) {
     Row(
@@ -38,10 +42,24 @@ fun FabMenuItemComponent(
             )
         }
 
-        SmallFloatingActionButton(
-            onClick = onClick
+        BadgedBox(
+            badge = {
+                if(item.route == InternalRoutesKey.Buy && shopCartItemsCount > 0) {
+                    Badge(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ) {
+                        Text(text = shopCartItemsCount.toString())
+                    }
+                }
+            }
         ) {
-            Icon(item.icon, contentDescription = null)
+            SmallFloatingActionButton(
+                onClick = onClick
+            ) {
+                Icon(item.icon, contentDescription = null)
+            }
         }
+
     }
 }
