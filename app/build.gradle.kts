@@ -153,12 +153,6 @@ dependencies {
     ksp(project(":mapper-processor"))
 }
 
-// Mejora compilación incremental de Room
-ksp {
-    arg("room.incremental", "true")
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 room {
     schemaDirectory("$projectDir/schemas")
 }
