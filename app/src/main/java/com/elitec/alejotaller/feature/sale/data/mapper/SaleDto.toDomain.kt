@@ -8,6 +8,6 @@ fun SaleDto.toDomain(): Sale =
         id = id,
         date = date,
         amount = amount,
-        products = listOf(),
+        products = products.toSaleItemList(),
         userId = userId
     )
