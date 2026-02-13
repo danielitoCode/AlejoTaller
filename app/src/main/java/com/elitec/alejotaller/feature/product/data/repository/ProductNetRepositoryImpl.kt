@@ -11,12 +11,14 @@ import io.appwrite.services.Databases
 class ProductNetRepositoryImpl(
     private val netDB: Databases
 ) {
+
     suspend fun getAll(): List<ProductDto> {
         val response = netDB.listDocuments(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.PRODUCT_TABLE_ID
         )
-        return  response.documents.map { document -> document.toProductDto() }
+        val decode = response.documents.map { document -> document.toProductDto() }
+        return  decode
     }
 
     suspend fun getById(itemId: String): ProductDto {

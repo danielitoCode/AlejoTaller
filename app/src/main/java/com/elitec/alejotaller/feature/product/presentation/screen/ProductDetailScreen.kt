@@ -34,11 +34,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
@@ -153,11 +156,16 @@ private fun ProductImageSection(
         contentAlignment = Alignment.Center
     ) {
         // Placeholder for the Xbox image
-        Image(
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-            painter = painterResource(photoLocalResource ?: R.drawable.echoflow_transparent),
-            contentDescription = "Product Image"
+        AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(photoUrl)
+                .crossfade(true)
+                .build(),
+            contentDescription = null,
+            onLoading = { },
+            placeholder = painterResource(R.drawable.image),
+            error = painterResource(R.drawable.errorimage),
+            contentScale = ContentScale.Crop
         )
     }
 }

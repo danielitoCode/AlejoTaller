@@ -25,9 +25,11 @@ class ProductViewModel(
         emptyList()
     )
 
-    init {
+    fun syncProducts(onProductCharge: () -> Unit, onFail: () -> Unit) {
         viewModelScope.launch {
             syncProductCaseUse()
+                .onSuccess { onProductCharge() }
+                .onFailure { onFail() }
         }
     }
 

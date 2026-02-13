@@ -78,6 +78,19 @@ fun InternalNavigationWrapper(
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
+        toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
+        productViewModel.syncProducts(
+            onProductCharge = {
+                toasterViewModel.dismissMessage("product charge")
+                toasterViewModel.showMessage("Productos cargados", ToastType.Success)
+            },
+            onFail = {
+                toasterViewModel.dismissMessage("product charge")
+                toasterViewModel.showMessage("Error al cargar los productos", ToastType.Error)
+            }
+        )
+    }
+    LaunchedEffect(null) {
         profileViewModel.getAccountInfo(
             onGetInfo = {
                 toasterViewModel.showMessage("Informacion de usuario cargada", ToastType.Success)
@@ -115,6 +128,7 @@ fun InternalNavigationWrapper(
                     )
                 ) {
                     ProductScreen(
+                        products = products,
                         navigateToDetails = { productId ->
                             backStack.navigateTo(InternalRoutesKey.ProductDetail(productId))
                         },

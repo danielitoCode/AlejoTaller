@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -44,26 +45,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.feature.category.domain.entity.Category
+import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ProductScreen(
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
+    categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
 
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+    var categorySelected by rememberSaveable { mutableStateOf<Category?>(null) }
+    val categoriesList by categoryViewModel.categoriesFlow.collectAsStateWithLifecycle()
 
     Column(
         modifier = modifier
@@ -111,7 +123,13 @@ fun ProductScreen(
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        CategoriesSection()
+        CategoriesSection(
+            onCategorySelected = { category ->
+                categorySelected = category
+            },
+            categorySelected = categorySelected,
+            categoriesList
+        )
         Spacer(modifier = Modifier.height(16.dp))
         ProductGrid(
             onProductClick =  navigateToDetails,
@@ -215,13 +233,12 @@ fun BannerSection(
 }
 
 @Composable
-fun CategoriesSection(modifier: Modifier = Modifier) {
-    val categories = listOf(
-        stringResource(id = R.string.all),
-        stringResource(id = R.string.smartphones),
-        stringResource(id = R.string.headphones),
-        stringResource(id = R.string.laptops)
-    )
+fun CategoriesSection(
+    onCategorySelected: (Category) -> Unit,
+    categorySelected: Category? = null,
+    categories: List<Category>,
+    modifier: Modifier = Modifier
+) {
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -244,7 +261,7 @@ fun CategoriesSection(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(categories) { category ->
-                val isSelected = category == stringResource(id = R.string.all)
+                val isSelected = category == categorySelected
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
@@ -260,12 +277,14 @@ fun CategoriesSection(modifier: Modifier = Modifier) {
                         )
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    Text(
-                        text = category,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.labelLarge
-                    )
+                    Row {
+                        Text(
+                            text = category.name,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
         }
@@ -313,10 +332,16 @@ fun ProductItem(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.BottomStart
         ) {
-            Image(
-                contentScale = ContentScale.Crop,
-                painter = painterResource(product.photoLocalResource ?: R.drawable.echoflow_transparent),
-                contentDescription = "Product Image",
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(product.photoUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                onLoading = { },
+                placeholder = painterResource(R.drawable.image),
+                error = painterResource(R.drawable.errorimage),
+                contentScale = ContentScale.Crop
             )
             Box(
                 modifier = Modifier.fillMaxWidth()
