@@ -186,10 +186,9 @@ private fun ProductInfoSection(
             .background(MaterialTheme.colorScheme.surface)
             .padding(24.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment= Alignment.Start,
         ) {
             Text(
                 text = productName,

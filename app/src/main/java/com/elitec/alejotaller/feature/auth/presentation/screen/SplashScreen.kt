@@ -26,7 +26,6 @@ fun SplashScreen(
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(null) {
-        delay(1000)
         profileViewModel.getAccountInfo(
             onGetInfo = { userId ->
                 onUserAuth(userId)

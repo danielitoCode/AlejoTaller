@@ -3,6 +3,7 @@ package com.elitec.alejotaller.feature.sale.di
 import com.elitec.alejotaller.feature.sale.data.repository.AppwriteSaleNotificationUserProvider
 import com.elitec.alejotaller.feature.sale.data.repository.SaleNetRepositoryImpl
 import com.elitec.alejotaller.feature.sale.data.repository.SaleOfflineFirstRepository
+import com.elitec.alejotaller.feature.sale.data.repository.SolucionesCubaPaymentGateway
 import com.elitec.alejotaller.feature.sale.data.repository.TelegramNotificatorImpl
 import com.elitec.alejotaller.feature.sale.domain.caseUse.GetSalesByIdCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
@@ -24,6 +25,7 @@ val saleFeatureModule = module {
 
     // Data layer
     single { SaleNetRepositoryImpl(get()) }
+    single { SolucionesCubaPaymentGateway(get()) }
     single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
     single<TelegramNotificator> { TelegramNotificatorImpl(get()) }
     single<SaleNotificationUserProvider> { AppwriteSaleNotificationUserProvider(get()) }

@@ -39,7 +39,9 @@ import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductView
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
+import com.elitec.alejotaller.feature.sale.presentation.viewmodel.SaleViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
 import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
@@ -62,6 +64,7 @@ fun InternalNavigationWrapper(
     productViewModel: ProductViewModel = koinViewModel(),
     profileViewModel: ProfileViewModel = koinViewModel(),
     toasterViewModel: ToasterViewModel = koinViewModel(),
+    saleViewModel: SaleViewModel = koinViewModel(),
     authViewModel: AuthViewModel = koinViewModel()
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
@@ -188,7 +191,45 @@ fun InternalNavigationWrapper(
                     )
                 }
                 entry<InternalRoutesKey.BuyConfirm> {
+                    BuyConfirmScreen(
+                        items = cartItems,
+                        totalAmount = shopCartViewModel.getTotalAmount(),
+                        onBackClick = { backStack.navigateBack() },
+                        onSubmitPurchase = {
+                            if (cartItems.isEmpty()) {
+                                toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
+                                backStack.navigateBack()
+                            } else {
+                                toasterViewModel.showMessage(
+                                    "Confirmando pago por Transfermóvil",
+                                    ToastType.Normal,
+                                    id = "sale charge",
+                                    isInfinite = true
+                                )
 
+                                saleViewModel.newSale(
+                                    sale = cartItems.toSale(userId),
+                                    onSaleRegistered = {
+                                        toasterViewModel.dismissMessage("sale charge")
+                                        toasterViewModel.showMessage(
+                                            "Pago confirmado por Transfermóvil. ¡Pedido realizado!",
+                                            ToastType.Success
+                                        )
+                                        shopCartViewModel.clearCart()
+                                        backStack.navigateTo(InternalRoutesKey.Buy)
+                                    }
+                                )
+                            }
+                        },
+                        onFail = { error ->
+                            toasterViewModel.dismissMessage("sale charge")
+                            toasterViewModel.showMessage(
+                                "No se pudo confirmar el pago: $error",
+                                ToastType.Error
+                            )
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
                 entry<InternalRoutesKey.Settings> {
                     Text(text = "AJUSTES")

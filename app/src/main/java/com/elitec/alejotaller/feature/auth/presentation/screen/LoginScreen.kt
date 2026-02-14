@@ -212,13 +212,6 @@ fun LoginScreen(
                             )
                         }
                     }
-                    TextButton(
-                        onClick = {
-                            onNavigateTo(MainRoutesKey.MainHome("Test User"))
-                        }
-                    ) {
-                        Text(text = "ByPass")
-                    }
                     Button(
                         onClick = {
                             toasterViewModel.showMessage(

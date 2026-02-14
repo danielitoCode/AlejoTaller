@@ -199,4 +199,12 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("PUSHER_SUPPORT_CHANNEL")
     prop("PUSHER_IA_CHANNEL")
     prop("PUSHER_SALE_CHANNEL")
+    // Soluciones Cuba Pay
+    prop("SOLUCIONES_CUBA_PAY_API_URL")
+    prop("SOLUCIONES_CUBA_API_KEY")
+    prop("SOLUCIONES_CUBA_MERCHANT_ID")
+    // prop("SOLUCIONES_CUBA_SUCCESS_URL")
+    // prop("SOLUCIONES_CUBA_CANCEL_URL")
+    // prop("SOLUCIONES_CUBA_CALLBACK_URL")
+    // prop("SOLUCIONES_CUBA_REGISTER_URL")
 }
