@@ -164,6 +164,12 @@ fun LoginScreen(
                     )
                     Button(
                         onClick = {
+                            toasterViewModel.showMessage(
+                                "Autenticando usuario",
+                                ToastType.Normal,
+                                "Custom Account Charge",
+                                isInfinite = true
+                            )
                             loginViewModel.autUser(
                                 email = email,
                                 pass = password,
@@ -205,6 +211,13 @@ fun LoginScreen(
                                 modifier = Modifier.size(25.dp)
                             )
                         }
+                    }
+                    TextButton(
+                        onClick = {
+                            onNavigateTo(MainRoutesKey.MainHome("Test User"))
+                        }
+                    ) {
+                        Text(text = "ByPass")
                     }
                     Button(
                         onClick = {

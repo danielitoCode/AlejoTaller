@@ -20,8 +20,12 @@ class RegistrationViewModel(
     fun customRegister(email: String, password: String, name: String, onUserRegister: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             customRegisterCaseUse(email, password, name)
-                .onSuccess { userId -> onUserRegister(userId) }
-                .onFailure { error -> onFail(error.message ?: "") }
+                .onSuccess { userId ->
+                    onUserRegister(userId)
+                }
+                .onFailure { error ->
+                    onFail(error.message ?: "")
+                }
         }
     }
 }

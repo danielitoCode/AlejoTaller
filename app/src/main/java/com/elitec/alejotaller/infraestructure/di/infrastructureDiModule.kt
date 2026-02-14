@@ -8,6 +8,8 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthPro
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import com.pusher.client.Pusher
+import com.pusher.client.PusherOptions
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
@@ -35,6 +37,14 @@ val infrastructureModule = module {
             name = "app_database"
         )
             .build()
+    }
+
+    // Realtime
+    single {
+        Pusher(
+            BuildConfig.PUSHER_API_KEY,
+            PusherOptions()
+                .setCluster(BuildConfig.PUSHER_CLUSTER))
     }
 
     // GoogleSingInProvider

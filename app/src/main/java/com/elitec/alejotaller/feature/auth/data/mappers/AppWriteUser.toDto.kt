@@ -12,5 +12,5 @@ fun User<Map<String, Any>>.toDto(): UserDto =
         sub = (prefs.data["sub"] as? String) ?: "",
         phone = (prefs.data["sub"] as? String) ?: "",
         photoUrl = (prefs.data["sub"] as? String) ?: "",
-        verification = prefs.data["verification"] as Boolean
+        verification = (prefs.data["verification"] as? Boolean) ?: false
     )

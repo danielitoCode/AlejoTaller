@@ -133,8 +133,17 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.kotlinx.serialization.core)
+    // Real time
+    // implementation(libs.okhttp)
+    // implementation(libs.okio)
+    implementation(libs.pusher.java.client)
+    /*implementation(libs.courier.android) {
+        exclude(group = "androidx.test.ext", module = "junit")
+    }*/
     // Network Images
     implementation(libs.coil.compose)
+    implementation(libs.coil.okhttp)
+    implementation(libs.coil.compose.svg)
     // Blur effect
     implementation(libs.compose.blurEffect.core)
     implementation(libs.compose.blurEffect.materials)
@@ -164,7 +173,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
             name,
             "\"${localProperties.getProperty(name, "")}\""
         )
-
+    // Appwrite
     prop("APPWRITE_DATABASE_ID")
     prop("CATEGORY_TABLE_ID")
     prop("PRODUCT_TABLE_ID")
@@ -172,12 +181,22 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("APPWRITE_PROJECT_ID")
     prop("APPWRITE_PROJECT_ENDPOINT")
     prop("APPWRITE_TELEGRAM_FUNCTION_URL")
+    // Google
     prop("GOOGLE_CLOUD_WEBCLIENT")
     prop("GOOGLE_CLOUD_ANDROID_DEBUG")
     prop("GOOGLE_CLOUD_ANDROID_RELEASE")
+    // Telegram
     prop("TELEGRAM_BOT_KEY")
     prop("TELEGRAM_CHAT_ID")
     prop("TELEGRAM_GROUP_NAME")
     prop("TELEGRAM_GROUP_TYPE")
     prop("TELEGRAM_API_URL")
+    // Pusher
+    prop("PUSHER_API_KEY")
+    prop("PUSHER_CLUSTER")
+    prop("PUSHER_NOTIFICATION_CHANNEL")
+    prop("PUSHER_PROMO_CHANNEL")
+    prop("PUSHER_SUPPORT_CHANNEL")
+    prop("PUSHER_IA_CHANNEL")
+    prop("PUSHER_SALE_CHANNEL")
 }

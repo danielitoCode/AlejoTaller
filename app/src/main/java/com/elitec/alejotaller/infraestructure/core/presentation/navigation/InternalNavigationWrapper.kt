@@ -140,7 +140,7 @@ fun InternalNavigationWrapper(
                 ) { key ->
                     ProductDetailScreen(
                         modifier = Modifier.fillMaxSize(),
-                        product = productTestList.first { it.id == key.productId},
+                        product = products.first { it.id == key.productId},
                         onBackClick = { backStack.navigateBack() },
                         onAddToCartClick = {
                             val productSelected = products.first { it.id == key.productId }

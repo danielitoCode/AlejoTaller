@@ -18,8 +18,12 @@ class AuthViewModel(
     fun autUser(email: String, pass: String, onUserLogIn: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             authUserCaseUse(email, pass)
-                .onSuccess { userId -> onUserLogIn(userId) }
-                .onFailure { error -> onFail(error.message ?: "") }
+                .onSuccess {
+                    userId -> onUserLogIn(userId)
+                }
+                .onFailure { error ->
+                    onFail(error.message ?: "")
+                }
         }
     }
 
