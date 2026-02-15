@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 
 private enum class PaymentMethod(val label: String) {
-    Transfermovil("Transfermóvil")
+    SolucionesCuba("Tarjeta virtual (UltraPay / SolucionesCuba)")
 }
 
 @Composable
@@ -31,11 +31,11 @@ fun BuyConfirmScreen(
     items: List<UiSaleItem>,
     totalAmount: Double,
     onBackClick: () -> Unit,
-    onFail: (String) -> Unit,
     onSubmitPurchase: () -> Unit,
+    onRegisterInUltrapay: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedMethod by remember { mutableStateOf(PaymentMethod.Transfermovil) }
+    var selectedMethod by remember { mutableStateOf(PaymentMethod.SolucionesCuba) }
 
     Column(
         modifier = modifier
@@ -49,7 +49,7 @@ fun BuyConfirmScreen(
         )
 
         Text(
-            text = "Revisa tu pedido y confirma el método de pago.",
+            text = "Serás redirigido a la pasarela para pagar con tu tarjeta virtual.",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -73,12 +73,12 @@ fun BuyConfirmScreen(
                 )
 
                 OutlinedButton(
-                    onClick = { selectedMethod = PaymentMethod.Transfermovil },
+                    onClick = { selectedMethod = PaymentMethod.SolucionesCuba },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     RadioButton(
-                        selected = selectedMethod == PaymentMethod.Transfermovil,
-                        onClick = { selectedMethod = PaymentMethod.Transfermovil }
+                        selected = selectedMethod == PaymentMethod.SolucionesCuba,
+                        onClick = { selectedMethod = PaymentMethod.SolucionesCuba }
                     )
                     Text(
                         text = selectedMethod.label,
@@ -87,7 +87,7 @@ fun BuyConfirmScreen(
                 }
 
                 Text(
-                    text = "Al confirmar, se registrará el pedido para pago por Transfermóvil.",
+                    text = "Si aún no tienes cuenta, regístrate debajo del botón Pagar.",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -101,10 +101,17 @@ fun BuyConfirmScreen(
         Button(
             onClick = onSubmitPurchase,
             modifier = Modifier.fillMaxWidth(),
-            enabled = items.isNotEmpty() && selectedMethod == PaymentMethod.Transfermovil
+            enabled = items.isNotEmpty() && selectedMethod == PaymentMethod.SolucionesCuba
         ) {
-            Text(text = "Confirmar pago")
+            Text(text = "Confirmar pedido")
         }
+
+       /* OutlinedButton(
+            onClick = onRegisterInUltrapay,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "Registrarme en UltraPay")
+        }*/
 
         OutlinedButton(
             onClick = onBackClick,

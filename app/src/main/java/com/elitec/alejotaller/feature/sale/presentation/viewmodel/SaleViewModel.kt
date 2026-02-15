@@ -23,6 +23,7 @@ class SaleViewModel(
         viewModelScope, SharingStarted.WhileSubscribed(5_000),
         emptyList()
     )
+
     fun sync(userId: String) {
         viewModelScope.launch {
             syncSalesCaseUse(userId)
@@ -38,13 +39,15 @@ class SaleViewModel(
         }
     }
 
-    fun newSale(sale: Sale, onSaleRegistered: () -> Unit) {
+    fun newSale(sale: Sale, onSaleRegistered: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
             registerNewSaleCauseUse(sale)
-                .onSuccess {
-                    onSaleRegistered()
+                .onSuccess { transferId ->
+                    onSaleRegistered(transferId)
                 }
-                .onFailure {  }
+                .onFailure { error ->
+                    onFail(error.message ?: "")
+                }
         }
     }
 }

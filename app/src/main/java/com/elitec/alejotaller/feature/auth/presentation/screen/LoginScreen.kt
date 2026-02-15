@@ -37,6 +37,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -54,6 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -339,16 +341,20 @@ private fun SurfaceIcon(
     alpha: Float
 ) {
     Surface(
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha),
+        color = Color.Transparent,// MaterialTheme.colorScheme.primaryContainer.copy(alpha),
         shape = MaterialShapes.Cookie9Sided.toShape(),
-        modifier = Modifier.size(120.dp)
+        modifier = Modifier.size(180.dp)
     ) {
         Box(contentAlignment = Alignment.Center) {
+            LoadingIndicator(
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha),
+                modifier = Modifier.fillMaxSize()
+            )
             Icon(
                 painter = painterResource(R.drawable.alejoicon_clean),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize().padding(30.dp)
             )
         }
     }

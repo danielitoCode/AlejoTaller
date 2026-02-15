@@ -63,6 +63,8 @@ material3 = "1.5.0-alpha14"
 # Courier
 courier = "5.2.14"
 pusherJavaClient = "2.4.2"
+# QR
+qr = "4.5.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -149,6 +151,8 @@ courier-android = { module = "com.github.trycourier:courier-android", version.re
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 pusher-java-client = { module = "com.pusher:pusher-java-client", version.ref = "pusherJavaClient" }
+# QR
+compose-qr = { module = "io.github.g0dkar:qrcode-kotlin", version.ref = "qr" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

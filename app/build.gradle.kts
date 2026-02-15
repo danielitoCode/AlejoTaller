@@ -157,6 +157,8 @@ dependencies {
     ksp(libs.room.compiler)
     // Datetime
     implementation(libs.kotlinx.datetime)
+    // QR
+    implementation(libs.compose.qr)
     // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))

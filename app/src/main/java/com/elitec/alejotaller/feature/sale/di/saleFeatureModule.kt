@@ -21,7 +21,6 @@ import org.koin.dsl.module
 val saleFeatureModule = module {
     // Infrastructure instances
     single { get<AppBD>().saleDao() }
-    single { HttpClient() }
 
     // Data layer
     single { SaleNetRepositoryImpl(get()) }

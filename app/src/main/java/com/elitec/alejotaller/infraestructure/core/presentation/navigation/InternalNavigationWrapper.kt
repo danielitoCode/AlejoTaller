@@ -201,7 +201,7 @@ fun InternalNavigationWrapper(
                                 backStack.navigateBack()
                             } else {
                                 toasterViewModel.showMessage(
-                                    "Confirmando pago por Transfermóvil",
+                                    "Confirmando pedido",
                                     ToastType.Normal,
                                     id = "sale charge",
                                     isInfinite = true
@@ -212,23 +212,31 @@ fun InternalNavigationWrapper(
                                     onSaleRegistered = {
                                         toasterViewModel.dismissMessage("sale charge")
                                         toasterViewModel.showMessage(
-                                            "Pago confirmado por Transfermóvil. ¡Pedido realizado!",
+                                            "La compra ha sido confirmada, ID de pedido: $it",
                                             ToastType.Success
                                         )
                                         shopCartViewModel.clearCart()
                                         backStack.navigateTo(InternalRoutesKey.Buy)
+                                    },
+                                    onFail = { error ->
+                                        toasterViewModel.dismissMessage("sale charge")
+                                        toasterViewModel.showMessage(
+                                            "La compra no ha sido confirmada: $error",
+                                            ToastType.Error
+                                        )
                                     }
                                 )
                             }
                         },
-                        onFail = { error ->
+                        /*onFail = { error ->
                             toasterViewModel.dismissMessage("sale charge")
                             toasterViewModel.showMessage(
                                 "No se pudo confirmar el pago: $error",
                                 ToastType.Error
                             )
-                        },
-                        modifier = Modifier.fillMaxSize()
+                        },*/
+                        onRegisterInUltrapay = {}
+                        ,modifier = Modifier.fillMaxSize()
                     )
                 }
                 entry<InternalRoutesKey.Settings> {

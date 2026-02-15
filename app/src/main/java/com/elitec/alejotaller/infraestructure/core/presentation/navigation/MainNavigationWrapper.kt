@@ -43,7 +43,7 @@ fun MainNavigationWrapper(
     modifier: Modifier = Modifier
 ) {
     val backStack = rememberNavBackStack(MainRoutesKey.Splash)
-    val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(false)
+    val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(true)
     Box(
         contentAlignment = Alignment.TopEnd,
         modifier = modifier.fillMaxSize()
@@ -131,7 +131,7 @@ fun MainNavigationWrapper(
             },
         )
         AnimatedVisibility(
-            visible = connectionStatus,
+            visible = !connectionStatus,
             modifier = Modifier.padding(10.dp)
         ) {
             Surface(

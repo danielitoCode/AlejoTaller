@@ -5,19 +5,25 @@ import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.TelegramNotificator
+import io.appwrite.ID
 
 class RegisterNewSaleCauseUse(
     private val repository: SaleRepository,
     private val notificationUserProvider: SaleNotificationUserProvider,
     private val telegramNotificator: TelegramNotificator
 ) {
-    suspend operator fun invoke(sale: Sale): Result<Unit> = runCatching {
-        repository.save(sale)
+    suspend operator fun invoke(sale: Sale): Result<String> = runCatching {
+        val saleConfirmed = sale.copy(id = ID.unique())
 
         val user = notificationUserProvider
             .getCurrentUser()
-            .getOrElse { return@runCatching }
+            .getOrElse { throw Exception("Transfer fail") }
 
-        telegramNotificator.notify(sale, user)
+        telegramNotificator.notify(saleConfirmed, user)
+
+
+        repository.save(saleConfirmed)
+
+        sale.id
     }
 }
