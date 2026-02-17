@@ -18,7 +18,7 @@ import com.elitec.alejotaller.infraestructure.core.data.converters.ListConverter
         ProductDto::class,
         SaleDto::class
     ],
-    version = 3,
+    version = 4,
 )
 @TypeConverters(
     DateTimeConverter::class,

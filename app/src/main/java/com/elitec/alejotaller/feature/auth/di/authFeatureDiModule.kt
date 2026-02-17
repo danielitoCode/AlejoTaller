@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.feature.auth.di
 
 import com.elitec.alejotaller.feature.auth.data.repository.AccountRepositoryImpl
+import com.elitec.alejotaller.feature.auth.data.repository.FileUploadRepoImpl
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthUserCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthWithGoogleCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
@@ -15,6 +16,7 @@ import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhoneCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.VerifyUserUseCase
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
+import com.elitec.alejotaller.feature.auth.domain.repositories.FileRepository
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.RegistrationViewModel
@@ -24,6 +26,7 @@ import org.koin.dsl.module
 val authFeatureDiModule = module {
     // Data layer
     single<AccountRepository> { AccountRepositoryImpl(get()) }
+    single<FileRepository> { FileUploadRepoImpl(get()) }
 
     // Domain layer
     factory { CreateAccountUseCase(get(), get()) }
@@ -38,7 +41,7 @@ val authFeatureDiModule = module {
     factory { UpdateUserNameUseCase(get()) }
     factory { UpdateUserPassCaseUse(get()) }
     factory { UpdateUserPhoneCaseUse(get()) }
-    factory { UpdateUserPhotoUrlCaseUse(get()) }
+    factory { UpdateUserPhotoUrlCaseUse(get(), get()) }
     factory { VerifyUserUseCase(get()) }
     factory { AuthUserCaseUse(get()) }
     factory { CloseSessionCaseUse(get()) }

@@ -30,13 +30,13 @@ import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
-import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
+import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
@@ -155,6 +155,7 @@ fun InternalNavigationWrapper(
                     ProfileScreen(
                         profileName = "Usuario de pruebas",
                         profileEmail = "email@test.com",
+                        userId = userId,
                         navigateBack = {},
                         onEditProfile = {},
                         isGoogleUser = info.userProfile.sub != "",
@@ -274,6 +275,7 @@ private fun List<UiSaleItem>.toSale(userId: String): Sale {
         date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
         amount = sumOf { item -> item.product.price * item.quantity },
         products = products,
+        verified = BuyState.UNVERIFIED,
         userId = userId
     )
 }

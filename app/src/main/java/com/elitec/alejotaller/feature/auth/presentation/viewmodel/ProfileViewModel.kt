@@ -1,5 +1,8 @@
 package com.elitec.alejotaller.feature.auth.presentation.viewmodel
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
@@ -10,8 +13,12 @@ import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPassCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhoneCaseUse
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import kotlinx.coroutines.flow.MutableStateFlow
+import android.net.Uri
+import androidx.core.graphics.scale
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 
 class ProfileViewModel(
     private val getProfileUseCase: GetCurrentUserInfoCaseUse,
@@ -24,10 +31,31 @@ class ProfileViewModel(
     private var _userProfile = MutableStateFlow<User?>(null)
     val userProfile get() = _userProfile.asStateFlow()
 
-    fun updatePhotoUrl(photoUrl: String, onPhotoUpload: () -> Unit, onFail: () -> Unit) {
+    fun updatePhotoUrl(
+        userId: String,
+        uri: Uri,
+        context: Context,
+        onPhotoUpload: (String) -> Unit,
+        onFail: () -> Unit
+    ) {
         viewModelScope.launch {
-            updatePhotoUrlCaseUse(photoUrl)
-                .onSuccess { onPhotoUpload() }
+            val inputStream = context.contentResolver.openInputStream(uri)
+                ?: throw IllegalStateException("No se pudo abrir el archivo desde el URI")
+
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            val scaledBitmap = originalBitmap.scale(800, 800, true)
+
+            // Archivo temporal comprimido
+            val compressedFile = File.createTempFile("compressed_", ".jpg", context.cacheDir)
+            FileOutputStream(compressedFile).use { out ->
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out)
+            }
+            // Liberar memoria
+            originalBitmap.recycle()
+            scaledBitmap.recycle()
+
+            updatePhotoUrlCaseUse(compressedFile, userId)
+                .onSuccess { url -> onPhotoUpload(url) }
                 .onFailure { onFail() }
         }
     }

@@ -11,6 +11,7 @@ fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
         date = data["date"].toLocalDate(),
         amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
         products = data["products"].toSaleItems(),
+        verified =  data["verified"] as? String ?: "UNVERIFIED",
         userId = data["user_id"] as? String ?: ""
     )
 

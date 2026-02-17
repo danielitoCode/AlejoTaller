@@ -183,6 +183,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("APPWRITE_PROJECT_ID")
     prop("APPWRITE_PROJECT_ENDPOINT")
     prop("APPWRITE_TELEGRAM_FUNCTION_URL")
+    prop("APPWRITE_BUCKECT_ID")
     // Google
     prop("GOOGLE_CLOUD_WEBCLIENT")
     prop("GOOGLE_CLOUD_ANDROID_DEBUG")

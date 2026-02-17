@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.auth.presentation.screen
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -42,25 +43,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.elitec.alejotaller.feature.auth.presentation.components.ProfilePhotoBox
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.compose.navigation.koinNavViewModel
 
 @Composable
 fun ProfileScreen(
     profileName: String,
+    userId: String,
     profileEmail: String,
     profilePhone: String? = null,
+    profilePhotoUrl: String? = null,
     isGoogleUser: Boolean,
     onEditProfile: () -> Unit,
     navigateBack: () -> Unit,
-    profileViewModel: ProfileViewModel = koinNavViewModel(),
+    profileViewModel: ProfileViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
     onVerifyEmail: (() -> Unit)? = null
 ) {
@@ -75,8 +81,11 @@ fun ProfileScreen(
 
     var name by rememberSaveable { mutableStateOf(profileName) }
     var phone by rememberSaveable { mutableStateOf(profilePhone ?: "") }
+    var photoUrl by rememberSaveable { mutableStateOf(profilePhotoUrl?.toUri()) }
     var pass by rememberSaveable { mutableStateOf("") }
     var passConfirm by rememberSaveable { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     val animateColorName = animateColorAsState(
         targetValue = borderColorName
@@ -140,8 +149,12 @@ fun ProfileScreen(
             }
         }
         ProfilePhotoBox(
-            onClick = {},
-            photoUrl = ""
+            photoUrl = photoUrl,
+            onSelected = { photoSelected ->
+                photoUrl = photoSelected
+            },
+            onFailSelected = {  },
+            modifier = Modifier
         )
         OutlinedTextField(
             value = name,
@@ -362,25 +375,32 @@ fun ProfileScreen(
                                     end = 20.dp
                                 )
                         )
-                        Button(
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onTertiary
-                            ),
-                            onClick = {}
-                        ) {
-                            Text(
-                                modifier = Modifier.padding(5.dp),
-                                color = MaterialTheme.colorScheme.tertiary,
-                                text = "Confirmar cambios"
-                            )
-                        }
                     }
                 }
             }
         }
         Button(
-            enabled = name != profileName || phone != profilePhone,
-            onClick = {}
+            enabled = name != profileName || phone != profilePhone || photoUrl.toString() != profilePhotoUrl,
+            onClick = {
+                when {
+                    name != profileName -> {
+                        profileViewModel.updateName(
+                            name,
+                            onNameUpdate = {  },
+                            onFail = {  }
+                        )
+                    }
+                    photoUrl != null && photoUrl.toString() != profilePhotoUrl -> {
+                        profileViewModel.updatePhotoUrl(
+                            userId = userId,
+                            context = context,
+                            uri = photoUrl!!,
+                            onPhotoUpload = {  },
+                            onFail = {  }
+                        )
+                    }
+                }
+            }
         ) {
             Row(
                 modifier = Modifier.padding(5.dp)
@@ -399,18 +419,3 @@ fun ProfileScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun ProfileScreenPreview() {
-    AlejoTallerTheme {
-        ProfileScreen(
-            profileName = "Juan Pérez",
-            profileEmail = "juan.perez@example.com",
-            profilePhone = "+57 300 123 4567",
-            onEditProfile = {},
-            navigateBack = {},
-            onVerifyEmail = {},
-            isGoogleUser = false
-        )
-    }
-}

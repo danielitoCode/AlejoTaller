@@ -2,6 +2,7 @@ package com.elitec.alejotaller.infraestructure.di
 
 import androidx.room.Room
 import com.elitec.alejotaller.BuildConfig
+import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessionManager
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
@@ -13,6 +14,7 @@ import com.pusher.client.PusherOptions
 import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
+import io.appwrite.services.Storage
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -37,6 +39,7 @@ val infrastructureModule = module {
     }
     single { Databases(get()) }
     single { Account(get()) }
+    single { Storage(get()) }
 
     // Database
     single {
