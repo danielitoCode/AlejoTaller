@@ -59,6 +59,7 @@ import coil3.svg.SvgDecoder
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
+import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
@@ -70,6 +71,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ProductScreen(
+    promotions: List<Promotion> = listOf(),
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
     categoryViewModel: CategoriesViewModel = koinViewModel(),
@@ -168,8 +170,12 @@ fun SearchBar(modifier: Modifier = Modifier) {
 @Composable
 fun BannerSection(
     visible: Boolean = true,
+    promotion: Promotion? = null,
     modifier: Modifier = Modifier
 ) {
+    val bannerTitle = promotion?.title ?: stringResource(id = R.string.clearance_sales)
+    val bannerMessage = promotion?.message ?: stringResource(id = R.string.up_to_50)
+
     AnimatedVisibility(
         visible = visible
     ) {
@@ -191,7 +197,7 @@ fun BannerSection(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = stringResource(id = R.string.clearance_sales),
+                        text = bannerTitle,
                         color = MaterialTheme.colorScheme.onPrimary,
                         style = MaterialTheme.typography.titleLarge
                     )
@@ -209,7 +215,7 @@ fun BannerSection(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = stringResource(id = R.string.up_to_50),
+                            text = bannerMessage,
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.labelMedium
                         )
@@ -400,12 +406,4 @@ fun IconPlaceholder(
             .background(color = color.copy(alpha = 0.1f))
             .border(1.dp, color, RoundedCornerShape(2.dp))
     )
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun ProductScreenPreview() {
-    AlejoTallerTheme {
-        ProductScreen({})
-    }
 }

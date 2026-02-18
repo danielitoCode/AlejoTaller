@@ -65,6 +65,7 @@ courier = "5.2.14"
 pusherJavaClient = "2.4.2"
 # QR
 qr = "1.1.2"
+playServicesAnalyticsImpl = "18.2.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -153,6 +154,7 @@ okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 pusher-java-client = { module = "com.pusher:pusher-java-client", version.ref = "pusherJavaClient" }
 # QR
 compose-qr = { module = "io.github.alexzhirkevich:qrose", version.ref = "qr" }
+play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

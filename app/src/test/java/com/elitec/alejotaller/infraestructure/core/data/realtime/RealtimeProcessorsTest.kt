@@ -1,7 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.data.realtime
 
-import com.elitec.alejotaller.feature.notifications.data.realtime.PromotionEventProcessor
-import com.elitec.alejotaller.feature.notifications.domain.entity.PromotionEvent
+import com.elitec.alejotaller.feature.notifications.data.realtime.processor.PromotionEventProcessor
 import com.elitec.alejotaller.feature.sale.data.realtime.processor.SaleEventProcessor
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue

@@ -2,8 +2,8 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.notifications.data.realtime.PromotionEventProcessor
-import com.elitec.alejotaller.feature.notifications.domain.entity.PromotionEvent
+import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
+import com.elitec.alejotaller.feature.notifications.data.realtime.processor.PromotionEventProcessor
 import com.elitec.alejotaller.feature.sale.data.realtime.processor.SaleEventProcessor
 
 class RealTimeManagerImpl(

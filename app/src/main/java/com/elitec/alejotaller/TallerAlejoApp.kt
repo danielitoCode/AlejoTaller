@@ -3,6 +3,7 @@ package com.elitec.alejotaller
 import android.app.Application
 import com.elitec.alejotaller.feature.auth.di.authFeatureDiModule
 import com.elitec.alejotaller.feature.category.di.categoryFeatureModule
+import com.elitec.alejotaller.feature.notifications.di.notificationsFeatureModule
 import com.elitec.alejotaller.feature.product.di.productFeatureModule
 import com.elitec.alejotaller.feature.sale.di.saleFeatureModule
 import com.elitec.alejotaller.infraestructure.di.infrastructureModule
@@ -18,6 +19,7 @@ class TallerAlejoApp : Application() {
                 infrastructureModule,
                 authFeatureDiModule,
                 categoryFeatureModule,
+                notificationsFeatureModule,
                 productFeatureModule,
                 saleFeatureModule
             )

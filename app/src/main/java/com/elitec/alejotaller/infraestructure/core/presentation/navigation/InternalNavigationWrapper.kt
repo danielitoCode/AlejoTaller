@@ -31,6 +31,7 @@ import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
+import com.elitec.alejotaller.feature.notifications.presentation.PromotionViewModel
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
@@ -45,9 +46,10 @@ import com.elitec.alejotaller.feature.sale.presentation.screen.BuyReservationScr
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
 import com.elitec.alejotaller.feature.sale.presentation.viewmodel.SaleViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
-import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
+import com.elitec.alejotaller.infraestructure.core.presentation.uiModels.FabMenuItem
+import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.RealtimeSyncViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -66,6 +68,8 @@ fun InternalNavigationWrapper(
     productViewModel: ProductViewModel = koinViewModel(),
     profileViewModel: ProfileViewModel = koinViewModel(),
     toasterViewModel: ToasterViewModel = koinViewModel(),
+    promotionViewModel: PromotionViewModel = koinViewModel(),
+    realtimeSyncViewModel: RealtimeSyncViewModel = koinViewModel(),
     saleViewModel: SaleViewModel = koinViewModel(),
     authViewModel: AuthViewModel = koinViewModel()
 ) {
@@ -82,6 +86,7 @@ fun InternalNavigationWrapper(
     val products by productViewModel.productFlow.collectAsStateWithLifecycle()
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
+    val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
@@ -110,6 +115,18 @@ fun InternalNavigationWrapper(
     LaunchedEffect(userId) {
         saleViewModel.sync(userId)
     }
+    LaunchedEffect(null) {
+        realtimeSyncViewModel.startRealtimeSync()
+    }
+    LaunchedEffect(null) {
+        realtimeSyncViewModel.uiMessages.collect { message ->
+            toasterViewModel.showMessage(
+                message = message.message,
+                type = if (message.isError) ToastType.Error else ToastType.Success
+            )
+        }
+    }
+
     val fabItems = listOf(
         FabMenuItem("Productos", Icons.Default.GifBox, InternalRoutesKey.Home),
         FabMenuItem("Su Compra", Icons.Default.ShoppingCart, InternalRoutesKey.Buy),
@@ -138,6 +155,7 @@ fun InternalNavigationWrapper(
                 ) {
                     ProductScreen(
                         products = products,
+                        promotions = promotions,
                         navigateToDetails = { productId ->
                             backStack.navigateTo(InternalRoutesKey.ProductDetail(productId))
                         },
