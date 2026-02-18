@@ -195,6 +195,8 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("TELEGRAM_GROUP_TYPE")
     prop("TELEGRAM_API_URL")
     // Pusher
+    prop("PUSHER_APP_ID")
+    prop("PUSHER_API_SECRETS")
     prop("PUSHER_API_KEY")
     prop("PUSHER_CLUSTER")
     prop("PUSHER_NOTIFICATION_CHANNEL")
