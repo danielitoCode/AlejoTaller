@@ -21,6 +21,9 @@ sealed class InternalRoutesKey: NavKey {
     object BuyConfirm: InternalRoutesKey()
 
     @Serializable
+    object BuyReservation: InternalRoutesKey()
+
+    @Serializable
     object Settings: InternalRoutesKey()
 
     @Serializable object Logout: InternalRoutesKey()

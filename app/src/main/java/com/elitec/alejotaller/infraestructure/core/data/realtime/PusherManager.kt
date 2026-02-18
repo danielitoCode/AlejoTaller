@@ -2,6 +2,7 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
 import com.pusher.client.Pusher
+import com.pusher.client.channel.PusherEvent
 import com.pusher.client.connection.ConnectionEventListener
 import com.pusher.client.connection.ConnectionState
 import com.pusher.client.connection.ConnectionStateChange
@@ -18,7 +19,7 @@ class PusherManager(
     // private val _notificationsFlow = MutableStateFlow<List<Notification>>(emptyList())
     // val notificationsFlow: StateFlow<List<Notification>> = _notificationsFlow.asStateFlow()
 
-    fun init() {
+    fun init(onConnect: () -> Unit, onDisconnect: () -> Unit) {
         if (isConnected) {
             Log.i("PusherManager", "Pusher already initialized. Skipping connect().")
             return
@@ -28,12 +29,14 @@ class PusherManager(
 
         pusher.connect(object : ConnectionEventListener {
             override fun onConnectionStateChange(change: ConnectionStateChange) {
+                onConnect()
                 Log.i("PusherManager",
                     "Connection state changed: ${change.previousState} -> ${change.currentState}"
                 )
             }
 
             override fun onError(message: String, code: String, e: Exception) {
+                onDisconnect()
                 Log.e("PusherManager",
                     "Error connecting! Code: $code, Message: $message",
                     e
@@ -44,8 +47,8 @@ class PusherManager(
         isConnected = true
     }
 
-    /*fun subscribe(channel: String = "my-channel", onReceive: ((Notification) -> Unit)? = null) {
-        init() // asegura conexión una vez
+    fun subscribe(channel: String = "default", onReceive: ((PusherEvent) -> Unit)? = null) {
+        //init() // asegura conexión una vez
 
         if (subscribedChannels.contains(channel)) {
             Log.w("PusherManager", "Already subscribed to channel $channel. Ignoring subscribe().")
@@ -57,26 +60,8 @@ class PusherManager(
         val channelObj = pusher.subscribe(channel)
         subscribedChannels.add(channel)
 
-        channelObj.bind("info") { event ->
+        channelObj.bind("event") { event ->
             Log.i("PusherManager", "Received event on '$channel': ${event.data}")
-
-            val notification = try {
-                val result =  Json.decodeFromString<Notification>(event.data)
-                result
-            } catch (e: Exception) {
-                Log.e("PusherManager", "Error decoding: ${event.data}", e)
-                null
-            }
-
-            notification?.let {
-                onReceive?.invoke(it)
-
-                val updated = _notificationsFlow.value.toMutableList()
-                updated.add(0, it)
-                _notificationsFlow.value = updated
-
-                Log.i("PusherManager", "Added notification to flow. Total=${updated.size}")
-            }
         }
-    }*/
+    }
 }

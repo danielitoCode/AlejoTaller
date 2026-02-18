@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SaleItem(
     val productId: String,
-    val quantity: Int
+    val quantity: Int,
+    val productName: String? = null
 ) {
     init {
         require(productId.isNotBlank()) { "Product id cannot be blank" }

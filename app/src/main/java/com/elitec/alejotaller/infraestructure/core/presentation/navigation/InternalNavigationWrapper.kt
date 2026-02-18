@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.GifBox
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Text
@@ -40,6 +41,7 @@ import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
+import com.elitec.alejotaller.feature.sale.presentation.screen.BuyReservationScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
 import com.elitec.alejotaller.feature.sale.presentation.viewmodel.SaleViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
@@ -79,6 +81,7 @@ fun InternalNavigationWrapper(
     val profileInfo by profileViewModel.userProfile.collectAsStateWithLifecycle()
     val products by productViewModel.productFlow.collectAsStateWithLifecycle()
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
+    val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
 
     LaunchedEffect(null) {
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
@@ -104,10 +107,13 @@ fun InternalNavigationWrapper(
             }
         )
     }
-
+    LaunchedEffect(userId) {
+        saleViewModel.sync(userId)
+    }
     val fabItems = listOf(
         FabMenuItem("Productos", Icons.Default.GifBox, InternalRoutesKey.Home),
         FabMenuItem("Su Compra", Icons.Default.ShoppingCart, InternalRoutesKey.Buy),
+        FabMenuItem("Reservas", Icons.Default.QrCode, InternalRoutesKey.BuyReservation),
         FabMenuItem("Perfil", Icons.Default.AccountCircle, InternalRoutesKey.Profile),
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
         FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
@@ -191,6 +197,13 @@ fun InternalNavigationWrapper(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+                entry<InternalRoutesKey.BuyReservation> {
+                    BuyReservationScreen(
+                        sales = sales.filter { it.userId == userId },
+                        productNamesById = products.associate { it.id to it.name },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
                 entry<InternalRoutesKey.BuyConfirm> {
                     BuyConfirmScreen(
                         items = cartItems,
@@ -217,7 +230,7 @@ fun InternalNavigationWrapper(
                                             ToastType.Success
                                         )
                                         shopCartViewModel.clearCart()
-                                        backStack.navigateTo(InternalRoutesKey.Buy)
+                                        backStack.navigateTo(InternalRoutesKey.BuyReservation)
                                     },
                                     onFail = { error ->
                                         toasterViewModel.dismissMessage("sale charge")
@@ -267,7 +280,7 @@ fun InternalNavigationWrapper(
 
 private fun List<UiSaleItem>.toSale(userId: String): Sale {
     val products = map { item ->
-        SaleItem(productId = item.product.id, quantity = item.quantity)
+        SaleItem(productId = item.product.id, quantity = item.quantity, productName = item.product.name)
     }
 
     return Sale(

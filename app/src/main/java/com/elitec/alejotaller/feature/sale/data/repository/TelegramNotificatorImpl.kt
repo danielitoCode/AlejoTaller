@@ -87,7 +87,8 @@ fun Sale.toFormattedMessage(user: SaleNotifierUser): String {
     """.trimIndent()
 
     val itemsDetails = products.joinToString(separator = "\n") { item ->
-        "🔹 Producto ID: ${item.productId} | Cantidad: ${item.quantity}"
+        val productDisplayName = item.productName ?: "ID: ${item.productId}"
+        "🔹 Producto: $productDisplayName | Cantidad: ${item.quantity}"
     }
 
     return "$header\n$itemsDetails\n\n💵 Monto total: ${"%.2f".format(amount)}"
