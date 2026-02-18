@@ -8,6 +8,8 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessi
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
+import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherManager
+import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import com.pusher.client.Pusher
 import com.pusher.client.PusherOptions
@@ -58,6 +60,8 @@ val infrastructureModule = module {
             PusherOptions()
                 .setCluster(BuildConfig.PUSHER_CLUSTER))
     }
+    single { PusherManager(get()) }
+    single { RealTimeManagerImpl(get()) }
 
     // Networking
     single {

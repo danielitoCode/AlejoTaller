@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.data.mappers
 
+import com.elitec.alejotaller.feature.sale.data.mapper.toSaleItem
 import com.elitec.alejotaller.feature.sale.data.mapper.toSaleItemList
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import io.appwrite.extensions.toJson

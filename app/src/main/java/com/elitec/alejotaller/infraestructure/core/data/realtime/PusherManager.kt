@@ -47,8 +47,11 @@ class PusherManager(
         isConnected = true
     }
 
-    fun subscribe(channel: String = "default", onReceive: ((PusherEvent) -> Unit)? = null) {
-        //init() // asegura conexión una vez
+    fun subscribe(
+        channel: String = "default",
+        eventNames: List<String>,
+        onReceive: ((RealtimeEventEnvelope) -> Unit)? = null
+    ) {
 
         if (subscribedChannels.contains(channel)) {
             Log.w("PusherManager", "Already subscribed to channel $channel. Ignoring subscribe().")
@@ -60,8 +63,16 @@ class PusherManager(
         val channelObj = pusher.subscribe(channel)
         subscribedChannels.add(channel)
 
-        channelObj.bind("event") { event ->
-            Log.i("PusherManager", "Received event on '$channel': ${event.data}")
+        eventNames.forEach { eventName ->
+            channelObj.bind(eventName) { event ->
+                val envelope = RealtimeEventEnvelope(
+                    channel = channel,
+                    name = eventName,
+                    payload = event.data
+                )
+                Log.i("PusherManager", "Received event '${envelope.name}' on '$channel': ${event.data}")
+                onReceive?.invoke(envelope)
+            }
         }
     }
 }
