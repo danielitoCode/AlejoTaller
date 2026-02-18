@@ -6,6 +6,7 @@ import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
 import com.elitec.alejotaller.feature.notifications.domain.caseuse.SavePromotionCaseUse
 import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeMessageKind
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeCommand
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
 class RealtimeSyncViewModel(
-    private val realTimeManager: RealTimeManagerImpl,
+    private val subscribeRealtimeSyncCaseUse: SubscribeRealtimeSyncCaseUse,
     private val savePromotionCaseUse: SavePromotionCaseUse,
     private val orderNotificationService: OrderNotificationService,
     private val interpretSaleRealtimeEventCaseUse: InterpretSaleRealtimeEventCaseUse
@@ -29,18 +30,11 @@ class RealtimeSyncViewModel(
     fun startRealtimeSync() {
         if (isSubscribed) return
 
-        realTimeManager.subscribeToABuyConfirmationChannel(
+        subscribeRealtimeSyncCaseUse(
             onConnect = { isSubscribed = true },
             onDisconnect = { isSubscribed = false },
-            onConfirmationEvent = { saleId ->
-                dispatchSaleEvent(SaleRealtimeEvent(saleId = saleId, isSuccess = true))
-            },
-            onConfirmationError = { saleId, cause ->
-                dispatchSaleEvent(SaleRealtimeEvent(saleId = saleId, isSuccess = false, cause = cause))
-            },
-            onPromotionEvent = { event ->
-                persistPromotion(event)
-            }
+            onSaleEvent = ::dispatchSaleEvent,
+            onPromotion = ::persistPromotion
         )
     }
 
@@ -65,24 +59,10 @@ class RealtimeSyncViewModel(
         }
     }
 
-    private fun persistPromotion(event: PromotionEvent) {
+    private fun persistPromotion(promotion: Promotion) {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            savePromotionCaseUse(
-                Promotion(
-                    id = event.id.ifBlank { "promo-$now" },
-                    title = event.title,
-                    message = event.message,
-                    imageUrl = event.imageUrl,
-                    validFromEpochMillis = event.validFromEpochMillis ?: now,
-                    validUntilEpochMillis = event.validUntilEpochMillis ?: (now + DEFAULT_PROMO_TTL)
-                )
-            )
+            savePromotionCaseUse(promotion)
         }
-    }
-
-    companion object {
-        private const val DEFAULT_PROMO_TTL = 1000L * 60L * 60L * 24L * 7L
     }
 }
 

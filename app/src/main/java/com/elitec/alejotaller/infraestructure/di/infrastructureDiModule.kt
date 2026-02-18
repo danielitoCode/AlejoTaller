@@ -9,6 +9,7 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthPro
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherManager
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
@@ -64,7 +65,7 @@ val infrastructureModule = module {
                 .setCluster(BuildConfig.PUSHER_CLUSTER))
     }
     single { PusherManager(get()) }
-    single { RealTimeManagerImpl(get()) }
+    single<RealtimeSyncGateway> { RealTimeManagerImpl(get()) }
     single { OrderNotificationService(androidContext()) }
     factory { InterpretSaleRealtimeEventCaseUse() }
 
