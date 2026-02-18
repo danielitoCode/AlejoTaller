@@ -9,6 +9,8 @@ data class PromotionDto(
     val title: String,
     val message: String,
     val imageUrl: String?,
+    val oldPrice: Double?,
+    val currentPrice: Double?,
     val validFromEpochMillis: Long,
     val validUntilEpochMillis: Long
 )

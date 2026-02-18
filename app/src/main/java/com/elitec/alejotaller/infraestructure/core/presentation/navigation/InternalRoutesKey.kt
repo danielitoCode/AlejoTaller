@@ -15,6 +15,9 @@ sealed class InternalRoutesKey: NavKey {
     object Profile: InternalRoutesKey()
 
     @Serializable
+    data class PromotionDetail(val promotionId: String): InternalRoutesKey()
+
+    @Serializable
     object Buy: InternalRoutesKey()
 
     @Serializable

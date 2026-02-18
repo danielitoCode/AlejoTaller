@@ -29,6 +29,8 @@ class PromotionEventProcessor(
             title = root["title"]?.jsonPrimitive?.content ?: "Promoción",
             message = root["message"]?.jsonPrimitive?.content ?: "",
             imageUrl = root["imageUrl"]?.jsonPrimitive?.content,
+            oldPrice = root["oldPrice"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
+            currentPrice = root["currentPrice"]?.jsonPrimitive?.contentOrNull?.toDoubleOrNull(),
             validFromEpochMillis = root["validFromEpochMillis"]?.jsonPrimitive?.contentOrNull?.toLongOrNull(),
             validUntilEpochMillis = root["validUntilEpochMillis"]?.jsonPrimitive?.contentOrNull?.toLongOrNull()
         )

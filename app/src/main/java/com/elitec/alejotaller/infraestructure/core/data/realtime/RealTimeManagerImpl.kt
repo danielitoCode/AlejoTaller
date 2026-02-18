@@ -2,6 +2,7 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
 import com.elitec.alejotaller.BuildConfig
+import com.elitec.alejotaller.feature.notifications.data.mappers.toDomainPromotion
 import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
 import com.elitec.alejotaller.feature.notifications.data.realtime.processor.PromotionEventProcessor
 import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
@@ -59,16 +60,3 @@ class RealTimeManagerImpl(
 }
 
 private const val DEFAULT_PROMO_TTL = 1000L * 60L * 60L * 24L * 7L
-
-private fun PromotionEvent.toDomainPromotion(): Promotion {
-    val now = System.currentTimeMillis()
-
-    return Promotion(
-        id = id.ifBlank { "promo-$now" },
-        title = title,
-        message = message,
-        imageUrl = imageUrl,
-        validFromEpochMillis = validFromEpochMillis ?: now,
-        validUntilEpochMillis = validUntilEpochMillis ?: (now + DEFAULT_PROMO_TTL)
-    )
-}

@@ -5,6 +5,8 @@ data class Promotion(
     val title: String,
     val message: String,
     val imageUrl: String?,
+    val oldPrice: Double? = null,
+    val currentPrice: Double? = null,
     val validFromEpochMillis: Long,
     val validUntilEpochMillis: Long
 ) {

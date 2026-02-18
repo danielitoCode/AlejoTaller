@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +36,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,6 +69,7 @@ import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTalle
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -74,6 +77,7 @@ fun ProductScreen(
     promotions: List<Promotion> = listOf(),
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
+    onPromotionClick: (String) -> Unit = {},
     categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
@@ -94,7 +98,9 @@ fun ProductScreen(
             contentAlignment = Alignment.TopEnd
         ) {
             BannerSection(
-                visible = isBannerVisible
+                visible = isBannerVisible,
+                promotions = promotions,
+                onPromotionClick = onPromotionClick
             )
             Surface(
                 onClick = { isBannerVisible = false },
@@ -170,11 +176,23 @@ fun SearchBar(modifier: Modifier = Modifier) {
 @Composable
 fun BannerSection(
     visible: Boolean = true,
-    promotion: Promotion? = null,
+    promotions: List<Promotion> = emptyList(),
+    onPromotionClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    val bannerTitle = promotion?.title ?: stringResource(id = R.string.clearance_sales)
-    val bannerMessage = promotion?.message ?: stringResource(id = R.string.up_to_50)
+    var activeIndex by remember(promotions) { mutableStateOf(0) }
+    val activePromotion = promotions.getOrNull(activeIndex)
+    val bannerTitle = activePromotion?.title ?: stringResource(id = R.string.clearance_sales)
+    val bannerMessage = activePromotion?.message ?: stringResource(id = R.string.up_to_50)
+
+    LaunchedEffect(promotions, visible) {
+        if (!visible || promotions.size <= 1) return@LaunchedEffect
+
+        while (true) {
+            delay(4_000)
+            activeIndex = (activeIndex + 1) % promotions.size
+        }
+    }
 
     AnimatedVisibility(
         visible = visible
@@ -185,55 +203,61 @@ fun BannerSection(
                 .height(160.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.primary)
+                .clickable(enabled = activePromotion != null) {
+                    activePromotion?.let { onPromotionClick(it.id) }
+                }
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
+            Crossfade(targetState = activePromotion?.id ?: "default") { it ->
+                val promo = it
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = bannerTitle,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        IconPlaceholder(
-                            modifier = Modifier.size(14.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = bannerMessage,
+                            text = bannerTitle,
                             color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconPlaceholder(
+                                modifier = Modifier.size(14.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = bannerMessage,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            contentScale = ContentScale.Crop,
+                            painter = painterResource(R.drawable.echoflow_transparent),
+                            contentDescription = "Banner Image"
                         )
                     }
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        contentScale = ContentScale.Crop,
-                        painter = painterResource(R.drawable.echoflow_transparent),
-                        contentDescription = "Banner Image"
-                    )
                 }
             }
         }

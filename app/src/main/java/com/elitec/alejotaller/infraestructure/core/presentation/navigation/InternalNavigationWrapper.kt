@@ -31,7 +31,9 @@ import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
+import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.notifications.presentation.PromotionViewModel
+import com.elitec.alejotaller.feature.notifications.presentation.screen.PromotionDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
@@ -160,6 +162,16 @@ fun InternalNavigationWrapper(
                             backStack.navigateTo(InternalRoutesKey.ProductDetail(productId))
                         },
                         modifier = Modifier.fillMaxSize()
+                    )
+                }
+                entry<InternalRoutesKey.PromotionDetail>(
+                    metadata = ListDetailSceneStrategy.detailPane()
+                ) { key ->
+                    PromotionDetailScreen(
+                        modifier = Modifier.fillMaxSize(),
+                        promotion = promotions.firstOrNull { it.id == key.promotionId }
+                            ?: fallbackPromotion(key.promotionId),
+                        onBackClick = { backStack.navigateBack() }
                     )
                 }
                 entry<InternalRoutesKey.ProductDetail>(
@@ -308,5 +320,17 @@ private fun List<UiSaleItem>.toSale(userId: String): Sale {
         products = products,
         verified = BuyState.UNVERIFIED,
         userId = userId
+    )
+}
+
+private fun fallbackPromotion(id: String): Promotion {
+    val now = System.currentTimeMillis()
+    return Promotion(
+        id = id,
+        title = "Oferta",
+        message = "Promoción no disponible",
+        imageUrl = null,
+        validFromEpochMillis = now,
+        validUntilEpochMillis = now
     )
 }
