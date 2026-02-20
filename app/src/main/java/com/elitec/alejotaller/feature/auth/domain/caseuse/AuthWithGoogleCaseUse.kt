@@ -22,19 +22,30 @@ class AuthWithGoogleCaseUse(
             sub = googleUser.sub
         )
 
+        runCatching { sessionManager.closeCurrentSession() }
+
         return@runCatching try {
             sessionManager.openEmailSession(googleUser.email, password)
         } catch (e: Exception) {
-            if(e !is AppwriteException) throw e
+            if (e !is AppwriteException) throw e
 
             when(e.code) {
                 401 -> {
-                    registerCaseUse(
+                    val userId =registerCaseUse(
                         email = googleUser.email,
                         password = password,
                         name = googleUser.name
+                    ).getOrElse { throw it }
+
+                    accountRepository.updateProfile(
+                        UserProfile(
+                            sub = googleUser.sub,
+                            phone = googleUser.phone,
+                            photoUrl = googleUser.photoUrl,
+                            verification = false
+                        )
                     )
-                    val userId = sessionManager.openEmailSession(googleUser.email, password)
+                    userId
                     accountRepository.updateProfile(
                         UserProfile(
                             sub = googleUser.sub,
