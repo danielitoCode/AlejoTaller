@@ -55,7 +55,8 @@ android {
             injectLocalProperties()
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             injectLocalProperties()
 

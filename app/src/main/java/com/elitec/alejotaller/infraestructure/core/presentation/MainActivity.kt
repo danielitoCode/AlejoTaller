@@ -33,6 +33,7 @@ import com.dokar.sonner.Toaster
 import com.dokar.sonner.ToasterDefaults
 import com.dokar.sonner.rememberToasterState
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.feature.settigns.presentation.viewmodel.SettingsViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.navigation.MainNavigationWrapper
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToastAction
@@ -47,7 +48,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AlejoTallerTheme {
+            val settingsViewModel: SettingsViewModel = koinViewModel()
+            val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
+
+            AlejoTallerTheme(darkTheme = settings.darkMode) {
                 val toasterViewModel: ToasterViewModel = koinViewModel()
                 val toasterState = rememberToasterState()
 
