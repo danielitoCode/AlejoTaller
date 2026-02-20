@@ -52,25 +52,31 @@ class PusherManager(
         eventNames: List<String>,
         onReceive: ((RealtimeEventEnvelope) -> Unit)? = null
     ) {
+        val normalizedChannel = channel.trim()
 
-        if (subscribedChannels.contains(channel)) {
-            Log.w("PusherManager", "Already subscribed to channel $channel. Ignoring subscribe().")
+        if (normalizedChannel.isBlank()) {
+            Log.e("PusherManager", "Cannot subscribe: channel is blank. Check PUSHER_*_CHANNEL config.")
+            return
+        }
+
+        if (subscribedChannels.contains(normalizedChannel)) {
+            Log.w("PusherManager", "Already subscribed to channel $normalizedChannel. Ignoring subscribe().")
             return
         }
 
         Log.i("PusherManager", "Subscribing to channel: $channel")
 
-        val channelObj = pusher.subscribe(channel)
-        subscribedChannels.add(channel)
+        val channelObj = pusher.subscribe(normalizedChannel)
+        subscribedChannels.add(normalizedChannel)
 
         eventNames.forEach { eventName ->
             channelObj.bind(eventName) { event ->
                 val envelope = RealtimeEventEnvelope(
-                    channel = channel,
+                    channel = normalizedChannel,
                     name = eventName,
                     payload = event.data
                 )
-                Log.i("PusherManager", "Received event '${envelope.name}' on '$channel': ${event.data}")
+                Log.i("PusherManager", "Received event '${envelope.name}' on '$normalizedChannel': ${event.data}")
                 onReceive?.invoke(envelope)
             }
         }

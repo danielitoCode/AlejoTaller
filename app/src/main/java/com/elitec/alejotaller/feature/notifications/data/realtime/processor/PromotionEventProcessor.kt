@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.notifications.data.realtime.processor
 
+import android.util.Log
 import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
 import com.elitec.alejotaller.infraestructure.core.data.realtime.ChainedRealtimeEventProcessor
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealtimeEventEnvelope
@@ -12,11 +13,15 @@ class PromotionEventProcessor(
     private val onPromotionReceived: (PromotionEvent) -> Unit,
 ) : ChainedRealtimeEventProcessor() {
 
+    private val tag = "Promotion Events"
     private val json: Json = Json { ignoreUnknownKeys = true }
 
     override fun handle(event: RealtimeEventEnvelope): Boolean {
         if (!event.isPromotionEvent()) return false
+        Log.i(tag, "Promotion event received: name=${event.name}, channel=${event.channel}, payload=${event.payload}")
         val payload = event.payload ?: return true
+        val decoded = decode(payload)
+        Log.i(tag, "Promotion interpreted: id=${decoded.id}, title=${decoded.title}, currentPrice=${decoded.currentPrice}")
         onPromotionReceived(decode(payload))
         return true
     }

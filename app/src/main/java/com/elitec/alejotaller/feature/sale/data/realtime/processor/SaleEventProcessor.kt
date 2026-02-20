@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.data.realtime.processor
 
+import android.util.Log
 import com.elitec.alejotaller.feature.sale.data.model.SaleEventResponse
 import com.elitec.alejotaller.infraestructure.core.data.realtime.ChainedRealtimeEventProcessor
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealtimeEventEnvelope
@@ -16,11 +17,19 @@ class SaleEventProcessor(
 
     override fun handle(event: RealtimeEventEnvelope): Boolean {
         if (!event.isSaleEvent()) return false
+        Log.i(TAG, "Sale event received: name=${event.name}, channel=${event.channel}, payload=${event.payload}")
+
         val response = event.payload?.let(::decode) ?: return true
 
         when (response) {
-            is SaleEventResponse.SaleSuccessResponse -> onSuccess(response.saleId)
-            is SaleEventResponse.SaleErrorResponse -> onError(response.saleId, response.cause)
+            is SaleEventResponse.SaleSuccessResponse -> {
+                Log.i(TAG, "Sale success interpreted for saleId=${response.saleId}")
+                onSuccess(response.saleId)
+            }
+            is SaleEventResponse.SaleErrorResponse -> {
+                Log.w(TAG, "Sale error interpreted for saleId=${response.saleId}, cause=${response.cause}")
+                onError(response.saleId, response.cause)
+            }
         }
 
         return true
@@ -42,4 +51,8 @@ class SaleEventProcessor(
 
     private fun RealtimeEventEnvelope.isSaleEvent(): Boolean =
         name.startsWith("sale.") || payload?.contains("\"sale") == true
+
+    companion object {
+        private const val TAG = "SaleEventProcessor"
+    }
 }

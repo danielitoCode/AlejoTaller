@@ -35,14 +35,19 @@ class RealTimeManagerImpl(
         })
         saleProcessor.setNext(promotionProcessor)
 
+        val saleChannel = BuildConfig.PUSHER_SALE_CHANNEL.orFallback(DEFAULT_SALE_CHANNEL, "PUSHER_SALE_CHANNEL")
+        val promoChannel = BuildConfig.PUSHER_PROMO_CHANNEL.orFallback(DEFAULT_PROMO_CHANNEL, "PUSHER_PROMO_CHANNEL")
+
+        Log.i(TAG, "Realtime subscription config -> saleChannel='$saleChannel', promoChannel='$promoChannel', saleEvents=$SALE_EVENTS, promoEvents=$PROMOTION_EVENTS")
+
         pusherManager.subscribe(
-            channel = BuildConfig.PUSHER_SALE_CHANNEL,
+            channel = saleChannel,
             eventNames = SALE_EVENTS,
             onReceive = { saleProcessor.process(it) }
         )
 
         pusherManager.subscribe(
-            channel = BuildConfig.PUSHER_PROMO_CHANNEL,
+            channel = promoChannel,
             eventNames = PROMOTION_EVENTS,
             onReceive = { event ->
                 if (!saleProcessor.process(event)) {
@@ -54,9 +59,19 @@ class RealTimeManagerImpl(
 
     companion object {
         private const val TAG = "RealTimeManager"
+        private const val DEFAULT_SALE_CHANNEL = "sales"
+        private const val DEFAULT_PROMO_CHANNEL = "promo"
         private val SALE_EVENTS = listOf("sale.success", "sale.error")
         private val PROMOTION_EVENTS = listOf("promotion.new", "promotion.update")
     }
+}
+
+private fun String?.orFallback(default: String, keyName: String): String {
+    val normalized = this?.trim().orEmpty()
+    if (normalized.isNotBlank()) return normalized
+
+    Log.w("RealTimeManager", "$keyName is blank. Falling back to channel '$default' for realtime subscription.")
+    return default
 }
 
 private const val DEFAULT_PROMO_TTL = 1000L * 60L * 60L * 24L * 7L

@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
+import android.content.Context
 import com.elitec.alejotaller.feature.auth.domain.caseuse.util.hashEmailWithSub
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.entity.UserProfile
@@ -13,9 +14,9 @@ class RegisterWithGoogleUseCase(
     private val accountRepository: AccountRepository
 ) {
 
-    suspend operator fun invoke(): Result<String> = runCatching {
+    suspend operator fun invoke(context: Context): Result<String> = runCatching {
 
-        val googleUser = googleAuthProvider.getUser()
+        val googleUser = googleAuthProvider.getUser(context)
 
         val password = hashEmailWithSub(
             email = googleUser.email,

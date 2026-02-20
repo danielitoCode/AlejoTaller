@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.auth.presentation.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthUserCaseUse
@@ -27,9 +28,9 @@ class AuthViewModel(
         }
     }
 
-    fun authWithGoogle(onUserLogIn: (String) -> Unit, onFail: (String) -> Unit) {
+    fun authWithGoogle(context: Context, onUserLogIn: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
-            authWhitGoogleUseCase()
+            authWhitGoogleUseCase(context)
                 .onSuccess { userId -> onUserLogIn(userId) }
                 .onFailure { error -> onFail(error.message ?: "") }
         }

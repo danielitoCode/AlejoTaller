@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.data.repository
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
 import androidx.credentials.GetCredentialRequest
@@ -11,9 +12,9 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 
 class GoogleAuthProviderImpl(
-    private val context: Context
+    // private val context: Context
 ): GoogleAuthProvider {
-    override suspend fun getUser(): GoogleUser {
+    override suspend fun getUser(context: Context): GoogleUser {
         val hashNonce =  createNonce()
 
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
@@ -28,7 +29,10 @@ class GoogleAuthProviderImpl(
 
         val credentialManager = CredentialManager.create(context)
 
-        val credential = credentialManager.getCredential(context, request).credential
+        val activityContext = context as? Activity
+            ?: throw IllegalArgumentException("Google Sign-In requiere un Activity context")
+
+        val credential = credentialManager.getCredential(activityContext, request).credential
 
         // Paso 2: Extraer información desde la credencial
         val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)

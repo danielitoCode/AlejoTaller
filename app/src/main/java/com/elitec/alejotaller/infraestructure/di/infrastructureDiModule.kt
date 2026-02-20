@@ -88,7 +88,7 @@ val infrastructureModule = module {
     }
 
     // GoogleSingInProvider
-    single<GoogleAuthProvider> { GoogleAuthProviderImpl(androidContext()) }
+    single<GoogleAuthProvider> { GoogleAuthProviderImpl() }//androidContext()) }
     single<SessionManager> { AppwriteSessionManager(get()) }
 
     // ViewModels

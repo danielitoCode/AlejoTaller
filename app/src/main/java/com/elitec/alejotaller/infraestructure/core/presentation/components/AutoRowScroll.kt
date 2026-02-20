@@ -304,13 +304,15 @@ private fun SeamlessRow(
     LaunchedEffect(rowId) {
         val scrollSign = if (scrollToLeft) +1f else -1f
         var lastNanos = 0L
+        var shouldStop = false
 
-        while (isActive) {
+        while (isActive && !shouldStop) {
             val now = withFrameNanos { it }
             if (lastNanos == 0L) {
                 lastNanos = now
                 continue
             }
+
 
             val dtSec = (now - lastNanos) / 1_000_000_000f
             lastNanos = now
@@ -318,7 +320,18 @@ private fun SeamlessRow(
             val motion = if (latestScrollEnabled) latestVisibility.coerceIn(0f, 1f) else 0f
             val deltaPx = scrollSign * speedPxPerSec * motion * dtSec
 
-            if (deltaPx != 0f) listState.scrollBy(deltaPx)
+            if (deltaPx != 0f) {
+                runCatching { listState.scrollBy(deltaPx) }
+                    .onFailure { error ->
+                        if (error is IllegalStateException &&
+                            error.message?.contains("LayoutNode should be attached to an owner") == true
+                        ) {
+                            shouldStop = true
+                        } else {
+                            throw error
+                        }
+                    }
+            }
         }
     }
 
