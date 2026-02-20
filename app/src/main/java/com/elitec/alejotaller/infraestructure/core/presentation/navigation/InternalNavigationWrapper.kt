@@ -11,7 +11,6 @@ import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
@@ -47,6 +46,7 @@ import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyReservationScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
 import com.elitec.alejotaller.feature.sale.presentation.viewmodel.SaleViewModel
+import com.elitec.alejotaller.feature.settigns.presentation.screen.SettingsScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.components.FloatingActionButtonMenu
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
@@ -189,12 +189,16 @@ fun InternalNavigationWrapper(
                 }
                 entry<InternalRoutesKey.Profile> {
                     ProfileScreen(
-                        profileName = "Usuario de pruebas",
-                        profileEmail = "email@test.com",
+                        profileName = profileInfo?.name ?: "Usuario",
+                        profileEmail = profileInfo?.email ?: "Sin correo",
                         userId = userId,
-                        navigateBack = {},
-                        onEditProfile = {},
-                        isGoogleUser = info.userProfile.sub != "",
+                        profilePhone = profileInfo?.userProfile?.phone,
+                        profilePhotoUrl = profileInfo?.userProfile?.photoUrl,
+                        navigateBack = { backStack.navigateBack() },
+                        onEditProfile = {
+                            profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
+                        },
+                        isGoogleUser = profileInfo?.userProfile?.sub?.isNotBlank() == true,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -284,7 +288,7 @@ fun InternalNavigationWrapper(
                     )
                 }
                 entry<InternalRoutesKey.Settings> {
-                    Text(text = "AJUSTES")
+                    SettingsScreen(modifier = Modifier.fillMaxSize())
                 }
             }
         )

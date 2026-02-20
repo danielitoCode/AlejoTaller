@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.infraestructure.core.presentation.screens.nested
+package com.elitec.alejotaller.feature.settigns.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,12 +14,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.ModeNight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Vibration
-import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,20 +30,39 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.elitec.alejotaller.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.elitec.alejotaller.feature.settigns.domain.entity.AppSettings
+import com.elitec.alejotaller.feature.settigns.presentation.viewmodel.SettingsViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettingsScreen(
+    modifier: Modifier = Modifier,
+    settingsViewModel: SettingsViewModel = koinViewModel()
+) {
+    val settings = settingsViewModel.settings.collectAsStateWithLifecycle()
+
+    SettingsScreenContent(
+        settings = settings.value,
+        onDarkModeChange = settingsViewModel::updateDarkMode,
+        onNotificationsChange = settingsViewModel::updateNotifications,
+        onHapticsChange = settingsViewModel::updateHapticFeedback,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun SettingsScreenContent(
+    settings: AppSettings,
+    onDarkModeChange: (Boolean) -> Unit,
+    onNotificationsChange: (Boolean) -> Unit,
+    onHapticsChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var darkMode by rememberSaveable { mutableStateOf(true) }
-    var notificationsEnabled by rememberSaveable { mutableStateOf(true) }
-    var hapticFeedback by rememberSaveable { mutableStateOf(false) }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -59,34 +76,35 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "Personaliza tu experiencia de forma rápida y moderna.",
+            text = "Estos cambios se guardan automáticamente en caché local.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         SettingItem(
             title = "Tema oscuro",
-            description = "Reduce el brillo y mejora la lectura de noche.",
+            description = "Controla el tema general de toda la app.",
             icon = Icons.Default.DarkMode,
-            checked = darkMode,
-            onCheckedChange = { darkMode = it }
+            checked = settings.darkMode,
+            onCheckedChange = onDarkModeChange
         )
 
         SettingItem(
             title = "Notificaciones",
             description = "Recibe alertas sobre pedidos y novedades.",
             icon = Icons.Default.Notifications,
-            checked = notificationsEnabled,
-            onCheckedChange = { notificationsEnabled = it }
+            checked = settings.notificationsEnabled,
+            onCheckedChange = onNotificationsChange
         )
 
         SettingItem(
             title = "Vibración",
             description = "Activa respuesta háptica en interacciones.",
             icon = Icons.Default.Vibration,
-            checked = hapticFeedback,
-            onCheckedChange = { hapticFeedback = it }
+            checked = settings.hapticFeedbackEnabled,
+            onCheckedChange = onHapticsChange
         )
+
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.secondaryContainer,
@@ -112,7 +130,7 @@ fun SettingsScreen(
                     )
                 }
                 Text(
-                    text = "Muy pronto podrás elegir colores y tamaño de fuente.",
+                    text = "El tema se aplica de forma global desde este panel.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f)
                 )
@@ -136,7 +154,7 @@ fun SettingsScreen(
                 Column {
                     Text(text = "Privacidad", style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = "Tus datos se procesan bajo una sesión segura.",
+                        text = "Tus datos locales de ajustes se guardan en caché segura.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -151,7 +169,7 @@ fun SettingsScreen(
 private fun SettingItem(
     title: String,
     description: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
@@ -194,10 +212,4 @@ private fun SettingItem(
             )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun SettingsScreenPreview() {
-    SettingsScreen()
 }
