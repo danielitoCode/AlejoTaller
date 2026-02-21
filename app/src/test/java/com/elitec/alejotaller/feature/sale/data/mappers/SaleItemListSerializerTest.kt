@@ -1,10 +1,9 @@
-package com.elitec.alejotaller.feature.data.mappers
+package com.elitec.alejotaller.feature.sale.data.mappers
 
-import com.elitec.alejotaller.feature.sale.data.mapper.toSaleItem
 import com.elitec.alejotaller.feature.sale.data.mapper.toSaleItemList
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import io.appwrite.extensions.toJson
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Test
 
 class SaleItemListSerializerTest {
@@ -14,14 +13,14 @@ class SaleItemListSerializerTest {
             SaleItem("1", 32),
             SaleItem("43", 2),
             SaleItem("773", 2),
-            SaleItem("12",322)
+            SaleItem("12", 322)
         )
         val saleItemListTestSerialized = saleItemTest.toJson()
         println(saleItemListTestSerialized)
 
         val deserializedItemListTest = saleItemListTestSerialized.toSaleItemList()
 
-        assertEquals(saleItemTest, deserializedItemListTest)
+        Assert.assertEquals(saleItemTest, deserializedItemListTest)
 
     }
 }

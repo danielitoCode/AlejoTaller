@@ -8,6 +8,7 @@ import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
 import io.appwrite.ID
 import io.appwrite.Query
+import io.appwrite.exceptions.AppwriteException
 import io.appwrite.services.Databases
 
 class SaleNetRepositoryImpl(
@@ -39,5 +40,30 @@ class SaleNetRepositoryImpl(
             documentId = resolvedId,
             data = item.copy(id = resolvedId)
         )
+    }
+
+    suspend fun upsert(item: SaleDto) {
+        val resolvedId = item.id.ifBlank { ID.unique() }
+        val resolvedItem = item.copy(id = resolvedId)
+        runCatching {
+            netDB.createDocument(
+                databaseId = BuildConfig.APPWRITE_DATABASE_ID,
+                collectionId = BuildConfig.SALE_TABLE_ID,
+                documentId = resolvedId,
+                data = resolvedItem
+            )
+        }.recoverCatching { throwable ->
+            val appwriteError = throwable as? AppwriteException
+            if (appwriteError?.code == 409) {
+                netDB.updateDocument(
+                    databaseId = BuildConfig.APPWRITE_DATABASE_ID,
+                    collectionId = BuildConfig.SALE_TABLE_ID,
+                    documentId = resolvedId,
+                    data = resolvedItem
+                )
+            } else {
+                throw throwable
+            }
+        }.getOrThrow()
     }
 }
