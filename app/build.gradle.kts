@@ -209,8 +209,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("SOLUCIONES_CUBA_PAY_API_URL")
     prop("SOLUCIONES_CUBA_API_KEY")
     prop("SOLUCIONES_CUBA_MERCHANT_ID")
-    // prop("SOLUCIONES_CUBA_SUCCESS_URL")
-    // prop("SOLUCIONES_CUBA_CANCEL_URL")
-    // prop("SOLUCIONES_CUBA_CALLBACK_URL")
-    // prop("SOLUCIONES_CUBA_REGISTER_URL")
+    prop("SOLUCIONES_CUBA_SUCCESS_URL")
+    prop("SOLUCIONES_CUBA_CANCEL_URL")
+    prop("SOLUCIONES_CUBA_CALLBACK_URL")
 }

@@ -6,10 +6,13 @@ import com.elitec.alejotaller.feature.sale.data.repository.SaleOfflineFirstRepos
 import com.elitec.alejotaller.feature.sale.data.repository.SolucionesCubaPaymentGateway
 import com.elitec.alejotaller.feature.sale.data.repository.TelegramNotificatorImpl
 import com.elitec.alejotaller.feature.sale.domain.caseUse.GetSalesByIdCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.InitiatePaymentCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
+import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.TelegramNotificator
@@ -25,13 +28,15 @@ val saleFeatureModule = module {
 
     // Data layer
     single { SaleNetRepositoryImpl(get()) }
-    single { SolucionesCubaPaymentGateway(get()) }
+    single<PaymentGateway> { SolucionesCubaPaymentGateway(get()) }
     single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
     single<TelegramNotificator> { TelegramNotificatorImpl(get()) }
     single<SaleNotificationUserProvider> { AppwriteSaleNotificationUserProvider(get()) }
 
     // Domain layer
     factory { ObserveAllSalesCaseUse(get()) }
+    factory { UpdateDeliveryTypeCaseUse(get()) }
+    factory { InitiatePaymentCaseUse(get(), get(), get(), get()) }
     factory { RegisterNewSaleCauseUse(get(), get(), get()) }
     factory { SyncSalesCaseUse(get()) }
     factory { GetSalesByIdCaseUse(get()) }
@@ -40,6 +45,8 @@ val saleFeatureModule = module {
     // Presentation layer
     viewModel {
         SaleViewModel(
+            get(),
+            get(),
             get(),
             get(),
             get(),

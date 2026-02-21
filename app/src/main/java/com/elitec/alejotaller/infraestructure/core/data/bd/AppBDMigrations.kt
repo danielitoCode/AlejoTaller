@@ -17,12 +17,16 @@ object AppBDMigrations {
             // se puede dejar el cuerpo vacío (solo sube el número de versión).
         }
     }
-    /**
-     * Lista de TODAS las migraciones en orden.
-     * Se pasan al builder de Room en el módulo DI.
-     */
+    // ← NUEVA migración para el campo deliveryType
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE SaleDto ADD COLUMN deliveryType TEXT DEFAULT NULL"
+            )
+        }
+    }
     val ALL: Array<Migration> = arrayOf(
-        MIGRATION_5_6
-        // Agrega aquí las próximas: MIGRATION_6_7, MIGRATION_7_8, etc.
+        MIGRATION_5_6,
+        MIGRATION_6_7//, MIGRATION_7_8, etc.
     )
 }

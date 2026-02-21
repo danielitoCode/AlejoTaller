@@ -21,7 +21,7 @@ import com.elitec.alejotaller.infraestructure.core.data.converters.ListConverter
         SaleDto::class,
         PromotionDto::class
     ],
-    version = 6,
+    version = 7,
 )
 @TypeConverters(
     DateTimeConverter::class,

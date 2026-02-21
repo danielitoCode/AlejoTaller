@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
@@ -58,6 +59,8 @@ import kotlinx.datetime.todayIn
 import org.koin.androidx.compose.koinViewModel
 import java.util.UUID
 import kotlin.time.Clock
+import androidx.core.net.toUri
+import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
 
 @Suppress("LambdaParameterInEffect")
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -73,7 +76,7 @@ fun InternalNavigationWrapper(
     promotionViewModel: PromotionViewModel = koinViewModel(),
     realtimeSyncViewModel: RealtimeSyncViewModel = koinViewModel(),
     saleViewModel: SaleViewModel = koinViewModel(),
-    authViewModel: AuthViewModel = koinViewModel()
+    authViewModel: AuthViewModel = koinViewModel(),
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
 
@@ -249,10 +252,25 @@ fun InternalNavigationWrapper(
                     BuyReservationScreen(
                         sales = sales.filter { it.userId == userId },
                         productNamesById = products.associate { it.id to it.name },
+                        // ← Nuevo: mostrar home cuando está vacío
+                        onGoToShop = {
+                            backStack.navigateTo(InternalRoutesKey.Home)
+                        },
+                        // ← Nuevo: guardar preferencia de entrega
+                        onDeliveryTypeSelected = { saleId, deliveryType ->
+                            saleViewModel.updateDeliveryType(saleId, deliveryType)
+                            val msg = when (deliveryType) {
+                                DeliveryType.PICKUP   -> "¡Perfecto! Te esperamos en el taller 🏪"
+                                DeliveryType.DELIVERY -> "¡Listo! Coordinaremos la entrega contigo 🛵"
+                            }
+                            toasterViewModel.showMessage(msg, ToastType.Success)
+                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
                 entry<InternalRoutesKey.BuyConfirm> {
+                    val context = LocalContext.current
+
                     BuyConfirmScreen(
                         items = cartItems,
                         totalAmount = shopCartViewModel.getTotalAmount(),
@@ -263,42 +281,47 @@ fun InternalNavigationWrapper(
                                 backStack.navigateBack()
                             } else {
                                 toasterViewModel.showMessage(
-                                    "Confirmando pedido",
+                                    "Procesando pedido…",
                                     ToastType.Normal,
-                                    id = "sale charge",
+                                    id = "sale_charge",
                                     isInfinite = true
                                 )
-
-                                saleViewModel.newSale(
+                                saleViewModel.initiatePayment(
                                     sale = cartItems.toSale(userId),
-                                    onSaleRegistered = {
-                                        toasterViewModel.dismissMessage("sale charge")
-                                        toasterViewModel.showMessage(
-                                            "La compra ha sido confirmada, ID de pedido: $it",
-                                            ToastType.Success
-                                        )
+                                    onReadyToPay = { saleId, checkoutUrl ->
+                                        toasterViewModel.dismissMessage("sale_charge")
                                         shopCartViewModel.clearCart()
-                                        backStack.navigateTo(InternalRoutesKey.BuyReservation)
+                                        if (checkoutUrl != null) {
+                                            // ✅ Abre la URL de pago en Chrome Custom Tabs
+                                            val intent = androidx.browser.customtabs.CustomTabsIntent.Builder()
+                                                .setShowTitle(true)
+                                                .build()
+                                            intent.launchUrl(context, checkoutUrl.toUri())
+                                            // Navegar a reservas para que el usuario vea su pedido pendiente
+                                            backStack.navigateTo(InternalRoutesKey.BuyReservation)
+                                        } else {
+                                            // Pago online no disponible, pero la venta fue registrada
+                                            toasterViewModel.showMessage(
+                                                "Pedido registrado (#${saleId.take(8)}). " +
+                                                        "El pago online no está disponible. " +
+                                                        "Contacta al taller para coordinar el pago.",
+                                                ToastType.Warning
+                                            )
+                                            backStack.navigateTo(InternalRoutesKey.BuyReservation)
+                                        }
                                     },
                                     onFail = { error ->
-                                        toasterViewModel.dismissMessage("sale charge")
+                                        toasterViewModel.dismissMessage("sale_charge")
                                         toasterViewModel.showMessage(
-                                            "La compra no ha sido confirmada: $error",
+                                            "No se pudo procesar el pedido: $error",
                                             ToastType.Error
                                         )
                                     }
                                 )
                             }
                         },
-                        /*onFail = { error ->
-                            toasterViewModel.dismissMessage("sale charge")
-                            toasterViewModel.showMessage(
-                                "No se pudo confirmar el pago: $error",
-                                ToastType.Error
-                            )
-                        },*/
-                        onRegisterInUltrapay = {}
-                        ,modifier = Modifier.fillMaxSize()
+                        onRegisterInUltrapay = {},
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
                 entry<InternalRoutesKey.Settings> {
