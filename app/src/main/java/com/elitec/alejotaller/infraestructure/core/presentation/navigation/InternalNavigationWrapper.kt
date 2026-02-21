@@ -84,6 +84,9 @@ fun InternalNavigationWrapper(
     }
     val listDetailSceneStrategy = rememberListDetailSceneStrategy<Any>(directive = directive)
 
+    val searchQuery by productViewModel.searchQuery.collectAsStateWithLifecycle()
+    val selectedCategoryId by productViewModel.selectedCategoryId.collectAsStateWithLifecycle()
+
     val profileInfo by profileViewModel.userProfile.collectAsStateWithLifecycle()
     val products by productViewModel.productFlow.collectAsStateWithLifecycle()
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
@@ -158,8 +161,19 @@ fun InternalNavigationWrapper(
                     ProductScreen(
                         products = products,
                         promotions = promotions,
+                        searchQuery = searchQuery,
+                        selectedCategoryId = selectedCategoryId,
+                        onSearchQueryChanged = { query ->
+                            productViewModel.onSearchQueryChanged(query)
+                        },
+                        onCategorySelected = { categoryId ->
+                            productViewModel.onCategorySelected(categoryId)
+                        },
                         navigateToDetails = { productId ->
                             backStack.navigateTo(InternalRoutesKey.ProductDetail(productId))
+                        },
+                        onPromotionClick = { promotionId ->
+                            backStack.navigateTo(InternalRoutesKey.PromotionDetail(promotionId))
                         },
                         modifier = Modifier.fillMaxSize()
                     )

@@ -27,8 +27,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -78,12 +80,15 @@ fun ProductScreen(
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
     onPromotionClick: (String) -> Unit = {},
+    searchQuery: String = "",                          // ← nuevo parámetro
+    selectedCategoryId: String? = null,               // ← nuevo parámetro
+    onSearchQueryChanged: (String) -> Unit = {},       // ← nuevo parámetro
+    onCategorySelected: (String?) -> Unit = {},        // ← nuevo parámetro
     categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
 
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
-    var categorySelected by rememberSaveable { mutableStateOf<Category?>(null) }
     val categoriesList by categoryViewModel.categoriesFlow.collectAsStateWithLifecycle()
 
     Column(
@@ -92,7 +97,12 @@ fun ProductScreen(
             .padding(horizontal = 16.dp)
             .fillMaxSize()
     ) {
-        SearchBar()
+        // CAMBIO 3: SearchBar ahora es controlado (stateless)
+        SearchBar(
+            query = searchQuery,
+            onQueryChanged = onSearchQueryChanged,
+            onClearQuery = { onSearchQueryChanged("") }
+        )
         Spacer(modifier = Modifier.height(16.dp))
         Box(
             contentAlignment = Alignment.TopEnd
@@ -134,26 +144,56 @@ fun ProductScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
         CategoriesSection(
-            onCategorySelected = { category ->
-                categorySelected = category
-            },
-            categorySelected = categorySelected,
-            categoriesList
+            onCategorySelected = { category -> onCategorySelected(category.id) },
+            selectedCategoryId = selectedCategoryId,
+            categories = categoriesList
         )
         Spacer(modifier = Modifier.height(16.dp))
-        ProductGrid(
-            onProductClick =  navigateToDetails,
-            products = products
-        )
+        // CAMBIO 5: Mensaje cuando no hay resultados
+        if (products.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Sin resultados",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Prueba con otro término o categoría",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+        } else {
+            ProductGrid(
+                onProductClick = navigateToDetails,
+                products = products
+            )
+        }
     }
 }
 
 @Composable
-fun SearchBar(modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf("") }
+fun SearchBar(
+    query: String,
+    onQueryChanged: (String) -> Unit,
+    onClearQuery: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
+        value = query,
+        onValueChange = onQueryChanged,
         modifier = modifier.fillMaxWidth(),
         placeholder = {
             Text(
@@ -161,17 +201,87 @@ fun SearchBar(modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
-        trailingIcon = {
-            IconPlaceholder(
-                modifier = Modifier.size(24.dp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Buscar",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        },
+        trailingIcon = {
+            // El botón de limpiar aparece solo cuando hay texto
+            if (query.isNotEmpty()) {
+                IconButton(onClick = onClearQuery) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Limpiar búsqueda",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         },
         shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(),
         singleLine = true
     )
 }
+
+@Composable
+fun CategoriesSection(
+    onCategorySelected: (Category) -> Unit,
+    selectedCategoryId: String? = null,              // ← cambia de Category? a String?
+    categories: List<Category>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.categories),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = stringResource(id = R.string.see_all),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(categories) { category ->
+                // CAMBIO 8: La comparación ahora es por ID, no por objeto
+                val isSelected = category.id == selectedCategoryId
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surface
+                        )
+                        .border(
+                            width = 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = category.name,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun BannerSection(
@@ -256,65 +366,6 @@ fun BannerSection(
                             contentScale = ContentScale.Crop,
                             painter = painterResource(R.drawable.echoflow_transparent),
                             contentDescription = "Banner Image"
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun CategoriesSection(
-    onCategorySelected: (Category) -> Unit,
-    categorySelected: Category? = null,
-    categories: List<Category>,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(id = R.string.categories),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                text = stringResource(id = R.string.see_all),
-                color = MaterialTheme.colorScheme.primary,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(categories) { category ->
-                val isSelected = category == categorySelected
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surface
-                        )
-                        .border(
-                            width = 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.outline,
-                            shape = RoundedCornerShape(10.dp)
-                        )
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Row {
-                        Text(
-                            text = category.name,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                            else MaterialTheme.colorScheme.onSurface,
-                            style = MaterialTheme.typography.labelLarge
                         )
                     }
                 }
