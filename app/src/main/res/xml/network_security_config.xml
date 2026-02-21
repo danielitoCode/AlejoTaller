@@ -6,4 +6,6 @@
         <domain includeSubdomains="true">*.cloud.appwrite.io</domain>
         <domain includeSubdomains="true">localhost</domain>
     </domain-config>
+    <!-- El resto del tráfico exige HTTPS -->
+    <base-config cleartextTrafficPermitted="false" />
 </network-security-config>

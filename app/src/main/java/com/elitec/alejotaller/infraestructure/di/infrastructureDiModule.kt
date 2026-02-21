@@ -10,6 +10,7 @@ import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
+import com.elitec.alejotaller.infraestructure.core.data.bd.AppBDMigrations
 import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherManager
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
@@ -54,6 +55,7 @@ val infrastructureModule = module {
             klass = AppBD::class.java,
             name = "app_database"
         )
+            .addMigrations(*AppBDMigrations.ALL)  // ✅ Migraciones registradas
             .build()
     }
 
@@ -80,9 +82,11 @@ val infrastructureModule = module {
                     }
                 )
             }
-            install(Logging) {
-                logger = Logger.DEFAULT
-                level = LogLevel.ALL
+            if (BuildConfig.DEBUG) {
+                install(Logging) {
+                    logger = Logger.DEFAULT
+                    level = LogLevel.ALL
+                }
             }
         }
     }
