@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.infraestructure.core.presentation.components.AutoScrollRows
 import com.elitec.alejotaller.infraestructure.core.presentation.components.LandingButtons
 import com.elitec.alejotaller.infraestructure.core.presentation.components.LandingTittle
-import com.elitec.alejotaller.infraestructure.core.presentation.components.NetflixLandingHero
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
 import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode

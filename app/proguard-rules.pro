@@ -60,12 +60,42 @@
 # Activity del SDK de Appwrite declarada en AndroidManifest.
 -keep class io.appwrite.views.CallbackActivity { *; }
 
-# ---------- KOIN ----------
-# Koin funciona con referencias de tipo; mantenemos metadata Kotlin.
+# ---------- APPWRITE (SDK & AUTH) ----------
+# Evita errores de "create method not resolved" en servicios de Appwrite
+-keep class io.appwrite.** { *; }
+-keep interface io.appwrite.** { *; }
+-dontwarn io.appwrite.**
+
+# ---------- PUSHER (REAL-TIME) ----------
+# Pusher utiliza reflexión para manejar eventos y conexiones
+-keep class com.pusher.client.** { *; }
+-keep class com.pusher.java_websocket.** { *; }
+-dontwarn com.pusher.client.**
+
+# ---------- KTOR (NETWORKING) ----------
+# Necesario para el motor CIO y coroutines internas
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
+
+# ---------- VIEWMODELS & KOIN ----------
+# Mantiene los constructores de ViewModels para que Koin pueda inyectarlos
+-keep class com.elitec.alejotaller.**.*ViewModel { *; }
 -keep class kotlin.Metadata { *; }
 
-# ---------- WARNINGS COMUNES DE LIBRERÍAS ----------
-# Evita ruido por clases opcionales de JDK/Android no presentes en runtime Android.
+# ---------- DTOs & ENTITIES ----------
+# Asegura que las clases de datos no pierdan campos críticos para JSON/DB
+-keep @kotlinx.serialization.Serializable class com.elitec.alejotaller.** { *; }
+-keep @androidx.room.Entity class com.elitec.alejotaller.** { *; }
+
+# ---------- WARNINGS COMUNES ----------
 -dontwarn javax.naming.**
 -dontwarn org.slf4j.**
 -dontwarn java.lang.invoke.StringConcatFactory
+
+# Prevención de errores en el SDK de Appwrite (Reflexión)
+-keep class io.appwrite.** { *; }
+-keep interface io.appwrite.** { *; }
+-dontwarn io.appwrite.**
+# Si utilizas Ktor (que Appwrite usa internamente), también es recomendable:
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
