@@ -10,8 +10,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 class SaleEventProcessor(
-    private val onSuccess: (saleId: String) -> Unit,
-    private val onError: (saleId: String, cause: String) -> Unit,
+    private val onSuccess: (saleId: String, userId: String) -> Unit,
+    private val onError: (saleId: String, userId: String, cause: String) -> Unit,
 ) : ChainedRealtimeEventProcessor() {
     private val json: Json = Json { ignoreUnknownKeys = true }
 
@@ -24,11 +24,11 @@ class SaleEventProcessor(
         when (response) {
             is SaleEventResponse.SaleSuccessResponse -> {
                 Log.i(TAG, "Sale success interpreted for saleId=${response.saleId}")
-                onSuccess(response.saleId)
+                onSuccess(response.saleId, response.userId)
             }
             is SaleEventResponse.SaleErrorResponse -> {
                 Log.w(TAG, "Sale error interpreted for saleId=${response.saleId}, cause=${response.cause}")
-                onError(response.saleId, response.cause)
+                onError(response.saleId, response.userId, response.cause)
             }
         }
 
@@ -37,6 +37,9 @@ class SaleEventProcessor(
 
     private fun decode(payload: String): SaleEventResponse {
         val root = json.parseToJsonElement(payload).jsonObject
+        val userId = root["userId"]?.jsonPrimitive?.content
+            ?: root["user_id"]?.jsonPrimitive?.content
+            ?: ""
         val saleId = root["saleId"]?.jsonPrimitive?.content
             ?: root["sale_id"]?.jsonPrimitive?.content
             ?: ""
@@ -44,8 +47,8 @@ class SaleEventProcessor(
             ?: "Unknown sale error"
 
         return when (root["type"]?.jsonPrimitive?.content?.lowercase()) {
-            "sale.error", "error" -> SaleEventResponse.SaleErrorResponse(saleId = saleId, cause = cause)
-            else -> SaleEventResponse.SaleSuccessResponse(saleId = saleId)
+            "sale.error", "error" -> SaleEventResponse.SaleErrorResponse(saleId = saleId, userId = userId, cause = cause)
+            else -> SaleEventResponse.SaleSuccessResponse(saleId = saleId, userId = userId)
         }
     }
 

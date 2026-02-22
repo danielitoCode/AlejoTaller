@@ -23,11 +23,11 @@ class RealTimeManagerImpl(
         pusherManager.init(onConnect, onDisconnect)
 
         val saleProcessor = SaleEventProcessor(
-            onSuccess = { saleId ->
-                onSaleEvent(SaleRealtimeEvent(saleId = saleId, isSuccess = true))
+            onSuccess = { saleId, userId ->
+                onSaleEvent(SaleRealtimeEvent(saleId = saleId, userId = userId, isSuccess = true))
             },
-            onError = { saleId, cause ->
-                onSaleEvent(SaleRealtimeEvent(saleId = saleId, isSuccess = false, cause = cause))
+            onError = { saleId, userId, cause ->
+                onSaleEvent(SaleRealtimeEvent(saleId = saleId, userId = userId, isSuccess = false, cause = cause))
             }
         )
         val promotionProcessor = PromotionEventProcessor(onPromotionReceived = { event ->
