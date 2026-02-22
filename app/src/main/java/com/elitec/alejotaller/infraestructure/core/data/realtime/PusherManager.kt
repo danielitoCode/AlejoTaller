@@ -2,6 +2,7 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
 import com.pusher.client.Pusher
+import com.pusher.client.channel.Channel
 import com.pusher.client.channel.PusherEvent
 import com.pusher.client.connection.ConnectionEventListener
 import com.pusher.client.connection.ConnectionState
@@ -14,10 +15,7 @@ class PusherManager(
     private val pusher: Pusher
 ) {
     private var isConnected = false
-    private val subscribedChannels = mutableSetOf<String>()
-
-    // private val _notificationsFlow = MutableStateFlow<List<Notification>>(emptyList())
-    // val notificationsFlow: StateFlow<List<Notification>> = _notificationsFlow.asStateFlow()
+    private val subscribedChannels = mutableMapOf<String, Channel>()
 
     fun init(onConnect: () -> Unit, onDisconnect: () -> Unit) {
         if (isConnected) {
@@ -29,15 +27,22 @@ class PusherManager(
 
         pusher.connect(object : ConnectionEventListener {
             override fun onConnectionStateChange(change: ConnectionStateChange) {
-                onConnect()
-                Log.i("PusherManager",
+                when (change.currentState) {
+                    ConnectionState.CONNECTED -> onConnect()
+                    ConnectionState.DISCONNECTED,
+                    ConnectionState.DISCONNECTING -> onDisconnect()
+                    else -> Unit
+                }
+                Log.i(
+                    "PusherManager",
                     "Connection state changed: ${change.previousState} -> ${change.currentState}"
                 )
             }
 
             override fun onError(message: String, code: String, e: Exception) {
                 onDisconnect()
-                Log.e("PusherManager",
+                Log.e(
+                    "PusherManager",
                     "Error connecting! Code: $code, Message: $message",
                     e
                 )
@@ -67,7 +72,7 @@ class PusherManager(
         Log.i("PusherManager", "Subscribing to channel: $channel")
 
         val channelObj = pusher.subscribe(normalizedChannel)
-        subscribedChannels.add(normalizedChannel)
+        subscribedChannels[normalizedChannel] = channelObj
 
         eventNames.forEach { eventName ->
             channelObj.bind(eventName) { event ->
@@ -79,6 +84,31 @@ class PusherManager(
                 Log.i("PusherManager", "Received event '${envelope.name}' on '$normalizedChannel': ${event.data}")
                 onReceive?.invoke(envelope)
             }
+        }
+    }
+
+    fun unsubscribe(channel: String) {
+        val normalizedChannel = channel.trim()
+        if (normalizedChannel.isBlank()) return
+
+        if (subscribedChannels.remove(normalizedChannel) != null) {
+            pusher.unsubscribe(normalizedChannel)
+            Log.i("PusherManager", "Unsubscribed from channel: $normalizedChannel")
+        }
+    }
+
+    fun unsubscribeAll() {
+        val channels = subscribedChannels.keys.toList()
+        channels.forEach { channel ->
+            pusher.unsubscribe(channel)
+            Log.i("PusherManager", "Unsubscribed from channel: $channel")
+        }
+        subscribedChannels.clear()
+
+        if (isConnected) {
+            pusher.disconnect()
+            isConnected = false
+            Log.i("PusherManager", "Pusher disconnected after unsubscribeAll().")
         }
     }
 }

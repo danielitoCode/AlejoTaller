@@ -54,6 +54,7 @@ import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTalle
 fun ProductDetailScreen(
     modifier: Modifier = Modifier,
     product: Product,
+    showTopBar: Boolean = true,
     onBackClick: () -> Unit = {},
     onFavoriteClick: () -> Unit = {},
     onShareClick: () -> Unit = {},
@@ -74,11 +75,13 @@ fun ProductDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize()
         ) {
-            HeaderSection(
-                onBackClick = onBackClick,
-                onFavoriteClick = onFavoriteClick,
-                onShareClick = onShareClick
-            )
+            if (showTopBar) {
+                HeaderSection(
+                    onBackClick = onBackClick,
+                    onFavoriteClick = onFavoriteClick,
+                    onShareClick = onShareClick
+                )
+            }
             ProductImageSection(
                 photoUrl = product.photoUrl,
                 photoLocalResource = product.photoLocalResource

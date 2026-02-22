@@ -9,4 +9,6 @@ interface RealtimeSyncGateway {
         onSaleEvent: (SaleRealtimeEvent) -> Unit,
         onPromotion: (Promotion) -> Unit = {}
     )
+    fun unsubscribeAll()
+
 }

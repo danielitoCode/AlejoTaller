@@ -61,6 +61,7 @@ import java.util.UUID
 import kotlin.time.Clock
 import androidx.core.net.toUri
 import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
 
 @Suppress("LambdaParameterInEffect")
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
@@ -85,6 +86,7 @@ fun InternalNavigationWrapper(
         calculatePaneScaffoldDirective(windowAdaptiveInfo)
             .copy(horizontalPartitionSpacerSize = 0.dp)
     }
+    val layoutSpec = rememberAdaptiveLayoutSpec()
     val listDetailSceneStrategy = rememberListDetailSceneStrategy<Any>(directive = directive)
 
     val searchQuery by productViewModel.searchQuery.collectAsStateWithLifecycle()
@@ -95,6 +97,7 @@ fun InternalNavigationWrapper(
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
     val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
+    val hasPendingSales = sales.any { sale -> sale.userId == userId && sale.verified == BuyState.UNVERIFIED }
 
     LaunchedEffect(null) {
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
@@ -120,12 +123,19 @@ fun InternalNavigationWrapper(
             }
         )
     }
+
     LaunchedEffect(userId) {
         saleViewModel.sync(userId)
     }
-    LaunchedEffect(null) {
-        realtimeSyncViewModel.startRealtimeSync()
+
+    LaunchedEffect(hasPendingSales) {
+        if (hasPendingSales) {
+            realtimeSyncViewModel.startRealtimeSync()
+        } else {
+            realtimeSyncViewModel.stopRealtimeSync()
+        }
     }
+
     LaunchedEffect(null) {
         realtimeSyncViewModel.uiMessages.collect { message ->
             toasterViewModel.showMessage(
@@ -196,7 +206,8 @@ fun InternalNavigationWrapper(
                 ) { key ->
                     ProductDetailScreen(
                         modifier = Modifier.fillMaxSize(),
-                        product = products.first { it.id == key.productId},
+                        product = products.first { it.id == key.productId },
+                        showTopBar = layoutSpec.showTopBarInDetail,
                         onBackClick = { backStack.navigateBack() },
                         onAddToCartClick = {
                             val productSelected = products.first { it.id == key.productId }
@@ -325,7 +336,10 @@ fun InternalNavigationWrapper(
                     )
                 }
                 entry<InternalRoutesKey.Settings> {
-                    SettingsScreen(modifier = Modifier.fillMaxSize())
+                    SettingsScreen(
+                        asDetailPane = layoutSpec.showListAndDetail,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
         )

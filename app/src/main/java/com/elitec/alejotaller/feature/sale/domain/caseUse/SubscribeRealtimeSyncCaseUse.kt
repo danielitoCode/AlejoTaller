@@ -20,4 +20,8 @@ class SubscribeRealtimeSyncCaseUse(
             onPromotion = onPromotion
         )
     }
+
+    fun unsubscribeAll() {
+        gateway.unsubscribeAll()
+    }
 }

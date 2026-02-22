@@ -38,6 +38,18 @@ class RealtimeSyncViewModel(
         )
     }
 
+    fun stopRealtimeSync() {
+        if (!isSubscribed) return
+
+        subscribeRealtimeSyncCaseUse.unsubscribeAll()
+        isSubscribed = false
+    }
+
+    override fun onCleared() {
+        stopRealtimeSync()
+        super.onCleared()
+    }
+
     private fun dispatchSaleEvent(event: SaleRealtimeEvent) {
         interpretSaleRealtimeEventCaseUse(event).forEach { command ->
             when (command) {

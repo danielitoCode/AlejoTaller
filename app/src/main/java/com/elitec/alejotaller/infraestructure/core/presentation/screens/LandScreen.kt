@@ -92,7 +92,7 @@ fun LandScreen(
                 }
                 AutoScrollRows(
                     rowCount = 1,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.height(350.dp)
                 )
                 LandingButtons(
                     onSignInClick = onSignInClick,
@@ -125,7 +125,7 @@ fun LandScreen(
 }
 
 @Preview(
-    showBackground = true, device = "spec:width=411dp,height=891dp,orientation=landscape"
+    showBackground = true, device = "spec:width=411dp,height=891dp"
 )
 
 @Composable

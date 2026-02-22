@@ -68,6 +68,8 @@ import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.DevicePosture
+import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
@@ -88,6 +90,7 @@ fun ProductScreen(
     modifier: Modifier = Modifier,
 ) {
 
+    val layoutSpec = rememberAdaptiveLayoutSpec()
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
     val categoriesList by categoryViewModel.categoriesFlow.collectAsStateWithLifecycle()
 
@@ -103,42 +106,44 @@ fun ProductScreen(
             onQueryChanged = onSearchQueryChanged,
             onClearQuery = { onSearchQueryChanged("") }
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Box(
-            contentAlignment = Alignment.TopEnd
-        ) {
-            BannerSection(
-                visible = isBannerVisible,
-                promotions = promotions,
-                onPromotionClick = onPromotionClick
-            )
-            Surface(
-                onClick = { isBannerVisible = false },
-                modifier = Modifier.padding(
-                    top = 5.dp,
-                    end = 10.dp
-                ),
-                shadowElevation = 5.dp,
-                tonalElevation = 3.dp,
-                color = MaterialTheme.colorScheme.onSurface,
-                shape = RoundedCornerShape(15.dp)
+        if(layoutSpec.posture != DevicePosture.CompactLandscape) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Box(
+                contentAlignment = Alignment.TopEnd
             ) {
-                Row(
-                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement
-                        .spacedBy(3.dp)
+                BannerSection(
+                    visible = isBannerVisible,
+                    promotions = promotions,
+                    onPromotionClick = onPromotionClick
+                )
+                Surface(
+                    onClick = { isBannerVisible = false },
+                    modifier = Modifier.padding(
+                        top = 5.dp,
+                        end = 10.dp
+                    ),
+                    shadowElevation = 5.dp,
+                    tonalElevation = 3.dp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    shape = RoundedCornerShape(15.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
-                        modifier = Modifier.size(15.dp),
-                        tint = MaterialTheme.colorScheme.surface
-                    )
-                    Text(
-                        color = MaterialTheme.colorScheme.surface,
-                        text = "Cerrar"
-                    )
+                    Row(
+                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement
+                            .spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.surface
+                        )
+                        Text(
+                            color = MaterialTheme.colorScheme.surface,
+                            text = "Cerrar"
+                        )
+                    }
                 }
             }
         }

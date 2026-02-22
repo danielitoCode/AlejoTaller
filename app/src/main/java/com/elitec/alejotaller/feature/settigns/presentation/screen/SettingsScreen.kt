@@ -42,6 +42,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
+    asDetailPane: Boolean = false,
     settingsViewModel: SettingsViewModel = koinViewModel()
 ) {
     val settings = settingsViewModel.settings.collectAsStateWithLifecycle()
@@ -51,6 +52,7 @@ fun SettingsScreen(
         onDarkModeChange = settingsViewModel::updateDarkMode,
         onNotificationsChange = settingsViewModel::updateNotifications,
         onHapticsChange = settingsViewModel::updateHapticFeedback,
+        asDetailPane = asDetailPane,
         modifier = modifier
     )
 }
@@ -61,13 +63,16 @@ private fun SettingsScreenContent(
     onDarkModeChange: (Boolean) -> Unit,
     onNotificationsChange: (Boolean) -> Unit,
     onHapticsChange: (Boolean) -> Unit,
+    asDetailPane: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val horizontalPadding = if (asDetailPane) 24.dp else 20.dp
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(horizontal = horizontalPadding, vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(

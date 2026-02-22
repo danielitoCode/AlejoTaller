@@ -160,6 +160,8 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     // QR
     implementation(libs.compose.qr)
+    // Size class integration
+    implementation(libs.compose.window.size)
     // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))

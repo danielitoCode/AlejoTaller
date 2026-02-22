@@ -57,6 +57,10 @@ class RealTimeManagerImpl(
         )
     }
 
+    override fun unsubscribeAll() {
+        pusherManager.unsubscribeAll()
+    }
+
     companion object {
         private const val TAG = "RealTimeManager"
         private const val DEFAULT_SALE_CHANNEL = "sales"
