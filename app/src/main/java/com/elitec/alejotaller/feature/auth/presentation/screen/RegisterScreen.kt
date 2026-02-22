@@ -15,7 +15,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,14 +24,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.RegistrationViewModel
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
-import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.viewmodel.koinViewModel
+
 
 @Composable
 fun RegisterScreen(
@@ -42,12 +45,25 @@ fun RegisterScreen(
     registerViewModel: RegistrationViewModel = koinViewModel(),
     toasterViewModel: ToasterViewModel = koinViewModel()
 ) {
+    val deviceMode = LocalConfiguration.current.toDeviceMode() // Screen configuration
+
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
+    when(deviceMode) {
+        AppWindowType.MobilePortrait,
+        AppWindowType.TabletPortrait-> {
+
+        }
+        AppWindowType.MobileLandscape -> TODO()
+        AppWindowType.TabletLandscape -> TODO()
+        AppWindowType.Laptop -> TODO()
+        AppWindowType.DesktopVertical -> TODO()
+        AppWindowType.Expanded -> TODO()
+    }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -156,7 +172,7 @@ fun RegisterScreen(
     }
 }
 
-@Composable
+/*@Composable
 private fun AuthTextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -172,4 +188,4 @@ private fun AuthTextField(
         modifier = Modifier.fillMaxWidth(),
         visualTransformation = visualTransformation
     )
-}
+}*/
