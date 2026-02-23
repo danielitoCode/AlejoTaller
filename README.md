@@ -34,6 +34,41 @@ Taller Alejo es una aplicación Android para la gestión de un taller. El objeti
 - **Pruebas** unitarias/integración para casos de uso y repositorios.
 - **Documentación técnica** (diagramas, convenciones y guía de contribución).
 
+
+## Balance MVP (actualizado)
+### ✅ Lo que ya está sólido
+- **Base arquitectónica**: separación por capas (`data`, `domain`, `presentation`) e inyección de dependencias con Koin.
+- **Persistencia local**: almacenamiento local con Room para soportar operación sin conexión.
+- **Sincronización base**: integración con Appwrite y flujo de sincronización para ventas.
+- **Feature de ventas avanzada**: existen casos de uso, repositorio offline-first y ViewModel para observación/sincronización.
+
+### 🟡 Lo que está parcialmente cubierto
+- **Productos y categorías**: hay infraestructura y lectura/mapeo, pero no está consolidado el CRUD completo en UX y dominio.
+- **UX de flujos críticos**: existen pantallas y navegación, pero falta robustecer feedback de carga/error y consistencia de estados.
+- **Pruebas automatizadas**: ya hay pruebas unitarias en piezas críticas (realtime, serializers, reconciliación), pero la cobertura aún no es de MVP “cerrado”.
+
+### 🔴 Lo crítico que falta para declarar MVP cumplido
+1. **CRUD completo de productos y categorías** en capa de dominio + UI.
+2. **Sincronización bidireccional real** (subida de cambios locales + política de resolución de conflictos).
+3. **Manejo de errores de punta a punta** (casos de uso, repositorios y ViewModels con mensajes accionables).
+4. **Cobertura mínima de calidad**: pruebas de integración/repositorios y criterios de aceptación por feature.
+5. **Definición explícita de “Done” del MVP**: checklist funcional y técnico para cierre.
+
+### Propuesta de cierre MVP (orden recomendado)
+1. **Vertical 1: catálogo (productos/categorías)**
+   - Crear/editar/eliminar + validaciones + persistencia local.
+2. **Vertical 2: ventas offline-first completas**
+   - Cola de pendientes locales + reconciliación + estrategia de conflictos.
+3. **Vertical 3: hardening UX**
+   - Estados de carga, errores recuperables y confirmaciones de acciones sensibles.
+4. **Vertical 4: calidad y release**
+   - Suite de pruebas mínima para rutas críticas + documentación técnica corta.
+
+### Criterio sugerido para “MVP listo”
+- Un usuario puede **crear/editar/eliminar productos**, **registrar ventas**, operar **sin conexión** y sincronizar luego sin pérdida de datos.
+- Existen **mensajes claros de error/estado** en los flujos principales.
+- Las rutas críticas están cubiertas por pruebas automatizadas básicas.
+
 ## Estructura del proyecto (alto nivel)
 ```
 app/

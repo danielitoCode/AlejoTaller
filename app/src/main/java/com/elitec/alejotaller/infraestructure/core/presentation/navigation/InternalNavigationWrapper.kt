@@ -19,7 +19,9 @@ import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneSt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -80,6 +82,9 @@ fun InternalNavigationWrapper(
     authViewModel: AuthViewModel = koinViewModel(),
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
+
+    var isSubmittingPurchase by remember { mutableStateOf(false) }
+    var isUpdatingDeliveryType by remember { mutableStateOf(false) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val directive = remember(windowAdaptiveInfo) {
@@ -281,12 +286,29 @@ fun InternalNavigationWrapper(
                         },
                         // ← Nuevo: guardar preferencia de entrega
                         onDeliveryTypeSelected = { saleId, deliveryType ->
-                            saleViewModel.updateDeliveryType(saleId, deliveryType)
-                            val msg = when (deliveryType) {
-                                DeliveryType.PICKUP   -> "¡Perfecto! Te esperamos en el taller 🏪"
-                                DeliveryType.DELIVERY -> "¡Listo! Coordinaremos la entrega contigo 🛵"
+                            if (isUpdatingDeliveryType) {
+                                return@BuyReservationScreen
                             }
-                            toasterViewModel.showMessage(msg, ToastType.Success)
+                            isUpdatingDeliveryType = true
+                            saleViewModel.updateDeliveryType(
+                                saleId = saleId,
+                                deliveryType = deliveryType,
+                                onSuccess = {
+                                    isUpdatingDeliveryType = false
+                                    val msg = when (deliveryType) {
+                                        DeliveryType.PICKUP -> "¡Perfecto! Te esperamos en el taller 🏪"
+                                        DeliveryType.DELIVERY -> "¡Listo! Coordinaremos la entrega contigo 🛵"
+                                    }
+                                    toasterViewModel.showMessage(msg, ToastType.Success)
+                                },
+                                onFail = { error ->
+                                    isUpdatingDeliveryType = false
+                                    toasterViewModel.showMessage(
+                                        "No se pudo guardar la preferencia de entrega. Reintenta. Detalle: $error",
+                                        ToastType.Error
+                                    )
+                                }
+                            )
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -299,10 +321,12 @@ fun InternalNavigationWrapper(
                         totalAmount = shopCartViewModel.getTotalAmount(),
                         onBackClick = { backStack.navigateBack() },
                         onSubmitPurchase = {
+                            if (isSubmittingPurchase) return@BuyConfirmScreen
                             if (cartItems.isEmpty()) {
                                 toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
                                 backStack.navigateBack()
                             } else {
+                                isSubmittingPurchase = true
                                 toasterViewModel.showMessage(
                                     "Procesando pedido…",
                                     ToastType.Normal,
@@ -312,6 +336,7 @@ fun InternalNavigationWrapper(
                                 saleViewModel.initiatePayment(
                                     sale = cartItems.toSale(userId),
                                     onReadyToPay = { saleId, checkoutUrl ->
+                                        isSubmittingPurchase = false
                                         toasterViewModel.dismissMessage("sale_charge")
                                         shopCartViewModel.clearCart()
                                         if (checkoutUrl != null) {
@@ -334,6 +359,7 @@ fun InternalNavigationWrapper(
                                         }
                                     },
                                     onFail = { error ->
+                                        isSubmittingPurchase = false
                                         toasterViewModel.dismissMessage("sale_charge")
                                         toasterViewModel.showMessage(
                                             "No se pudo procesar el pedido: $error",
@@ -344,6 +370,7 @@ fun InternalNavigationWrapper(
                             }
                         },
                         onRegisterInUltrapay = {},
+                        isSubmitting = isSubmittingPurchase,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

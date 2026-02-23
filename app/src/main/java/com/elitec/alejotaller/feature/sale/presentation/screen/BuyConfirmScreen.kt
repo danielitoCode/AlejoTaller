@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
@@ -33,9 +35,11 @@ fun BuyConfirmScreen(
     onBackClick: () -> Unit,
     onSubmitPurchase: () -> Unit,
     onRegisterInUltrapay: () -> Unit,
+    isSubmitting: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var selectedMethod by remember { mutableStateOf(PaymentMethod.SolucionesCuba) }
+    var showConfirmSubmitDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -99,11 +103,15 @@ fun BuyConfirmScreen(
         )
 
         Button(
-            onClick = onSubmitPurchase,
+            onClick = { showConfirmSubmitDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            enabled = items.isNotEmpty() && selectedMethod == PaymentMethod.SolucionesCuba
+            enabled = !isSubmitting && items.isNotEmpty() && selectedMethod == PaymentMethod.SolucionesCuba
         ) {
-            Text(text = "Confirmar pedido")
+            if (isSubmitting) {
+                CircularProgressIndicator()
+            } else {
+                Text(text = "Confirmar pedido")
+            }
         }
 
        /* OutlinedButton(
@@ -115,9 +123,37 @@ fun BuyConfirmScreen(
 
         OutlinedButton(
             onClick = onBackClick,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isSubmitting
         ) {
             Text(text = "Volver")
+        }
+
+        if (showConfirmSubmitDialog) {
+            AlertDialog(
+                onDismissRequest = { showConfirmSubmitDialog = false },
+                title = { Text("Confirmar pedido") },
+                text = { Text("Esta acción registrará la compra y te redirigirá al pago. ¿Deseas continuar?") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showConfirmSubmitDialog = false
+                            onSubmitPurchase()
+                        },
+                        enabled = !isSubmitting
+                    ) {
+                        Text("Sí, continuar")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showConfirmSubmitDialog = false },
+                        enabled = !isSubmitting
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
         }
     }
 }
