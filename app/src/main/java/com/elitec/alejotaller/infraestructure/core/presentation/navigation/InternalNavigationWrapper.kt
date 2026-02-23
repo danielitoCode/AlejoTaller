@@ -97,7 +97,14 @@ fun InternalNavigationWrapper(
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
     val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
-    val hasPendingSales = sales.any { sale -> sale.userId == userId && sale.verified == BuyState.UNVERIFIED }
+    val pendingSaleIds = remember(userId) {
+        sales
+            .asSequence()
+            .filter { sale -> sale.userId == userId && sale.verified == BuyState.UNVERIFIED }
+            .map { sale -> sale.id }
+            .toSet()
+    }
+    val hasPendingSales = pendingSaleIds.isNotEmpty()
 
     LaunchedEffect(null) {
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
@@ -112,6 +119,7 @@ fun InternalNavigationWrapper(
             }
         )
     }
+
     LaunchedEffect(null) {
         profileViewModel.getAccountInfo(
             onGetInfo = {
@@ -126,6 +134,10 @@ fun InternalNavigationWrapper(
 
     LaunchedEffect(userId) {
         saleViewModel.sync(userId)
+    }
+
+    LaunchedEffect(userId, pendingSaleIds) {
+        realtimeSyncViewModel.updateSubscriptionScope(userId = userId, pendingSaleIds = pendingSaleIds)
     }
 
     LaunchedEffect(hasPendingSales) {

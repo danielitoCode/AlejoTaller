@@ -13,6 +13,7 @@ import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
@@ -24,6 +25,8 @@ class RealtimeSyncViewModel(
 ) : ViewModel() {
 
     private var isSubscribed = false
+    private var activeUserId: String = ""
+    private val activePendingSaleIds = MutableStateFlow<Set<String>>(emptySet())
     private val _uiMessages = MutableSharedFlow<RealtimeUiMessage>(extraBufferCapacity = 16)
     val uiMessages = _uiMessages.asSharedFlow()
 
@@ -36,6 +39,11 @@ class RealtimeSyncViewModel(
             onSaleEvent = ::dispatchSaleEvent,
             onPromotion = ::persistPromotion
         )
+    }
+
+    fun updateSubscriptionScope(userId: String, pendingSaleIds: Set<String>) {
+        activeUserId = userId
+        activePendingSaleIds.value = pendingSaleIds
     }
 
     fun stopRealtimeSync() {
@@ -51,6 +59,8 @@ class RealtimeSyncViewModel(
     }
 
     private fun dispatchSaleEvent(event: SaleRealtimeEvent) {
+        if (!shouldHandleSaleEvent(event, activeUserId, activePendingSaleIds.value)) return
+
         interpretSaleRealtimeEventCaseUse(event).forEach { command ->
             when (command) {
                 is SaleRealtimeCommand.InAppMessage -> viewModelScope.launch {
@@ -82,3 +92,14 @@ data class RealtimeUiMessage(
     val message: String,
     val isError: Boolean
 )
+
+internal fun shouldHandleSaleEvent(
+    event: SaleRealtimeEvent,
+    activeUserId: String,
+    activePendingSaleIds: Set<String>
+): Boolean {
+    if (activeUserId.isBlank()) return false
+    if (event.userId.isBlank()) return false
+    if (event.userId != activeUserId) return false
+    return event.saleId in activePendingSaleIds
+}
