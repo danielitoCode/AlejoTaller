@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
-    @Query("SELECT * FROM categorydto")
+    @Query("SELECT * FROM categorydto ORDER BY id DESC")
     fun observeAll(): Flow<List<CategoryDto>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
