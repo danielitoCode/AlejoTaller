@@ -168,6 +168,7 @@ dependencies {
     implementation(libs.compose.qr)
     // Size class integration
     implementation(libs.compose.window.size)
+    //implementation(libs.window.size.compose)
     // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))

@@ -64,6 +64,7 @@ class SolucionesCubaPaymentGateway(
                 "No se pudo obtener URL de pago desde la API. Respuesta: $payload"
             )
     }
+
     /**
      * Extrae la URL de checkout del payload de respuesta.
      * Soporta dos formatos posibles:
