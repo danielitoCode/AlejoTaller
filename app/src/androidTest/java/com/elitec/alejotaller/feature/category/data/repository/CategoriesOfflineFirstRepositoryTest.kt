@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
 import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
-import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -14,13 +13,12 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import kotlin.test.assertEquals
 
 @RunWith(AndroidJUnit4::class)
 class CategoriesOfflineFirstRepositoryTest {
     private lateinit var  volatileDb: AppBD
-    private lateinit var categoryDao: CategoryDao
+    private lateinit var dao: CategoryDao
 
     @Before
     fun setUp() {
@@ -29,7 +27,7 @@ class CategoriesOfflineFirstRepositoryTest {
             context,
             AppBD::class.java
         ).build()
-        categoryDao = volatileDb.categoriesDao()
+        dao = volatileDb.categoriesDao()
     }
 
     @After
@@ -47,10 +45,10 @@ class CategoriesOfflineFirstRepositoryTest {
         )
 
         // When
-        categoryDao.insertAll(categoriesList)
+        dao.insertAll(categoriesList)
 
         // Then
-        val response = categoryDao.observeAll().first()
+        val response = dao.observeAll().first()
         assertEquals(categoriesList.sortedByDescending { it.id }, response)
     }
 
@@ -62,12 +60,12 @@ class CategoriesOfflineFirstRepositoryTest {
         val category3 = CategoryDto("category3", "Category test 3", "photo url 3")
 
         // When
-        categoryDao.insert(category1)
-        categoryDao.insert(category2)
-        categoryDao.insert(category3)
+        dao.insert(category1)
+        dao.insert(category2)
+        dao.insert(category3)
 
         // Then
-        val response = categoryDao.observeAll().first()
+        val response = dao.observeAll().first()
         assertEquals(
             listOf(
                 category1,
@@ -87,9 +85,9 @@ class CategoriesOfflineFirstRepositoryTest {
             CategoryDto("category3", "Category test 3", "photo url 3")
         )
         // When
-        categoryDao.insertAll(categoriesList)
+        dao.insertAll(categoriesList)
         // Then
-        val response = categoryDao.getById("category4")
+        val response = dao.getById("category4")
 
         assertEquals(null, response)
     }
@@ -103,9 +101,9 @@ class CategoriesOfflineFirstRepositoryTest {
             CategoryDto("category3", "Category test 3", "photo url 3")
         )
         // When
-        categoryDao.insertAll(categoriesList)
+        dao.insertAll(categoriesList)
         // Then
-        val response = categoryDao.getById("category2")
+        val response = dao.getById("category2")
 
         assertEquals(
             CategoryDto(
