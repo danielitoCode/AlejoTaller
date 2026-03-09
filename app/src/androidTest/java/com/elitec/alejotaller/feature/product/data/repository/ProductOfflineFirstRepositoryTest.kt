@@ -10,7 +10,9 @@ import com.elitec.alejotaller.feature.product.data.dto.ProductDto
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
+import io.appwrite.services.Databases
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -20,8 +22,9 @@ import kotlin.test.assertNull
 
 class ProductOfflineFirstRepositoryTest {
     private lateinit var  volatileDb: AppBD
-    private lateinit var dao: ProductDao
 
+    private lateinit var productOfflineRepo: ProductOfflineFirstRepository
+    private lateinit var dao: ProductDao
     private val listProductDtoTest = listOf(
         ProductDto(
             id = "1",
@@ -91,8 +94,21 @@ class ProductOfflineFirstRepositoryTest {
         dao.insertAll(listProductDtoTest)
 
         // Then
-        val response = dao.getAllFlow().first()
-        assertEquals(listProductDtoTest.sortedByDescending { it.id }, response)
+        val response = productOfflineRepo.observeAll().first()
+        val expectedData = listProductDtoTest
+            .map { productDto ->
+                Product(
+                    productDto.id,
+                    productDto.name,
+                    productDto.description,
+                    productDto.price,
+                    productDto.photoUrl,
+                    productDto.categoryId,
+                    productDto.rating
+                )
+            }
+            .sortedByDescending { item -> item.id }
+        assertEquals(expectedData, response)
     }
 
     @Test
