@@ -1,11 +1,13 @@
 package com.elitec.alejotaller.feature.sale.domain.caseUse
 
+import android.nfc.FormatException
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeMessageKind
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeCommand
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
 
 class InterpretSaleRealtimeEventCaseUse {
     operator fun invoke(event: SaleRealtimeEvent): List<SaleRealtimeCommand> {
+        if(event.saleId.isEmpty()|| event.userId.isEmpty() ) return emptyList()
         return if (event.isSuccess) {
             listOf(
                 SaleRealtimeCommand.InAppMessage(
