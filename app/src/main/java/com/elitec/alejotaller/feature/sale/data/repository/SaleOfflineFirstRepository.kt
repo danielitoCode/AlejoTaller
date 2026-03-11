@@ -7,6 +7,7 @@ import com.elitec.alejotaller.feature.sale.data.dto.SaleDto
 import com.elitec.alejotaller.feature.sale.data.mapper.toDomain
 import com.elitec.alejotaller.feature.sale.data.mapper.toDto
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.alejotaller.feature.sale.domain.repository.SaleNetRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -14,7 +15,7 @@ import kotlinx.coroutines.flow.map
 private const val MAX_SYNC_RETRIES = 3
 
 class SaleOfflineFirstRepository(
-    private val net: SaleNetRepositoryImpl,
+    private val net: SaleNetRepository,
     private val bd: SaleDao
 ) : SaleRepository {
     override fun observeAll(): Flow<List<Sale>> =
@@ -76,7 +77,7 @@ internal fun mergeSyncResult(
 }
 
 private suspend fun pushWithRetry(
-    net: SaleNetRepositoryImpl,
+    net: SaleNetRepository,
     sale: SaleDto,
     maxRetries: Int = MAX_SYNC_RETRIES
 ) {

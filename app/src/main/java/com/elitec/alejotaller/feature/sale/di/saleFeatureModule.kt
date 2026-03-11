@@ -13,6 +13,7 @@ import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncC
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
 import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
+import com.elitec.alejotaller.feature.sale.domain.repository.SaleNetRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.TelegramNotificator
@@ -27,7 +28,7 @@ val saleFeatureModule = module {
     single { get<AppBD>().saleDao() }
 
     // Data layer
-    single { SaleNetRepositoryImpl(get()) }
+    single< SaleNetRepository> { SaleNetRepositoryImpl(get()) }
     single<PaymentGateway> { SolucionesCubaPaymentGateway(get()) }
     single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
     single<TelegramNotificator> { TelegramNotificatorImpl(get()) }
