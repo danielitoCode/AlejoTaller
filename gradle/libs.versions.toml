@@ -70,7 +70,12 @@ playServicesAnalyticsImpl = "18.2.0"
 sizeScreen = "1.5.0-alpha15"
 windowSize="0.5.0"
 junitJupiter = "5.14.0"
-
+# Test
+mock = "1.14.9"
+turbine = "1.2.1"
+coroutinesTest = "1.10.2"
+androidxTestCore = "1.7.0"
+roboelectric = "4.11.1"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -164,6 +169,12 @@ play-services-analytics-impl = { group = "com.google.android.gms", name = "play-
 compose-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "sizeScreen" }
 window-size-compose = { module = "dev.chrisbanes.material3:material3-window-size-class-multiplatform", version.ref = "windowSize" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+# Test
+mock-test = { module = "io.mockk:mockk", version.ref = "mock" }
+turbine-test = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutinesTest" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+roboelectric-test = { module = "org.robolectric:robolectric", version.ref = "roboelectric" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

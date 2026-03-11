@@ -39,6 +39,10 @@ class CategoriesOfflineFirstRepositoryTest {
             AppBD::class.java
         ).build()
         dao = db.categoriesDao()
+
+        net = FakeCategoryNetRepository()
+
+        repository = CategoriesOfflineFirstRepository(net,dao)
     }
 
     @After

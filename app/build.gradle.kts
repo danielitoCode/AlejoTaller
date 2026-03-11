@@ -79,6 +79,7 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
+            isIncludeAndroidResources = true // Permite acceso a recursos desde unit test
         }
     }
 }
@@ -95,6 +96,16 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.material3)
     testImplementation(libs.junit)
+    // Unit Test
+    testImplementation(libs.mock.test)
+    testImplementation(libs.turbine.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.koin.test)
+    testImplementation(libs.koin.test.junit4)
+    testImplementation(libs.ktor.client.test)
+    // testImplementation(libs.roboelectric.test)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -122,7 +133,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.compose.navigation)
-    implementation(libs.koin.test)
+
     // Google Identity
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)

@@ -70,7 +70,7 @@ fun LandScreen(
     )
     var contentVisible by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(null) {
         contentVisible = true
     }
 
