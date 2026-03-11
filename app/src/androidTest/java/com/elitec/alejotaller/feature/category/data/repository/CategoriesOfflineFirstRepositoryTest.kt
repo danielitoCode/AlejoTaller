@@ -4,8 +4,13 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.elitec.alejotaller.core.MainDispatcherRule
+import com.elitec.alejotaller.fakes.FakeCategoryNetRepository
+import com.elitec.alejotaller.fakes.FakeProductNetRepository
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
 import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
+import com.elitec.alejotaller.feature.product.data.dao.ProductDao
+import com.elitec.alejotaller.feature.product.data.repository.ProductOfflineFirstRepository
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -13,26 +18,32 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.test.assertEquals
+import junit.framework.TestCase.assertEquals
+import org.junit.Rule
+import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 class CategoriesOfflineFirstRepositoryTest {
-    private lateinit var  volatileDb: AppBD
+    @get:Rule
+    val dispatcherRule = MainDispatcherRule()
+    private lateinit var db: AppBD
     private lateinit var dao: CategoryDao
+    private lateinit var net: FakeCategoryNetRepository
+    private lateinit var repository: CategoriesOfflineFirstRepository
 
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
-        volatileDb = Room.inMemoryDatabaseBuilder(
+        db = Room.inMemoryDatabaseBuilder(
             context,
             AppBD::class.java
         ).build()
-        dao = volatileDb.categoriesDao()
+        dao = db.categoriesDao()
     }
 
     @After
     fun tearDown() {
-        volatileDb.close()
+        db.close()
     }
 
     @Test
@@ -79,15 +90,9 @@ class CategoriesOfflineFirstRepositoryTest {
     @Test
     fun get_not_existing_category_by_id() = runTest {
         // Given
-        val categoriesList = listOf(
-            CategoryDto("category1", "Category test 1", "photo url 1"),
-            CategoryDto("category2", "Category test 2", "photo url 2"),
-            CategoryDto("category3", "Category test 3", "photo url 3")
-        )
-        // When
-        dao.insertAll(categoriesList)
+        repository.sync()
         // Then
-        val response = dao.getById("category4")
+        val response = repository.getById("id not saved")
 
         assertEquals(null, response)
     }
@@ -95,22 +100,15 @@ class CategoriesOfflineFirstRepositoryTest {
     @Test
     fun get_existing_category_by_id() = runTest {
         // Given
-        val categoriesList = listOf(
-            CategoryDto("category1", "Category test 1", "photo url 1"),
-            CategoryDto("category2", "Category test 2", "photo url 2"),
-            CategoryDto("category3", "Category test 3", "photo url 3")
-        )
-        // When
-        dao.insertAll(categoriesList)
-        // Then
-        val response = dao.getById("category2")
+        repository.sync()
 
-        assertEquals(
-            CategoryDto(
-                "category2",
-                "Category test 2",
-                "photo url 2"),
-            response
-        )
+        // Then
+        val cached = repository.observeAll().first()
+        val selected = cached[Random.nextInt(0,cached.size-1)]
+
+        // Then
+        val response = repository.getById(selected.id)
+
+        assertEquals(selected.name, response?.name)
     }
 }

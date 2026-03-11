@@ -5,6 +5,7 @@ import com.elitec.alejotaller.feature.category.data.repository.CategoriesOffline
 import com.elitec.alejotaller.feature.category.domain.caseUse.ObserveCategoriesCaseUse
 import com.elitec.alejotaller.feature.category.domain.caseUse.SyncCategoriesCaseUse
 import com.elitec.alejotaller.feature.category.domain.repository.CategoriesRepository
+import com.elitec.alejotaller.feature.category.domain.repository.CategoryNetRepository
 import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import org.koin.core.module.dsl.viewModel
@@ -15,7 +16,7 @@ val categoryFeatureModule = module {
     single { get<AppBD>().categoriesDao() }
 
     // Data layer
-    single { CategoriesNetRepositoryImpl(get()) }
+    single< CategoryNetRepository> { CategoriesNetRepositoryImpl(get()) }
     single<CategoriesRepository> { CategoriesOfflineFirstRepository(get(), get()) }
 
     // Domain layer
