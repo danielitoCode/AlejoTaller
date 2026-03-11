@@ -5,14 +5,15 @@ import com.elitec.alejotaller.feature.category.data.mapper.toCategoryDto
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
 import com.elitec.alejotaller.feature.product.data.mapper.toProductDto
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import io.appwrite.services.Databases
 
 class ProductNetRepositoryImpl(
     private val netDB: Databases
-) {
+): ProductNetRepository{
 
-    suspend fun getAll(): List<ProductDto> {
+    override suspend fun getAll(): List<ProductDto> {
         val response = netDB.listDocuments(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.PRODUCT_TABLE_ID
@@ -21,7 +22,7 @@ class ProductNetRepositoryImpl(
         return  decode
     }
 
-    suspend fun getById(itemId: String): ProductDto {
+    override suspend fun getById(itemId: String): ProductDto {
         val response = netDB.getDocument(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.PRODUCT_TABLE_ID,

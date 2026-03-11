@@ -5,6 +5,7 @@ import com.elitec.alejotaller.feature.product.data.repository.ProductOfflineFirs
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
+import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
@@ -17,7 +18,7 @@ val productFeatureModule = module {
     single { get<AppBD>().productsDao() }
 
     // Data layer
-    single { ProductNetRepositoryImpl(get()) }
+    single< ProductNetRepository> { ProductNetRepositoryImpl(get()) }
     single<ProductRepository>{ ProductOfflineFirstRepository(get(), get()) }
 
     // Domain Layer

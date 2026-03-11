@@ -30,7 +30,7 @@ interface ProductDao {
     suspend fun insert(items: ProductDto)
 
     @Query("SELECT * FROM productdto WHERE id = :id")
-    suspend fun getById(id: String): ProductDto
+    suspend fun getById(id: String): ProductDto?
 
     @Query("DELETE FROM productdto WHERE id = :id")
     suspend fun deleteById(id: String)
