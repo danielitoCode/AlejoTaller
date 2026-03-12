@@ -8,7 +8,7 @@
       <SelectionState runConfigName="sync_downloads_and_caches_products()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="LandScreenTest">
+      <SelectionState runConfigName="ProductOfflineFirstRepositoryTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
