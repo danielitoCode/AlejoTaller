@@ -1,0 +1,68 @@
+name: Android Unit Tests + Kover Coverage
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests-and-coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Generate Kover reports
+        run: ./gradlew :app:koverHtmlReport :app:koverXmlReport --stacktrace
+
+      - name: Verify coverage threshold (45%)
+        run: ./gradlew :app:koverVerify --stacktrace
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-kover-report
+          path: |
+            app/build/reports/kover/
+          if-no-files-found: warn
+
+      - name: Upload coverage XML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-kover-xml
+          path: app/build/reports/kover/xml/report.xml
+          if-no-files-found: warn

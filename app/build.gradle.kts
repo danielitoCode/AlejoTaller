@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
+    alias(libs.plugins.jetbrains.kotlinx.kover)
     // alias(libs.plugins.kotzilla)
 }
 
@@ -183,6 +184,36 @@ dependencies {
     // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))
+}
+
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*.R",
+                    "*.R$*",
+                    "*.BuildConfig",
+                    "*.Manifest*",
+                    "*.*Test*",
+                    "*.ComposableSingletons*",
+                    "*.Preview*",
+                    "*.*_Factory*",
+                    "*.*_Provide*Factory*",
+                    "*.*_MembersInjector*",
+                    "*.*Dao_Impl*",
+                    "*.*MapperImpl*",
+                    "*.Companion*"
+                )
+            }
+        }
+
+        verify {
+            rule {
+                minBound(45)
+            }
+        }
+    }
 }
 
 room {
