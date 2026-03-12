@@ -51,7 +51,6 @@ import com.elitec.alejotaller.infraestructure.core.presentation.components.Landi
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
 import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
-
 @Composable
 fun LandScreen(
     modifier: Modifier = Modifier,

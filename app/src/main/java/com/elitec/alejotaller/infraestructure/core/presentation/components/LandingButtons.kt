@@ -11,8 +11,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
+// TestTag
+const val NAVIGATE_TO_LOGIN_BUTTON = "NAVIGATE_TO_LOGIN_BUTTON"
+const val NAVIGATE_TO_REGISTER_BUTTON = "NAVIGATE_TO_REGISTER_BUTTON"
 @Composable
 fun LandingButtons(
     modifier: Modifier = Modifier,
@@ -29,7 +33,8 @@ fun LandingButtons(
             onClick = onSignInClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(52.dp)
+                .testTag(NAVIGATE_TO_LOGIN_BUTTON),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(text = "Iniciar sesión")
@@ -38,7 +43,8 @@ fun LandingButtons(
             onClick = onSignUpClick,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
+                .height(52.dp)
+                .testTag(NAVIGATE_TO_REGISTER_BUTTON),
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(text = "Crear cuenta")

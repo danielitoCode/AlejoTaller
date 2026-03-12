@@ -11,9 +11,6 @@
       <SelectionState runConfigName="CategoriesOfflineFirstRepositoryTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="get_not_existing_category_by_id()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="dateTimeStrategyMock()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>

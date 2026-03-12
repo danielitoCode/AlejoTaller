@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.fakes
+package com.elitec.alejotaller.data.fakesRepositories
 
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto

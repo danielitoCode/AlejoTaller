@@ -30,10 +30,10 @@ class RealTimeManagerImpl(
                 onSaleEvent(SaleRealtimeEvent(saleId = saleId, userId = userId, isSuccess = false, cause = cause))
             }
         )
+
         val promotionProcessor = PromotionEventProcessor(onPromotionReceived = { event ->
             onPromotion(event.toDomainPromotion())
         })
-        saleProcessor.setNext(promotionProcessor)
 
         val saleChannel = BuildConfig.PUSHER_SALE_CHANNEL.orFallback(DEFAULT_SALE_CHANNEL, "PUSHER_SALE_CHANNEL")
         val promoChannel = BuildConfig.PUSHER_PROMO_CHANNEL.orFallback(DEFAULT_PROMO_CHANNEL, "PUSHER_PROMO_CHANNEL")
