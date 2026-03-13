@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.data.repository
 
+import android.util.Log
 import com.elitec.alejotaller.feature.product.data.mapper.toDomain
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.sale.data.dao.SaleDao
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private const val MAX_SYNC_RETRIES = 3
+private const val TAG = "SaleOfflineRepository"
 
 class SaleOfflineFirstRepository(
     private val net: SaleNetRepository,
@@ -27,8 +29,16 @@ class SaleOfflineFirstRepository(
 
     override suspend fun save(item: Sale) {
         val saleDto = item.toDto()
+        Log.i(TAG, "event=sale_save_local_start saleId=${saleDto.id} userId=${saleDto.userId}")
         bd.insert(saleDto)
-        runCatching { pushWithRetry(net, saleDto) }
+        Log.i(TAG, "event=sale_save_local_success saleId=${saleDto.id}")
+        runCatching {
+            Log.i(TAG, "event=sale_save_remote_push_start saleId=${saleDto.id}")
+            pushWithRetry(net, saleDto)
+            Log.i(TAG, "event=sale_save_remote_push_success saleId=${saleDto.id}")
+        }.onFailure { error ->
+            Log.w(TAG, "event=sale_save_remote_push_failed saleId=${saleDto.id} cause=${error.message}", error)
+        }
     }
 
     override suspend fun sync(userId: String): Result<Unit> = runCatching {
@@ -82,10 +92,16 @@ private suspend fun pushWithRetry(
     maxRetries: Int = MAX_SYNC_RETRIES
 ) {
     var lastError: Throwable? = null
-    repeat(maxRetries) {
+    repeat(maxRetries) { attempt ->
         runCatching { net.upsert(sale) }
-            .onSuccess { return }
-            .onFailure { error -> lastError = error }
+            .onSuccess {
+                Log.i(TAG, "event=sale_push_retry_success saleId=${sale.id} attempt=${attempt + 1}")
+                return
+            }
+            .onFailure { error ->
+                lastError = error
+                Log.w(TAG, "event=sale_push_retry_failed saleId=${sale.id} attempt=${attempt + 1} cause=${error.message}")
+            }
     }
 
     throw (lastError ?: IllegalStateException("No se pudo sincronizar la venta ${sale.id}"))

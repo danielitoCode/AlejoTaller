@@ -24,6 +24,6 @@ class RegisterNewSaleCauseUse(
 
         repository.save(saleConfirmed)
 
-        sale.id
+        saleConfirmed.id
     }
 }

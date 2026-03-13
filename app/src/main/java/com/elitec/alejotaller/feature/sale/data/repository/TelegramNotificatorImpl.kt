@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.data.repository
 
+import android.util.Log
 import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
@@ -20,11 +21,19 @@ class TelegramNotificatorImpl(
     private val httpClient: HttpClient
 ) : TelegramNotificator {
 
+    private companion object {
+        const val DEFAULT_TELEGRAM_API_URL = "https://api.telegram.org"
+        const val TAG = "TelegramNotificator"
+    }
+
     override suspend fun notify(sale: Sale, user: SaleNotifierUser) {
         val chatId = BuildConfig.TELEGRAM_CHAT_ID.trim()
         require(chatId.isNotBlank()) { "TELEGRAM_CHAT_ID no está configurado" }
 
-        val response = httpClient.post(resolveTelegramSendMessageEndpoint()) {
+        val endpoint = resolveTelegramSendMessageEndpoint()
+        Log.i(TAG, "event=telegram_notify_start saleId=${sale.id} endpoint=$endpoint")
+
+        val response = httpClient.post(endpoint) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             headers.append(HttpHeaders.CacheControl, "no-cache")
@@ -36,27 +45,32 @@ class TelegramNotificatorImpl(
             )
         }.body<TelegramApiResponse>()
 
+        Log.i(TAG, "event=telegram_notify_response saleId=${sale.id} ok=${response.ok} errorCode=${response.errorCode}")
+
         check(response.ok) {
             "Telegram API devolvió error${response.errorCode?.let { " (code=$it)" } ?: ""}: ${response.description ?: "sin descripción"}"
         }
+
+        Log.i(TAG, "event=telegram_notify_success saleId=${sale.id}")
     }
 
     private fun resolveTelegramSendMessageEndpoint(): String {
         val configuredUrl = BuildConfig.TELEGRAM_API_URL.trim().removeSuffix("/")
         val botToken = BuildConfig.TELEGRAM_BOT_KEY.trim()
+        val baseUrl = configuredUrl.ifBlank { DEFAULT_TELEGRAM_API_URL }
 
         return when {
             configuredUrl.isBlank() -> {
                 require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no está configurado" }
-                "$configuredUrl/bot$botToken/sendMessage"
+                "$baseUrl/bot$botToken/sendMessage"
             }
 
             configuredUrl.endsWith("/sendMessage") -> configuredUrl
-            configuredUrl.contains("/bot") -> "$configuredUrl/sendMessage"
+            configuredUrl.contains("/bot") -> "$baseUrl/sendMessage"
 
             else -> {
                 require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no está configurado" }
-                "$configuredUrl/bot$botToken/sendMessage"
+                "$baseUrl/bot$botToken/sendMessage"
             }
         }
     }

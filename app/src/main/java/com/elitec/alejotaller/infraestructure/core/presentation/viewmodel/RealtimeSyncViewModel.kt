@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
@@ -24,6 +25,9 @@ class RealtimeSyncViewModel(
     private val interpretSaleRealtimeEventCaseUse: InterpretSaleRealtimeEventCaseUse
 ) : ViewModel() {
 
+    private companion object {
+        const val TAG = "RealtimeSyncVM"
+    }
     private var isSubscribed = false
     private var activeUserId: String = ""
     private val activePendingSaleIds = MutableStateFlow<Set<String>>(emptySet())
@@ -59,11 +63,16 @@ class RealtimeSyncViewModel(
     }
 
     private fun dispatchSaleEvent(event: SaleRealtimeEvent) {
-        if (!shouldHandleSaleEvent(event, activeUserId, activePendingSaleIds.value)) return
+        Log.i(TAG, "event=realtime_dispatch_received saleId=${event.saleId} userId=${event.userId} success=${event.isSuccess}")
+        if (!shouldHandleSaleEvent(event, activeUserId, activePendingSaleIds.value)) {
+            Log.i(TAG, "event=realtime_dispatch_ignored saleId=${event.saleId} activeUserId=$activeUserId")
+            return
+        }
 
         interpretSaleRealtimeEventCaseUse(event).forEach { command ->
             when (command) {
                 is SaleRealtimeCommand.InAppMessage -> viewModelScope.launch {
+                    Log.i(TAG, "event=realtime_in_app_message saleId=${event.saleId} kind=${command.kind}")
                     _uiMessages.emit(
                         RealtimeUiMessage(
                             message = command.message,
@@ -76,7 +85,9 @@ class RealtimeSyncViewModel(
                     orderNotificationService.showOrderStatus(
                         title = command.title,
                         message = command.body
-                    )
+                    ).also {
+                        Log.i(TAG, "event=realtime_push_notification saleId=${event.saleId} title=${command.title}")
+                    }
             }
         }
     }

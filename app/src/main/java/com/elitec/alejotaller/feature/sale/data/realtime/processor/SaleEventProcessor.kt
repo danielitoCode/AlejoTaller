@@ -17,17 +17,17 @@ class SaleEventProcessor(
 
     override fun handle(event: RealtimeEventEnvelope): Boolean {
         if (!event.isSaleEvent()) return false
-        Log.i(TAG, "Sale event received: name=${event.name}, channel=${event.channel}, payload=${event.payload}")
+        Log.i(TAG, "event=realtime_sale_received name=${event.name} channel=${event.channel} payload=${event.payload}")
 
         val response = event.payload?.let(::decode) ?: return true
 
         when (response) {
             is SaleEventResponse.SaleSuccessResponse -> {
-                Log.i(TAG, "Sale success interpreted for saleId=${response.saleId}")
+                Log.i(TAG, "event=realtime_sale_success saleId=${response.saleId} userId=${response.userId}")
                 onSuccess(response.saleId, response.userId)
             }
             is SaleEventResponse.SaleErrorResponse -> {
-                Log.w(TAG, "Sale error interpreted for saleId=${response.saleId}, cause=${response.cause}")
+                Log.i(TAG, "event=realtime_sale_success saleId=${response.saleId} userId=${response.userId}")
                 onError(response.saleId, response.userId, response.cause)
             }
         }

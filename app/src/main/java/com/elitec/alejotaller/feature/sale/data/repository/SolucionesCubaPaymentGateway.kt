@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.data.repository
 
+import android.util.Log
 import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
 import io.ktor.client.HttpClient
@@ -12,6 +13,10 @@ import java.util.Locale
 class SolucionesCubaPaymentGateway(
     private val httpClient: HttpClient
 ): PaymentGateway {
+
+    private companion object {
+        const val TAG = "SolucionesCubaGateway"
+    }
 
     override suspend fun createCheckoutUrl(
         saleId: String,
@@ -40,6 +45,7 @@ class SolucionesCubaPaymentGateway(
         require(BuildConfig.SOLUCIONES_CUBA_API_KEY.isNotBlank()) { "SOLUCIONES_CUBA_API_KEY no está configurada" }
         require(BuildConfig.SOLUCIONES_CUBA_MERCHANT_ID.isNotBlank()) { "SOLUCIONES_CUBA_MERCHANT_ID no está configurado" }
         require(amount > 0) { "El monto debe ser mayor que 0" }
+        Log.i(TAG, "event=payment_checkout_start saleId=$saleId amount=$amount endpoint=$endpoint")
         val response = httpClient.submitForm(
             url = endpoint,
             formParameters = Parameters.build {
@@ -59,10 +65,14 @@ class SolucionesCubaPaymentGateway(
             }
         )
         val payload = response.bodyAsText().trim()
-        extractCheckoutUrl(payload)
+        val checkoutUrl = extractCheckoutUrl(payload)
             ?: throw IllegalStateException(
                 "No se pudo obtener URL de pago desde la API. Respuesta: $payload"
             )
+        Log.i(TAG, "event=payment_checkout_success saleId=$saleId checkoutUrl=$checkoutUrl")
+        checkoutUrl
+    }.onFailure { error ->
+        Log.e(TAG, "event=payment_checkout_failed saleId=$saleId cause=${error.message}", error)
     }
 
     /**

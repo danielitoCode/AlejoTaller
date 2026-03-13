@@ -50,7 +50,7 @@ class RealTimeManagerImpl(
             channel = promoChannel,
             eventNames = PROMOTION_EVENTS,
             onReceive = { event ->
-                if (!saleProcessor.process(event)) {
+                if (!promotionProcessor.process(event)) {
                     Log.w(TAG, "Evento realtime no manejado: ${event.name} en canal ${event.channel}")
                 }
             }
