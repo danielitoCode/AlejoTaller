@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
+import android.util.Log
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
@@ -340,11 +341,24 @@ fun InternalNavigationWrapper(
                                         toasterViewModel.dismissMessage("sale_charge")
                                         shopCartViewModel.clearCart()
                                         if (checkoutUrl != null) {
+                                            val checkoutUri = checkoutUrl.toUri()
+                                            Log.i(
+                                                "BuyConfirmNavigation",
+                                                "event=payment_redirect saleId=$saleId url=$checkoutUrl host=${checkoutUri.host} scheme=${checkoutUri.scheme}"
+                                            )
+                                            if (checkoutUri.scheme != "https") {
+                                                toasterViewModel.showMessage(
+                                                    "Pedido registrado (#${saleId.take(8)}), pero la pasarela devolvió una URL insegura: $checkoutUrl",
+                                                    ToastType.Warning
+                                                )
+                                                backStack.navigateTo(InternalRoutesKey.BuyReservation)
+                                                return@initiatePayment
+                                            }
                                             // ✅ Abre la URL de pago en Chrome Custom Tabs
                                             val intent = androidx.browser.customtabs.CustomTabsIntent.Builder()
                                                 .setShowTitle(true)
                                                 .build()
-                                            intent.launchUrl(context, checkoutUrl.toUri())
+                                            intent.launchUrl(context, checkoutUri)
                                             // Navegar a reservas para que el usuario vea su pedido pendiente
                                             backStack.navigateTo(InternalRoutesKey.BuyReservation)
                                         } else {

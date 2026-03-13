@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dokar.sonner.ToastType
@@ -31,6 +32,7 @@ class ToasterViewModel: ViewModel() {
             id = id ?: Clock.System.now().toString(),
             isInfinite = isInfinite
         )
+        Log.i("ToasterViewModel", "event=toast message=$message id=$id")
         viewModelScope.launch {
             _toastActions.emit(ToastAction.Show(event))
         }
