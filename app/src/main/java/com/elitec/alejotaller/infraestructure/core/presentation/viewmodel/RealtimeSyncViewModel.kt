@@ -8,6 +8,7 @@ import com.elitec.alejotaller.feature.notifications.domain.caseuse.SavePromotion
 import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeMessageKind
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeCommand
 import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
@@ -22,7 +23,8 @@ class RealtimeSyncViewModel(
     private val subscribeRealtimeSyncCaseUse: SubscribeRealtimeSyncCaseUse,
     private val savePromotionCaseUse: SavePromotionCaseUse,
     private val orderNotificationService: OrderNotificationService,
-    private val interpretSaleRealtimeEventCaseUse: InterpretSaleRealtimeEventCaseUse
+    private val interpretSaleRealtimeEventCaseUse: InterpretSaleRealtimeEventCaseUse,
+    private val updateSaleVerificationFromRealtimeCaseUse: UpdateSaleVerificationFromRealtimeCaseUse
 ) : ViewModel() {
 
     private companion object {
@@ -67,6 +69,17 @@ class RealtimeSyncViewModel(
         if (!shouldHandleSaleEvent(event, activeUserId, activePendingSaleIds.value)) {
             Log.i(TAG, "event=realtime_dispatch_ignored saleId=${event.saleId} activeUserId=$activeUserId")
             return
+        }
+
+        viewModelScope.launch {
+            updateSaleVerificationFromRealtimeCaseUse(
+                saleId = event.saleId,
+                isSuccess = event.isSuccess
+            ).onSuccess {
+                Log.i(TAG, "event=realtime_status_persisted saleId=${event.saleId} nextState=${if (event.isSuccess) "VERIFIED" else "DELETED"}")
+            }.onFailure { error ->
+                Log.w(TAG, "event=realtime_status_persist_failed saleId=${event.saleId} cause=${error.message}", error)
+            }
         }
 
         interpretSaleRealtimeEventCaseUse(event).forEach { command ->

@@ -12,6 +12,7 @@ import com.elitec.alejotaller.feature.sale.domain.caseUse.RegisterNewSaleCauseUs
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
+import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
 import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNetRepository
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
@@ -38,6 +39,7 @@ val saleFeatureModule = module {
     factory { ObserveAllSalesCaseUse(get()) }
     factory { UpdateDeliveryTypeCaseUse(get()) }
     factory { InitiatePaymentCaseUse(get(), get(), get(), get()) }
+    factory { UpdateSaleVerificationFromRealtimeCaseUse(get()) }
     factory { RegisterNewSaleCauseUse(get(), get(), get()) }
     factory { SyncSalesCaseUse(get()) }
     factory { GetSalesByIdCaseUse(get()) }

@@ -97,5 +97,5 @@ val infrastructureModule = module {
 
     // ViewModels
     viewModel { ToasterViewModel() }
-    viewModel { RealtimeSyncViewModel(get(), get(), get(), get()) }
+    viewModel { RealtimeSyncViewModel(get(), get(), get(), get(), get()) }
 }
