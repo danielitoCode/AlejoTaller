@@ -118,7 +118,8 @@ dependencies {
     // HttpClient
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.android)
+    //implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.serialization.kotlinx.json) { //Esto es para evitar conflictos con el R8
         exclude(group = "com.fasterxml.jackson.core")
         exclude(group = "com.fasterxml.jackson.dataformat", module = "jackson-dataformat-xml")
