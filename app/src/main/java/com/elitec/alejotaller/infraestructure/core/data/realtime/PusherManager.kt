@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class PusherManager(
+class  PusherManager(
     private val pusher: Pusher
 ) {
     private var isConnected = false

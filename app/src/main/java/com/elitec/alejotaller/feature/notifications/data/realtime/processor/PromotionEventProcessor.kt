@@ -19,6 +19,7 @@ class PromotionEventProcessor(
     override fun handle(event: RealtimeEventEnvelope): Boolean {
         if (!event.isPromotionEvent()) return false
         Log.i(tag, "Promotion event received: name=${event.name}, channel=${event.channel}, payload=${event.payload}")
+
         val payload = event.payload ?: return true
         val decoded = decode(payload)
         Log.i(tag, "Promotion interpreted: id=${decoded.id}, title=${decoded.title}, currentPrice=${decoded.currentPrice}")
