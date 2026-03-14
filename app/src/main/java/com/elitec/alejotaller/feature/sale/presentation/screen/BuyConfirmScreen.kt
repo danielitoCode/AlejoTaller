@@ -21,11 +21,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 
 private enum class PaymentMethod(val label: String) {
-    SolucionesCuba("Tarjeta virtual (UltraPay / SolucionesCuba)")
+    SolucionesCuba("Tarjeta virtual (UltraPay / SolucionesCuba)"),
+    Transfermovil("Metodo de pago por transferencia directa"),
 }
 
 @Composable
@@ -156,4 +159,44 @@ fun BuyConfirmScreen(
             )
         }
     }
+}
+
+@Preview(
+    showBackground = true
+)
+@Composable
+private fun BuyConfirmScreenPreview() {
+    val salesUIState = listOf(
+        UiSaleItem(
+            Product(
+                "product1",
+                "Product test 1",
+                "Product test 1 description",
+                332.2,
+                "photo url 1",
+                "categoryId",
+                4.3
+            ), 5
+        ),
+        UiSaleItem(
+            Product(
+                "product2",
+                "Product test 2",
+                "Product test 2 description",
+                332.2,
+                "photo url 2",
+                "categoryId",
+                4.7
+            ), 3
+        ),
+    )
+    val totalAmount = remember { salesUIState.sumOf { it.product.price * it.quantity } }
+    BuyConfirmScreen(
+        items = salesUIState,
+        totalAmount = totalAmount,
+        onBackClick = {},
+        onSubmitPurchase = {},
+        onRegisterInUltrapay = {},
+        isSubmitting = false
+    )
 }
