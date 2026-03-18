@@ -103,6 +103,7 @@ fun InternalNavigationWrapper(
     val cartItems by shopCartViewModel.shopCartFlow.collectAsStateWithLifecycle()
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
     val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
+
     val pendingSaleIds = remember(userId) {
         sales
             .asSequence()

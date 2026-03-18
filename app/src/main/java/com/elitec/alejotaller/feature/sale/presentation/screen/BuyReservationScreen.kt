@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.presentation.screen
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DeliveryDining
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -43,13 +45,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
 import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
+import kotlinx.datetime.LocalDate
 
 @Composable
 fun BuyReservationScreen(
@@ -61,7 +71,6 @@ fun BuyReservationScreen(
     onGoToShop: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var selectedSale by remember(sales) { mutableStateOf(sales.firstOrNull()) }
     // ─────────────────────────────────────────────────────────────────────
     // VACÍO 1: Estado completamente vacío — sin ninguna compra
     // ─────────────────────────────────────────────────────────────────────
@@ -73,16 +82,25 @@ fun BuyReservationScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
-        // ── Detalle de la venta seleccionada con QR ──────────────────────
-        selectedSale?.let { sale ->
-            SaleDetailCard(
-                sale = sale,
-                productNamesById = productNamesById,
-                onDeliveryTypeSelected = onDeliveryTypeSelected
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.ShoppingBag,
+                contentDescription = "Shopping Bag",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text = "Mis reservas",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
             )
         }
+        Spacer(Modifier.height(5.dp))
+
         // ── Lista de reservas ────────────────────────────────────────────
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -91,8 +109,8 @@ fun BuyReservationScreen(
             items(sales, key = { it.id }) { sale ->
                 SaleListItem(
                     sale = sale,
-                    isSelected = selectedSale?.id == sale.id,
-                    onClick = { selectedSale = sale }
+                    onClick = {
+                    }
                 )
             }
         }
@@ -131,7 +149,7 @@ private fun EmptyReservationsState(
             text = "Aquí aparecerán tus pedidos una vez que hayas realizado alguna compra.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(28.dp))
         Button(
@@ -142,71 +160,6 @@ private fun EmptyReservationsState(
             Icon(Icons.Default.ShoppingCart, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Ver productos")
-        }
-    }
-}
-// ─────────────────────────────────────────────────────────────────────────────
-// Card de detalle con QR + estado + selector de entrega cuando está VERIFIED
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun SaleDetailCard(
-    sale: Sale,
-    productNamesById: Map<String, String>,
-    onDeliveryTypeSelected: (saleId: String, type: DeliveryType) -> Unit
-) {
-    val qrContent = buildString {
-        appendLine("id=${sale.id}")
-        appendLine("status=${sale.verified.name}")
-        appendLine("amount=${"%.2f".format(sale.amount)}")
-        appendLine("date=${sale.date}")
-        sale.products.forEach { item ->
-            val name = item.productName ?: productNamesById[item.productId] ?: item.productId
-            appendLine("- $name x${item.quantity}")
-        }
-    }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Estado visual del pedido
-            SaleStatusBadge(sale.verified)
-            // QR
-            Image(
-                painter = rememberQrCodePainter(qrContent),
-                contentDescription = "Código QR del pedido",
-                modifier = Modifier.size(160.dp)
-            )
-            Text(
-                text = "Pedido #${sale.id.take(8)}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Total: ${"%.2f".format(sale.amount)} CUP",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            // ─────────────────────────────────────────────────────────────
-            // VACÍO 2: Pedido VERIFIED — mostrar selector de entrega
-            // ─────────────────────────────────────────────────────────────
-            AnimatedVisibility(
-                visible = sale.verified == BuyState.VERIFIED,
-                enter = fadeIn(tween(400)) + expandVertically(tween(400))
-            ) {
-                DeliverySelectionSection(
-                    currentDeliveryType = sale.deliveryType,
-                    onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
-                )
-            }
         }
     }
 }
@@ -265,73 +218,7 @@ private fun SaleStatusBadge(state: BuyState) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Selector de entrega — aparece SOLO cuando el pedido está VERIFIED
 // ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun DeliverySelectionSection(
-    currentDeliveryType: DeliveryType?,
-    onTypeSelected: (DeliveryType) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        HorizontalDivider()
-        Text(
-            text = "🎉 ¡Tu pedido está listo!",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-        Text(
-            text = "¿Cómo prefieres recibirlo?",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            // Opción: Recoger en tienda
-            DeliveryOptionCard(
-                icon = Icons.Default.Store,
-                title = "Recoger",
-                subtitle = "Paso por el taller",
-                selected = currentDeliveryType == DeliveryType.PICKUP,
-                onClick = { onTypeSelected(DeliveryType.PICKUP) },
-                modifier = Modifier.weight(1f)
-            )
-            // Opción: Domicilio
-            DeliveryOptionCard(
-                icon = Icons.Default.DeliveryDining,
-                title = "Domicilio",
-                subtitle = "Me lo traen",
-                selected = currentDeliveryType == DeliveryType.DELIVERY,
-                onClick = { onTypeSelected(DeliveryType.DELIVERY) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        // Confirmación cuando ya eligió
-        currentDeliveryType?.let { type ->
-            val confirmText = when (type) {
-                DeliveryType.PICKUP   ->
-                    "✅ Perfecto, te esperamos en el taller. Trae el código QR para retirar tu pedido."
-                DeliveryType.DELIVERY ->
-                    "✅ ¡Entendido! El taller te contactará pronto para coordinar la entrega."
-            }
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Text(
-                    text = confirmText,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-    }
-}
+
 @Composable
 private fun DeliveryOptionCard(
     icon: ImageVector,
@@ -388,7 +275,6 @@ private fun DeliveryOptionCard(
 @Composable
 private fun SaleListItem(
     sale: Sale,
-    isSelected: Boolean,
     onClick: () -> Unit
 ) {
     Card(
@@ -396,8 +282,7 @@ private fun SaleListItem(
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-            else MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.primaryContainer
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -409,35 +294,89 @@ private fun SaleListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = "Pedido #${sale.id.take(8)}",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(text = sale.date.toString(), style = MaterialTheme.typography.bodySmall)
-                Text(
-                    text = "${"%.2f".format(sale.amount)} CUP",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarToday,
+                        contentDescription = "Calendar day",
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(0.7f),
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(text = sale.date.toString(), style = MaterialTheme.typography.bodySmall)
+                }
+                Column(
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text(
+                        text = "Pedido",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(0.8f),
+                        text = "#${sale.id.take(8)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = "Monto total:",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Text(
+                        text = "${"%.2f".format(sale.amount)} CUP",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
             // Badge de estado compacto
-            val (stateLabel, stateColor) = when (sale.verified) {
-                BuyState.UNVERIFIED -> "Reservada" to MaterialTheme.colorScheme.tertiary
-                BuyState.VERIFIED   -> "Lista ✓"   to MaterialTheme.colorScheme.primary
-                BuyState.DELETED    -> "Cancelada" to MaterialTheme.colorScheme.error
+            val (icon, label, color) = when (sale.verified) {
+                BuyState.UNVERIFIED -> Triple(
+                    Icons.Outlined.HourglassEmpty,
+                    "Pendiente",
+                    Color(0xFFFF973C)
+                )
+                BuyState.VERIFIED -> Triple(
+                    Icons.Outlined.CheckCircle,
+                    "Listo",
+                    MaterialTheme.colorScheme.primary
+                )
+                BuyState.DELETED -> Triple(
+                    Icons.Outlined.Cancel,
+                    "Cancelada",
+                    MaterialTheme.colorScheme.error
+                )
             }
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = stateColor.copy(alpha = 0.12f)
+                color = color.copy(alpha = 0.12f)
             ) {
-                Text(
-                    text = stateLabel,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = stateColor,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    modifier = Modifier.padding(horizontal = 3.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Icon(
+                        imageVector =  icon,
+                        contentDescription = "Calendar day",
+                        tint = color,
+                        modifier = Modifier.size(15.dp)
+                    )
+                    Text(
+                        text = label,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = color,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -447,4 +386,145 @@ private fun BuyState.toLabel(): String = when (this) {
     BuyState.UNVERIFIED -> "Reservada"
     BuyState.VERIFIED -> "Lista"
     BuyState.DELETED -> "Cancelada"
+}
+
+@Preview(
+    showBackground = true
+)
+@Composable
+private fun BuyReservationScreenPreview() {
+    val products = remember {
+        listOf(
+            Product(
+                "product1",
+                "Product test 1",
+                "Product test 1 description",
+                332.2,
+                "photo url 1",
+                "categoryId",
+                4.3
+            ),
+            Product(
+                "product2",
+                "Product test 2",
+                "Product test 2 description",
+                332.2,
+                "photo url 2",
+                "categoryId",
+                4.7
+            ),
+            Product(
+                "product3",
+                "Product test 3",
+                "Product test 3 description",
+                312.5,
+                "photo url 3",
+                "categoryId",
+                4.0
+            )
+        )
+    }
+
+    val salesUIState = remember {
+        listOf(
+            UiSaleItem( products[0], 5),
+            UiSaleItem( products[1], 3),
+        )
+    }
+    val salesUIState2 = remember {
+        listOf(
+            UiSaleItem( products[1], 5),
+            UiSaleItem( products[2], 3),
+        )
+    }
+    val salesUIState3 = remember {
+        listOf(
+            UiSaleItem( products[2], 5),
+            UiSaleItem( products[0], 3),
+        )
+    }
+
+    val salesItemsList = remember {
+        salesUIState.map {
+            SaleItem(it.product.id, quantity = it.quantity, productName = it.product.name)
+        }
+    }
+    val salesItemsList2 = remember {
+        salesUIState2.map {
+            SaleItem(it.product.id, quantity = it.quantity, productName = it.product.name)
+        }
+    }
+    val salesItemsList3 = remember {
+        salesUIState3.map {
+            SaleItem(it.product.id, quantity = it.quantity, productName = it.product.name)
+        }
+    }
+
+    val totalAmount = remember {
+        salesUIState.sumOf {
+            it.product.price * it.quantity
+        }
+    }
+    val totalAmount2 = remember {
+        salesUIState.sumOf {
+            it.product.price * it.quantity
+        }
+    }
+    val totalAmount3 = remember {
+        salesUIState.sumOf {
+            it.product.price * it.quantity
+        }
+    }
+
+    val saleList = remember {
+        listOf(
+            Sale(
+                id = "sale1",
+                date = LocalDate(2023,1,12),
+                amount = totalAmount,
+                verified = BuyState.UNVERIFIED,
+                products = salesItemsList,
+                userId = "userId test",
+                deliveryType = DeliveryType.DELIVERY
+            ),
+            Sale(
+                id = "sale2",
+                date = LocalDate(2023,1,13),
+                amount = totalAmount2,
+                verified = BuyState.VERIFIED,
+                products = salesItemsList2,
+                userId = "userId test",
+                deliveryType = DeliveryType.DELIVERY
+            ),
+            Sale(
+                id = "sale3",
+                date = LocalDate(2023,1,14),
+                amount = totalAmount3,
+                verified = BuyState.DELETED,
+                products = salesItemsList3,
+                userId = "userId test",
+                deliveryType = DeliveryType.PICKUP
+            )
+        )
+    }
+
+    val translateMap = mutableMapOf<String, String>()
+
+    products.forEach { product ->
+        translateMap[product.id] = product.name
+    }
+
+    AlejoTallerTheme {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            BuyReservationScreen(
+                sales = saleList,
+                productNamesById = translateMap,
+                onDeliveryTypeSelected = {saleId, type -> },
+                onGoToShop = {}
+            )
+        }
+    }
 }
