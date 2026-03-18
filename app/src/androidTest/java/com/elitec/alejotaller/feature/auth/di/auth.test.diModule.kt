@@ -1,9 +1,9 @@
 package com.elitec.alejotaller.feature.auth.di
 
+import com.elitec.alejotaller.fakes.FakeGoogleAuthProvider
+import com.elitec.alejotaller.fakes.FakeSessionManager
 import com.elitec.alejotaller.feature.auth.data.fakeRepository.FakeAccountRepository
 import com.elitec.alejotaller.feature.auth.data.fakeRepository.FakeFileRepository
-import com.elitec.alejotaller.feature.auth.data.repository.AccountRepositoryImpl
-import com.elitec.alejotaller.feature.auth.data.repository.FileUploadRepoImpl
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthUserCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthWithGoogleCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
@@ -17,6 +17,8 @@ import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPassCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhoneCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.VerifyUserUseCase
+import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
+import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
 import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 import com.elitec.alejotaller.feature.auth.domain.repositories.FileRepository
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
@@ -29,6 +31,11 @@ val authTestDiModule = module {
     // Data layer
     single<AccountRepository> { FakeAccountRepository() }
     single<FileRepository> { FakeFileRepository() }
+    
+    // Ports (Fakes para instrumented tests)
+    single<SessionManager> { FakeSessionManager() }
+    single<GoogleAuthProvider> { FakeGoogleAuthProvider() }
+
     // Domain: CaseUse
     factory { CreateAccountUseCase(get(), get()) }
     factory { GetCurrentUserInfoCaseUse(get()) }

@@ -41,7 +41,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.elitec.alejotaller.KoinTestRunner"
     }
 
     // Evita conflictos con Ktor, Koin y otras libs.
