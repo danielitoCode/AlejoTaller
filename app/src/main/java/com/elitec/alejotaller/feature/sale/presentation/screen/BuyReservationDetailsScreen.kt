@@ -1,7 +1,6 @@
 package com.elitec.alejotaller.feature.sale.presentation.screen
 
 import android.content.res.Configuration
-import android.widget.Space
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -10,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeliveryDining
@@ -38,12 +40,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
-import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
 import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
@@ -51,10 +54,11 @@ import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.LocalDate
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.graphics.Color
+
+// Constantes para testing
+const val DELIVERY_SECTION_TAG = "delivery_section"
+const val OPTION_PICKUP_TAG = "option_pickup"
+const val OPTION_DELIVERY_TAG = "option_delivery"
 
 @Composable
 fun BuyReservationDetailsScreen(
@@ -136,12 +140,11 @@ fun BuyReservationDetailsScreen(
                         contentDescription = "Código QR del pedido",
                         modifier = Modifier.size(160.dp)
                     )
-                    // ─────────────────────────────────────────────────────────────
-                    // VACÍO 2: Pedido VERIFIED — mostrar selector de entrega
-                    // ─────────────────────────────────────────────────────────────
+                    // Selector de entrega si está VERIFIED
                     AnimatedVisibility(
                         visible = sale.verified == BuyState.VERIFIED,
-                        enter = fadeIn(tween(400)) + expandVertically(tween(400))
+                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
                     ) {
                         DeliverySelectionSection(
                             currentDeliveryType = sale.deliveryType,
@@ -242,26 +245,23 @@ private fun DeliverySelectionSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Opción: Recoger en tienda
             DeliveryOptionCard(
                 icon = Icons.Default.Store,
                 title = "Recoger",
                 subtitle = "Paso por el taller",
                 selected = currentDeliveryType == DeliveryType.PICKUP,
                 onClick = { onTypeSelected(DeliveryType.PICKUP) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).testTag(OPTION_PICKUP_TAG)
             )
-            // Opción: Domicilio
             DeliveryOptionCard(
                 icon = Icons.Default.DeliveryDining,
                 title = "Domicilio",
                 subtitle = "Me lo traen",
                 selected = currentDeliveryType == DeliveryType.DELIVERY,
                 onClick = { onTypeSelected(DeliveryType.DELIVERY) },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).testTag(OPTION_DELIVERY_TAG)
             )
         }
-        // Confirmación cuando ya eligió
         currentDeliveryType?.let { type ->
             val confirmText = when (type) {
                 DeliveryType.PICKUP   ->
@@ -385,86 +385,54 @@ private fun SaleStatusBadge(state: BuyState) {
     }
 }
 
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL
-)
 @Composable
-private fun BuyReservationDetailsScreenPreview() {
+private fun BuyReservationDetailsPreviewContent(state: BuyState) {
     val products = remember {
         listOf(
-            Product(
-                "product1",
-                "Product test 1",
-                "Product test 1 description",
-                332.2,
-                "photo url 1",
-                "categoryId",
-                4.3
-            ),
-            Product(
-                "product2",
-                "Product test 2",
-                "Product test 2 description",
-                332.2,
-                "photo url 2",
-                "categoryId",
-                4.7
-            ),
-            Product(
-                "product3",
-                "Product test 3",
-                "Product test 3 description",
-                312.5,
-                "photo url 3",
-                "categoryId",
-                4.0
-            )
+            Product("p1", "Batería 12V", "", 12000.0, "", "", 4.5),
+            Product("p2", "Aceite Motor", "", 4500.0, "", "", 4.8)
         )
     }
-    val salesUIState = remember {
-        listOf(
-            UiSaleItem( products[0], 5),
-            UiSaleItem( products[1], 3),
-        )
+    val salesItems = products.map {
+        SaleItem(it.id, quantity = 1, productName = it.name)
     }
-    val salesItemsList = remember {
-        salesUIState.map {
-            SaleItem(it.product.id, quantity = it.quantity, productName = it.product.name)
-        }
-    }
-    val totalAmount = remember {
-        salesUIState.sumOf {
-            it.product.price * it.quantity
-        }
-    }
-    val translateMap = mutableMapOf<String, String>()
+    val translateMap = products.associate { it.id to it.name }
 
-    products.forEach { product ->
-        translateMap[product.id] = product.name
-    }
     AlejoTallerTheme {
-        Surface(
-            color = MaterialTheme.colorScheme.background,
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Surface(color = MaterialTheme.colorScheme.background) {
             BuyReservationDetailsScreen(
                 sale = Sale(
-                    id = "sale1",
-                    date = LocalDate(2023,1,12),
-                    amount = totalAmount,
-                    verified = BuyState.UNVERIFIED,
-                    products = salesItemsList,
-                    userId = "userId test",
-                    deliveryType = DeliveryType.DELIVERY
+                    id = "ORD-777",
+                    date = LocalDate(2023, 10, 25),
+                    amount = 16500.0,
+                    verified = state,
+                    products = salesItems,
+                    userId = "user123",
+                    deliveryType = if (state == BuyState.VERIFIED) DeliveryType.PICKUP else null
                 ),
                 productNamesById = translateMap,
-                findProductPrice = { productId ->
-                    val productFind = products.first { it.id == productId }
-                    productFind.price
-                },
-                onDeliveryTypeSelected = {saleId , type ->}
+                findProductPrice = { id -> products.find { it.id == id }?.price ?: 0.0 },
+                onDeliveryTypeSelected = { _, _ -> },
+                modifier = Modifier.fillMaxSize().padding(16.dp)
             )
         }
     }
+}
+
+@Preview(showBackground = true, name = "Estado: Pendiente")
+@Composable
+private fun PreviewUnverified() {
+    BuyReservationDetailsPreviewContent(BuyState.UNVERIFIED)
+}
+
+@Preview(showBackground = true, name = "Estado: Verificado (Listo)")
+@Composable
+private fun PreviewVerified() {
+    BuyReservationDetailsPreviewContent(BuyState.VERIFIED)
+}
+
+@Preview(showBackground = true, name = "Estado: Cancelado")
+@Composable
+private fun PreviewDeleted() {
+    BuyReservationDetailsPreviewContent(BuyState.DELETED)
 }
