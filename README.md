@@ -89,3 +89,26 @@ app/
 
 ## Contribución
 Si deseas contribuir, crea una rama, realiza tus cambios y abre un pull request.
+
+## Flujo de autenticación con Google (actual)
+
+### Objetivo
+- Mantener un acceso de “un toque” para usuarios Google en Appwrite usando credenciales de email/password por detrás.
+- Permitir que cualquier usuario cambie su contraseña sin romper su cuenta.
+
+### Reglas del flujo
+1. **Default Google**:
+   - `email` de la cuenta Appwrite = email de Google.
+   - `password` inicial = `sub` de Google.
+   - En `prefs` se guarda `sub` (`prefs.sub = sub`) junto al resto de metadatos.
+2. **Cambio de contraseña**:
+   - El usuario puede cambiar su contraseña libremente.
+   - El `sub` se mantiene en `prefs`; no se elimina.
+3. **Google one-tap**:
+   - Funciona directamente mientras la contraseña actual siga siendo el `sub`.
+4. **Fallback (Opción A)**:
+   - Si el login one-tap falla porque el usuario ya cambió su contraseña, se muestra un mensaje guiando a iniciar una vez con correo+contraseña para continuar usando Google.
+
+### Detalle técnico del fallback
+- En error de autenticación Google (`401`) se intenta alta automática.
+- Si la alta responde `409` (cuenta ya existe), se interpreta como posible contraseña cambiada y se devuelve el mensaje de recuperación con login tradicional una vez.
