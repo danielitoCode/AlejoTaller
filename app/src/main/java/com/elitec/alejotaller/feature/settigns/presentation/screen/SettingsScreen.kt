@@ -39,6 +39,7 @@ import com.elitec.alejotaller.feature.settigns.domain.entity.AppSettings
 import com.elitec.alejotaller.feature.settigns.presentation.viewmodel.SettingsViewModel
 import org.koin.androidx.compose.koinViewModel
 
+private const val CHECK_DARK_THEME_TAG = "DARK_THEME_CHECK"
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,

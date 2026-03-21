@@ -23,7 +23,7 @@ class TallerAlejoApp : Application() {
                 notificationsFeatureModule,
                 productFeatureModule,
                 settingsFeatureModule,
-                saleFeatureModule
+                saleFeatureModule,
             )
         }
     }

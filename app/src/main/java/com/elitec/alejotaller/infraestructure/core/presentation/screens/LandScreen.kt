@@ -67,6 +67,7 @@ fun LandScreen(
         animationSpec = infiniteRepeatable(tween(2800)),
         label = "glowAlpha"
     )
+
     var contentVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(null) {

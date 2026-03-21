@@ -52,7 +52,10 @@ class MainActivity : ComponentActivity() {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
 
             AlejoTallerTheme(darkTheme = settings.darkMode) {
-                val toasterViewModel: ToasterViewModel = koinViewModel()
+                /*MatosNoteScreen(
+                    modifier = Modifier.fillMaxSize()
+                )*/
+               val toasterViewModel: ToasterViewModel = koinViewModel()
                 val toasterState = rememberToasterState()
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
