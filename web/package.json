@@ -20,6 +20,14 @@
     "svelte-check": "^4.4.5",
     "typescript": "~5.9.3",
     "vite": "^8.0.1",
-    "vite-plugin-functions-mixins": "^0.4.1"
+    "vitest": "^4.1.0",
+    "jsdom": "^29.0.1",
+    "msw": "^2.12.13"
+  },
+  "dependencies": {
+    "appwrite": "^22.4.0",
+    "dexie": "^4.3.0",
+    "lucide-svelte": "^0.577.0",
+    "pusher-js": "^8.4.0"
   }
 }
