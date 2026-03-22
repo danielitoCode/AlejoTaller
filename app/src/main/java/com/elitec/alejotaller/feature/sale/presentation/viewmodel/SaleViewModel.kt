@@ -9,6 +9,7 @@ import com.elitec.alejotaller.feature.sale.domain.caseUse.RegisterNewSaleCauseUs
 import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
 import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
+import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -54,12 +55,13 @@ class SaleViewModel(
      * Error crítico (no se pudo ni guardar la venta).
      */
     fun initiatePayment(
-            sale: Sale,
-            onReadyToPay: (saleId: String, checkoutUrl: String?) -> Unit,
-            onFail: (String) -> Unit
+        sale: Sale,
+        paymentChannel: PaymentChannel,
+        onReadyToPay: (saleId: String, checkoutUrl: String) -> Unit,
+        onFail: (String) -> Unit
     ) {
         viewModelScope.launch {
-            initiatePaymentCaseUse(sale)
+            initiatePaymentCaseUse(sale, paymentChannel)
                     .onSuccess { result ->
                         onReadyToPay(result.saleId, result.checkoutUrl)
                     }

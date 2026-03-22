@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
+import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 
 private enum class PaymentMethod(val label: String) {
@@ -57,12 +58,12 @@ fun BuyConfirmScreen(
     items: List<UiSaleItem>,
     totalAmount: Double,
     onBackClick: () -> Unit,
-    onSubmitPurchase: () -> Unit,
+    onSubmitPurchase: (PaymentChannel?) -> Unit,
     onRegisterInUltrapay: () -> Unit,
     isSubmitting: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    var selectedMethod by remember { mutableStateOf(PaymentMethod.SolucionesCuba) }
+    var selectedMethod by remember { mutableStateOf<PaymentChannel?>(null) }
     var showConfirmSubmitDialog by remember { mutableStateOf(false) }
 
     val ultraPayBrush = Brush.linearGradient(
@@ -106,7 +107,7 @@ fun BuyConfirmScreen(
         }
 
         Text(
-            text = "Serás redirigido a la pasarela para pagar con tu tarjeta virtual.",
+            text = "Puedes reservar sin pago online o elegir un canal de pago experimental.",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -209,7 +210,7 @@ fun BuyConfirmScreen(
                     tonalElevation = 5.dp,
                     shadowElevation = 5.dp,
                     shape = RoundedCornerShape(20.dp),
-                    onClick = { selectedMethod = PaymentMethod.SolucionesCuba },
+                    onClick = { selectedMethod = PaymentChannel.ULTRAPAY },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -243,6 +244,10 @@ fun BuyConfirmScreen(
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
                             }
+                            RadioButton(
+                                selected = selectedMethod == PaymentChannel.ULTRAPAY,
+                                onClick = { selectedMethod = PaymentChannel.ULTRAPAY }
+                            )
                         }
                         Text(
                             text = "Si aún no tienes cuenta, regístrate debajo",
@@ -280,7 +285,7 @@ fun BuyConfirmScreen(
                     tonalElevation = 5.dp,
                     shadowElevation = 5.dp,
                     shape = RoundedCornerShape(20.dp),
-                    onClick = { selectedMethod = PaymentMethod.SolucionesCuba },
+                    onClick = { selectedMethod = PaymentChannel.TRANSFERMOVIL },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -314,6 +319,10 @@ fun BuyConfirmScreen(
                                     modifier = Modifier.padding(start = 8.dp)
                                 )
                             }
+                            RadioButton(
+                                selected = selectedMethod == PaymentChannel.TRANSFERMOVIL,
+                                onClick = { selectedMethod = PaymentChannel.TRANSFERMOVIL }
+                            )
                         }
                     }
                 }
@@ -323,12 +332,12 @@ fun BuyConfirmScreen(
         Button(
             onClick = { showConfirmSubmitDialog = true },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isSubmitting && items.isNotEmpty() && selectedMethod == PaymentMethod.SolucionesCuba
+            enabled = !isSubmitting && items.isNotEmpty()
         ) {
             if (isSubmitting) {
                 CircularProgressIndicator()
             } else {
-                Text(text = "Solicitar pedido (En Efectivo)")
+                Text(text = if (selectedMethod == null) "Reservar sin pago online" else "Solicitar pedido y pagar")
             }
         }
 
@@ -351,12 +360,20 @@ fun BuyConfirmScreen(
             AlertDialog(
                 onDismissRequest = { showConfirmSubmitDialog = false },
                 title = { Text("Confirmar pedido") },
-                text = { Text("Esta acción registrará la compra y te redirigirá al pago. ¿Deseas continuar?") },
+                text = {
+                    Text(
+                        if (selectedMethod == null) {
+                            "Se registrará tu reservación como pendiente de confirmación. ¿Deseas continuar?"
+                        } else {
+                            "Se registrará el pedido y se abrirá la pasarela de pago seleccionada. ¿Deseas continuar?"
+                        }
+                    )
+                },
                 confirmButton = {
                     Button(
                         onClick = {
                             showConfirmSubmitDialog = false
-                            onSubmitPurchase()
+                            onSubmitPurchase(selectedMethod)
                         },
                         enabled = !isSubmitting
                     ) {
