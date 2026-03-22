@@ -39,19 +39,19 @@ class SaleNetRepositoryImpl(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.SALE_TABLE_ID,
             documentId = resolvedId,
-            data = item.copy(id = resolvedId)
+            data = item.toAppwriteData()
         )
     }
 
     override suspend fun upsert(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
-        val resolvedItem = item.copy(id = resolvedId)
+        val payload = item.copy(id = resolvedId).toAppwriteData()
         runCatching {
             netDB.createDocument(
                 databaseId = BuildConfig.APPWRITE_DATABASE_ID,
                 collectionId = BuildConfig.SALE_TABLE_ID,
                 documentId = resolvedId,
-                data = resolvedItem
+                data = payload
             )
         }.recoverCatching { throwable ->
             val appwriteError = throwable as? AppwriteException
@@ -60,7 +60,7 @@ class SaleNetRepositoryImpl(
                     databaseId = BuildConfig.APPWRITE_DATABASE_ID,
                     collectionId = BuildConfig.SALE_TABLE_ID,
                     documentId = resolvedId,
-                    data = resolvedItem
+                    data = payload
                 )
             } else {
                 throw throwable
@@ -68,3 +68,17 @@ class SaleNetRepositoryImpl(
         }.getOrThrow()
     }
 }
+
+internal fun SaleDto.toAppwriteData(): Map<String, Any?> = mapOf(
+    "date" to date.toString(),
+    "amount" to amount,
+    "verified" to verified,
+    "products" to products.map { product ->
+        mapOf(
+            "productId" to product.productId,
+            "quantity" to product.quantity
+        )
+    },
+    "user_id" to userId,
+    "delivery_type" to deliveryType
+).filterValues { value -> value != null }

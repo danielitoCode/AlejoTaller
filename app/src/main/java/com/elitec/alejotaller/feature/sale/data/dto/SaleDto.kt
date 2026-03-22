@@ -27,7 +27,7 @@ fun String.toBuyState(): BuyState = when(this) {
     "UNVERIFIED" -> BuyState.UNVERIFIED
     "VERIFIED" -> BuyState.VERIFIED
     "DELETED" -> BuyState.DELETED
-    else -> throw Exception("Estado de venta imposible de resolver")
+    else -> BuyState.UNVERIFIED
 }
 
 fun String.toDeliveryType(): DeliveryType = when(this) {

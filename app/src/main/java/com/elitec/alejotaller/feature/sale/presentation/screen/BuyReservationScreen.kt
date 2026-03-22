@@ -64,11 +64,8 @@ import kotlinx.datetime.LocalDate
 @Composable
 fun BuyReservationScreen(
     sales: List<Sale>,
-    productNamesById: Map<String, String>,
-    // ── Nuevo callback para cuando el usuario confirma tipo de entrega ──
-    onDeliveryTypeSelected: (saleId: String, type: DeliveryType) -> Unit = { _, _ -> },
-    // ── Nuevo callback para navegar al carrito (desde el EmptyState) ──
     onGoToShop: () -> Unit = {},
+    onSaleSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     // ─────────────────────────────────────────────────────────────────────
@@ -110,6 +107,7 @@ fun BuyReservationScreen(
                 SaleListItem(
                     sale = sale,
                     onClick = {
+
                     }
                 )
             }
@@ -521,9 +519,8 @@ private fun BuyReservationScreenPreview() {
         ) {
             BuyReservationScreen(
                 sales = saleList,
-                productNamesById = translateMap,
-                onDeliveryTypeSelected = {saleId, type -> },
-                onGoToShop = {}
+                onGoToShop = {},
+                onSaleSelected = {_->}
             )
         }
     }

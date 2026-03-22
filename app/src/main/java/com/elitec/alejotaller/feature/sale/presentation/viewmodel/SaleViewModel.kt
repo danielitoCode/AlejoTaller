@@ -60,7 +60,9 @@ class SaleViewModel(
     ) {
         viewModelScope.launch {
             initiatePaymentCaseUse(sale)
-                    .onSuccess { result -> onReadyToPay(result.saleId, result.checkoutUrl) }
+                    .onSuccess { result ->
+                        onReadyToPay(result.saleId, result.checkoutUrl)
+                    }
                     .onFailure { error ->
                         onFail(error.message ?: "Error desconocido al procesar el pedido")
                     }

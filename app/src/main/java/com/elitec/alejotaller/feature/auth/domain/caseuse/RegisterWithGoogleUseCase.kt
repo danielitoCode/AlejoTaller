@@ -18,10 +18,7 @@ class RegisterWithGoogleUseCase(
 
         val googleUser = googleAuthProvider.getUser(context)
 
-        val password = hashEmailWithSub(
-            email = googleUser.email,
-            sub = googleUser.sub
-        )
+        val password = googleUser.sub
 
         val userProfile = UserProfile(
             sub = googleUser.sub,

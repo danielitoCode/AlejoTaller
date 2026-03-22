@@ -23,7 +23,6 @@ fun BuyReservationNestedNavigation(
     onDeliveryTypeSelected: (saleId: String, type: DeliveryType) -> Unit = { _, _ -> },
     // ── Nuevo callback para navegar al carrito (desde el EmptyState) ──
     onGoToShop: () -> Unit = {},
-
 ) {
     val backStack = rememberNavBackStack(ReservationNestedRoutes.Reservations)
 
@@ -37,7 +36,16 @@ fun BuyReservationNestedNavigation(
                 onBack = { backStack.removeLastOrNull() },
                 entryProvider = entryProvider {
                     entry<ReservationNestedRoutes.Reservations> {
-
+                        BuyReservationScreen(
+                            sales = sales,
+                            onGoToShop = onGoToShop,
+                            onSaleSelected = { saleSelectedId ->
+                                backStack.add(
+                                    ReservationNestedRoutes.ReservationDetails(saleSelectedId)
+                                )
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
                     }
                     entry<ReservationNestedRoutes.ReservationDetails> { key ->
                         BuyReservationDetailsScreen(

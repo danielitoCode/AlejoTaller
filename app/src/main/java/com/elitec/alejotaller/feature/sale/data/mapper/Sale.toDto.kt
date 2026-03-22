@@ -13,5 +13,6 @@ fun Sale.toDto(): SaleDto =
         verified = verified.toString(),
         amount = amount,
         products = products,
-        userId = userId
+        userId = userId,
+        deliveryType = deliveryType?.toString()
     )

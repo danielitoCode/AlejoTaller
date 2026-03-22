@@ -17,10 +17,7 @@ class AuthWithGoogleCaseUse(
     suspend operator fun invoke(context: Context): Result<String> = runCatching {
         val googleUser = googleAuthProvider.getUser(context)
 
-        val password = hashEmailWithSub(
-            email = googleUser.email,
-            sub = googleUser.sub
-        )
+        val password = googleUser.sub
 
         runCatching { sessionManager.closeCurrentSession() }
 
@@ -31,21 +28,23 @@ class AuthWithGoogleCaseUse(
 
             when(e.code) {
                 401 -> {
-                    val userId =registerCaseUse(
-                        email = googleUser.email,
-                        password = password,
-                        name = googleUser.name
-                    ).getOrElse { throw it }
+                    val userId = try {
+                        registerCaseUse(
+                            email = googleUser.email,
+                            password = password,
+                            name = googleUser.name
+                        ).getOrElse { throw it }
+                    } catch (registerError: Exception) {
+                        val appwriteError = registerError as? AppwriteException
+                        if (appwriteError?.code == 409) {
+                            throw IllegalStateException(
+                                "Tu contraseña fue cambiada. " +
+                                        "Inicia una vez con correo y contraseña para continuar con Google."
+                            )
+                        }
+                        throw registerError
+                    }
 
-                    accountRepository.updateProfile(
-                        UserProfile(
-                            sub = googleUser.sub,
-                            phone = googleUser.phone,
-                            photoUrl = googleUser.photoUrl,
-                            verification = false
-                        )
-                    )
-                    userId
                     accountRepository.updateProfile(
                         UserProfile(
                             sub = googleUser.sub,

@@ -16,16 +16,13 @@
       <SelectionState runConfigName="sync_downloads_and_caches_products()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="internalNavigationWrapperTest()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="when_sale_is_verified_delivery_selection_is_shown()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
       <SelectionState runConfigName="when_sale_is_unverified_delivery_selection_is_hidden()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="BuyReservationDetailsScreenTest">
+      <SelectionState runConfigName="LandScreenTest">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

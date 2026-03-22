@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.sale.domain.caseUse
 
+import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
 import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
@@ -27,10 +28,18 @@ class InitiatePaymentCaseUse(
     private val telegramNotificator: TelegramNotificator,
     private val paymentGateway: PaymentGateway
 ) {
-    suspend operator fun invoke(sale: Sale): Result<PaymentInitResult> = runCatching {
+    suspend operator fun invoke(sale: Sale, paymentChannel: PaymentChannel): Result<PaymentInitResult> = runCatching {
         // Paso 1: Asignar ID definitivo a la venta
         val saleConfirmed = sale.copy(id = ID.unique())
         // Paso 2: Obtener datos del usuario para la notificación
+        val description = buildDescription(saleConfirmed)
+        // Paso 2: Solicitar URL de pago a la pasarela seleccionada
+        val checkoutUrl = paymentGateway.createCheckoutUrl(
+            saleId = saleConfirmed.id,
+            amount = saleConfirmed.amount,
+            description = "$description [${paymentChannel.name}]"
+        ).getOrElse { throw it }
+
         val user = notificationUserProvider
             .getCurrentUser()
             .getOrElse { throw Exception("No se pudo obtener el usuario para la notificación") }
@@ -38,16 +47,10 @@ class InitiatePaymentCaseUse(
         telegramNotificator.notify(saleConfirmed, user)
         // Paso 4: Guardar la venta localmente (offline-first)
         repository.save(saleConfirmed)
-        // Paso 5: Solicitar URL de pago a la pasarela
-        val description = buildDescription(saleConfirmed)
-        val checkoutUrlResult = paymentGateway.createCheckoutUrl(
-            saleId = saleConfirmed.id,
-            amount = saleConfirmed.amount,
-            description = description
-        )
+
         PaymentInitResult(
             saleId = saleConfirmed.id,
-            checkoutUrl = checkoutUrlResult.getOrNull()  // null = Telegram OK pero pago fallido
+            checkoutUrl = checkoutUrl  // null = Telegram OK pero pago fallido
         )
     }
     private fun buildDescription(sale: Sale): String {
@@ -62,5 +65,5 @@ class InitiatePaymentCaseUse(
  */
 data class PaymentInitResult(
     val saleId: String,
-    val checkoutUrl: String?
+    val checkoutUrl: String
 )

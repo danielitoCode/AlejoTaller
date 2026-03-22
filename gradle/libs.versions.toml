@@ -77,6 +77,8 @@ coroutinesTest = "1.10.2"
 androidxTestCore = "1.7.0"
 roboelectric = "4.11.1"
 kover = "0.9.3"
+# Realtime
+alset = "1.0.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -164,6 +166,7 @@ courier-android = { module = "com.github.trycourier:courier-android", version.re
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 pusher-java-client = { module = "com.pusher:pusher-java-client", version.ref = "pusherJavaClient" }
+alset-pulse = { module = "com.github.yecharlot:alset-pulse-android-kotlin", version.ref = "alset" }
 # QR
 compose-qr = { module = "io.github.alexzhirkevich:qrose", version.ref = "qr" }
 play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }

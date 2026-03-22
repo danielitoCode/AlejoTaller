@@ -16,6 +16,7 @@ import kotlin.test.assertIs
 class ProductsCaseUseTest {
     @Test
     fun `observe products returns repository flow`() = runTest {
+
         val expected = listOf(fakeProduct(id = "p-1"), fakeProduct(id = "p-2"))
         val repository = FakeProductRepository(products = expected)
         val caseUse = ObserveProductsCaseUse(repository)
