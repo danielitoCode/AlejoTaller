@@ -1,0 +1,15 @@
+export var ColorScheme = {
+    Primary: "primary",
+    OnPrimary: "onPrimary",
+    Secondary: "secondary",
+    OnSecondary: "onSecondary",
+    Background: "background",
+    OnBackground: "onBackground",
+    Surface: "surface",
+    OnSurface: "onSurface",
+    SurfaceVariant: "surfaceVariant",
+    OnSurfaceVariant: "onSurfaceVariant",
+    Outline: "outline",
+    Error: "error",
+    OnError: "onError",
+};

@@ -1,0 +1,3 @@
+export enum Role {
+    CUSTOM, PREMIUM, OPERATOR, ADMINISTRATOR
+}
