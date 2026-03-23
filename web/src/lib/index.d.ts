@@ -11,6 +11,11 @@ export class NavHost extends SvelteComponent {}
 // If you are publishing `dist/core/...` etc. (as your npm pack log showed), keep these.
 export * from "./motion";
 export * from "./navigation";
+export * from "./core/modifier/Modifier"
+export * from "./components/Alignment";
+
+export { default as Box } from "./component/layouts/Box.svelte";
+
 
 /*// =========================
 // COMPONENTS (Svelte)

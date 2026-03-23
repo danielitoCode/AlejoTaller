@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Imagen desde la web</title>
+        <style>
+            :root {
+                color-scheme: light dark;
+                --bg: #0f1210;
+                --surface: rgba(255, 255, 255, 0.08);
+                --text: rgba(255, 255, 255, 0.92);
+                --muted: rgba(255, 255, 255, 0.72);
+                --outline: rgba(255, 255, 255, 0.14);
+                --primary: #66bb6a;
+                --on-primary: #0c2e16;
+            }
+
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: #f6f8f5;
+                    --surface: rgba(0, 0, 0, 0.03);
+                    --text: rgba(26, 28, 25, 0.92);
+                    --muted: rgba(26, 28, 25, 0.72);
+                    --outline: rgba(0, 0, 0, 0.12);
+                    --primary: #388e3c;
+                    --on-primary: #ffffff;
+                }
+            }
+
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+                background: radial-gradient(circle at 50% 10%, rgba(102, 187, 106, 0.18), transparent 55%), var(--bg);
+                color: var(--text);
+            }
+
+            .wrap {
+                height: 100%;
+                display: grid;
+                place-items: center;
+                padding: 16px;
+            }
+
+            .card {
+                width: min(520px, 100%);
+                border: 1px solid var(--outline);
+                background: var(--surface);
+                border-radius: 18px;
+                padding: 16px;
+                display: grid;
+                gap: 12px;
+                box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+                backdrop-filter: blur(10px);
+            }
+
+            h1 {
+                margin: 0;
+                font-size: 1.2rem;
+                letter-spacing: -0.01em;
+            }
+
+            p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.95rem;
+            }
+
+            .field {
+                display: grid;
+                gap: 6px;
+            }
+
+            input {
+                width: 100%;
+                height: 44px;
+                border-radius: 12px;
+                border: 1px solid var(--outline);
+                padding: 0 12px;
+                font: inherit;
+                color: var(--text);
+                background: rgba(255, 255, 255, 0.04);
+                outline: none;
+            }
+
+            input:focus-visible {
+                outline: 3px solid rgba(102, 187, 106, 0.28);
+                outline-offset: 2px;
+            }
+
+            .preview {
+                border: 1px dashed var(--outline);
+                border-radius: 16px;
+                height: 170px;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+                background: rgba(0, 0, 0, 0.03);
+            }
+
+            .preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .actions {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            button {
+                height: 44px;
+                border-radius: 14px;
+                border: 1px solid transparent;
+                cursor: pointer;
+                font: inherit;
+                font-weight: 700;
+                padding: 0 14px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                transition: transform 120ms ease, filter 160ms ease, background-color 160ms ease, border-color 160ms ease;
+            }
+
+            button:active {
+                transform: translateY(1px);
+            }
+
+            .ghost {
+                background: transparent;
+                border-color: var(--outline);
+                color: var(--text);
+            }
+
+            .primary {
+                background: var(--primary);
+                color: var(--on-primary);
+            }
+
+            .note {
+                font-size: 0.85rem;
+                color: var(--muted);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <div class="card">
+                <div>
+                    <h1>Imagen desde la web</h1>
+                    <p>Pega una URL directa de imagen (jpg/png/webp). Te mostramos un preview antes de usarla.</p>
+                </div>
+
+                <label class="field">
+                    <span class="note">URL</span>
+                    <input id="url" type="url" placeholder="https://..." autocomplete="off" />
+                </label>
+
+                <div class="preview" id="preview">
+                    <span class="note">Preview</span>
+                </div>
+
+                <div class="actions">
+                    <button class="ghost" type="button" id="cancel">Cancelar</button>
+                    <button class="primary" type="button" id="use" disabled>Usar URL</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const hash = new URLSearchParams(location.hash.slice(1));
+            const parentOrigin = hash.get("parent_origin");
+            const initialValue = hash.get("value") || "";
+
+            const urlInput = document.getElementById("url");
+            const preview = document.getElementById("preview");
+            const useBtn = document.getElementById("use");
+            const cancelBtn = document.getElementById("cancel");
+
+            function post(data) {
+                if (!parentOrigin) return;
+                window.parent.postMessage(data, parentOrigin);
+            }
+
+            function setPreview(url) {
+                preview.innerHTML = "";
+                if (!url) {
+                    const span = document.createElement("span");
+                    span.className = "note";
+                    span.textContent = "Preview";
+                    preview.appendChild(span);
+                    useBtn.disabled = true;
+                    return;
+                }
+
+                const img = document.createElement("img");
+                img.alt = "";
+                img.src = url;
+                img.onload = () => (useBtn.disabled = false);
+                img.onerror = () => {
+                    preview.innerHTML = '<span class="note">No se pudo cargar la imagen.</span>';
+                    useBtn.disabled = true;
+                };
+                preview.appendChild(img);
+            }
+
+            urlInput.value = initialValue;
+            setPreview(initialValue);
+
+            urlInput.addEventListener("input", (e) => {
+                const value = e.currentTarget.value.trim();
+                setPreview(value);
+            });
+
+            cancelBtn.addEventListener("click", () => post({ type: "image-url-cancel" }));
+            useBtn.addEventListener("click", () => post({ type: "image-url-selected", url: urlInput.value.trim() }));
+        </script>
+    </body>
+</html>
+

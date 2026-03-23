@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { Button, Card, TextField } from 'm3-svelte'
+  import { Button, Card, LoadingIndicator, TextField } from 'm3-svelte'
   import type { NavController } from '../../lib/navigation/NavController'
   import { MAIN_ROUTES } from '../routes'
   import AppRoot from '../../core/infrastructure/presentation/components/AppRoot.svelte'
   import Screen from '../../core/infrastructure/presentation/components/Screen.svelte'
+  import appLogo from '../../assets/app-logo.webp'
 
   export let navController: NavController
 
@@ -16,8 +17,10 @@
     <section class="initial-screen login-mobile-screen">
       <div class="login-mobile-top">
         <div class="login-mobile-icon-shell">
-          <div class="login-mobile-loader"></div>
-          <div class="login-mobile-icon">A</div>
+          <div class="login-mobile-loader-wrap">
+            <LoadingIndicator size={160} aria-label="Cargando" />
+          </div>
+          <img class="login-mobile-logo" src={appLogo} alt="Logo de la aplicacion" />
         </div>
 
         <div class="login-mobile-copy">

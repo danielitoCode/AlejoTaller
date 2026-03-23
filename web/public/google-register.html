@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        background: transparent;
+      }
+      .card {
+        width: min(420px, calc(100vw - 32px));
+        border-radius: 20px;
+        padding: 16px 16px 14px;
+        background: rgba(20, 20, 20, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        display: grid;
+        gap: 12px;
+      }
+      .head {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        opacity: 0.96;
+        filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.35));
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.06rem;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0;
+        opacity: 0.86;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .user {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+      }
+      .name {
+        font-weight: 750;
+        letter-spacing: -0.01em;
+      }
+      .email {
+        opacity: 0.9;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 2px;
+      }
+      .btn {
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.25);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 700;
+      }
+      .btn.primary {
+        background: rgba(129, 199, 132, 0.9);
+        color: rgba(15, 47, 24, 1);
+        border-color: rgba(129, 199, 132, 0.55);
+      }
+      .btn:hover {
+        filter: brightness(1.06);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="dialog" aria-label="Crear cuenta">
+      <div class="head">
+        <img class="logo" src="/alejoicon_clean.svg" alt="" aria-hidden="true" />
+        <div>
+          <h1>Crear cuenta</h1>
+          <p>¿Deseas crear una cuenta con este perfil de Google?</p>
+        </div>
+      </div>
+
+      <div class="user" aria-label="Perfil seleccionado">
+        <img id="avatar" class="avatar" alt="" />
+        <div>
+          <div id="name" class="name"></div>
+          <div id="email" class="email"></div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="cancel" class="btn" type="button">Cancelar</button>
+        <button id="accept" class="btn primary" type="button">Crear cuenta</button>
+      </div>
+    </div>
+
+    <script>
+      function parseHash() {
+        const raw = String(location.hash || "").replace(/^#/, "");
+        const params = new URLSearchParams(raw);
+        return Object.fromEntries(params.entries());
+      }
+
+      const params = parseHash();
+      const parentOrigin = params.parent_origin || window.location.origin;
+
+      const email = params.email || "";
+      const name = params.name || "";
+      const picture = params.picture || "";
+
+      document.getElementById("name").textContent = name || "Cuenta de Google";
+      document.getElementById("email").textContent = email;
+
+      const avatarEl = document.getElementById("avatar");
+      if (picture) avatarEl.src = picture;
+      else avatarEl.remove();
+
+      document.getElementById("cancel").addEventListener("click", () => {
+        window.parent.postMessage({ type: "google-register-cancel" }, parentOrigin);
+      });
+
+      document.getElementById("accept").addEventListener("click", () => {
+        window.parent.postMessage({ type: "google-register-accept" }, parentOrigin);
+      });
+    </script>
+  </body>
+</html>
+

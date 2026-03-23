@@ -8,19 +8,11 @@
     import { rememberNavController } from "../../../../lib/navigation/rememberNavController";
     import { authContainer } from "../../../feature/auth/di/auth.container";
     import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import CategoryManagement from "../../../feature/category/presentation/routes/CategoryManagement.svelte";
-    import ProductManagement from "../../../feature/product/presentation/routes/ProductManagement.svelte";
     import { categoryStore } from "../../../feature/category/presentation/viewmodel/category.store";
     import { productStore } from "../../../feature/product/presentation/viewmodel/product.store";
     import { promotionStore } from "../../../feature/notification/presentation/viewmodel/promotion.store";
-    import PromoManagement from "../../../feature/notification/presentation/routes/PromoManagement.svelte";
-    import SaleManagement from "../../../feature/sale/presentation/routes/SaleManagement.svelte";
     import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import UserManagement from "../../../feature/auth/presentation/routes/UserManagement.svelte";
     import Icon from "../components/Icon.svelte";
-    import DashboardHome from "../routes/DashboardHome.svelte";
-    import SettingsManagement from "../routes/SettingsManagement.svelte";
-    import ReservationManagement from "../routes/ReservationManagement.svelte";
     import { toastStore } from "../viewmodel/toast.store";
     import { logger } from "../util/logger.service";
     import RealtimeDock from "../components/RealtimeDock.svelte";
@@ -31,7 +23,6 @@
     import { pulseRefreshTargets } from "../../data/alset-pulse/pulse.refresh-targets";
     import { ENV } from "../../env";
     import SupportDetail from "../../../feature/support/presentation/routes/SupportDetail.svelte";
-    import SaleDetail from "../../../feature/sale/presentation/routes/SaleDetail.svelte";
     import { supportDetail, salesDetail } from "./nested.router";
     import { get } from "svelte/store";
     import { BuyState } from "../../../feature/sale/domain/entity/enums";
@@ -298,7 +289,7 @@
                 <NavHost
                     navController={internalNavController}
                     routes={[
-                        composable(dashboard, () => DashboardHome),
+                        /*composable(dashboard, () => DashboardHome),
                         composable(support, () => SupportInbox),
                         composable(supportDetail, () => SupportDetail),
                         composable(users, () => UserManagement),
@@ -308,7 +299,7 @@
                         composable(salesDetail, () => SaleDetail),
                         composable(promo, () => PromoManagement),
                         composable(settings, () => SettingsManagement),
-                        composable(reservation, () => ReservationManagement)
+                        composable(reservation, () => ReservationManagement)*/
                     ]}
                 />
             </div>

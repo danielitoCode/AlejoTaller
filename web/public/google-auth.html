@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Google Sign-In</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        display: grid;
+        place-items: center;
+        min-height: 100vh;
+        background: transparent;
+      }
+      .card {
+        width: min(380px, calc(100vw - 32px));
+        border-radius: 20px;
+        padding: 16px 16px 14px;
+        background: rgba(20, 20, 20, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        backdrop-filter: blur(12px);
+        color: #fff;
+        display: grid;
+        gap: 12px;
+      }
+      .head {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        opacity: 0.96;
+        filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.35));
+      }
+      .copy {
+        display: grid;
+        gap: 2px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 1.06rem;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0;
+        opacity: 0.86;
+        font-size: 0.92rem;
+        line-height: 1.35;
+      }
+      .gbtn {
+        display: grid;
+        place-items: start;
+      }
+      .btn {
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(0, 0, 0, 0.25);
+        color: #fff;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .btn.ghost {
+        background: transparent;
+      }
+      .btn:hover {
+        filter: brightness(1.06);
+      }
+      .error {
+        color: #ffb4ab;
+        font-size: 0.92rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="dialog" aria-label="Continuar con Google">
+      <div class="head">
+        <img class="logo" src="/alejoicon_clean.svg" alt="" aria-hidden="true" />
+        <div class="copy">
+          <h1>Continuar con Google</h1>
+          <p>Elige una cuenta para ingresar.</p>
+        </div>
+      </div>
+
+      <div id="g-btn" class="gbtn"></div>
+      <div id="error" class="error" hidden></div>
+
+      <button id="cancel" class="btn ghost" type="button">Cancelar</button>
+    </div>
+
+    <script>
+      function parseHash() {
+        const raw = String(location.hash || "").replace(/^#/, "");
+        const params = new URLSearchParams(raw);
+        return Object.fromEntries(params.entries());
+      }
+
+      const params = parseHash();
+      const clientId = params.client_id;
+      const parentOrigin = params.parent_origin || window.location.origin;
+
+      const errorEl = document.getElementById("error");
+      function showError(message) {
+        errorEl.textContent = message;
+        errorEl.hidden = false;
+      }
+
+      document.getElementById("cancel").addEventListener("click", () => {
+        window.parent.postMessage({ type: "google-cancel" }, parentOrigin);
+      });
+
+      if (!clientId) {
+        showError("Falta configurar el client_id de Google.");
+      } else {
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          if (!window.google || !google.accounts || !google.accounts.id) {
+            showError("No se pudo cargar Google Sign-In.");
+            return;
+          }
+
+          google.accounts.id.initialize({
+            client_id: clientId,
+            auto_select: false,
+            cancel_on_tap_outside: false,
+            callback: (response) => {
+              window.parent.postMessage(
+                { type: "google-credential", credential: response.credential },
+                parentOrigin
+              );
+            }
+          });
+
+          google.accounts.id.disableAutoSelect();
+
+          google.accounts.id.renderButton(document.getElementById("g-btn"), {
+            theme: "outline",
+            size: "large",
+            shape: "pill",
+            width: 320,
+            text: "continue_with"
+          });
+
+          google.accounts.id.prompt();
+        };
+        script.onerror = () => showError("No se pudo cargar el script de Google.");
+        document.head.appendChild(script);
+      }
+    </script>
+  </body>
+</html>
+

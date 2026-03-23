@@ -24,14 +24,21 @@
 }
 
 html,
-body,
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
 #app {
-  min-height: 100%;
+  height: 100dvh;
+  margin: 0;
 }
 
 body {
   margin: 0;
-  font-family: var(--m3-font);
+  font-family: var(--m3-font), serif;
   color: var(--m3c-on-background);
   background:
     radial-gradient(circle at top left, light-dark(rgb(76 175 80 / 0.18), rgb(129 199 132 / 0.14)) 0, transparent 30%),
@@ -223,29 +230,27 @@ h3 {
 
 .login-mobile-icon-shell {
   position: relative;
-  width: 150px;
-  height: 150px;
+  width: 170px;
+  height: 170px;
   display: grid;
   place-items: center;
 }
 
-.login-mobile-loader {
-  position: absolute;
-  inset: 10px;
-  border-radius: 999px;
-  border: 12px solid rgb(120 207 138 / 0.18);
-  border-top-color: rgb(137 207 139 / 0.42);
-  border-right-color: rgb(137 207 139 / 0.28);
+.login-mobile-loader-wrap {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: rgb(137 207 139 / 0.86);
 }
 
-.login-mobile-icon {
+.login-mobile-logo {
+  position: absolute;
   width: 94px;
   height: 94px;
-  display: grid;
-  place-items: center;
-  color: rgb(168 220 171);
-  font-size: 3rem;
-  font-weight: 800;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgb(0 0 0 / 0.22));
+  pointer-events: none;
 }
 
 .login-mobile-copy {
@@ -1662,14 +1667,13 @@ h3 {
   }
 
   .login-mobile-icon-shell {
-    width: 128px;
-    height: 128px;
+    width: 148px;
+    height: 148px;
   }
 
-  .login-mobile-icon {
+  .login-mobile-logo {
     width: 82px;
     height: 82px;
-    font-size: 2.6rem;
   }
 
   .login-mobile-card {

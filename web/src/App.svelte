@@ -8,6 +8,10 @@
   import LoginScreen from './demo/screens/LoginScreen.svelte'
   import RegisterScreen from './demo/screens/RegisterScreen.svelte'
   import MainHomeScreen from './demo/screens/MainHomeScreen.svelte'
+  import {initGlobalLogger} from "./core/infrastructure/presentation/util/console.interceptor";
+  import MainNavigationWrapper from "./core/infrastructure/presentation/navigation/MainNavigationWrapper.svelte";
+  import ToastHost from "./core/infrastructure/presentation/components/ToastHost.svelte";
+  import DevTerminal from "./core/infrastructure/presentation/components/DevTerminal.svelte";
 
   const navController = rememberNavController(MAIN_ROUTES.splash)
 
@@ -20,6 +24,10 @@
   ]
 
   let isOnline = true
+
+  if (import.meta.env.DEV) {
+    initGlobalLogger();
+  }
 
   function syncConnectivity() {
     isOnline = navigator.onLine
@@ -35,6 +43,7 @@
       window.removeEventListener('offline', syncConnectivity)
     }
   })
+
 </script>
 
 <svelte:head>
@@ -45,10 +54,18 @@
   />
 </svelte:head>
 
-<main class="root-shell">
-  <NavHost {navController} {routes} />
-
-  {#if !isOnline}
-    <div class="offline-banner">Desconectado</div>
-  {/if}
+<main>
+  <MainNavigationWrapper/>
 </main>
+
+<ToastHost/>
+
+<!-- Terminal solo en desarrollo -->
+{#if import.meta.env.DEV}
+  <DevTerminal/>
+{/if}
+
+{#if !isOnline}
+  <div class="offline-banner">Desconectado</div>
+{/if}
+

@@ -1,31 +1,45 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import type { NavController } from '../../lib/navigation/NavController'
-  import { MAIN_ROUTES } from '../routes'
-  import AppRoot from '../../core/infrastructure/presentation/components/AppRoot.svelte'
-  import Screen from '../../core/infrastructure/presentation/components/Screen.svelte'
+  import {onMount} from "svelte";
+  import alejoIcon from "/alejoicon_clean.svg";
+  import {authContainer} from "../../core/feature/auth/di/auth.container";
 
-  export let navController: NavController
+  export let navController;
 
-  onMount(() => {
-    const timer = window.setTimeout(() => {
-      navController.navigate(MAIN_ROUTES.landing)
-    }, 850)
+  onMount(async () => {
+    try {
+      const user = await authContainer.useCases.accounts.getCurrentUser();
 
-    return () => window.clearTimeout(timer)
+      if (user.role !== "admin") {
+        navController.navigate("unauthorized", { message: "Tu cuenta existe, pero no tiene permisos de administrador." });
+        return;
+      }
+
+      navController.navigate("home", { id: user.id });
+    } catch {
+      navController.navigate("welcome");
+    }
   })
 </script>
+<div class="splash-screen" role="status" aria-label="Loading app">
+  <img src={alejoIcon} class="app-icon" alt="App icon" />
+</div>
 
-<AppRoot>
-  <Screen ariaLabel="Pantalla de carga">
-    <section class="initial-screen splash-screen">
-      <div class="splash-mark">
-        <div class="splash-ring"></div>
-        <div class="brand-mark">TA</div>
-      </div>
-      <p class="eyebrow">Taller Alejo</p>
-      <h1>Preparando panel y sincronizacion</h1>
-      <p class="body-copy">Carga inicial del flujo publico.</p>
-    </section>
-  </Screen>
-</AppRoot>
+
+<style>
+  .splash-screen {
+    width: 100%;
+    height: 100dvh;
+    display: grid;
+    place-items: center;
+    background: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-background);
+  }
+
+  .app-icon {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    color: var(--md-sys-color-on-background);
+  }
+</style>
+
