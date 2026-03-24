@@ -1,304 +1,529 @@
 <script lang="ts">
-  import { Button, Icon } from 'm3-svelte'
+  import { Button, Card, Icon } from 'm3-svelte'
   import AutoAwesome from "@ktibow/iconset-material-symbols/auto-awesome"
+  import { ArrowRight, UserRoundPlus } from "lucide-svelte";
   import Screen from "../components/Screen.svelte";
-  import type {NavController} from "../../../../lib/navigation/NavController";
-  import {MAIN_ROUTES} from "../../../../demo/routes";
+  import type { NavController } from "../../../../lib/navigation/NavController";
+
   export let navController: NavController
 
   type ShowcaseItem = {
     id: string;
     title: string;
-    subtitle: string;
     imageUrl: string;
+    featured?: boolean;
   };
 
-  const baseItems: ShowcaseItem[] = [
+  const showcaseItems: ShowcaseItem[] = [
     {
-      id: "1",
-      title: "EcoFlow",
-      subtitle: "Power · Solar",
-      imageUrl:
-              "https://us.ecoflow.com/cdn/shop/files/ecoflow-ecoflow-delta-pro-ultra-whole-home-backup-power-ul-9540-certificated-dpu-bundle-delta-pro-ultra-1-x-inverter-1-x-battery-1179495744.png?v=1767511531&width=1240"
+      id: "power-anker-solix",
+      title: "Estacion de energia",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Anker_SOLIX_C300X_Portable_Power_Station.jpg",
+      featured: true
     },
     {
-      id: "2",
-      title: "BMS",
-      subtitle: "Battery Safety",
-      imageUrl:
-              "https://www.anernstore.com/cdn/shop/articles/Technician_troubleshooting_a_LiFePO4_battery_BMS_w.png?v=1761728830&width=1200"
+      id: "battery-18650",
+      title: "Bateria 18650",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Liion-18650-AA-battery.jpg"
     },
     {
-      id: "3",
-      title: "LI3-2A",
-      subtitle: "Controller",
-      imageUrl: "https://lian-li.com/wp-content/uploads/2024/10/TL_Controller_02a.jpg"
+      id: "components-closeup",
+      title: "Componentes electronicos",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Electronic_components_(8370189100).jpg"
     },
     {
-      id: "4",
-      title: "T2N3904",
-      subtitle: "Electronics",
-      imageUrl:
-              "https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=900&q=80"
+      id: "soldering-kit",
+      title: "Kit de soldadura",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Soldering_iron_and_accessories.jpg"
+    },
+    {
+      id: "lithium-pack",
+      title: "Bateria de litio",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Lithium_ion_battery.jpg"
+    },
+    {
+      id: "bench-components",
+      title: "Mesa de electronica",
+      imageUrl: "https://commons.wikimedia.org/wiki/Special:FilePath/Electronic_components.jpg"
     }
   ];
 
-  const rows = [{ id: 0, reverse: false, speed: 48, items: [...baseItems, ...baseItems] }];
+  const marqueeItems = [...showcaseItems, ...showcaseItems];
 </script>
 
-
-<Screen ariaLabel="Bienvenida">
-  <section class="welcome-screen">
-    <header class="header">
-      <div class="welcome-emblem-shell">
+<Screen ariaLabel="Bienvenida" scrollable={false}>
+  <section class="welcome-mobile">
+    <section class="welcome-gallery-shell">
+      <header class="welcome-head">
         <div class="welcome-emblem">
-          <Icon icon="{AutoAwesome}"/>
+          <Icon icon={AutoAwesome} />
         </div>
-      </div>
-      <h1>Bienvenido</h1>
-    </header>
+        <h1>Bienvenido</h1>
+        <p>Inicia sesion o crea tu cuenta para continuar.</p>
+      </header>
 
-    <section class="auto-scroll" aria-label="Galería automática">
-      {#each rows as row}
-        <div class="row-mask">
-          <div
-                  class="row-track {row.reverse ? 'reverse' : ''}"
-                  style={`--duration:${Math.max(18, 220 / row.speed)}s`}
-          >
-            {#each row.items as item, idx (`${row.id}-${item.id}-${idx}`)}
-              <article class="media-card" aria-label={item.title}>
-                <img
-                        class="media-image"
-                        src={item.imageUrl}
-                        alt={item.title}
-                        loading="lazy"
-                        decoding="async"
-                />
-                <div class="media-overlay">
-                  <span class="media-title">{item.title}</span>
-                  <span class="media-subtitle">{item.subtitle}</span>
-                </div>
-              </article>
-            {/each}
+      <section class="welcome-gallery" aria-label="Productos destacados en desplazamiento automatico">
+        <div class="gallery-fade gallery-fade-left" aria-hidden="true"></div>
+        <div class="gallery-fade gallery-fade-right" aria-hidden="true"></div>
+        <div class="gallery-brush" aria-hidden="true"></div>
+        <ul class="marquee-track" role="list">
+          {#each marqueeItems as item, index}
+            <li class={`preview-card ${item.featured ? "featured" : ""}`} aria-hidden={index >= showcaseItems.length}>
+              <img src={item.imageUrl} alt={item.title} loading={index < 3 ? "eager" : "lazy"} />
+            </li>
+          {/each}
+        </ul>
+      </section>
+    </section>
+
+    <aside class="welcome-copy-panel">
+      <div class="actions-panel">
+        <Card variant="filled">
+          <div class="actions-content">
+            <div class="actions-copy">
+              <span class="actions-eyebrow">Acceso</span>
+              <strong>Entra al panel o crea tu cuenta</strong>
+              <p class="actions-support">Gestiona productos, mensajes y ventas desde una interfaz clara y directa.</p>
+            </div>
+            <div class="actions-stack">
+              <Button variant="filled" size="m" onclick={() => navController.navigate("login") }>
+                <span class="btn-content">
+                  <span>Iniciar sesion</span>
+                  <ArrowRight size={18} />
+                </span>
+              </Button>
+              <Button variant="text" size="m" onclick={() => navController.navigate("register") }>
+                <span class="btn-content">
+                  <UserRoundPlus size={18} />
+                  <span>Crear cuenta</span>
+                </span>
+              </Button>
+            </div>
           </div>
-        </div>
-      {/each}
-    </section>
-
-    <section class="buttons-container">
-      <div class="landing-buttons">
-        <p class="landing-buttons-tittle">Inicia sesion o crea tu cuenta para continuar.</p>
-        <Button variant="filled" size="s" onclick={() => navController.navigate(MAIN_ROUTES.login)}>
-          <p class="button-tittle">Iniciar sesion</p>
-        </Button>
-        <Button variant="text" size="s" onclick={() => navController.navigate(MAIN_ROUTES.register)}>
-          <p class="button-tittle">Crear cuenta</p>
-        </Button>
+        </Card>
       </div>
-    </section>
-
+    </aside>
   </section>
 </Screen>
 
 <style>
-  .header {
-    display: grid;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .landing-buttons-tittle {
-    margin: 0;
-    text-align: center;
-    max-width: 460px;
-    color: color-mix(in srgb, var(--m3c-on-background) 90%, transparent);
-    font-size: clamp(1rem, 2vw, 1.1rem);
-  }
-
-  .button-tittle {
-    padding: 10px;
-  }
-
-  .welcome-screen {
+  :global(.screen[aria-label="Bienvenida"]) {
+    width: 100%;
+    max-width: none;
+    height: 100dvh;
     min-height: 100dvh;
-    width: 100%;
-    display: grid;
-    grid-template-rows: 1fr auto 1fr;
-    place-items: center;
-    --screen-pad: clamp(10px, 2.2vw, 16px);
-    --card-size: clamp(150px, 18vmin, 220px);
-    padding:
-            calc(var(--screen-pad) + env(safe-area-inset-top))
-            calc(var(--screen-pad) + env(safe-area-inset-right))
-            calc(var(--screen-pad) + env(safe-area-inset-bottom))
-            calc(var(--screen-pad) + env(safe-area-inset-left));
-  }
-
-  h1 {
-    text-align: center;
+    padding: 0;
     margin: 0;
-    font-size: clamp(1.9rem, 3.3vw, 2.35rem);
-    line-height: 1.12;
-    letter-spacing: -0.02em;
   }
 
-  .auto-scroll {
-    display: grid;
-    gap: 20px;
-    min-height: 0;
-    align-content: center;
-    z-index: 0;
-  }
-
-  .row-mask {
-    overflow: hidden;
+  .welcome-mobile {
     width: 100%;
-    height: var(--card-size);
-    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-  }
-
-  .row-track {
+    height: 100%;
+    max-height: 100%;
+    box-sizing: border-box;
+    padding:
+      max(18px, calc(env(safe-area-inset-top) + 10px))
+      16px
+      max(28px, calc(env(safe-area-inset-bottom) + 18px));
     display: flex;
-    width: max-content;
-    gap: 18px;
-    will-change: transform;
-    animation: marquee var(--duration) linear infinite;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(16px, 3vh, 28px);
+    overflow-x: hidden;
+    overflow-y: hidden;
+    color: var(--md-sys-color-on-background);
+    background:
+      radial-gradient(
+        circle at 50% 9%,
+        color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent),
+        transparent 34%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--md-sys-color-primary-container) 18%, var(--md-sys-color-background)) 0%,
+        color-mix(in srgb, var(--md-sys-color-surface-container-low) 76%, var(--md-sys-color-background)) 58%,
+        var(--md-sys-color-background) 100%
+      );
   }
 
-  .row-track.reverse {
-    animation-name: marquee-reverse;
+  .welcome-gallery-shell,
+  .welcome-copy-panel {
+    display: grid;
+    gap: clamp(16px, 2.8vh, 24px);
+    min-height: 0;
   }
 
-  .auto-scroll:hover .row-track {
-    animation-play-state: paused;
+  .welcome-head {
+    display: grid;
+    justify-items: center;
+    text-align: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding-top: 6px;
   }
 
-  .media-card {
-    width: var(--card-size);
-    aspect-ratio: 1;
-    border-radius: 30px;
-    overflow: hidden;
+  .welcome-emblem {
+    width: clamp(54px, 14vw, 66px);
+    height: clamp(54px, 14vw, 66px);
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, transparent);
+    color: var(--md-sys-color-on-primary-container);
+  }
+
+  .welcome-head h1 {
+    margin: 0;
+    font-size: clamp(2rem, 8vw, 2.8rem);
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+  }
+
+  .welcome-head p {
+    margin: 0;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: clamp(1rem, 3.8vw, 1.25rem);
+    max-width: 22rem;
+    line-height: 1.4;
+  }
+
+  .welcome-gallery {
     position: relative;
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-    border: 1px solid color-mix(in srgb, white 28%, transparent);
-    background: var(--md-sys-color-surface-variant);
+    width: 100%;
+    height: clamp(148px, 21vh, 210px);
+    overflow: hidden;
+    border-radius: 32px;
+    flex-shrink: 0;
+    box-shadow: 0 24px 54px rgb(0 0 0 / 0.24);
+    background: var(--md-sys-color-surface-container);
   }
 
-  .media-image {
+  .gallery-brush {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--md-sys-color-background) 0%, transparent) 0%,
+        color-mix(in srgb, var(--md-sys-color-surface-container-low) 22%, transparent) 24%,
+        color-mix(in srgb, var(--md-sys-color-surface-container-high) 68%, transparent) 60%,
+        color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent) 100%
+      ),
+      radial-gradient(circle at 72% 48%, color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent), transparent 34%);
+  }
+
+  .marquee-track {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    gap: 12px;
+    width: max-content;
+    height: 100%;
+    animation: marquee-x 28s linear infinite;
+  }
+
+  .preview-card {
+    flex: 0 0 clamp(140px, 38vw, 200px);
+    width: clamp(140px, 38vw, 200px);
+    height: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    background: var(--md-sys-color-surface-container-high);
+    box-shadow: 0 14px 34px rgb(0 0 0 / 0.22);
+  }
+
+  .preview-card.featured {
+    flex-basis: clamp(200px, 55vw, 300px);
+    width: clamp(200px, 55vw, 300px);
+  }
+
+  .preview-card img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
     display: block;
-    transform: scale(1.02);
   }
 
-  .media-overlay {
+  .gallery-fade {
     position: absolute;
-    inset: auto 0 0;
-    display: grid;
-    gap: 2px;
+    top: 0;
+    bottom: 0;
+    width: 42px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .gallery-fade-left {
+    left: 0;
+    background: linear-gradient(90deg, var(--md-sys-color-background) 0%, color-mix(in srgb, var(--md-sys-color-background) 0%, transparent) 100%);
+  }
+
+  .gallery-fade-right {
+    right: 0;
+    background: linear-gradient(270deg, var(--md-sys-color-background) 0%, color-mix(in srgb, var(--md-sys-color-background) 0%, transparent) 100%);
+  }
+
+  .actions-panel {
+    width: 100%;
+    flex-shrink: 0;
+    margin-top: auto;
+    padding-top: 4px;
+  }
+
+  .actions-panel :global(.m3-container.filled) {
+    border-radius: 28px;
+    background: var(--md-sys-color-surface-container-high);
+    --m3v-background: var(--md-sys-color-surface-container-high);
+    box-shadow:
+      0 22px 46px rgb(0 0 0 / 0.24),
+      inset 0 1px 0 rgb(255 255 255 / 0.08);
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 85%, transparent);
+  }
+
+  .actions-content {
     padding: 16px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.66), rgba(0, 0, 0, 0.08));
-    color: #fff;
+    border-radius: 28px;
+    display: grid;
+    gap: 12px;
+    background: transparent;
+    backdrop-filter: blur(10px);
+    min-height: 0;
   }
 
-  .media-title {
+  .actions-copy {
+    display: grid;
+    gap: 4px;
+    padding-inline: 2px;
+    color: var(--md-sys-color-on-surface);
+  }
+
+  .actions-eyebrow {
+    font-size: 0.75rem;
     font-weight: 700;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--md-sys-color-primary);
   }
 
-  .media-subtitle {
-    font-size: 0.88rem;
-    opacity: 0.92;
+  .actions-copy strong {
+    font-size: 1rem;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
   }
 
-  .landing-buttons {
-    width: min(100%, 420px);
-    justify-self: center;
-    --landing-button-pad: clamp(5px, 1.5vw, 5px);
-    padding: calc(var(--landing-button-pad));
+  .actions-support {
+    margin: 0;
+    color: var(--md-sys-color-on-surface-variant);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  .actions-stack {
     display: grid;
     gap: 10px;
   }
 
-  .buttons-container {
-    display: flex;
-    text-align: center;
+  .actions-content :global(.m3-button) {
+    width: 100%;
   }
 
-  @media (orientation: landscape) and (max-height: 600px) {
-    .welcome-screen {
-      min-height: 100dvh;
-      width: 100%;
-      display: grid;
-      grid-template-rows: 1fr auto 1fr;
-      align-items: center;
-      place-items: center;
-      --screen-pad: clamp(10px, 2.2vw, 16px);
-      --card-size: clamp(150px, 18vmin, 220px);
+  .actions-content :global(.m3-container.m) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 58px;
+    padding-inline: clamp(1.1rem, 4vw, 1.6rem);
+    border-radius: 18px;
+  }
+
+  .btn-content {
+    width: 100%;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    padding: 14px 0;
+  }
+
+  .actions-content :global(.m3-button.filled .btn-content) {
+    justify-content: space-between;
+    padding-inline: 2px;
+  }
+
+  .actions-content :global(.m3-button.text .btn-content) {
+    justify-content: center;
+  }
+
+  @keyframes marquee-x {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  @media (max-height: 760px) {
+    .welcome-mobile {
+      padding-top: max(14px, calc(env(safe-area-inset-top) + 8px));
+      padding-bottom: max(22px, calc(env(safe-area-inset-bottom) + 14px));
+      gap: 12px;
+    }
+
+    .welcome-head h1 {
+      font-size: clamp(1.7rem, 7.2vw, 2.2rem);
+    }
+
+    .welcome-head p {
+      font-size: clamp(0.9rem, 3.5vw, 1.05rem);
+    }
+
+    .welcome-gallery {
+      height: clamp(124px, 18vh, 156px);
+    }
+
+    .actions-content {
+      padding: 12px;
+      gap: 8px;
+    }
+  }
+
+  @media (min-width: 800px) and (orientation: portrait) {
+    .welcome-mobile {
+      max-width: 1024px;
+      margin: 0 auto;
+      padding-inline: 24px;
+      justify-content: space-between;
+    }
+
+    .welcome-gallery {
+      height: 220px;
+    }
+
+    .actions-panel {
+      width: min(100%, 760px);
+      margin-inline: auto;
+    }
+
+    .preview-card {
+      flex-basis: clamp(180px, 25vw, 260px);
+      width: clamp(180px, 25vw, 260px);
+      height: 100%;
+    }
+
+    .preview-card.featured {
+      flex-basis: clamp(260px, 40vw, 400px);
+      width: clamp(260px, 40vw, 400px);
+    }
+  }
+
+  @media (orientation: landscape) and (min-width: 700px), (min-width: 1100px) {
+    .welcome-mobile {
+      max-width: 1240px;
+      margin: 0 auto;
       padding:
-              calc(var(--screen-pad) + env(safe-area-inset-top))
-              calc(var(--screen-pad) + env(safe-area-inset-right))
-              calc(var(--screen-pad) + env(safe-area-inset-bottom))
-              calc(var(--screen-pad) + env(safe-area-inset-left));
+        max(22px, calc(env(safe-area-inset-top) + 12px))
+        24px
+        max(24px, calc(env(safe-area-inset-bottom) + 14px));
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.82fr);
+      align-items: stretch;
+      gap: clamp(24px, 4vw, 48px);
     }
 
-    .auto-scroll {
-      position: absolute;
-      inset: -12% -24%;
-      opacity: 0.18;
-      pointer-events: none;
-      filter: saturate(0.9) contrast(1.05);
+    .welcome-gallery-shell {
+      min-height: 0;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: stretch;
     }
 
-    .landing-buttons {
-      width: min(100%, 300px);
-      justify-self: start;
-      align-self: start;
-    }
-  }
-
-  @media (min-width: 1024px) {
-    .auto-scroll {
-      position: static;
-      inset: auto;
-      opacity: 1;
-      pointer-events: auto;
-      filter: none;
+    .welcome-head {
+      justify-items: start;
+      text-align: left;
+      max-width: 32rem;
+      padding-top: 0;
     }
 
-    .landing-buttons {
-      justify-self: center;
-      width: min(100%, 320px);
+    .welcome-head p {
+      max-width: 28rem;
     }
-  }
 
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
+    .welcome-gallery {
+      height: auto;
+      min-height: 0;
+      max-height: clamp(240px, 46dvh, 420px);
     }
-    to {
-      transform: translateX(-50%);
-    }
-  }
 
-  @keyframes marquee-reverse {
-    from {
-      transform: translateX(-50%);
+    .gallery-fade-left,
+    .gallery-fade-right {
+      display: none;
     }
-    to {
-      transform: translateX(0);
-    }
-  }
 
-  @keyframes reveal {
-    from {
-      opacity: 0;
-      transform: translateY(28px);
+    .marquee-track {
+      gap: 16px;
+      align-items: stretch;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
+
+    .preview-card {
+      flex-basis: clamp(220px, 24vw, 300px);
+      width: clamp(220px, 24vw, 300px);
+      border-radius: 28px;
+    }
+
+    .preview-card.featured {
+      flex-basis: clamp(280px, 32vw, 380px);
+      width: clamp(280px, 32vw, 380px);
+    }
+
+    .welcome-copy-panel {
+      min-height: 0;
+      align-content: stretch;
+    }
+
+    .actions-panel {
+      margin-top: 0;
+      align-self: stretch;
+    }
+
+    .actions-panel :global(.m3-container.filled) {
+      height: 100%;
+      min-height: 0;
+    }
+
+    .actions-content {
+      height: 100%;
+      box-sizing: border-box;
+      padding: clamp(20px, 2.5vw, 28px);
+      grid-template-rows: auto 1fr;
+      align-content: stretch;
+    }
+
+    .actions-copy {
+      gap: 8px;
+    }
+
+    .actions-copy strong {
+      font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+    }
+
+    .actions-support {
+      font-size: 0.98rem;
+      max-width: 24rem;
+    }
+
+    .actions-stack {
+      gap: 14px;
+      align-self: center;
+      width: 100%;
+    }
+
+    .actions-content :global(.m3-container.m) {
+      min-height: 58px;
     }
   }
 </style>

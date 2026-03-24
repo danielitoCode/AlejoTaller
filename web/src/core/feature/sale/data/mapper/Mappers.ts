@@ -5,7 +5,7 @@ import type {SaleItemDTO} from "../dto/SaleItemDTO";
 
 export type SaleWriteDTO = Pick<
     SaleDTO,
-    "$id" | "date" | "amount" | "verified" | "products" | "userId" | "deliveryType"
+    "$id" | "date" | "amount" | "buy_state" | "products" | "user_id" | "delivery_type"
 >;
 
 function saleItemFromDTO(item: SaleItemDTO): SaleItem {
@@ -30,10 +30,10 @@ export function saleFromDTO(dto: SaleDTO): Sale {
         id: dto.$id,
         date: dto.date,
         amount: dto.amount,
-        verified: dto.verified as BuyState,
+        verified: dto.buy_state as BuyState,
         products: dto.products.map(saleItemFromDTO),
-        userId: dto.userId,
-        deliveryType: dto.deliveryType ? (dto.deliveryType as DeliveryType) : null,
+        userId: dto.user_id,
+        deliveryType: dto.delivery_type ? (dto.delivery_type as DeliveryType) : null,
     };
 }
 
@@ -46,9 +46,9 @@ export function saleToDTO(sale: Sale): SaleWriteDTO {
         $id: sale.id,
         date: sale.date,
         amount: sale.amount,
-        verified: sale.verified,
+        buy_state: sale.verified,
         products: sale.products.map(saleItemToDTO),
-        userId: sale.userId,
-        deliveryType: sale.deliveryType ?? null,
+        user_id: sale.userId,
+        delivery_type: sale.deliveryType ?? null,
     };
 }

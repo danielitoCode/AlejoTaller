@@ -10,14 +10,14 @@
 <style>
     .screen {
         width: 100%;
-        height: 100dvh;
         min-height: 100dvh;
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: hidden;
     }
 
     .screen.scrollable {
-        overflow: auto;
-        overscroll-behavior: contain;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
     }
 </style>

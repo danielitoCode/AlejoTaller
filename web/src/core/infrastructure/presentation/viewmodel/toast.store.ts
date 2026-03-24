@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 
-export type ToastType = "success" | "error" | "info";
+export type ToastType = "success" | "error" | "warning" | "info" | "promo";
 
 export interface ToastMessage {
     id: number;
@@ -51,12 +51,22 @@ function createToastStore() {
         push("info", text, timeoutMs);
     }
 
+    function warning(text: string, timeoutMs?: number): void {
+        push("warning", text, timeoutMs);
+    }
+
+    function promo(text: string, timeoutMs?: number): void {
+        push("promo", text, timeoutMs ?? 3600);
+    }
+
     return {
         subscribe,
         remove,
         success,
         error,
-        info
+        info,
+        warning,
+        promo
     };
 }
 

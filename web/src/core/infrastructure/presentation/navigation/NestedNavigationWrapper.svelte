@@ -1,4 +1,4 @@
-﻿<script lang="ts">
+<script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import { fade } from "svelte/transition";
     import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
@@ -6,76 +6,71 @@
     import NavHost from "../../../../lib/navigation/NavHost.svelte";
     import { composable } from "../../../../lib/navigation/composable";
     import { rememberNavController } from "../../../../lib/navigation/rememberNavController";
+    import { Button, FAB, Icon, NavigationRail, NavigationRailItem } from "m3-svelte";
+    import menuIcon from "@ktibow/iconset-material-symbols/menu-rounded";
+    import closeIcon from "@ktibow/iconset-material-symbols/close-rounded";
+    import storefrontIcon from "@ktibow/iconset-material-symbols/storefront-rounded";
+    import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
+    import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
+    import personIcon from "@ktibow/iconset-material-symbols/person-rounded";
+    import settingsIcon from "@ktibow/iconset-material-symbols/settings-rounded";
+    import logoutIcon from "@ktibow/iconset-material-symbols/logout-rounded";
     import { authContainer } from "../../../feature/auth/di/auth.container";
     import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
     import { categoryStore } from "../../../feature/category/presentation/viewmodel/category.store";
     import { productStore } from "../../../feature/product/presentation/viewmodel/product.store";
     import { promotionStore } from "../../../feature/notification/presentation/viewmodel/promotion.store";
     import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import Icon from "../components/Icon.svelte";
+    import { cartStore } from "../../../feature/sale/presentation/viewmodel/cart.store";
+    import { BuyState } from "../../../feature/sale/domain/entity/enums";
+    import InternalProductScreen from "../../../feature/product/presentation/screens/InternalProductScreen.svelte";
+    import InternalBuyScreen from "../routes/InternalBuyScreen.svelte";
+    import InternalBuyConfirmScreen from "../routes/InternalBuyConfirmScreen.svelte";
+    import InternalReservationScreen from "../routes/InternalReservationScreen.svelte";
+    import InternalReservationDetailScreen from "../routes/InternalReservationDetailScreen.svelte";
+    import InternalProfileScreen from "../routes/InternalProfileScreen.svelte";
+    import SettingsScreen from "../../../feature/settigns/presentation/routes/SettingsScreen.svelte";
     import { toastStore } from "../viewmodel/toast.store";
     import { logger } from "../util/logger.service";
-    import RealtimeDock from "../components/RealtimeDock.svelte";
-    import SupportInbox from "../../../feature/support/presentation/routes/SupportInbox.svelte";
-    import { supportInboxStore } from "../../../feature/support/presentation/viewmodel/support-inbox.store";
-    import { category, dashboard, product, promo, reservation, sales, settings, support, users } from "./nested.router";
-    import { subscribePulseChannelAll } from "../../data/alset-pulse/pulse.realtime";
-    import { pulseRefreshTargets } from "../../data/alset-pulse/pulse.refresh-targets";
-    import { ENV } from "../../env";
-    import SupportDetail from "../../../feature/support/presentation/routes/SupportDetail.svelte";
-    import { supportDetail, salesDetail } from "./nested.router";
-    import { get } from "svelte/store";
-    import { BuyState } from "../../../feature/sale/domain/entity/enums";
-    import {
-        BadgeDollarSign,
-        CalendarCheck2,
-        Home,
-        LogOut,
-        Menu,
-        MessageSquareText,
-        Megaphone,
-        Package,
-        Settings,
-        Tags,
-        Users
-    } from "lucide-svelte";
+    import { buy, buyConfirm, dashboard, product, profile, reservation, reservationDetail, settings as settingsRoute } from "./nested.router";
 
     export let navController: NavController;
-    export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;
+    export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
 
     const internalNavController = rememberNavController(dashboard.path);
     const userId = navBackStackEntry?.args?.id ?? "usuario";
-
     const currentUser = sessionStore.getCurrentUser();
 
     const items = [
-        { label: "Principal", path: dashboard.path, icon: Home },
-        { label: "Mensajes", path: support.path, icon: MessageSquareText },
-        { label: "Usuarios", path: users.path, icon: Users },
-        { label: "Productos", path: product.path, icon: Package },
-        { label: "Categorías", path: category.path, icon: Tags },
-        { label: "Ventas", path: sales.path, icon: BadgeDollarSign },
-        { label: "Promos", path: promo.path, icon: Megaphone },
-        { label: "Reservas", path: reservation.path, icon: CalendarCheck2 },
-        { label: "Ajustes", path: settings.path, icon: Settings }
+        { label: "Productos", path: dashboard.path, icon: storefrontIcon, badge: 0 },
+        { label: "Su compra", path: buy.path, icon: shoppingCartIcon, badge: 0 },
+        { label: "Reservas", path: reservation.path, icon: qrCodeIcon, badge: 0 },
+        { label: "Perfil", path: profile.path, icon: personIcon, badge: 0 },
+        { label: "Ajustes", path: settingsRoute.path, icon: settingsIcon, badge: 0 }
     ];
 
     const internalStackStore = internalNavController._getStackStore();
     $: internalStack = $internalStackStore;
     $: currentPath = internalStack.at(-1)?.route ?? dashboard.path;
+    $: cartCount = $cartStore.items.reduce((sum, item) => sum + item.quantity, 0);
+    $: pendingSales = $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
+    $: navItems = items.map((item) => ({
+        ...item,
+        badge: item.path === buy.path ? cartCount : item.path === reservation.path ? pendingSales : 0
+    }));
 
-    let sidebarOpen = false;
-    let stopPulseRefresh: (() => void) | null = null;
-    let supportSyncTimer: number | null = null;
-    let salesSyncTimer: number | null = null;
-    let syncingSupport = false;
-    let syncingSales = false;
-    let queuedSupport = false;
-    let queuedSales = false;
+    let fabOpen = false;
 
     function go(path: string) {
         if (currentPath !== path) internalNavController.navigate(path);
-        sidebarOpen = false;
+        fabOpen = false;
+    }
+
+    function isItemActive(path: string): boolean {
+        if (path === dashboard.path) return currentPath === dashboard.path || currentPath === product.path;
+        if (path === buy.path) return currentPath === buy.path || currentPath === buyConfirm.path;
+        if (path === reservation.path) return currentPath === reservation.path || currentPath === reservationDetail.path;
+        return currentPath === path;
     }
 
     async function logout() {
@@ -87,262 +82,204 @@
     }
 
     onMount(() => {
-        authContainer.useCases.accounts
-            .getCurrentUser()
-            .then((u) => {
-                if (u.role !== "admin") {
-                    navController.navigate("unauthorized", {
-                        message: "Tu cuenta no está autorizada para usar el panel de gestión."
-                    });
-                }
-            })
-            .catch(() => {
-                navController.navigate("login");
-            });
+        authContainer.useCases.accounts.getCurrentUser().catch(() => {
+            navController.navigate("login");
+        });
 
         productStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar datos");
+            toastStore.error("Error al sincronizar productos");
         });
         categoryStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar datos");
+            toastStore.error("Error al sincronizar categorias");
         });
         promotionStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar datos");
+            toastStore.error("Error al sincronizar promociones");
         });
         saleStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar ventas");
-        });
-
-        logger.info(
-            `[Pusher] init key=${ENV.pusherKey ? ENV.pusherKey.slice(0, 6) + "…" : "N/A"} cluster=${ENV.pusherCluster ?? "N/A"} channel=${ENV.pusherSupportChannel ?? "support-inbox"}`
-        );
-
-        stopPulseRefresh = subscribePulseChannelAll((eventName, payload) => {
-            try {
-                const summary =
-                    payload && typeof payload === "object"
-                        ? JSON.stringify(payload).slice(0, 800)
-                        : String(payload ?? "");
-                logger.info(`[Pusher] event=${eventName} payload=${summary}`);
-            } catch {
-                logger.info(`[Pusher] event=${eventName}`);
-            }
-
-            let targets: ("support" | "sales")[] = [];
-            try {
-                targets = pulseRefreshTargets(eventName, payload);
-            } catch (e: any) {
-                logger.error(`[Pusher] error parsing refresh targets: ${e?.message ?? e}`, e?.stack);
-                toastStore.error("Evento realtime inválido");
-                return;
-            }
-
-            logger.info(`[Pusher] targets=${targets.length ? targets.join(",") : "none"}`);
-            if (targets.length === 0) return;
-
-            toastStore.info(
-                targets.length === 2
-                    ? "Evento realtime: sincronizando todo…"
-                    : targets[0] === "support"
-                      ? "Evento realtime: sincronizando mensajes…"
-                      : "Evento realtime: sincronizando ventas…",
-                1200
-            );
-
-            if (targets.includes("support")) scheduleSupportSync();
-            if (targets.includes("sales")) scheduleSalesSync();
+            toastStore.error("Error al sincronizar reservas");
         });
     });
 
     onDestroy(() => {
-        if (supportSyncTimer) window.clearTimeout(supportSyncTimer);
-        if (salesSyncTimer) window.clearTimeout(salesSyncTimer);
-        supportSyncTimer = null;
-        salesSyncTimer = null;
-        stopPulseRefresh?.();
-        stopPulseRefresh = null;
+        logger.info("[InternalNavigation] disposed");
     });
-
-    function scheduleSupportSync() {
-        if (supportSyncTimer) window.clearTimeout(supportSyncTimer);
-        supportSyncTimer = window.setTimeout(() => {
-            supportSyncTimer = null;
-            syncSupportInbox();
-        }, 220);
-    }
-
-    function scheduleSalesSync() {
-        if (salesSyncTimer) window.clearTimeout(salesSyncTimer);
-        salesSyncTimer = window.setTimeout(() => {
-            salesSyncTimer = null;
-            syncSales();
-        }, 220);
-    }
-
-    async function syncSupportInbox() {
-        const beforeItems = get(supportInboxStore).items;
-        const beforePending = beforeItems.filter((m) => m.status === "nuevo").length;
-        if (syncingSupport) {
-            queuedSupport = true;
-            return;
-        }
-        syncingSupport = true;
-        queuedSupport = false;
-        toastStore.info("Actualizando mensajes…", 1200);
-        try {
-            await supportInboxStore.syncAll();
-            const afterItems = get(supportInboxStore).items;
-            const afterPending = afterItems.filter((m) => m.status === "nuevo").length;
-            const delta = Math.max(0, afterPending - beforePending);
-            toastStore.success(delta > 0 ? `Nuevo mensaje (+${delta})` : "Mensajes actualizados", 1100);
-        } catch (e: any) {
-            logger.error(e?.message ?? e, e?.stack);
-            toastStore.error("No se pudieron actualizar los mensajes");
-        } finally {
-            syncingSupport = false;
-            if (queuedSupport) syncSupportInbox();
-        }
-    }
-
-    async function syncSales() {
-        const beforeItems = get(saleStore).items;
-        const beforePending = beforeItems.filter((s) => s.verified === BuyState.UNVERIFIED).length;
-        if (syncingSales) {
-            queuedSales = true;
-            return;
-        }
-        syncingSales = true;
-        queuedSales = false;
-        toastStore.info("Actualizando ventas...", 1200);
-        try {
-            await saleStore.syncAll();
-            const afterItems = get(saleStore).items;
-            const afterPending = afterItems.filter((s) => s.verified === BuyState.UNVERIFIED).length;
-            const delta = Math.max(0, afterPending - beforePending);
-            toastStore.success(delta > 0 ? `Nueva venta (+${delta})` : "Ventas actualizadas", 1100);
-        } catch (e: any) {
-            logger.error(e?.message ?? e, e?.stack);
-            toastStore.error("No se pudieron actualizar las ventas");
-        } finally {
-            syncingSales = false;
-            if (queuedSales) syncSales();
-        }
-    }
 </script>
 
 <section class="nested-shell">
-    <aside class="sidebar {sidebarOpen ? 'open' : ''}">
-        <header class="sidebar-head">
-            <div class="brand">
-                <img src="/alejoicon_clean.svg" alt="Logo" class="brand-logo" />
-                <div class="brand-meta">
-                    <h2>Business Dashboard</h2>
-                    {#await currentUser}
-                        <p>Loading user...</p>
-                    {:then user}
-                        <p>{user.name}</p>
-                    {:catch error}
-                        <p>{error.message}</p>
-                    {/await}
+    <aside class="panel-shell expanded-only">
+        <div class="panel-card">
+            <header class="panel-head">
+                <div class="brand">
+                    <img src="/alejoicon_clean.svg" alt="Logo" class="brand-logo" />
+                    <div class="brand-meta">
+                        <h2>Taller Alejo</h2>
+                        {#await currentUser}
+                            <p>Cargando cuenta...</p>
+                        {:then user}
+                            <p>{user.name}</p>
+                        {:catch error}
+                            <p>{error.message}</p>
+                        {/await}
+                    </div>
                 </div>
+            </header>
+
+            <div class="rail-wrap">
+                <NavigationRail open={true} collapse="no" alignment="top" iconType="left">
+                    {#each navItems as item}
+                        <div class="rail-item-wrap">
+                            <NavigationRailItem
+                                label={item.label}
+                                icon={item.icon}
+                                active={isItemActive(item.path)}
+                                onclick={() => go(item.path)}
+                            />
+                            {#if item.badge > 0}
+                                <span class="rail-badge" aria-label={`Pendientes ${item.badge}`}>{item.badge}</span>
+                            {/if}
+                        </div>
+                    {/each}
+                </NavigationRail>
             </div>
-        </header>
 
-        <nav class="sidebar-nav" aria-label="Menú">
-            {#each items as item}
-                <button
-                    class:selected={currentPath === item.path}
-                    on:click={() => go(item.path)}
-                    aria-current={currentPath === item.path ? "page" : undefined}
-                    title={item.label}
-                >
-                    <Icon icon={item.icon} size={18} className="nav-ico" ariaLabel={item.label} />
-                    <span class="nav-label">{item.label}</span>
-                </button>
-            {/each}
-        </nav>
-
-        <button class="logout" on:click={logout} aria-label="Cerrar sesión" title="Cerrar sesión">
-            <Icon icon={LogOut} size={18} className="nav-ico" ariaLabel="Cerrar sesión" />
-            <span class="logout-label">Cerrar sesión</span>
-        </button>
+            <div class="panel-footer">
+                <Button variant="tonal" size="m" iconType="left" onclick={logout}>
+                    <Icon icon={logoutIcon} />
+                    Cerrar sesion
+                </Button>
+            </div>
+        </div>
     </aside>
 
     <main class="content">
-        <div class="top-mobile">
-            <button
-                class="menu-toggle"
-                type="button"
-                aria-label={sidebarOpen ? "Cerrar menú" : "Abrir menú"}
-                on:click={() => (sidebarOpen = !sidebarOpen)}
-            >
-                <Icon icon={Menu} size={20} className="menu-ico" ariaLabel="Menú" />
-            </button>
-            <strong>Panel de gestión</strong>
-            <span class="ghost" aria-hidden="true">{userId}</span>
+        <div class="top-mobile compact-only">
+            <div class="mobile-title">
+                <strong>Taller Alejo</strong>
+                <span>{userId}</span>
+            </div>
         </div>
-
-        <RealtimeDock navController={internalNavController} />
 
         {#key currentPath}
             <div class="route-stage" in:fade={{ duration: 180 }} out:fade={{ duration: 120 }}>
                 <NavHost
                     navController={internalNavController}
                     routes={[
-                        /*composable(dashboard, () => DashboardHome),
-                        composable(support, () => SupportInbox),
-                        composable(supportDetail, () => SupportDetail),
-                        composable(users, () => UserManagement),
-                        composable(product, () => ProductManagement),
-                        composable(category, () => CategoryManagement),
-                        composable(sales, () => SaleManagement),
-                        composable(salesDetail, () => SaleDetail),
-                        composable(promo, () => PromoManagement),
-                        composable(settings, () => SettingsManagement),
-                        composable(reservation, () => ReservationManagement)*/
+                        composable(dashboard, () => InternalProductScreen),
+                        composable(product, () => InternalProductScreen),
+                        composable(buy, () => InternalBuyScreen),
+                        composable(buyConfirm, () => InternalBuyConfirmScreen),
+                        composable(profile, () => InternalProfileScreen),
+                        composable(settingsRoute, () => SettingsScreen),
+                        composable(reservation, () => InternalReservationScreen),
+                        composable(reservationDetail, () => InternalReservationDetailScreen)
                     ]}
                 />
             </div>
         {/key}
-    </main>
 
-    {#if sidebarOpen}
-        <button class="scrim" aria-label="Cerrar menú" on:click={() => (sidebarOpen = false)}></button>
-    {/if}
+        <div class="fab-layer compact-only">
+            {#if fabOpen}
+                <button class="fab-scrim" type="button" aria-label="Cerrar menu" on:click={() => (fabOpen = false)}></button>
+            {/if}
+
+            <div class="fab-stack">
+                {#if fabOpen}
+                    <div class="fab-menu" aria-label="Navegacion rapida">
+                        {#each navItems as item}
+                            <div class="fab-item-row">
+                                <Button class="fab-label" variant="elevated" size="m" onclick={() => go(item.path)}>
+                                    {item.label}
+                                </Button>
+
+                                <button
+                                    class="fab-mini"
+                                    class:active={isItemActive(item.path)}
+                                    type="button"
+                                    on:click={() => go(item.path)}
+                                    aria-current={isItemActive(item.path) ? "page" : undefined}
+                                    aria-label={item.label}
+                                >
+                                    <Icon icon={item.icon} />
+                                    {#if item.badge > 0}
+                                        <span class="mini-badge">{item.badge}</span>
+                                    {/if}
+                                </button>
+                            </div>
+                        {/each}
+
+                        <div class="fab-item-row">
+                            <Button class="fab-label logout-label-mobile" variant="tonal" size="m" onclick={logout}>
+                                Cerrar sesion
+                            </Button>
+
+                            <button class="fab-mini logout-mini" type="button" on:click={logout} aria-label="Cerrar sesion">
+                                <Icon icon={logoutIcon} />
+                            </button>
+                        </div>
+                    </div>
+                {/if}
+
+                <div class="fab-main-wrap">
+                    {#if cartCount > 0}
+                        <span class="main-badge">{cartCount}</span>
+                    {/if}
+                    <FAB
+                        size="normal"
+                        icon={fabOpen ? closeIcon : menuIcon}
+                        onclick={() => (fabOpen = !fabOpen)}
+                    />
+                </div>
+            </div>
+        </div>
+    </main>
 </section>
 
 <style>
     .nested-shell {
         height: 100dvh;
         display: grid;
-        grid-template-columns: 280px 1fr;
+        grid-template-columns: 320px minmax(0, 1fr);
         background: var(--md-sys-color-background);
         color: var(--md-sys-color-on-background);
         overflow: hidden;
     }
 
-    .sidebar {
-        border-right: 1px solid var(--md-sys-color-outline-variant);
-        background: var(--md-sys-color-surface);
-        padding: 14px;
+    .panel-shell {
         height: 100%;
+        padding: 16px 0 16px 16px;
+        min-width: 0;
+    }
+
+    .panel-card {
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        border-radius: 32px;
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 82%, transparent);
+        background:
+            linear-gradient(
+                180deg,
+                color-mix(in srgb, var(--md-sys-color-surface-container-high) 90%, transparent) 0%,
+                var(--md-sys-color-surface-container) 100%
+            );
+    }
+
+    .panel-head {
+        padding: 20px 18px 8px;
     }
 
     .brand {
         display: flex;
-        gap: 12px;
         align-items: center;
+        gap: 12px;
     }
 
     .brand-logo {
         width: 44px;
         height: 44px;
         object-fit: contain;
-        opacity: 0.95;
+        opacity: 0.96;
     }
 
     .brand-meta {
@@ -351,13 +288,13 @@
         gap: 2px;
     }
 
-    .sidebar-head h2 {
+    .panel-head h2 {
         margin: 0;
-        font-size: 1.05rem;
+        font-size: 1.08rem;
         line-height: 1.15;
     }
 
-    .sidebar-head p {
+    .panel-head p {
         margin: 0;
         color: var(--md-sys-color-on-surface-variant);
         font-size: 0.92rem;
@@ -366,191 +303,249 @@
         white-space: nowrap;
     }
 
-    .sidebar-nav {
-        display: grid;
-        gap: 8px;
-        align-content: start;
-        overflow: auto;
+    .rail-wrap {
         min-height: 0;
-        padding-right: 6px;
+        overflow: visible;
+        position: relative;
     }
 
-    .sidebar-nav button,
-    .logout {
-        text-align: left;
-        border: 1px solid var(--md-sys-color-outline-variant);
+    .rail-wrap :global(.m3-container) {
+        width: 100%;
+    }
+
+    .rail-wrap :global(.rail) {
+        width: 100%;
+        height: 100%;
+        padding: 8px 0 18px;
+        gap: 18px;
         background: transparent;
-        color: var(--md-sys-color-on-surface);
-        border-radius: 12px;
-        padding: 10px 12px;
-        cursor: pointer;
-        display: inline-flex;
+    }
+
+    .rail-wrap :global(.rail.open),
+    .rail-wrap :global(.m3-container:has(> .rail.open:not(.modal))) {
+        width: 100%;
+    }
+
+    .rail-wrap :global(.items) {
+        width: 100%;
+        padding-right: 8px;
+        overflow: visible;
+    }
+
+    .rail-wrap :global(.item),
+    .rail-wrap :global(.icon),
+    .rail-wrap :global(.label) {
+        overflow: visible;
+    }
+
+    .rail-item-wrap {
+        position: relative;
+        overflow: visible;
+    }
+
+    .rail-badge {
+        position: absolute;
+        top: 8px;
+        right: 14px;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        display: flex;
         align-items: center;
-        gap: 10px;
-        font-weight: 650;
-        transition: background-color 160ms ease, border-color 160ms ease, transform 120ms ease;
-    }
-
-    .nav-ico {
-        opacity: 0.92;
-    }
-
-    .sidebar-nav button:hover {
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 40%, transparent);
-    }
-
-    .sidebar-nav button:active {
-        transform: translateY(1px);
-    }
-
-    .sidebar-nav button.selected {
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
-        border-color: var(--md-sys-color-primary);
-    }
-
-    .sidebar-nav button.selected .nav-ico {
-        opacity: 1;
-    }
-
-    .logout {
-        margin-top: auto;
         justify-content: center;
-        color: var(--md-sys-color-on-error-container);
-        background: color-mix(in srgb, var(--md-sys-color-error-container) 72%, transparent);
-        border-color: color-mix(in srgb, var(--md-sys-color-error) 22%, transparent);
+        place-items: center;
+        background: #d92d20;
+        color: var(--md-sys-color-on-error);
+        font-size: 0.74rem;
+        font-weight: 800;
+        pointer-events: none;
+        border: 2px solid var(--md-sys-color-surface-container);
+        box-shadow: 0 8px 16px rgb(0 0 0 / 0.18);
+        z-index: 5;
+    }
+
+    .panel-footer {
+        padding: 8px 18px 18px;
+    }
+
+    .panel-footer :global(button) {
+        width: 100%;
     }
 
     .content {
         height: 100%;
-        padding: 16px;
         min-width: 0;
-        overflow: auto;
+        min-height: 0;
+        padding: 16px 18px 32px 12px;
+        overflow: hidden;
+        position: relative;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
     }
 
     .route-stage {
-        min-height: 100%;
+        min-height: 0;
+        height: 100%;
         display: grid;
         align-content: start;
+        overflow: hidden;
     }
 
     .top-mobile {
         display: none;
     }
 
-    .scrim {
+    .mobile-title {
+        display: grid;
+        gap: 2px;
+    }
+
+    .mobile-title strong {
+        font-size: 1.04rem;
+    }
+
+    .mobile-title span {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.8rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .fab-layer {
         display: none;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 1100px) {
         .nested-shell {
             grid-template-columns: 1fr;
         }
 
-        .sidebar {
-            position: fixed;
-            inset: 0 auto 0 0;
-            width: min(84vw, 320px);
-            z-index: 40;
-            transform: translateX(-105%);
-            transition: transform 180ms ease;
-            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.25);
-        }
-
-        .sidebar.open {
-            transform: translateX(0);
+        .expanded-only {
+            display: none;
         }
 
         .content {
-            height: 100dvh;
-            padding: 12px;
+            padding: 12px 12px 28px;
         }
 
         .top-mobile {
             display: grid;
-            grid-template-columns: auto 1fr auto;
-            gap: 10px;
-            align-items: center;
             margin-bottom: 12px;
         }
 
-        .menu-toggle {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            border: 1px solid var(--md-sys-color-outline-variant);
-            background: var(--md-sys-color-surface);
-            display: grid;
-            place-items: center;
+        .compact-only {
+            display: block;
         }
 
-        .menu-ico {
-            opacity: 0.9;
-        }
-
-        .ghost {
-            opacity: 0;
-            pointer-events: none;
-            user-select: none;
-        }
-
-        .scrim {
+        .fab-layer {
             display: block;
             position: fixed;
             inset: 0;
-            background: color-mix(in srgb, black 30%, transparent);
-            z-index: 20;
+            pointer-events: none;
+            z-index: 60;
+        }
+
+        .fab-scrim {
+            position: fixed;
+            inset: 0;
             border: 0;
+            background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+            pointer-events: auto;
+        }
+
+        .fab-stack {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            display: grid;
+            justify-items: end;
+            gap: 14px;
+            pointer-events: none;
+        }
+
+        .fab-menu {
+            display: grid;
+            gap: 12px;
+            pointer-events: auto;
+        }
+
+        .fab-item-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fab-label {
+            min-width: 0;
+        }
+
+        .fab-label:global(.m3-container) {
+            box-shadow: 0 14px 28px color-mix(in srgb, black 20%, transparent);
+        }
+
+        .fab-mini {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+            background: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+            box-shadow: 0 14px 28px color-mix(in srgb, black 20%, transparent);
+        }
+
+        .fab-mini.active {
+            background: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
+        }
+
+        .logout-mini {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .logout-label-mobile:global(.m3-container) {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .mini-badge,
+        .main-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #d92d20;
+            color: var(--md-sys-color-on-error);
+            font-size: 0.72rem;
+            font-weight: 800;
+            border: 2px solid var(--md-sys-color-surface);
+            box-shadow: 0 8px 16px rgb(0 0 0 / 0.18);
+            z-index: 5;
+        }
+
+        .fab-main-wrap {
+            position: relative;
+            pointer-events: auto;
         }
     }
 
-    /* Tablet: rail compacto (solo iconos) */
-    @media (min-width: 861px) and (max-width: 1100px) {
-        .nested-shell {
-            grid-template-columns: 84px 1fr;
-        }
-
-        .sidebar {
-            padding: 12px 10px;
-        }
-
-        .brand {
-            justify-content: center;
-        }
-
-        .brand-logo {
-            width: 46px;
-            height: 46px;
-        }
-
-        .brand-meta {
-            display: none;
-        }
-
-        .sidebar-nav button,
-        .logout {
-            justify-content: center;
-            padding: 10px;
-            border-radius: 14px;
-        }
-
-        .sidebar-nav button .nav-label,
-        .logout .logout-label {
-            display: none;
-        }
-
-        .logout {
-            width: 100%;
-        }
-    }
-
-    .sidebar-nav::-webkit-scrollbar,
+    .rail-wrap :global(.rail::-webkit-scrollbar),
     .content::-webkit-scrollbar {
         width: 10px;
         height: 10px;
     }
 
-    .sidebar-nav::-webkit-scrollbar-thumb,
+    .rail-wrap :global(.rail::-webkit-scrollbar-thumb),
     .content::-webkit-scrollbar-thumb {
         background: color-mix(in srgb, var(--md-sys-color-outline) 30%, transparent);
         border-radius: 999px;
@@ -558,11 +553,8 @@
         background-clip: padding-box;
     }
 
-    .sidebar-nav::-webkit-scrollbar-track,
+    .rail-wrap :global(.rail::-webkit-scrollbar-track),
     .content::-webkit-scrollbar-track {
         background: transparent;
     }
 </style>
-
-
-

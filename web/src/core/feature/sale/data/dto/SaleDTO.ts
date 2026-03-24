@@ -4,10 +4,10 @@ import type {Models} from "appwrite";
 export interface SaleDTO extends Models.Document {
     date: string
     amount: number
-    verified: string
+    buy_state: string
     products: SaleItemDTO[]
-    userId: string
-    deliveryType?: string | null
+    user_id: string
+    delivery_type?: string | null
     $createdAt: string
     $updatedAt: string
 }

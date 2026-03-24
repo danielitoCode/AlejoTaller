@@ -8,13 +8,7 @@
     onMount(async () => {
         try {
             const user = await authContainer.useCases.accounts.getCurrentUser();
-
-            if (user.role !== "admin") {
-                navController.navigate("unauthorized", { message: "Tu cuenta existe, pero no tiene permisos de administrador." });
-                return;
-            }
-
-            navController.navigate("home", { id: user.id });
+            navController.navigate("home", { id: user.id ?? user.$id });
         } catch {
             navController.navigate("welcome");
         }

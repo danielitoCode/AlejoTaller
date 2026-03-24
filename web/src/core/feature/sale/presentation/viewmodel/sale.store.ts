@@ -1,3 +1,4 @@
+import type { DeliveryType } from "../../domain/entity/enums";
 import type {Sale} from "../../domain/entity/Sale";
 import {derived, writable} from "svelte/store";
 import {saleContainer} from "../../di/sale.container";
@@ -52,6 +53,41 @@ function createSaleStore() {
         }
     }
 
+    async function create(sale: Sale): Promise<Sale> {
+        update((state) => ({ ...state, loading: true, error: null }));
+        try {
+            const created = await saleContainer.useCases.create.execute(sale);
+            update((state) => ({
+                ...state,
+                items: [created, ...state.items]
+            }));
+            return created;
+        } catch (error: any) {
+            logger.error(error?.message ?? error, error?.stack);
+            update((state) => ({ ...state, error: normalizeError(error) }));
+            throw error;
+        } finally {
+            update((state) => ({ ...state, loading: false }));
+        }
+    }
+
+    async function updateDeliveryType(id: string, deliveryType: DeliveryType): Promise<void> {
+        update((state) => ({ ...state, loading: true, error: null }));
+        try {
+            const updated = await saleContainer.useCases.updateDeliveryType.execute(id, deliveryType);
+            update((state) => ({
+                ...state,
+                items: state.items.map((s) => (s.id === id ? updated : s))
+            }));
+        } catch (error: any) {
+            logger.error(error?.message ?? error, error?.stack);
+            update((state) => ({ ...state, error: normalizeError(error) }));
+            throw error;
+        } finally {
+            update((state) => ({ ...state, loading: false }));
+        }
+    }
+
     function clearError(): void {
         update((state) => ({...state, error: null}))
     }
@@ -66,7 +102,9 @@ function createSaleStore() {
         subscribe,
         hasData,
         syncAll,
+        create,
         setVerified,
+        updateDeliveryType,
         clearError,
         reset
     }

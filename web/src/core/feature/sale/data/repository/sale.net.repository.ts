@@ -49,7 +49,16 @@ export class SaleNetRepository {
             this.databaseId,
             COLLECTION_ID,
             id,
-            { verified }
+            { buy_state: verified }
+        );
+    }
+
+    async updateDeliveryType(id: string, deliveryType: string): Promise<SaleDTO> {
+        return await this.databases.updateDocument<SaleDTO>(
+            this.databaseId,
+            COLLECTION_ID,
+            id,
+            { delivery_type: deliveryType }
         );
     }
 }

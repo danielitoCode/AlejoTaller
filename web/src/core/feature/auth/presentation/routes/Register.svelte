@@ -8,6 +8,7 @@
     import VisibilityOffRounded from "@ktibow/iconset-material-symbols/visibility-off-rounded";
     import Screen from "../../../../infrastructure/presentation/components/Screen.svelte";
     import { registerStore } from "../viewmodel/register.store";
+    import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
     export let navController: NavController;
 
@@ -33,6 +34,7 @@
 
         if (!passwordsMatch) {
             localError = "Las contrasenas no coinciden.";
+            toastStore.error(localError);
             return;
         }
 
@@ -49,9 +51,11 @@
                 sub: "",
                 verification: false
             });
+            toastStore.success("Cuenta creada correctamente. Inicia sesion para continuar.");
             navController.navigate("login");
         } catch (error) {
             localError = error instanceof Error ? error.message : "No se pudo crear la cuenta.";
+            toastStore.error(localError);
         }
     }
 

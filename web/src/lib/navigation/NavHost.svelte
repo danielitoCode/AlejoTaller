@@ -19,14 +19,36 @@
         routes.find(r => r.route.path === currentEntry?.route);
 </script>
 
-<div>
+<div class="nav-host">
     <AnimatedVisibility visible={true}>
         {#if active}
-            <svelte:component
+            <div class="nav-host-content">
+                <svelte:component
                     this={active.component}
                     navController={navController}
                     navBackStackEntry={currentEntry}
-            />
+                />
+            </div>
         {/if}
     </AnimatedVisibility>
 </div>
+
+<style>
+    .nav-host {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .nav-host :global(.animated-visibility) {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .nav-host-content {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+</style>

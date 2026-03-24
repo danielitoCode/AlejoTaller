@@ -133,12 +133,25 @@ h3 {
   top: 16px;
   right: 16px;
   z-index: 50;
-  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 999px;
-  background: #b3261e;
-  color: white;
+  background: rgb(255 241 238 / 0.94);
+  color: #8f3b30;
+  border: 1px solid rgb(182 124 115 / 0.42);
+  font-size: 0.78rem;
   font-weight: 700;
   box-shadow: var(--shadow-soft);
+}
+
+.offline-banner::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .screen {

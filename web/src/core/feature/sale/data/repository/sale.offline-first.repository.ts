@@ -1,3 +1,4 @@
+import type { DeliveryType } from "../../domain/entity/enums";
 import type {Sale} from "../../domain/entity/Sale";
 import type {SaleDTO} from "../dto/SaleDTO";
 import {saleFromDTO, saleToDTO} from "../mapper/Mappers";
@@ -54,6 +55,20 @@ export class SaleOfflineFirstRepository implements SaleRepository {
         } catch (error: any) {
             logger.error(
                 `Error al actualizar venta en Appwrite: ${error?.message ?? "desconocido"}`,
+                error?.stack
+            );
+            throw error;
+        }
+    }
+
+    async updateDeliveryType(id: string, deliveryType: DeliveryType): Promise<Sale> {
+        try {
+            const updated = await this.net.updateDeliveryType(id, deliveryType);
+            await db.sales.put(updated);
+            return saleFromDTO(updated);
+        } catch (error: any) {
+            logger.error(
+                `Error al actualizar entrega en Appwrite: ${error?.message ?? "desconocido"}`,
                 error?.stack
             );
             throw error;
