@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { logStore } from "../viewmodel/log.store";
-    import type { LogEntry } from "../viewmodel/log.store";
+    import type {LogEntry} from "../viewmodel/log.store";
+    import {logStore} from "../viewmodel/log.store";
 
     let container: HTMLDivElement | null = null;
     let expanded = true;

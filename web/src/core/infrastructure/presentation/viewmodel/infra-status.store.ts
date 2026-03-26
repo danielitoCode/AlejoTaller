@@ -1,5 +1,5 @@
-import { derived, writable } from "svelte/store";
-import { ENV } from "../../env";
+import {derived, writable} from "svelte/store";
+import {ENV} from "../../env";
 
 export type InfraProviderKey = "appwrite" | "render" | "cloudflare";
 

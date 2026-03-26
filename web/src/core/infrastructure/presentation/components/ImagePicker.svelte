@@ -85,6 +85,21 @@
         }
     }
 
+    function handleFrameMessage(event: CustomEvent<{ data: any }>) {
+        const data = event.detail.data;
+
+        if (data?.type === "image-url-cancel") urlFrameOpen = false;
+
+        if (data?.type === "image-url-selected" && typeof data.url === "string") {
+            urlFrameOpen = false;
+            const next = data.url.trim();
+            if (!next) return;
+            clearLocal();
+            setUrl(next);
+            toastStore.success("URL de imagen aplicada.");
+        }
+    }
+
     function handleFileChange(event: Event) {
         const input = event.currentTarget as HTMLInputElement;
         const file = input.files?.[0] ?? null;
@@ -187,18 +202,7 @@
     ariaLabel="Imagen desde la web"
     src={urlFrameOpen ? urlFrameSrc : ""}
     on:close={() => (urlFrameOpen = false)}
-    on:frameMessage={(event) => {
-        const data = (event as CustomEvent<{ data: any }>).detail.data;
-        if (data?.type === "image-url-cancel") urlFrameOpen = false;
-        if (data?.type === "image-url-selected" && typeof data.url === "string") {
-            urlFrameOpen = false;
-            const next = data.url.trim();
-            if (!next) return;
-            clearLocal();
-            setUrl(next);
-            toastStore.success("URL de imagen aplicada.");
-        }
-    }}
+    on:frameMessage={handleFrameMessage}
 />
 
 <style>
@@ -278,10 +282,6 @@
         display: grid;
         place-items: center;
         color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .chev {
-        opacity: 0.85;
     }
 
     .menu {

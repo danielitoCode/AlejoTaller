@@ -4,9 +4,9 @@ export function initGlobalLogger() {
 
     // Console interception
     ["log", "info", "warn", "error"].forEach(level => {
-        const original = console[level as keyof Console] as Function;
+        const original = console[level as keyof Console] as (...args: any[]) => void;
 
-        console[level as keyof Console] = (...args: any[]) => {
+        (console[level as keyof Console] as unknown as (...args: any[]) => void) = (...args: any[]) => {
             original(...args);
 
             const stack =

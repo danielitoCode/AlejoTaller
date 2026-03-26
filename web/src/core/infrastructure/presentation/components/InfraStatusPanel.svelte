@@ -7,6 +7,11 @@
     import { ENV } from "../../env";
     import { ExternalLink, ShieldCheck, TriangleAlert } from "lucide-svelte";
 
+    const { isConfigured } = infraStatusStore;
+    $: appwriteHref = safeHref($infraStatusStore.data?.links?.appwrite);
+    $: renderHref = safeHref($infraStatusStore.data?.links?.render);
+    $: cloudflareHref = safeHref($infraStatusStore.data?.links?.cloudflare);
+
     let timer: number | null = null;
 
     function startPolling() {
@@ -43,7 +48,7 @@
     }
 </script>
 
-{#if !$infraStatusStore.isConfigured}
+{#if !$isConfigured}
     <section class="mgmt-card infra" aria-label="Infraestructura">
         <div class="infra-head">
             <div>
@@ -94,8 +99,8 @@
                             </div>
                         </div>
                     </div>
-                    {#if safeHref($infraStatusStore.data?.links?.appwrite) }
-                        <a class="link" href={safeHref($infraStatusStore.data?.links?.appwrite) as string} target="_blank" rel="noreferrer">
+                    {#if appwriteHref }
+                        <a class="link" href={appwriteHref} target="_blank" rel="noreferrer">
                             <Icon icon={ExternalLink} size={16} ariaLabel="Abrir" />
                         </a>
                     {/if}
@@ -123,8 +128,8 @@
                             </div>
                         </div>
                     </div>
-                    {#if safeHref($infraStatusStore.data?.links?.render)}
-                        <a class="link" href={safeHref($infraStatusStore.data?.links?.render) as string} target="_blank" rel="noreferrer">
+                    {#if renderHref}
+                        <a class="link" href={renderHref} target="_blank" rel="noreferrer">
                             <Icon icon={ExternalLink} size={16} ariaLabel="Abrir" />
                         </a>
                     {/if}
@@ -152,8 +157,8 @@
                             </div>
                         </div>
                     </div>
-                    {#if safeHref($infraStatusStore.data?.links?.cloudflare)}
-                        <a class="link" href={safeHref($infraStatusStore.data?.links?.cloudflare) as string} target="_blank" rel="noreferrer">
+                    {#if cloudflareHref}
+                        <a class="link" href={cloudflareHref} target="_blank" rel="noreferrer">
                             <Icon icon={ExternalLink} size={16} ariaLabel="Abrir" />
                         </a>
                     {/if}
@@ -284,33 +289,6 @@
     .link:hover {
         background: color-mix(in srgb, var(--md-sys-color-surface-variant) 32%, transparent);
     }
-
-    .badge {
-        width: 38px;
-        height: 38px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 28%, transparent);
-        color: var(--md-sys-color-on-surface);
-        flex: 0 0 auto;
-    }
-
-    .badge.ok {
-        border-color: color-mix(in srgb, #22c55e 35%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, #22c55e 12%, transparent);
-    }
-
-    .badge.bad {
-        border-color: color-mix(in srgb, var(--md-sys-color-error) 38%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, var(--md-sys-color-error) 10%, transparent);
-    }
-
-    .badge.unk {
-        opacity: 0.85;
-    }
-
     .bottom {
         display: grid;
         gap: 10px;

@@ -385,7 +385,7 @@
         height: 100%;
         min-width: 0;
         min-height: 0;
-        padding: 16px 18px 32px 12px;
+        padding: 16px 18px max(32px, env(safe-area-inset-bottom) + 16px) 12px;
         overflow: hidden;
         position: relative;
         display: grid;
@@ -435,7 +435,7 @@
         }
 
         .content {
-            padding: 12px 12px 28px;
+            padding: 12px 12px max(28px, env(safe-area-inset-bottom) + 12px);
         }
 
         .top-mobile {
