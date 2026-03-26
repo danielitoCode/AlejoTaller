@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { Button, Card } from "m3-svelte";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
-    import { authFlowStore } from "../../../feature/auth/presentation/viewmodel/auth-flow.store";
-    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import { onMount } from "svelte";
-    import { toastStore } from "../viewmodel/toast.store";
+    import {Button, Card} from "m3-svelte";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
+    import {authFlowStore} from "../../../feature/auth/presentation/viewmodel/auth-flow.store";
+    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
+    import {onMount} from "svelte";
+    import {toastStore} from "../viewmodel/toast.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;

@@ -1,15 +1,15 @@
 <script lang="ts">
-    import { Button, Card, Icon } from "m3-svelte";
+    import {Button, Card, Icon} from "m3-svelte";
     import shoppingBagIcon from "@ktibow/iconset-material-symbols/inventory-2-rounded";
     import scheduleIcon from "@ktibow/iconset-material-symbols/schedule-rounded";
     import checkCircleIcon from "@ktibow/iconset-material-symbols/check-circle-rounded";
     import cancelIcon from "@ktibow/iconset-material-symbols/cancel-rounded";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
-    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import { BuyState } from "../../../feature/sale/domain/entity/enums";
-    import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import { dashboard, reservationDetail } from "../navigation/nested.router";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
+    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
+    import {BuyState} from "../../../feature/sale/domain/entity/enums";
+    import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import {dashboard, reservationDetail} from "../navigation/nested.router";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;

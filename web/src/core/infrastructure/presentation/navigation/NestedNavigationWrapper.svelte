@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
-    import { fade } from "svelte/transition";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
+    import {onDestroy, onMount} from "svelte";
+    import {fade} from "svelte/transition";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
     import NavHost from "../../../../lib/navigation/NavHost.svelte";
-    import { composable } from "../../../../lib/navigation/composable";
-    import { rememberNavController } from "../../../../lib/navigation/rememberNavController";
-    import { Button, FAB, Icon, NavigationRail, NavigationRailItem } from "m3-svelte";
+    import {composable} from "../../../../lib/navigation/composable";
+    import {rememberNavController} from "../../../../lib/navigation/rememberNavController";
+    import {Button, FAB, Icon, NavigationRail, NavigationRailItem} from "m3-svelte";
     import menuIcon from "@ktibow/iconset-material-symbols/menu-rounded";
     import closeIcon from "@ktibow/iconset-material-symbols/close-rounded";
     import storefrontIcon from "@ktibow/iconset-material-symbols/storefront-rounded";
@@ -15,14 +15,14 @@
     import personIcon from "@ktibow/iconset-material-symbols/person-rounded";
     import settingsIcon from "@ktibow/iconset-material-symbols/settings-rounded";
     import logoutIcon from "@ktibow/iconset-material-symbols/logout-rounded";
-    import { authContainer } from "../../../feature/auth/di/auth.container";
-    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import { categoryStore } from "../../../feature/category/presentation/viewmodel/category.store";
-    import { productStore } from "../../../feature/product/presentation/viewmodel/product.store";
-    import { promotionStore } from "../../../feature/notification/presentation/viewmodel/promotion.store";
-    import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import { cartStore } from "../../../feature/sale/presentation/viewmodel/cart.store";
-    import { BuyState } from "../../../feature/sale/domain/entity/enums";
+    import {authContainer} from "../../../feature/auth/di/auth.container";
+    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
+    import {categoryStore} from "../../../feature/category/presentation/viewmodel/category.store";
+    import {productStore} from "../../../feature/product/presentation/viewmodel/product.store";
+    import {promotionStore} from "../../../feature/notification/presentation/viewmodel/promotion.store";
+    import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
+    import {BuyState} from "../../../feature/sale/domain/entity/enums";
     import InternalProductScreen from "../../../feature/product/presentation/screens/InternalProductScreen.svelte";
     import InternalBuyScreen from "../routes/InternalBuyScreen.svelte";
     import InternalBuyConfirmScreen from "../routes/InternalBuyConfirmScreen.svelte";
@@ -30,10 +30,18 @@
     import InternalReservationDetailScreen from "../routes/InternalReservationDetailScreen.svelte";
     import InternalProfileScreen from "../routes/InternalProfileScreen.svelte";
     import SettingsScreen from "../../../feature/settigns/presentation/routes/SettingsScreen.svelte";
-    import { toastStore } from "../viewmodel/toast.store";
-    import { logger } from "../util/logger.service";
-    import { buy, buyConfirm, dashboard, product, profile, reservation, reservationDetail, settings as settingsRoute } from "./nested.router";
-    import SaleVerificationAlert from "../components/SaleVerificationAlert.svelte";
+    import {toastStore} from "../viewmodel/toast.store";
+    import {logger} from "../util/logger.service";
+    import {
+        buy,
+        buyConfirm,
+        dashboard,
+        product,
+        profile,
+        reservation,
+        reservationDetail,
+        settings as settingsRoute
+    } from "./nested.router";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;

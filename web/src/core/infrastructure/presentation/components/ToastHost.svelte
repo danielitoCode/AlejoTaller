@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { toastStore } from "../viewmodel/toast.store";
+    import {toastStore} from "../viewmodel/toast.store";
 
     const toneLabel = {
         success: "Exito",

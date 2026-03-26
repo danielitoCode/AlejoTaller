@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { Button, Card, Icon } from 'm3-svelte'
+  import {Button, Card, Icon} from 'm3-svelte'
   import AutoAwesome from "@ktibow/iconset-material-symbols/auto-awesome"
-  import { ArrowRight, UserRoundPlus } from "lucide-svelte";
+  import {ArrowRight, UserRoundPlus} from "lucide-svelte";
   import Screen from "../components/Screen.svelte";
-  import type { NavController } from "../../../../lib/navigation/NavController";
+  import type {NavController} from "../../../../lib/navigation/NavController";
 
   export let navController: NavController
 

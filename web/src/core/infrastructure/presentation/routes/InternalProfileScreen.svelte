@@ -1,12 +1,12 @@
 <script lang="ts">
-    import { onMount } from "svelte";
-    import { Button, Card, TextFieldOutlined, TextFieldOutlinedMultiline } from "m3-svelte";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
+    import {onMount} from "svelte";
+    import {Button, Card, TextFieldOutlined, TextFieldOutlinedMultiline} from "m3-svelte";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
     import ImagePicker from "../components/ImagePicker.svelte";
-    import { toastStore } from "../viewmodel/toast.store";
-    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import { profileStore, type ProfileDraft } from "../../../feature/auth/presentation/viewmodel/profile.store";
+    import {toastStore} from "../viewmodel/toast.store";
+    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
+    import {type ProfileDraft, profileStore} from "../../../feature/auth/presentation/viewmodel/profile.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -63,6 +63,16 @@
         baseline = profileStore.save();
         toastStore.success("Perfil guardado localmente");
     }
+
+    function handleNameInput(event: Event) {
+        updateField({ name: (event.target as HTMLInputElement).value });
+    }
+    function handlePhoneInput(event: Event) {
+        updateField({ phone: (event.target as HTMLInputElement).value });
+    }
+    function handleBioInput(event: Event) {
+        updateField({ bio: (event.target as HTMLTextAreaElement).value });
+    }
 </script>
 
 <section class="screen">
@@ -116,12 +126,12 @@
                             <TextFieldOutlined
                                 label="Nombre"
                                 value={draft.name}
-                                oninput={(event) => updateField({ name: (event.currentTarget as HTMLInputElement).value })}
+                                oninput={handleNameInput}
                             />
                             <TextFieldOutlined
                                 label="Telefono"
                                 value={draft.phone}
-                                oninput={(event) => updateField({ phone: (event.currentTarget as HTMLInputElement).value })}
+                                oninput={handlePhoneInput}
                             />
                             <TextFieldOutlined label="Email" value={draft.email} disabled={true} />
                             <TextFieldOutlined label="ID de cuenta" value={draft.userId} disabled={true} />
@@ -142,7 +152,7 @@
                         label="Biografia"
                         rows={6}
                         value={draft.bio}
-                        oninput={(event) => updateField({ bio: (event.currentTarget as HTMLTextAreaElement).value })}
+                        oninput={handleBioInput}
                     />
                 </div>
             </Card>

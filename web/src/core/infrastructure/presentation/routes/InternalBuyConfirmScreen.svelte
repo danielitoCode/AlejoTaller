@@ -1,19 +1,19 @@
 <script lang="ts">
-    import { Button, Card, Icon } from "m3-svelte";
+    import {Button, Card, Icon} from "m3-svelte";
     import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import paymentsIcon from "@ktibow/iconset-material-symbols/payments-rounded";
     import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
     import creditCardIcon from "@ktibow/iconset-material-symbols/credit-card-heart-rounded";
     import accountBalanceIcon from "@ktibow/iconset-material-symbols/account-balance-rounded";
     import arrowBackIcon from "@ktibow/iconset-material-symbols/arrow-back-rounded";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
-    import { BuyState } from "../../../feature/sale/domain/entity/enums";
-    import { cartStore } from "../../../feature/sale/presentation/viewmodel/cart.store";
-    import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
-    import { toastStore } from "../viewmodel/toast.store";
-    import { buy, reservationDetail } from "../navigation/nested.router";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
+    import {BuyState} from "../../../feature/sale/domain/entity/enums";
+    import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
+    import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
+    import {toastStore} from "../viewmodel/toast.store";
+    import {buy, reservationDetail} from "../navigation/nested.router";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;

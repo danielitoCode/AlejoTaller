@@ -1,4 +1,3 @@
-import type {SaleItemDTO} from "./SaleItemDTO";
 import type {Models} from "appwrite";
 
 export interface SaleDTO extends Models.Document {

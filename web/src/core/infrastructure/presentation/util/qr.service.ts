@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import type { Sale } from '../../../feature/sale/domain/entity/Sale';
+import type {Sale} from '../../../feature/sale/domain/entity/Sale';
 
 /**
  * Genera datos comprimidos para QR de una venta/reservación

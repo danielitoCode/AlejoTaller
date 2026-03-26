@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Card, Icon } from "m3-svelte";
+    import {Button, Card, Icon} from "m3-svelte";
     import arrowBackIcon from "@ktibow/iconset-material-symbols/arrow-back-rounded";
     import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
     import localShippingIcon from "@ktibow/iconset-material-symbols/local-shipping-rounded";
@@ -7,12 +7,12 @@
     import scheduleIcon from "@ktibow/iconset-material-symbols/schedule-rounded";
     import checkCircleIcon from "@ktibow/iconset-material-symbols/check-circle-rounded";
     import cancelIcon from "@ktibow/iconset-material-symbols/cancel-rounded";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
-    import { productStore } from "../../../feature/product/presentation/viewmodel/product.store";
-    import { BuyState, DeliveryType } from "../../../feature/sale/domain/entity/enums";
-    import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import { toastStore } from "../viewmodel/toast.store";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
+    import {productStore} from "../../../feature/product/presentation/viewmodel/product.store";
+    import {BuyState, DeliveryType} from "../../../feature/sale/domain/entity/enums";
+    import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import {toastStore} from "../viewmodel/toast.store";
     import QRCodeDisplay from "../components/QRCodeDisplay.svelte";
 
     export let navController: NavController;

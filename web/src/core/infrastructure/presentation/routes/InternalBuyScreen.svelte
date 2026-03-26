@@ -1,11 +1,11 @@
 <script lang="ts">
-    import { Button, Card, Icon } from "m3-svelte";
+    import {Button, Card, Icon} from "m3-svelte";
     import deleteIcon from "@ktibow/iconset-material-symbols/delete-rounded";
     import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
-    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import type { NavController } from "../../../../lib/navigation/NavController";
-    import { cartStore } from "../../../feature/sale/presentation/viewmodel/cart.store";
-    import { buyConfirm, dashboard } from "../navigation/nested.router";
+    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../lib/navigation/NavController";
+    import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
+    import {buyConfirm, dashboard} from "../navigation/nested.router";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
