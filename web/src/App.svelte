@@ -51,11 +51,11 @@
 
 <ToastHost/>
 
-<!-- Terminal solo en desarrollo
+
 {#if import.meta.env.DEV}
   <DevTerminal/>
 {/if}
--->
+
 {#if !isOnline}
   <div class="offline-banner">Desconectado</div>
 {/if}

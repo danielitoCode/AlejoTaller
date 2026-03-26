@@ -13,6 +13,7 @@
     import { BuyState, DeliveryType } from "../../../feature/sale/domain/entity/enums";
     import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
     import { toastStore } from "../viewmodel/toast.store";
+    import QRCodeDisplay from "../components/QRCodeDisplay.svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;
@@ -62,12 +63,14 @@
 
         <div class="layout">
             <Card variant="filled" class="qr-card">
-                <div class="qr-box">
+                <div class="qr-header">
                     <Icon icon={qrCodeIcon} />
                     <span>QR de pedido</span>
                 </div>
+                <QRCodeDisplay {sale} />
                 <p class="subtle">ID: {sale.id}</p>
                 <p class="subtle">Fecha: {new Date(sale.date).toLocaleString()}</p>
+                <p class="hint">Incluye productos para escaneo rápido</p>
             </Card>
 
             <Card variant="outlined" class="detail-card">
@@ -183,18 +186,18 @@
         align-content: start;
         border-radius: 28px;
     }
-    .qr-box {
-        min-height: 180px;
-        border-radius: 24px;
-        background: white;
-        color: #111827;
-        display: grid;
-        place-items: center;
+    .qr-header {
+        display: flex;
         gap: 8px;
+        align-items: center;
+        font-weight: 600;
     }
-    .qr-box :global(svg) {
-        width: 72px;
-        height: 72px;
+    .hint {
+        font-size: 0.75rem;
+        color: var(--md-sys-color-outline-variant);
+        text-align: center;
+        margin: 0;
+        font-style: italic;
     }
     .items {
         display: grid;

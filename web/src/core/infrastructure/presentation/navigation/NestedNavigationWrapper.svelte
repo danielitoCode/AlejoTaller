@@ -33,6 +33,7 @@
     import { toastStore } from "../viewmodel/toast.store";
     import { logger } from "../util/logger.service";
     import { buy, buyConfirm, dashboard, product, profile, reservation, reservationDetail, settings as settingsRoute } from "./nested.router";
+    import SaleVerificationAlert from "../components/SaleVerificationAlert.svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;

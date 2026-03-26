@@ -26,12 +26,21 @@ function saleItemToDTO(item: SaleItem): SaleItemDTO {
 
 
 export function saleFromDTO(dto: SaleDTO): Sale {
+    let productsArray: SaleItem[] = [];
+    try {
+        const parsed = JSON.parse(dto.products);
+        productsArray = Array.isArray(parsed) ? parsed.map(saleItemFromDTO) : [];
+    } catch (error) {
+        console.warn(`Failed to parse products for sale ${dto.$id}:`, error);
+        productsArray = [];
+    }
+    
     return {
         id: dto.$id,
         date: dto.date,
         amount: dto.amount,
         verified: dto.buy_state as BuyState,
-        products: dto.products.map(saleItemFromDTO),
+        products: productsArray,
         userId: dto.user_id,
         deliveryType: dto.delivery_type ? (dto.delivery_type as DeliveryType) : null,
     };
@@ -47,7 +56,7 @@ export function saleToDTO(sale: Sale): SaleWriteDTO {
         date: sale.date,
         amount: sale.amount,
         buy_state: sale.verified,
-        products: sale.products.map(saleItemToDTO),
+        products: JSON.stringify(sale.products.map(saleItemToDTO)),
         user_id: sale.userId,
         delivery_type: sale.deliveryType ?? null,
     };
