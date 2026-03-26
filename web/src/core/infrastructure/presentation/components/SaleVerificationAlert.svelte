@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import { activeAlerts, saleAlertStore } from '../../../sale/presentation/viewmodel/sale-alert.store';
+    import { activeAlerts, saleAlertStore } from '../../../../feature/sale/presentation/viewmodel/sale-alert.store';
     import { sessionStore } from '../../../auth/presentation/viewmodel/session.store';
     import type { NavController } from '../../../../lib/navigation/NavController';
     import { reservationDetail } from '../navigation/nested.router';
@@ -220,4 +220,3 @@
         }
     }
 </style>
-

@@ -196,8 +196,8 @@
             });
             const current = await authContainer.useCases.accounts.getCurrentUser();
             authFlowStore.setSuccess({
-                userId: current.id,
-                email: profile.email,
+                userId: current.id ?? "",
+                email: profile.email ?? "",
                 provider: "google"
             });
             navController.navigate("home", { id: current.id, email: profile.email, provider: "google" });

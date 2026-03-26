@@ -13,6 +13,7 @@
   import MenuDemo from "./demo/MenuDemo.svelte";
   import ProgressIndicatorDemos from "./demo/ProgressIndicatorDemos.svelte";
   import SelectDemo from "./demo/SelectDemo.svelte";
+  import { saleStore } from './core/feature/sale/presentation/viewmodel/sale.store';
 
   let isOnline = true
 
@@ -29,9 +30,21 @@
     window.addEventListener('online', syncConnectivity)
     window.addEventListener('offline', syncConnectivity)
 
+    // Pedir permiso de notificaciones si no se ha concedido/denegado
+    if (window.Notification && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // Reintento de sincronización al reconectar
+    function handleOnline() {
+      saleStore.syncAll();
+    }
+    window.addEventListener('online', handleOnline);
+
     return () => {
       window.removeEventListener('online', syncConnectivity)
       window.removeEventListener('offline', syncConnectivity)
+      window.removeEventListener('online', handleOnline);
     }
   })
 
