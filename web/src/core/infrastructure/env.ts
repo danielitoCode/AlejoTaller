@@ -19,4 +19,7 @@ export const ENV = {
     pusherKey: import.meta.env.VITE_PUSHER_KEY,
     pusherCluster: import.meta.env.VITE_PUSHER_CLUSTER,
     pusherSupportChannel: import.meta.env.VITE_PUSHER_SUPPORT_CHANNEL,
+    pusherPromoChannel: import.meta.env.VITE_PUSHER_PROMO_CHANNEL,
+    pusherNotificationChannel: import.meta.env.VITE_PUSHER_NOTIFICATION_CHANNEL,
+    pusherIaChannel: import.meta.env.VITE_PUSHER_IA_CHANNEL,
 }

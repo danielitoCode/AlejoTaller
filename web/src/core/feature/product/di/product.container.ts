@@ -4,7 +4,6 @@ import {ProductOfflineFirstRepository} from "../data/repository/product.offline-
 import {GetAllProductCaseUse} from "../domain/caseuse/GetAllProductCaseUse";
 import {GetProductByIdCaseUse} from "../domain/caseuse/GetProductByIdCaseUse";
 import {SaveProductCaseUse} from "../domain/caseuse/SaveProductCaseUse";
-import {DeletePromotionCaseUse} from "../../notification/domain/caseuse/DeletePromotionCaseUse";
 import {DeleteProductCaseUse} from "../domain/caseuse/DeleteProductCaseUse";
 import {UpdateProductPriceCaseUse} from "../domain/caseuse/UpdateProductPriceCaseUse";
 

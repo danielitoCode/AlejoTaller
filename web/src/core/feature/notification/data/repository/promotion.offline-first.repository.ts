@@ -8,32 +8,6 @@ import { logger } from "../../../../infrastructure/presentation/util/logger.serv
 export class PromotionOfflineFirstRepository implements PromotionRepository {
     constructor(private readonly net: PromotionNetRepository) {}
 
-    async create(promotion: Promotion): Promise<void> {
-        try {
-            const created = await this.net.create(promotionToDTO(promotion))
-            await db.promotions.put(created)
-        } catch (error: any) {
-            logger.error(
-                `Error al crear promoción en Appwrite: ${error?.message ?? "desconocido"}`,
-                error?.stack
-            );
-            throw error;
-        }
-    }
-
-    async delete(id: string): Promise<void> {
-        try {
-            await this.net.delete(id)
-            await db.promotions.delete(id)
-        } catch (error: any) {
-            logger.error(
-                `Error al eliminar promoción en Appwrite: ${error?.message ?? "desconocido"}`,
-                error?.stack
-            );
-            throw error;
-        }
-    }
-
     async getAll(): Promise<Promotion[]> {
         try {
             const remote = await this.net.getAll()

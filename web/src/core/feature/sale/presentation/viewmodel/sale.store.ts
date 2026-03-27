@@ -27,40 +27,49 @@ function normalizeError(error: unknown): string {
 function createSaleStore() {
     const {subscribe, update} = writable<SaleState>(initialState)
     let pusherUnsubscribe: (() => void) | null = null;
+    let isSubscriptionPending = false;
 
     /**
      * Verifica si hay ventas sin verificar y gestiona suscripción Pusher
      */
     async function managePusherSubscription(): Promise<void> {
-        const state = get({subscribe});
-        const currentUser = await sessionStore.getCurrentUser().catch(() => null);
-        
-        if (!currentUser?.$id) {
-            // Usuario no autenticado, cerrar suscripción
-            if (pusherUnsubscribe) {
+        // Evitar race conditions
+        if (isSubscriptionPending) return;
+        isSubscriptionPending = true;
+
+        try {
+            const state = get({subscribe});
+            const currentUser = await sessionStore.getCurrentUser().catch(() => null);
+            
+            if (!currentUser?.$id) {
+                // Usuario no autenticado, cerrar suscripción
+                if (pusherUnsubscribe) {
+                    pusherUnsubscribe();
+                    pusherUnsubscribe = null;
+                }
+                return;
+            }
+
+            const hasUnverified = state.items.some((s) => s.verified === BuyState.UNVERIFIED);
+
+            if (hasUnverified && !pusherUnsubscribe) {
+                // Hay ventas sin verificar y no estamos suscritos -> suscribirse
+                logger.log("Suscribiendo a eventos de verificación de ventas");
+                pusherUnsubscribe = subscribeSaleVerification(
+                    currentUser.$id,
+                    (eventName, payload) => {
+                        handleSaleVerificationEvent(eventName, payload);
+                    }
+                );
+            } else if (!hasUnverified && pusherUnsubscribe) {
+                // No hay ventas sin verificar y estamos suscritos -> desuscribirse
+                logger.log("Desuscribiendo de eventos de verificación de ventas");
                 pusherUnsubscribe();
                 pusherUnsubscribe = null;
+                unsubscribeSaleVerification();
             }
-            return;
-        }
-
-        const hasUnverified = state.items.some((s) => s.verified === BuyState.UNVERIFIED);
-
-        if (hasUnverified && !pusherUnsubscribe) {
-            // Hay ventas sin verificar y no estamos suscritos -> suscribirse
-            logger.log("Suscribiendo a eventos de verificación de ventas");
-            pusherUnsubscribe = subscribeSaleVerification(
-                currentUser.$id,
-                (eventName, payload) => {
-                    handleSaleVerificationEvent(eventName, payload);
-                }
-            );
-        } else if (!hasUnverified && pusherUnsubscribe) {
-            // No hay ventas sin verificar y estamos suscritos -> desuscribirse
-            logger.log("Desuscribiendo de eventos de verificación de ventas");
-            pusherUnsubscribe();
-            pusherUnsubscribe = null;
-            unsubscribeSaleVerification();
+        } finally {
+            isSubscriptionPending = false;
         }
     }
 
@@ -73,7 +82,13 @@ function createSaleStore() {
     ): void {
         const { saleId, decision } = payload;
         
-        logger.log(`[Pusher Event] ${eventName} para venta ${saleId}: ${payload}` );
+        // Validar payload
+        if (!saleId || !decision) {
+            logger.error(`[Pusher Event] Invalid payload:`, payload.decision);
+            return;
+        }
+        
+        logger.log(`[Pusher Event] ${eventName} - Sale: ${saleId}, Decision: ${decision}` );
 
         // Actualizar estado local
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;

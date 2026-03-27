@@ -23,23 +23,6 @@ export class PromotionNetRepository {
         return response.documents
     }
 
-    async create(promo: PromotionWriteDTO): Promise<PromotionDTO> {
-        return await this.databases.createDocument<PromotionDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            promo.$id || ID.unique(),
-            promo as PromotionDTO
-        )
-    }
-
-    async delete(id: string): Promise<void> {
-        await this.databases.deleteDocument(
-            this.databaseId,
-            COLLECTION_ID,
-            id
-        )
-    }
-
     async getActive(now: number): Promise<PromotionDTO[]> {
         const response = await this.databases.listDocuments<PromotionDTO>(
             this.databaseId,
