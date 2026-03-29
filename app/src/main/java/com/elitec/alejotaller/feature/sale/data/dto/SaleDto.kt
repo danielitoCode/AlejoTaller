@@ -20,7 +20,9 @@ data class SaleDto(
     @SerialName("user_id")
     val userId: String,
     @SerialName("delivery_type")
-    val deliveryType: String? = null
+    val deliveryType: String? = null,
+    @SerialName("delivery_address")
+    val deliveryAddress: String? = null
 )
 
 fun String.toBuyState(): BuyState = when(this) {

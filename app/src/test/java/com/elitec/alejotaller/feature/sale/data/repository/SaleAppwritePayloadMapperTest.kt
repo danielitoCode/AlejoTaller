@@ -20,7 +20,8 @@ class SaleAppwritePayloadMapperTest {
             verified = "UNVERIFIED",
             products = listOf(SaleItem(productId = "prod-1", quantity = 2)),
             userId = "user-1",
-            deliveryType = "PICKUP"
+            deliveryType = "PICKUP",
+            deliveryAddress = """{"province":"La Habana","municipality":"Playa","mainStreet":"42","phone":"555","houseNumber":"12"}"""
         )
 
         val payload = dto.toAppwriteData()
@@ -31,6 +32,7 @@ class SaleAppwritePayloadMapperTest {
         assertEquals("UNVERIFIED", payload["verified"])
         assertEquals("user-1", payload["user_id"])
         assertEquals("PICKUP", payload["delivery_type"])
+        assertTrue((payload["delivery_address"] as? String)?.contains("\"province\":\"La Habana\"") == true)
 
         val products = payload["products"] as? List<*>
         assertTrue(products?.isNotEmpty() == true)
@@ -48,12 +50,15 @@ class SaleAppwritePayloadMapperTest {
             verified = "UNVERIFIED",
             products = emptyList(),
             userId = "user-1",
-            deliveryType = null
+            deliveryType = null,
+            deliveryAddress = null
         )
 
         val payload = dto.toAppwriteData()
 
         assertFalse(payload.containsKey("delivery_type"))
         assertNull(payload["delivery_type"])
+        assertFalse(payload.containsKey("delivery_address"))
+        assertNull(payload["delivery_address"])
     }
 }

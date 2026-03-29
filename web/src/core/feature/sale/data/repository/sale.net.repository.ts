@@ -38,7 +38,7 @@ export class SaleNetRepository {
         const response = await this.databases.listDocuments<SaleDTO>(
             this.databaseId,
             COLLECTION_ID,
-            [Query.equal("userId", userId)]
+            [Query.equal("user_id", userId)]
         )
 
         return response.documents

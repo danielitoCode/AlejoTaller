@@ -80,5 +80,6 @@ internal fun SaleDto.toAppwriteData(): Map<String, Any?> = mapOf(
         )
     },
     "user_id" to userId,
-    "delivery_type" to deliveryType
+    "delivery_type" to deliveryType,
+    "delivery_address" to deliveryAddress
 ).filterValues { value -> value != null }

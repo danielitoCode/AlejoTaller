@@ -44,6 +44,7 @@ import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
+import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryAddress
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
 import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
@@ -331,7 +332,7 @@ fun InternalNavigationWrapper(
                         items = cartItems,
                         totalAmount = shopCartViewModel.getTotalAmount(),
                         onBackClick = { backStack.navigateBack() },
-                        onSubmitPurchase = { paymentChannel ->
+                        onSubmitPurchase = { paymentChannel, deliveryType, deliveryAddress ->
                             if (isSubmittingPurchase) return@BuyConfirmScreen
                             if (cartItems.isEmpty()) {
                                 toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
@@ -344,7 +345,7 @@ fun InternalNavigationWrapper(
                                     id = "sale_charge",
                                     isInfinite = true
                                 )
-                                val sale = cartItems.toSale(userId)
+                                val sale = cartItems.toSale(userId, deliveryType, deliveryAddress)
                                 if (paymentChannel == null) {
                                     saleViewModel.newSale(
                                         sale = sale,
@@ -440,7 +441,11 @@ fun InternalNavigationWrapper(
     )
 }
 
-private fun List<UiSaleItem>.toSale(userId: String): Sale {
+private fun List<UiSaleItem>.toSale(
+    userId: String,
+    deliveryType: DeliveryType,
+    deliveryAddress: DeliveryAddress?
+): Sale {
     val products = map { item ->
         SaleItem(productId = item.product.id, quantity = item.quantity, productName = item.product.name)
     }
@@ -451,7 +456,9 @@ private fun List<UiSaleItem>.toSale(userId: String): Sale {
         amount = sumOf { item -> item.product.price * item.quantity },
         products = products,
         verified = BuyState.UNVERIFIED,
-        userId = userId
+        userId = userId,
+        deliveryType = deliveryType,
+        deliveryAddress = deliveryAddress
     )
 }
 

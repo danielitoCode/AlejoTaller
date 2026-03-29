@@ -8,10 +8,21 @@ export interface Sale {
     products: SaleItem[]
     userId: string
     deliveryType?: DeliveryType | null
+    deliveryAddress?: DeliveryAddress | null
 }
 
 export interface SaleItem {
     productId: string
     quantity: number
     price: number
+}
+
+export interface DeliveryAddress {
+    province: string
+    municipality: string
+    mainStreet: string
+    betweenStreets?: string | null
+    phone: string
+    houseNumber: string
+    referenceName?: string | null
 }

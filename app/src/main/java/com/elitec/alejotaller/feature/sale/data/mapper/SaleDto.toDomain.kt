@@ -4,6 +4,8 @@ import com.elitec.alejotaller.feature.sale.data.dto.SaleDto
 import com.elitec.alejotaller.feature.sale.data.dto.toBuyState
 import com.elitec.alejotaller.feature.sale.data.dto.toDeliveryType
 import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryAddress
+import kotlinx.serialization.json.Json
 
 fun SaleDto.toDomain(): Sale =
     Sale(
@@ -13,7 +15,10 @@ fun SaleDto.toDomain(): Sale =
         products = products,
         userId = userId,
         verified = verified.toBuyState(),
-        deliveryType = deliveryType?.toDeliveryType()
+        deliveryType = deliveryType?.toDeliveryType(),
+        deliveryAddress = deliveryAddress?.let {
+            runCatching { Json.decodeFromString<DeliveryAddress>(it) }.getOrNull()
+        }
     )
 
 

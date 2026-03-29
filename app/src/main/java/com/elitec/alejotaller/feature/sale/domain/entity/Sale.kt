@@ -1,8 +1,9 @@
 package com.elitec.alejotaller.feature.sale.domain.entity
 
 import kotlinx.datetime.LocalDate
-import kotlin.time.Instant
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Sale(
     val id: String,
     val date: LocalDate,
@@ -10,7 +11,8 @@ data class Sale(
     val verified: BuyState,
     val products: List<SaleItem>,
     val userId: String,
-    val deliveryType: DeliveryType? = null
+    val deliveryType: DeliveryType? = null,
+    val deliveryAddress: DeliveryAddress? = null
 )
 
 enum class BuyState {
@@ -25,4 +27,15 @@ enum class DeliveryType {
     PICKUP,   // El cliente va a recogerlo al taller
     DELIVERY  // El cliente solicita domicilio (el taller coordina)
 }
+
+@Serializable
+data class DeliveryAddress(
+    val province: String,
+    val municipality: String,
+    val mainStreet: String,
+    val betweenStreets: String? = null,
+    val phone: String,
+    val houseNumber: String,
+    val referenceName: String? = null
+)
 

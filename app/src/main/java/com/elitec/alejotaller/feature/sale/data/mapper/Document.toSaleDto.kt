@@ -13,7 +13,8 @@ fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
         products = data["products"].toSaleItems(),
         verified =  data["verified"] as? String ?: "UNVERIFIED",
         userId = data["user_id"] as? String ?: "",
-        deliveryType = data["delivery_type"] as? String
+        deliveryType = data["delivery_type"] as? String,
+        deliveryAddress = data["delivery_address"] as? String
     )
 
 private fun Any?.toLocalDate(): LocalDate = when (this) {

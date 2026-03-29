@@ -12,7 +12,6 @@
     import {productStore} from "../../../feature/product/presentation/viewmodel/product.store";
     import {BuyState, DeliveryType} from "../../../feature/sale/domain/entity/enums";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import {toastStore} from "../viewmodel/toast.store";
     import QRCodeDisplay from "../components/QRCodeDisplay.svelte";
 
     export let navController: NavController;
@@ -31,14 +30,10 @@
         return $productStore.items.find((product) => product.id === productId)?.name ?? productId;
     }
 
-    async function setDeliveryType(deliveryType: DeliveryType) {
-        if (!sale) return;
-        try {
-            await saleStore.updateDeliveryType(sale.id, deliveryType);
-            toastStore.success("Preferencia de entrega guardada");
-        } catch (error) {
-            toastStore.error(error instanceof Error ? error.message : "No se pudo guardar la entrega");
-        }
+    function deliverySummary() {
+        if (!sale?.deliveryType) return "Aun no se definio la entrega para este pedido.";
+        if (sale.deliveryType === DeliveryType.PICKUP) return "Recoger en tienda";
+        return "Entrega a domicilio";
     }
 </script>
 
@@ -89,33 +84,29 @@
             </Card>
         </div>
 
-        {#if sale.verified === BuyState.VERIFIED}
-            <Card variant="elevated" class="delivery-card">
-                <h2>Como prefieres recibirlo?</h2>
-                <div class="delivery-options">
-                    <button
-                        class:selected={sale.deliveryType === DeliveryType.PICKUP}
-                        class="delivery-option"
-                        type="button"
-                        on:click={() => setDeliveryType(DeliveryType.PICKUP)}
-                    >
-                        <Icon icon={storeIcon} />
-                        <strong>Recoger</strong>
-                        <span>Paso por el taller</span>
-                    </button>
-                    <button
-                        class:selected={sale.deliveryType === DeliveryType.DELIVERY}
-                        class="delivery-option"
-                        type="button"
-                        on:click={() => setDeliveryType(DeliveryType.DELIVERY)}
-                    >
-                        <Icon icon={localShippingIcon} />
-                        <strong>Domicilio</strong>
-                        <span>Me lo traen</span>
-                    </button>
+        <Card variant="elevated" class="delivery-card">
+            <h2>Entrega seleccionada</h2>
+            <div class="delivery-summary">
+                <Icon icon={sale.deliveryType === DeliveryType.DELIVERY ? localShippingIcon : storeIcon} />
+                <div>
+                    <strong>{deliverySummary()}</strong>
+                    {#if sale.deliveryType === DeliveryType.DELIVERY && sale.deliveryAddress}
+                        <span>{sale.deliveryAddress.mainStreet}, No. {sale.deliveryAddress.houseNumber}, {sale.deliveryAddress.municipality}, {sale.deliveryAddress.province}</span>
+                        <span>Telefono: {sale.deliveryAddress.phone}</span>
+                        {#if sale.deliveryAddress.betweenStreets}
+                            <span>Entre: {sale.deliveryAddress.betweenStreets}</span>
+                        {/if}
+                        {#if sale.deliveryAddress.referenceName}
+                            <span>Preguntar por: {sale.deliveryAddress.referenceName}</span>
+                        {/if}
+                    {:else if sale.deliveryType === DeliveryType.PICKUP}
+                        <span>Tu pedido se recogera directamente en el taller.</span>
+                    {:else}
+                        <span>Las reservas antiguas pueden no traer esta informacion completa.</span>
+                    {/if}
                 </div>
-            </Card>
-        {/if}
+            </div>
+        </Card>
     {:else}
         <Card variant="outlined">
             <p>No se encontro la reserva solicitada.</p>
@@ -218,32 +209,24 @@
     .item-row span {
         color: var(--md-sys-color-on-surface-variant);
     }
-    .delivery-options {
+    .delivery-summary {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: auto 1fr;
         gap: 12px;
-    }
-    .delivery-option {
-        border: 1px solid var(--md-sys-color-outline-variant);
+        align-items: start;
+        padding: 12px;
         border-radius: 18px;
-        background: transparent;
-        padding: 14px;
+        background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 85%, transparent);
+    }
+    .delivery-summary div {
         display: grid;
-        gap: 6px;
-        justify-items: center;
-        text-align: center;
-        cursor: pointer;
+        gap: 4px;
     }
-    .delivery-option.selected {
-        border-color: var(--md-sys-color-primary);
-        background: color-mix(in srgb, var(--md-sys-color-primary-container) 85%, transparent);
-    }
-    .delivery-option span {
+    .delivery-summary span {
         color: var(--md-sys-color-on-surface-variant);
     }
     @media (max-width: 900px) {
-        .layout,
-        .delivery-options {
+        .layout {
             grid-template-columns: 1fr;
         }
     }

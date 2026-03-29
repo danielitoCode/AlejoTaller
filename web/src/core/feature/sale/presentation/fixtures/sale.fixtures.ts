@@ -9,6 +9,15 @@ export const saleFixtures: Sale[] = [
         verified: BuyState.UNVERIFIED,
         userId: "user-1",
         deliveryType: DeliveryType.DELIVERY,
+        deliveryAddress: {
+            province: "La Habana",
+            municipality: "Playa",
+            mainStreet: "Calle 42",
+            betweenStreets: "Entre 1ra y 3ra",
+            phone: "5355555555",
+            houseNumber: "1204",
+            referenceName: "Preguntar por Leo"
+        },
         products: [
             { productId: "p1", quantity: 1, price: 149.9 },
             { productId: "p3", quantity: 2, price: 24.99 }

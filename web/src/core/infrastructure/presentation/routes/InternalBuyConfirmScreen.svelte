@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {Button, Card, Icon} from "m3-svelte";
+    import {Button, Card, Icon, TextFieldOutlined} from "m3-svelte";
     import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import paymentsIcon from "@ktibow/iconset-material-symbols/payments-rounded";
     import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
@@ -8,26 +8,79 @@
     import arrowBackIcon from "@ktibow/iconset-material-symbols/arrow-back-rounded";
     import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../lib/navigation/NavController";
-    import {BuyState} from "../../../feature/sale/domain/entity/enums";
+    import {BuyState, DeliveryType} from "../../../feature/sale/domain/entity/enums";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
     import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
     import {toastStore} from "../viewmodel/toast.store";
     import {buy, reservationDetail} from "../navigation/nested.router";
+    import type {DeliveryAddress} from "../../../feature/sale/domain/entity/Sale";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
 
     type PaymentMethod = "ULTRAPAY" | "TRANSFERMOVIL" | null;
+    type DeliveryDraft = {
+        province: string;
+        municipality: string;
+        mainStreet: string;
+        betweenStreets: string;
+        phone: string;
+        houseNumber: string;
+        referenceName: string;
+    };
 
     let selectedMethod: PaymentMethod = null;
+    let selectedDeliveryType: DeliveryType | null = null;
     let isSubmitting = false;
+    let address: DeliveryDraft = {
+        province: "",
+        municipality: "",
+        mainStreet: "",
+        betweenStreets: "",
+        phone: "",
+        houseNumber: "",
+        referenceName: ""
+    };
 
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    $: needsAddress = selectedDeliveryType === DeliveryType.DELIVERY;
+    $: missingDeliveryType = !selectedDeliveryType;
+    $: invalidAddress = needsAddress && !isAddressValid(address);
+
+    function isAddressValid(value: DeliveryDraft): boolean {
+        return Boolean(
+            value.province.trim() &&
+            value.municipality.trim() &&
+            value.mainStreet.trim() &&
+            value.phone.trim() &&
+            value.houseNumber.trim()
+        );
+    }
+
+    function toDeliveryAddress(value: DeliveryDraft): DeliveryAddress {
+        return {
+            province: value.province.trim(),
+            municipality: value.municipality.trim(),
+            mainStreet: value.mainStreet.trim(),
+            betweenStreets: value.betweenStreets.trim() || null,
+            phone: value.phone.trim(),
+            houseNumber: value.houseNumber.trim(),
+            referenceName: value.referenceName.trim() || null
+        };
+    }
 
     async function submitPurchase() {
         if (!items.length || isSubmitting) return;
+        if (!selectedDeliveryType) {
+            toastStore.warning("Selecciona si tu pedido es para recoger o a domicilio");
+            return;
+        }
+        if (needsAddress && !isAddressValid(address)) {
+            toastStore.warning("Completa los datos obligatorios de la direccion de entrega");
+            return;
+        }
 
         const currentUser = await sessionStore.getCurrentUser().catch(() => null);
         if (!currentUser?.$id) {
@@ -43,7 +96,8 @@
                 amount: totalAmount,
                 verified: BuyState.UNVERIFIED,
                 userId: currentUser.$id,
-                deliveryType: null,
+                deliveryType: selectedDeliveryType,
+                deliveryAddress: needsAddress ? toDeliveryAddress(address) : null,
                 products: items.map((item) => ({
                     productId: item.product.id,
                     quantity: item.quantity,
@@ -136,8 +190,53 @@
                 <p>Si no eliges un metodo, la compra se registra como reserva pendiente, igual que en Android.</p>
             </div>
 
+            <div class="section-title delivery-title">
+                <Icon icon={selectedDeliveryType === DeliveryType.DELIVERY ? accountBalanceIcon : shoppingCartIcon} />
+                <h2>Entrega del pedido</h2>
+            </div>
+
+            <div class="delivery-grid">
+                <button
+                    class:selected={selectedDeliveryType === DeliveryType.PICKUP}
+                    class="delivery-option"
+                    type="button"
+                    on:click={() => (selectedDeliveryType = DeliveryType.PICKUP)}
+                >
+                    <strong>Recoger en tienda</strong>
+                    <span>Pasas por el taller cuando se confirme tu compra.</span>
+                </button>
+
+                <button
+                    class:selected={selectedDeliveryType === DeliveryType.DELIVERY}
+                    class="delivery-option"
+                    type="button"
+                    on:click={() => (selectedDeliveryType = DeliveryType.DELIVERY)}
+                >
+                    <strong>Entrega a domicilio</strong>
+                    <span>Debes indicar la direccion para que el pedido salga completo.</span>
+                </button>
+            </div>
+
+            {#if needsAddress}
+                <div class="address-form">
+                    <TextFieldOutlined label="Provincia" bind:value={address.province} />
+                    <TextFieldOutlined label="Municipio" bind:value={address.municipality} />
+                    <TextFieldOutlined label="Calle principal" bind:value={address.mainStreet} />
+                    <TextFieldOutlined label="Telefono" bind:value={address.phone} type="tel" />
+                    <TextFieldOutlined label="Numero de la casa" bind:value={address.houseNumber} />
+                    <TextFieldOutlined label="Entre calles" bind:value={address.betweenStreets} />
+                    <TextFieldOutlined label="Preguntar por" bind:value={address.referenceName} />
+                    <p class="field-hint">Son obligatorios: provincia, municipio, calle principal, telefono y numero de la casa.</p>
+                </div>
+            {/if}
+
             <div class="actions">
-                <Button variant="filled" size="m" onclick={submitPurchase} disabled={isSubmitting || !items.length}>
+                <Button
+                    variant="filled"
+                    size="m"
+                    onclick={submitPurchase}
+                    disabled={isSubmitting || !items.length || missingDeliveryType || invalidAddress}
+                >
                     {selectedMethod ? "Solicitar pedido y pagar" : "Reservar sin pago online"}
                 </Button>
             </div>
@@ -270,8 +369,47 @@
     .actions :global(button) {
         width: 100%;
     }
+    .delivery-title {
+        margin-top: 4px;
+    }
+    .delivery-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .delivery-option {
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 22px;
+        background: transparent;
+        padding: 14px;
+        display: grid;
+        gap: 6px;
+        text-align: left;
+        cursor: pointer;
+    }
+    .delivery-option.selected {
+        border-color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary-container) 85%, transparent);
+    }
+    .delivery-option span,
+    .field-hint {
+        color: var(--md-sys-color-on-surface-variant);
+    }
+    .address-form {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .field-hint {
+        grid-column: 1 / -1;
+        font-size: 0.82rem;
+    }
     @media (max-width: 900px) {
         .layout {
+            grid-template-columns: 1fr;
+        }
+        .delivery-grid,
+        .address-form {
             grid-template-columns: 1fr;
         }
     }
