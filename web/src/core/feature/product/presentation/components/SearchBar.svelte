@@ -24,7 +24,6 @@
             label={placeholder}
             bind:value={query}
             type="search"
-            leadingIcon={SearchRounded}
             class="search-input"
             oninput={() => onQueryChanged(query)}
             trailing={{

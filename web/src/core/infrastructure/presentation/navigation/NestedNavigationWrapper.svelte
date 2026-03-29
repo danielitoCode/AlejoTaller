@@ -86,6 +86,7 @@
         try {
             await authContainer.useCases.sessions.closeSession.execute();
         } finally {
+            saleStore.reset();
             navController.navigate("welcome");
         }
     }
@@ -110,6 +111,7 @@
     });
 
     onDestroy(() => {
+        saleStore.reset();
         logger.info("[InternalNavigation] disposed");
     });
 </script>

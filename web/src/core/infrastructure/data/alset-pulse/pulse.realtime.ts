@@ -95,6 +95,10 @@ export function subscribeSaleVerification(
     const pusher = getPusher();
     if (!pusher || !userId) return () => {};
 
+    if (saleVerificationSubscription) {
+        saleVerificationSubscription.unsubscribe();
+    }
+
     const channelName = `sale-verification-${userId}`;
     const channel = pusher.subscribe(channelName);
 

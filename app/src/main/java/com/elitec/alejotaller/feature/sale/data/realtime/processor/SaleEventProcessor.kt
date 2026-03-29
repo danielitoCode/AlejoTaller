@@ -19,7 +19,7 @@ class SaleEventProcessor(
         if (!event.isSaleEvent()) return false
         Log.i(TAG, "event=realtime_sale_received name=${event.name} channel=${event.channel} payload=${event.payload}")
 
-        val response = event.payload?.let(::decode) ?: return true
+        val response = event.payload?.let { decode(event.name, it) } ?: return true
 
         when (response) {
             is SaleEventResponse.SaleSuccessResponse -> {
@@ -35,7 +35,7 @@ class SaleEventProcessor(
         return true
     }
 
-    private fun decode(payload: String): SaleEventResponse {
+    private fun decode(eventName: String, payload: String): SaleEventResponse {
         val root = json.parseToJsonElement(payload).jsonObject
         val userId = root["userId"]?.jsonPrimitive?.content
             ?: root["user_id"]?.jsonPrimitive?.content
@@ -46,14 +46,17 @@ class SaleEventProcessor(
         val cause = root["cause"]?.jsonPrimitive?.content
             ?: "Unknown sale error"
 
-        return when (root["type"]?.jsonPrimitive?.content?.lowercase()) {
-            "sale.error", "error" -> SaleEventResponse.SaleErrorResponse(saleId = saleId, userId = userId, cause = cause)
+        val normalizedType = root["type"]?.jsonPrimitive?.content?.lowercase()
+            ?: eventName.lowercase()
+
+        return when (normalizedType) {
+            "sale.error", "error", "sale:rejected" -> SaleEventResponse.SaleErrorResponse(saleId = saleId, userId = userId, cause = cause)
             else -> SaleEventResponse.SaleSuccessResponse(saleId = saleId, userId = userId)
         }
     }
 
     private fun RealtimeEventEnvelope.isSaleEvent(): Boolean =
-        name.startsWith("sale.") || payload?.contains("\"sale") == true
+        name.startsWith("sale.") || name.startsWith("sale:") || payload?.contains("\"sale") == true
 
     companion object {
         private const val TAG = "SaleEventProcessor"

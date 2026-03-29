@@ -19,6 +19,13 @@ class AppDatabase extends Dexie {
             promotions: "$id, validUntilEpochMillis",
             sales: "$id, userId, verified"
         })
+
+        this.version(2).stores({
+            products: "$id, name, categoryId",
+            categories: "$id, name",
+            promotions: "$id, validUntilEpochMillis",
+            sales: "$id, user_id, buy_state"
+        })
     }
 }
 

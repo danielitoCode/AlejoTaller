@@ -32,31 +32,49 @@ class RealtimeSyncViewModel(
     }
     private var isSubscribed = false
     private var activeUserId: String = ""
+    private var subscribedUserId: String = ""
     private val activePendingSaleIds = MutableStateFlow<Set<String>>(emptySet())
     private val _uiMessages = MutableSharedFlow<RealtimeUiMessage>(extraBufferCapacity = 16)
     val uiMessages = _uiMessages.asSharedFlow()
 
     fun startRealtimeSync() {
-        if (isSubscribed) return
+        if (activeUserId.isBlank()) return
+        if (activePendingSaleIds.value.isEmpty()) return
+        if (isSubscribed && subscribedUserId == activeUserId) return
+
+        if (isSubscribed && subscribedUserId != activeUserId) {
+            stopRealtimeSync()
+        }
 
         subscribeRealtimeSyncCaseUse(
+            userId = activeUserId,
             onConnect = { isSubscribed = true },
             onDisconnect = { isSubscribed = false },
             onSaleEvent = ::dispatchSaleEvent,
             onPromotion = ::persistPromotion
         )
+        subscribedUserId = activeUserId
     }
 
     fun updateSubscriptionScope(userId: String, pendingSaleIds: Set<String>) {
+        val previousUserId = activeUserId
         activeUserId = userId
         activePendingSaleIds.value = pendingSaleIds
+
+        if (previousUserId.isNotBlank() && previousUserId != userId) {
+            stopRealtimeSync()
+        }
     }
 
     fun stopRealtimeSync() {
-        if (!isSubscribed) return
+        if (!isSubscribed) {
+            subscribedUserId = ""
+            return
+        }
 
         subscribeRealtimeSyncCaseUse.unsubscribeAll()
         isSubscribed = false
+        subscribedUserId = ""
     }
 
     override fun onCleared() {

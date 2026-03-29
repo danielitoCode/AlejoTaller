@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,16 +59,15 @@ fun PromotionDetailScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                IconButton(
-                    onClick = onBackClick,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(MaterialTheme.colorScheme.surface, CircleShape)
-                ) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "back")
-                }
+                Icon(
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "back"
+                )
+                Spacer(Modifier.width(5.dp))
                 Text(
                     text = "Oferta especial",
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.titleLarge
                 )
             }

@@ -28,6 +28,7 @@ function createSaleStore() {
     const {subscribe, update} = writable<SaleState>(initialState)
     let pusherUnsubscribe: (() => void) | null = null;
     let isSubscriptionPending = false;
+    let subscribedUserId: string | null = null;
 
     /**
      * Verifica si hay ventas sin verificar y gestiona suscripción Pusher
@@ -40,33 +41,49 @@ function createSaleStore() {
         try {
             const state = get({subscribe});
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
-            
-            if (!currentUser?.$id) {
+            const currentUserId = currentUser?.$id ?? null;
+
+            if (!currentUserId) {
                 // Usuario no autenticado, cerrar suscripción
                 if (pusherUnsubscribe) {
                     pusherUnsubscribe();
                     pusherUnsubscribe = null;
                 }
+                unsubscribeSaleVerification();
+                subscribedUserId = null;
                 return;
             }
 
-            const hasUnverified = state.items.some((s) => s.verified === BuyState.UNVERIFIED);
+            const hasUnverified = state.items.some(
+                (s) => s.userId === currentUserId && s.verified === BuyState.UNVERIFIED
+            );
+
+            if (subscribedUserId && subscribedUserId !== currentUserId) {
+                if (pusherUnsubscribe) {
+                    pusherUnsubscribe();
+                    pusherUnsubscribe = null;
+                }
+                unsubscribeSaleVerification();
+                subscribedUserId = null;
+            }
 
             if (hasUnverified && !pusherUnsubscribe) {
                 // Hay ventas sin verificar y no estamos suscritos -> suscribirse
                 logger.log("Suscribiendo a eventos de verificación de ventas");
                 pusherUnsubscribe = subscribeSaleVerification(
-                    currentUser.$id,
+                    currentUserId,
                     (eventName, payload) => {
                         handleSaleVerificationEvent(eventName, payload);
                     }
                 );
+                subscribedUserId = currentUserId;
             } else if (!hasUnverified && pusherUnsubscribe) {
                 // No hay ventas sin verificar y estamos suscritos -> desuscribirse
                 logger.log("Desuscribiendo de eventos de verificación de ventas");
                 pusherUnsubscribe();
                 pusherUnsubscribe = null;
                 unsubscribeSaleVerification();
+                subscribedUserId = null;
             }
         } finally {
             isSubscriptionPending = false;
@@ -135,7 +152,20 @@ function createSaleStore() {
     async function syncAll(): Promise<void> {
         update((state) => ({...state, loading: true, error: null}))
         try {
-            const sales = await saleContainer.useCases.getAll.execute()
+            const currentUser = await sessionStore.getCurrentUser().catch(() => null)
+
+            if (!currentUser?.$id) {
+                if (pusherUnsubscribe) {
+                    pusherUnsubscribe();
+                    pusherUnsubscribe = null;
+                }
+                unsubscribeSaleVerification();
+                subscribedUserId = null;
+                update((state) => ({ ...state, items: [] }))
+                return
+            }
+
+            const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUser.$id)
             update((state) => ({...state, items: sales}))
             await managePusherSubscription();
         } catch (error) {
@@ -209,6 +239,8 @@ function createSaleStore() {
             pusherUnsubscribe();
             pusherUnsubscribe = null;
         }
+        unsubscribeSaleVerification();
+        subscribedUserId = null;
         update(() => initialState)
     }
 

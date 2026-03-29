@@ -15,6 +15,7 @@ class RealTimeManagerImpl(
 ) : RealtimeSyncGateway {
 
     override fun subscribe(
+        userId: String,
         onConnect: () -> Unit,
         onDisconnect: () -> Unit,
         onSaleEvent: (SaleRealtimeEvent) -> Unit,
@@ -35,7 +36,8 @@ class RealTimeManagerImpl(
             onPromotion(event.toDomainPromotion())
         })
 
-        val saleChannel = BuildConfig.PUSHER_SALE_CHANNEL.orFallback(DEFAULT_SALE_CHANNEL, "PUSHER_SALE_CHANNEL")
+        val saleChannelPrefix = BuildConfig.PUSHER_SALE_CHANNEL.orFallback(DEFAULT_SALE_CHANNEL_PREFIX, "PUSHER_SALE_CHANNEL")
+        val saleChannel = "$saleChannelPrefix-$userId"
         val promoChannel = BuildConfig.PUSHER_PROMO_CHANNEL.orFallback(DEFAULT_PROMO_CHANNEL, "PUSHER_PROMO_CHANNEL")
 
         Log.i(TAG, "Realtime subscription config -> saleChannel='$saleChannel', promoChannel='$promoChannel', saleEvents=$SALE_EVENTS, promoEvents=$PROMOTION_EVENTS")
@@ -63,9 +65,9 @@ class RealTimeManagerImpl(
 
     companion object {
         private const val TAG = "RealTimeManager"
-        private const val DEFAULT_SALE_CHANNEL = "sales"
+        private const val DEFAULT_SALE_CHANNEL_PREFIX = "sale-verification"
         private const val DEFAULT_PROMO_CHANNEL = "promo"
-        private val SALE_EVENTS = listOf("sale.success", "sale.error")
+        private val SALE_EVENTS = listOf("sale.success", "sale.error", "sale:confirmed", "sale:rejected")
         private val PROMOTION_EVENTS = listOf("promotion.new", "promotion.update")
     }
 }

@@ -93,7 +93,8 @@ fun BuyReservationScreen(
             Text(
                 text = "Mis reservas",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
         Spacer(Modifier.height(5.dp))
@@ -107,7 +108,7 @@ fun BuyReservationScreen(
                 SaleListItem(
                     sale = sale,
                     onClick = {
-
+                        onSaleSelected(sale.id)
                     }
                 )
             }

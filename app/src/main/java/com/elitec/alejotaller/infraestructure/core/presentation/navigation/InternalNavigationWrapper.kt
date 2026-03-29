@@ -106,7 +106,7 @@ fun InternalNavigationWrapper(
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
     val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
 
-    val pendingSaleIds = remember(userId) {
+    val pendingSaleIds = remember(userId, sales) {
         sales
             .asSequence()
             .filter { sale ->

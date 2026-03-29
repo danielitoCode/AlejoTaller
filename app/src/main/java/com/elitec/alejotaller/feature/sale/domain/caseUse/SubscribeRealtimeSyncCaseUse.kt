@@ -8,12 +8,14 @@ class SubscribeRealtimeSyncCaseUse(
     private val gateway: RealtimeSyncGateway
 ) {
     operator fun invoke(
+        userId: String,
         onConnect: () -> Unit,
         onDisconnect: () -> Unit,
         onSaleEvent: (SaleRealtimeEvent) -> Unit,
         onPromotion: (Promotion) -> Unit = {}
     ) {
         gateway.subscribe(
+            userId = userId,
             onConnect = onConnect,
             onDisconnect = onDisconnect,
             onSaleEvent = onSaleEvent,

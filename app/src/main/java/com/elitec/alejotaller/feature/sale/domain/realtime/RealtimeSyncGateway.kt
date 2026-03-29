@@ -4,6 +4,7 @@ import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 
 interface RealtimeSyncGateway {
     fun subscribe(
+        userId: String,
         onConnect: () -> Unit,
         onDisconnect: () -> Unit,
         onSaleEvent: (SaleRealtimeEvent) -> Unit,

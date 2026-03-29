@@ -87,11 +87,13 @@ fun BuyReservationDetailsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
+                    tint = MaterialTheme.colorScheme.onBackground,
                     imageVector = Icons.Default.ShoppingBag,
                     contentDescription = ""
                 )
                 Spacer(Modifier.width(5.dp))
                 Text(
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.headlineMedium,
                     text = "Estado de su pedido"
                 )
@@ -171,6 +173,7 @@ fun BuyReservationDetailsScreen(
                 items(sale.products) { product ->
                     val productPrice = findProductPrice(product.productId)
                     Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(15.dp)
                     ) {
@@ -181,35 +184,38 @@ fun BuyReservationDetailsScreen(
                                 .fillMaxWidth()
                                 .padding(5.dp),
                         ) {
-                            Text(
-                                text = productNamesById[product.productId] ?: ""
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
+                            Column {
+                                Text(
+
+                                    text = productNamesById[product.productId] ?: ""
+                                )
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     Text(
+                                        fontWeight = FontWeight.Bold,
                                         text = "Cant.:"
                                     )
                                     Spacer(Modifier.width(4.dp))
                                     Text(
+                                        fontWeight = FontWeight.Bold,
                                         text = "${product.quantity}"
                                     )
                                 }
-                                Spacer(Modifier.width(8.dp))
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        text = "Prec.:"
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = "$productPrice CUP"
-                                    )
-                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Prec.:"
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    fontWeight = FontWeight.Bold,
+                                    text = "$productPrice CUP"
+                                )
                             }
                         }
                     }

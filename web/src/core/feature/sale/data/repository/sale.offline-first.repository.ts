@@ -42,7 +42,7 @@ export class SaleOfflineFirstRepository implements SaleRepository {
             await db.sales.bulkPut(remote);
             return remote.map(saleFromDTO);
         } catch {
-            const local = await db.sales.where("userId").equals(userId).toArray();
+            const local = await db.sales.where("user_id").equals(userId).toArray();
             return local.map(saleFromDTO);
         }
     }
