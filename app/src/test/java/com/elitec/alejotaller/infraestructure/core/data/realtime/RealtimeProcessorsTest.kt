@@ -65,6 +65,41 @@ class RealtimeProcessorsTest {
     }
 
     @Test
+    fun `sale colon events should also be routed`() {
+        var confirmedSaleId = ""
+        var rejectedSaleId = ""
+
+        val processor = SaleEventProcessor(
+            onSuccess = { saleId, _ ->
+                confirmedSaleId = saleId
+            },
+            onError = { saleId, _, _ ->
+                rejectedSaleId = saleId
+            }
+        )
+
+        val confirmed = processor.process(
+            RealtimeEventEnvelope(
+                channel = "sale-verification-user-1",
+                name = "sale:confirmed",
+                payload = "{\"saleId\":\"sale-10\",\"userId\":\"user-1\"}"
+            )
+        )
+        val rejected = processor.process(
+            RealtimeEventEnvelope(
+                channel = "sale-verification-user-1",
+                name = "sale:rejected",
+                payload = "{\"saleId\":\"sale-11\",\"userId\":\"user-1\",\"cause\":\"manual review\"}"
+            )
+        )
+
+        assertTrue(confirmed)
+        assertTrue(rejected)
+        assertEquals("sale-10", confirmedSaleId)
+        assertEquals("sale-11", rejectedSaleId)
+    }
+
+    @Test
     fun `promotion should be resolved by next processor in chain`() {
         var promotion = PromotionEvent(id = "", title = "", message = "")
 

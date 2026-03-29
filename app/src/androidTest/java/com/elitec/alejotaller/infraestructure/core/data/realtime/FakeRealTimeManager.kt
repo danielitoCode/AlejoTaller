@@ -13,6 +13,7 @@ import kotlin.time.Clock
 class FakeRealTimeManager: RealtimeSyncGateway {
 
     override fun subscribe(
+        userId: String,
         onConnect: () -> Unit,
         onDisconnect: () -> Unit,
         onSaleEvent: (SaleRealtimeEvent) -> Unit,
