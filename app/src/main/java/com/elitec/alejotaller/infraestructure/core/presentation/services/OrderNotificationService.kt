@@ -3,7 +3,9 @@ package com.elitec.alejotaller.infraestructure.core.presentation.services
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresPermission
@@ -11,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.elitec.alejotaller.R
+import com.elitec.alejotaller.infraestructure.core.presentation.MainActivity
 import kotlin.random.Random
 
 class OrderNotificationService(
@@ -29,10 +32,27 @@ class OrderNotificationService(
     }
 
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
-    fun showOrderStatus(title: String, message: String) {
+    fun showOrderStatus(title: String, message: String, saleId: String) {
         createChannelIfRequired()
 
         if (!hasNotificationPermission()) return
+
+        val intent = Intent(
+            Intent.ACTION_VIEW,
+            android.net.Uri.parse("alejotaller://reservation/$saleId"),
+            context,
+            MainActivity::class.java
+        ).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_SALE_ID, saleId)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            saleId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.alejoicon)
@@ -40,6 +60,7 @@ class OrderNotificationService(
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
             .build()
 
         NotificationManagerCompat.from(context)
@@ -58,5 +79,6 @@ class OrderNotificationService(
 
     companion object {
         private const val CHANNEL_ID = "order_status_channel"
+        const val EXTRA_SALE_ID = "extra_sale_id"
     }
 }

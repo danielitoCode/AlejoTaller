@@ -70,8 +70,28 @@
         </div>
 
         <div class="footer-actions">
-            <Button variant="outlined" size="m" onclick={() => navController.navigate(dashboard.path)}>Seguir comprando</Button>
-            <Button variant="filled" size="m" onclick={() => navController.navigate(buyConfirm.path)}>Continuar</Button>
+            <Button
+                    variant="outlined"
+                    size="m"
+                    onclick={() =>
+                           navController.navigate(dashboard.path)
+                    }
+            >
+                <span style="padding: 12px 0">
+                    Seguir comprando
+                </span>
+            </Button>
+            <Button
+                    variant="filled"
+                    size="m"
+                    onclick={() =>
+                        navController.navigate(buyConfirm.path)
+                    }
+            >
+                <span style="padding: 12px 0">
+                    Continuar
+                </span>
+            </Button>
         </div>
     {/if}
 </section>

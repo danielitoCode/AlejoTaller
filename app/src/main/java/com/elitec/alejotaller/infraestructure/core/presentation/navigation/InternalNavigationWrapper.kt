@@ -75,6 +75,8 @@ import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAda
 fun InternalNavigationWrapper(
     onNavigateBack: () -> Unit,
     userId: String,
+    pendingReservationId: String? = null,
+    onPendingReservationConsumed: () -> Unit = {},
     modifier: Modifier = Modifier,
     shopCartViewModel: ShopCartViewModel = koinViewModel(),
     productViewModel: ProductViewModel = koinViewModel(),
@@ -89,6 +91,7 @@ fun InternalNavigationWrapper(
 
     var isSubmittingPurchase by remember { mutableStateOf(false) }
     var isUpdatingDeliveryType by remember { mutableStateOf(false) }
+    var targetReservationId by remember { mutableStateOf<String?>(pendingReservationId) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val directive = remember(windowAdaptiveInfo) {
@@ -152,6 +155,21 @@ fun InternalNavigationWrapper(
 
     LaunchedEffect(userId, pendingSaleIds) {
         realtimeSyncViewModel.updateSubscriptionScope(userId = userId, pendingSaleIds = pendingSaleIds)
+    }
+
+    LaunchedEffect(pendingReservationId) {
+        if (!pendingReservationId.isNullOrBlank()) {
+            targetReservationId = pendingReservationId
+        }
+    }
+
+    LaunchedEffect(targetReservationId, sales) {
+        val reservationId = targetReservationId ?: return@LaunchedEffect
+        if (sales.any { it.id == reservationId && it.userId == userId }) {
+            if (backStack.lastOrNull() !is InternalRoutesKey.BuyReservation) {
+                backStack.navigateTo(InternalRoutesKey.BuyReservation)
+            }
+        }
     }
 
     LaunchedEffect(hasPendingSales) {
@@ -289,6 +307,11 @@ fun InternalNavigationWrapper(
                     BuyReservationNestedNavigation(
                         sales = sales.filter { it.userId == userId },
                         productNamesById = products.associate { it.id to it.name },
+                        initialReservationId = targetReservationId,
+                        onInitialReservationConsumed = {
+                            targetReservationId = null
+                            onPendingReservationConsumed()
+                        },
                         // ← Nuevo: mostrar home cuando está vacío
                         onGoToShop = {
                             backStack.navigateTo(InternalRoutesKey.Home)

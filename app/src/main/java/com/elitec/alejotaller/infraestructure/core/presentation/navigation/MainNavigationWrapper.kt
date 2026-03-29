@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,10 +41,24 @@ import dev.tmapps.konnection.Konnection
 
 @Composable
 fun MainNavigationWrapper(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pendingReservationId: String? = null,
+    onPendingReservationConsumed: () -> Unit = {}
 ) {
     val backStack = rememberNavBackStack(MainRoutesKey.Splash)
     val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(true)
+
+    LaunchedEffect(pendingReservationId) {
+        val current = backStack.lastOrNull()
+        if (pendingReservationId != null && current is MainRoutesKey.MainHome && current.pendingReservationId != pendingReservationId) {
+            backStack.navigateTo(
+                MainRoutesKey.MainHome(
+                    userId = current.userId,
+                    pendingReservationId = pendingReservationId
+                )
+            )
+        }
+    }
     Box(
         contentAlignment = Alignment.TopEnd,
         modifier = modifier.fillMaxSize()
@@ -83,7 +98,7 @@ fun MainNavigationWrapper(
                 entry<MainRoutesKey.Splash> {
                     SplashScreen(
                         onUserAuth = { userId ->
-                            backStack.navigateTo(MainRoutesKey.MainHome(userId))
+                            backStack.navigateTo(MainRoutesKey.MainHome(userId, pendingReservationId))
                         },
                         onUserNotAuth = {
                             backStack.navigateTo(MainRoutesKey.Landing)
@@ -95,6 +110,8 @@ fun MainNavigationWrapper(
                     InternalNavigationWrapper(
                         onNavigateBack = { backStack.navigateBack() },
                         userId = key.userId,
+                        pendingReservationId = key.pendingReservationId,
+                        onPendingReservationConsumed = onPendingReservationConsumed,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -121,7 +138,7 @@ fun MainNavigationWrapper(
                 entry<MainRoutesKey.Register> {
                     RegisterScreen(
                         onNavigateBack = { backStack.navigateBack() },
-                        onRegisterReady = { userId -> backStack.navigateTo(MainRoutesKey.MainHome(userId)) },
+                        onRegisterReady = { userId -> backStack.navigateTo(MainRoutesKey.MainHome(userId, pendingReservationId)) },
                         modifier = Modifier.fillMaxSize()
                     )
                 }

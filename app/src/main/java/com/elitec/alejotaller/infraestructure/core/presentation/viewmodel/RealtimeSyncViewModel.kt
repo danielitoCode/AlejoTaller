@@ -115,7 +115,8 @@ class RealtimeSyncViewModel(
                 is SaleRealtimeCommand.PushNotification ->
                     orderNotificationService.showOrderStatus(
                         title = command.title,
-                        message = command.body
+                        message = command.body,
+                        saleId = event.saleId
                     ).also {
                         Log.i(TAG, "event=realtime_push_notification saleId=${event.saleId} title=${command.title}")
                     }

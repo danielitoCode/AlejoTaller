@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.infraestructure.core.presentation
 
 import android.Manifest
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -21,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -43,9 +45,12 @@ import org.koin.androidx.compose.koinViewModel
 import kotlin.time.Duration
 
 class MainActivity : ComponentActivity() {
+    private var pendingReservationId: String? by androidx.compose.runtime.mutableStateOf(null)
+
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        pendingReservationId = extractReservationId(intent)
         enableEdgeToEdge()
         setContent {
             val settingsViewModel: SettingsViewModel = koinViewModel()
@@ -107,7 +112,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize()
                     ) { innerPadding ->
                         MainNavigationWrapper(
-                            modifier = Modifier.fillMaxSize().padding(innerPadding)
+                            modifier = Modifier.fillMaxSize().padding(innerPadding),
+                            pendingReservationId = pendingReservationId,
+                            onPendingReservationConsumed = { pendingReservationId = null }
                         )
                     }
                     Toaster(
@@ -126,5 +133,19 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingReservationId = extractReservationId(intent)
+    }
+
+    private fun extractReservationId(intent: Intent?): String? {
+        if (intent == null) return null
+        intent.getStringExtra(
+            com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService.EXTRA_SALE_ID
+        )?.takeIf { it.isNotBlank() }?.let { return it }
+        return intent.data?.lastPathSegment?.takeIf { it.isNotBlank() }
     }
 }

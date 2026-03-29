@@ -30,6 +30,7 @@
     import InternalReservationDetailScreen from "../routes/InternalReservationDetailScreen.svelte";
     import InternalProfileScreen from "../routes/InternalProfileScreen.svelte";
     import SettingsScreen from "../../../feature/settigns/presentation/routes/SettingsScreen.svelte";
+    import SaleVerificationAlert from "../components/SaleVerificationAlert.svelte";
     import {toastStore} from "../viewmodel/toast.store";
     import {logger} from "../util/logger.service";
     import {
@@ -42,6 +43,7 @@
         reservationDetail,
         settings as settingsRoute
     } from "./nested.router";
+    import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
@@ -60,7 +62,8 @@
 
     const internalStackStore = internalNavController._getStackStore();
     $: internalStack = $internalStackStore;
-    $: currentPath = internalStack.at(-1)?.route ?? dashboard.path;
+    $: currentEntry = internalStack.at(-1);
+    $: currentPath = currentEntry?.route ?? dashboard.path;
     $: cartCount = $cartStore.items.reduce((sum, item) => sum + item.quantity, 0);
     $: pendingSales = $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
     $: navItems = items.map((item) => ({
@@ -69,6 +72,33 @@
     }));
 
     let fabOpen = false;
+    let suppressHashSync = false;
+
+    function handleSaleVerificationOpen(event: Event) {
+        const saleId = (event as CustomEvent<{ saleId?: string }>).detail?.saleId;
+        if (!saleId) return;
+        suppressHashSync = true;
+        internalNavController.resetTo(reservationDetail.path, { id: saleId });
+        const nextHash = buildHomeHash(reservationDetail.path, { id: saleId });
+        if (window.location.hash !== nextHash) {
+            window.location.hash = nextHash;
+        }
+        queueMicrotask(() => {
+            suppressHashSync = false;
+        });
+    }
+
+    function applyInternalHash() {
+        const parsed = parseDeepLinkHash(window.location.hash);
+        if (!parsed || parsed.top !== "home") return;
+        const targetRoute = parsed.nested ?? dashboard.path;
+        const targetArgs = parsed.args && Object.keys(parsed.args).length ? parsed.args : undefined;
+        const currentArgs = currentEntry?.args as Record<string, string> | undefined;
+
+        if (currentPath !== targetRoute || JSON.stringify(currentArgs ?? {}) !== JSON.stringify(targetArgs ?? {})) {
+            internalNavController.resetTo(targetRoute, targetArgs);
+        }
+    }
 
     function go(path: string) {
         if (currentPath !== path) internalNavController.navigate(path);
@@ -92,6 +122,17 @@
     }
 
     onMount(() => {
+        window.addEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
+        window.addEventListener("hashchange", applyInternalHash);
+
+        if (window.location.hash) {
+            suppressHashSync = true;
+            applyInternalHash();
+            queueMicrotask(() => {
+                suppressHashSync = false;
+            });
+        }
+
         authContainer.useCases.accounts.getCurrentUser().catch(() => {
             navController.navigate("login");
         });
@@ -111,9 +152,22 @@
     });
 
     onDestroy(() => {
+        window.removeEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
+        window.removeEventListener("hashchange", applyInternalHash);
         saleStore.reset();
         logger.info("[InternalNavigation] disposed");
     });
+
+    $: if (!suppressHashSync && typeof window !== "undefined") {
+        const args = currentEntry?.args as Record<string, string> | undefined;
+        const nextHash = buildHomeHash(
+            currentPath as typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settingsRoute.path,
+            { id: args?.id }
+        );
+        if (window.location.hash !== nextHash) {
+            window.history.replaceState({}, "", nextHash);
+        }
+    }
 </script>
 
 <section class="nested-shell">
@@ -187,6 +241,8 @@
                 />
             </div>
         {/key}
+
+        <SaleVerificationAlert navController={internalNavController} />
 
         <div class="fab-layer compact-only">
             {#if fabOpen}
