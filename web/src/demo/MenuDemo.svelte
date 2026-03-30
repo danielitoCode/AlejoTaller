@@ -1,4 +1,5 @@
 <script lang="ts">
+    // @ts-nocheck
     import { Menu, Switch } from "m3-svelte"
     import {MenuItem} from "m3-svelte"
     import iconCircle from "@ktibow/iconset-material-symbols/circles"

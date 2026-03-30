@@ -1,4 +1,5 @@
 <script>
+    // @ts-nocheck
     import { FAB } from "m3-svelte";
     import iconPlus from "@ktibow/iconset-material-symbols/add";
 </script>

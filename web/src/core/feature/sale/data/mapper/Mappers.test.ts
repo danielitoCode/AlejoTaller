@@ -30,6 +30,7 @@ describe("sale mappers", () => {
     it("hidrata la direccion de entrega desde el dto", () => {
         const sale = saleFromDTO({
             $id: "sale-1",
+            $sequence: 1,
             $createdAt: "",
             $updatedAt: "",
             $databaseId: "",

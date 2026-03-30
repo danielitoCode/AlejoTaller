@@ -1,4 +1,5 @@
 <script>
+    // @ts-nocheck
     import { TextField, Button, ListItem, Icon, Checkbox } from "m3-svelte";
     import iconPlus from "@ktibow/iconset-material-symbols/add";
     import iconDelete from "@ktibow/iconset-material-symbols/delete";

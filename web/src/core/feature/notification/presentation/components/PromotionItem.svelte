@@ -12,6 +12,13 @@
         }
     }
 
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            handleClick();
+        }
+    }
+
     function handleDelete(event: MouseEvent) {
         event.stopPropagation();
         if (onDelete && confirm("¿Eliminar esta promoción?")) {
@@ -34,7 +41,13 @@
         : 0;
 </script>
 
-<div class={`promotion-item ${isActive ? "active" : "inactive"}`} on:click={handleClick} role="button" tabindex="0">
+<div
+    class={`promotion-item ${isActive ? "active" : "inactive"}`}
+    on:click={handleClick}
+    on:keydown={handleKeydown}
+    role="button"
+    tabindex="0"
+>
     {#if promotion.imageUrl}
         <div class="item-image">
             <img src={promotion.imageUrl} alt={promotion.title} />
@@ -140,6 +153,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
+        line-clamp: 1;
         -webkit-line-clamp: 1;
         -webkit-box-orient: vertical;
     }
