@@ -36,13 +36,19 @@ function createProfileStore() {
 
     function hydrateFromUser(user: { $id?: string; email?: string; name?: string; prefs?: Record<string, unknown> }) {
         const userId = user.$id ?? "";
+        const remoteAvatar =
+            typeof user.prefs?.avatarUrl === "string"
+                ? user.prefs.avatarUrl
+                : (typeof user.prefs?.photo_url === "string"
+                    ? user.prefs.photo_url
+                    : (typeof user.prefs?.photoUrl === "string" ? user.prefs.photoUrl : ""));
         const base: ProfileDraft = {
             userId,
             email: user.email ?? "",
             name: user.name ?? "",
             phone: typeof user.prefs?.phone === "string" ? user.prefs.phone : "",
             bio: typeof user.prefs?.bio === "string" ? user.prefs.bio : "",
-            avatarUrl: typeof user.prefs?.avatarUrl === "string" ? user.prefs.avatarUrl : ""
+            avatarUrl: remoteAvatar
         };
 
         if (typeof window === "undefined" || !userId) {
@@ -57,7 +63,12 @@ function createProfileStore() {
                 return;
             }
 
-            set({ ...base, ...JSON.parse(raw) });
+            const local = JSON.parse(raw) as Partial<ProfileDraft>;
+            set({
+                ...base,
+                ...local,
+                avatarUrl: (local.avatarUrl?.trim() || base.avatarUrl || "")
+            });
         } catch {
             set(base);
         }

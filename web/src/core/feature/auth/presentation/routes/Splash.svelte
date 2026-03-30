@@ -8,9 +8,9 @@
     onMount(async () => {
         try {
             const user = await authContainer.useCases.accounts.getCurrentUser();
-            navController.navigate("home", { id: user.id ?? user.$id });
+            navController.resetTo("home", { id: user.id ?? user.$id });
         } catch {
-            navController.navigate("welcome");
+            navController.resetTo("welcome");
         }
     })
 </script>

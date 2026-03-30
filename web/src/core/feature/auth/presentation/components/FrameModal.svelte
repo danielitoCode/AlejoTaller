@@ -5,14 +5,19 @@
     export let title = "";
     export let ariaLabel = title || "Dialogo";
     export let src = "";
+    export let allowedOrigin = typeof window !== "undefined" ? window.location.origin : "";
 
     const dispatch = createEventDispatcher<{
         close: void;
         frameMessage: { data: any };
     }>();
 
+    let frameEl: HTMLIFrameElement | null = null;
+
     function handleMessage(event: MessageEvent) {
         if (!open) return;
+        if (allowedOrigin && event.origin !== allowedOrigin) return;
+        if (frameEl?.contentWindow && event.source !== frameEl.contentWindow) return;
         dispatch("frameMessage", { data: event.data });
     }
 
@@ -38,15 +43,15 @@
 {#if open}
     <div class="frame-modal">
         <button class="scrim" type="button" aria-label="Cerrar modal" on:click={close}></button>
-        <section class="panel" role="dialog" aria-modal="true" aria-label={ariaLabel}>
+        <div class="panel" role="dialog" aria-modal="true" aria-label={ariaLabel}>
             <header class="head">
                 <strong>{title}</strong>
                 <button class="close-btn" type="button" aria-label="Cerrar" on:click={close}>x</button>
             </header>
             <div class="frame-shell">
-                <iframe title={title} src={src} loading="eager"></iframe>
+                <iframe bind:this={frameEl} title={title} src={src} loading="eager"></iframe>
             </div>
-        </section>
+        </div>
     </div>
 {/if}
 

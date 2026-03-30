@@ -25,10 +25,19 @@
     let localFile: File | null = null;
     let localPreview = "";
     let uploading = false;
+    let previewLoading = false;
+    let previewError = false;
 
     $: previewSrc = localPreview || value;
     $: pending = uploading || !!localFile;
     $: isDisabled = disabled || uploading;
+    $: if (previewSrc) {
+        previewLoading = true;
+        previewError = false;
+    } else {
+        previewLoading = false;
+        previewError = false;
+    }
 
     function closeMenu() {
         open = false;
@@ -136,8 +145,33 @@
 
         <button class="picker-btn" type="button" on:click={() => (open = !open)} disabled={isDisabled}>
             <div class="picker-btn-main">
-                {#if previewSrc}
-                    <img class="thumb" src={previewSrc} alt="" aria-hidden="true" />
+                {#if previewSrc && !previewError}
+                    <div class="thumb-wrap" aria-hidden="true">
+                        {#if previewLoading}
+                            <div class="thumb thumb-loading">
+                                <div class="thumb-spinner"></div>
+                            </div>
+                        {/if}
+                        <img
+                            class="thumb"
+                            class:ready={!previewLoading}
+                            src={previewSrc}
+                            alt=""
+                            aria-hidden="true"
+                            on:load={() => {
+                                previewLoading = false;
+                                previewError = false;
+                            }}
+                            on:error={() => {
+                                previewLoading = false;
+                                previewError = true;
+                            }}
+                        />
+                    </div>
+                {:else if previewSrc && previewError}
+                    <div class="thumb placeholder error" aria-hidden="true">
+                        <Icon icon={ImageIcon} size={18} />
+                    </div>
                 {:else}
                     <div class="thumb placeholder" aria-hidden="true">
                         <Icon icon={ImageIcon} size={18} />
@@ -278,10 +312,57 @@
         flex: 0 0 auto;
     }
 
+    .thumb-wrap {
+        width: 36px;
+        height: 36px;
+        position: relative;
+        flex: 0 0 auto;
+    }
+
+    .thumb-wrap .thumb {
+        position: absolute;
+        inset: 0;
+    }
+
+    .thumb.ready {
+        opacity: 1;
+    }
+
+    .thumb-wrap img.thumb {
+        opacity: 0;
+        transition: opacity 160ms ease;
+    }
+
     .thumb.placeholder {
         display: grid;
         place-items: center;
         color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .thumb.placeholder.error {
+        background: color-mix(in srgb, var(--md-sys-color-error-container) 82%, transparent);
+        color: var(--md-sys-color-on-error-container);
+    }
+
+    .thumb-loading {
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 82%, transparent);
+    }
+
+    .thumb-spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
+        border-top-color: var(--md-sys-color-primary);
+        animation: thumb-spin 0.8s linear infinite;
+    }
+
+    @keyframes thumb-spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .menu {

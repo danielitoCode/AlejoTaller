@@ -19,6 +19,7 @@
     let showPassword = false;
     let showConfirmPassword = false;
     let localError: string | null = null;
+    let submitting = false;
 
     $: passwordsMatch = password.length > 0 && password === confirmPassword;
     $: canSubmit =
@@ -27,9 +28,13 @@
         password.trim().length > 5 &&
         confirmPassword.trim().length > 5 &&
         passwordsMatch &&
-        !$registerStore.loading;
+        !$registerStore.loading &&
+        !submitting;
+
+    $: normalizedEmail = email.trim().toLowerCase();
 
     async function submit() {
+        if (submitting) return;
         localError = null;
 
         if (!passwordsMatch) {
@@ -41,9 +46,10 @@
         if (!canSubmit) return;
 
         try {
+            submitting = true;
             await registerStore.createAccount({
                 name: name.trim(),
-                email: email.trim(),
+                email: normalizedEmail,
                 password,
                 phone: "",
                 photo_url: "",
@@ -52,10 +58,12 @@
                 verification: false
             });
             toastStore.success("Cuenta creada correctamente. Inicia sesion para continuar.");
-            navController.navigate("login");
+            navController.resetTo("login");
         } catch (error) {
             localError = error instanceof Error ? error.message : "No se pudo crear la cuenta.";
             toastStore.error(localError);
+        } finally {
+            submitting = false;
         }
     }
 

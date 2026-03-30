@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import {Button, Card, Icon} from "m3-svelte";
     import arrowBackIcon from "@ktibow/iconset-material-symbols/arrow-back-rounded";
     import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
@@ -17,8 +18,32 @@
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;
 
+    let loading = true;
     $: saleId = navBackStackEntry?.args?.id ?? "";
     $: sale = $saleStore.items.find((item) => item.id === saleId) ?? null;
+
+    onMount(() => {
+        const hydrate = async () => {
+            loading = true;
+            try {
+                if (saleId) {
+                    await saleStore.syncAll().catch(() => null);
+                }
+            } finally {
+                loading = false;
+            }
+        };
+
+        void hydrate();
+
+        const handleOnline = () => {
+            void hydrate();
+        };
+        window.addEventListener("online", handleOnline);
+        return () => {
+            window.removeEventListener("online", handleOnline);
+        };
+    });
 
     function saleStatusMeta(state: BuyState) {
         if (state === BuyState.VERIFIED) return { label: "Tu pedido esta listo", icon: checkCircleIcon, tone: "ready" };
@@ -43,7 +68,11 @@
         Volver
     </Button>
 
-    {#if sale}
+    {#if loading}
+        <Card variant="filled">
+            <p>Cargando detalle de la reserva...</p>
+        </Card>
+    {:else if sale}
         {@const meta = saleStatusMeta(sale.verified)}
         <div class="hero">
             <p class="eyebrow">Estado de pedido</p>
@@ -110,6 +139,7 @@
     {:else}
         <Card variant="outlined">
             <p>No se encontro la reserva solicitada.</p>
+            <Button variant="text" size="m" onclick={() => navController.popBackStack()}>Volver a reservas</Button>
         </Card>
     {/if}
 </section>

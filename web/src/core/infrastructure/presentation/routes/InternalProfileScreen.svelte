@@ -7,17 +7,28 @@
     import {toastStore} from "../viewmodel/toast.store";
     import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
     import {type ProfileDraft, profileStore} from "../../../feature/auth/presentation/viewmodel/profile.store";
+    import {authContainer} from "../../../feature/auth/di/auth.container";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
 
     let baseline: ProfileDraft | null = null;
     let loading = true;
+    let saving = false;
+    let avatarLoading = false;
+    let avatarError = false;
 
     $: draft = $profileStore;
     $: hasChanges = baseline !== null && JSON.stringify(draft) !== JSON.stringify(baseline);
+    $: if (draft.avatarUrl) {
+        avatarLoading = true;
+        avatarError = false;
+    } else {
+        avatarLoading = false;
+        avatarError = false;
+    }
 
-    onMount(async () => {
+    async function hydrateProfile() {
         try {
             const user = await sessionStore.getCurrentUser();
             profileStore.hydrateFromUser(user);
@@ -28,7 +39,12 @@
                 name: user.name ?? "",
                 phone: typeof user.prefs?.phone === "string" ? user.prefs.phone : "",
                 bio: typeof user.prefs?.bio === "string" ? user.prefs.bio : "",
-                avatarUrl: typeof user.prefs?.avatarUrl === "string" ? user.prefs.avatarUrl : ""
+                avatarUrl:
+                    typeof user.prefs?.avatarUrl === "string"
+                        ? user.prefs.avatarUrl
+                        : (typeof user.prefs?.photo_url === "string"
+                            ? user.prefs.photo_url
+                            : (typeof user.prefs?.photoUrl === "string" ? user.prefs.photoUrl : ""))
             };
 
             if (typeof window !== "undefined" && initial.userId) {
@@ -47,6 +63,17 @@
         } finally {
             loading = false;
         }
+    }
+
+    onMount(() => {
+        void hydrateProfile();
+        const handleOnline = () => {
+            void hydrateProfile();
+        };
+        window.addEventListener("online", handleOnline);
+        return () => {
+            window.removeEventListener("online", handleOnline);
+        };
     });
 
     function updateField(partial: Partial<ProfileDraft>) {
@@ -59,9 +86,31 @@
         toastStore.info("Cambios descartados");
     }
 
-    function handleSave() {
-        baseline = profileStore.save();
-        toastStore.success("Perfil guardado localmente");
+    async function handleSave() {
+        if (!baseline || saving) return;
+
+        saving = true;
+        try {
+            if (draft.name.trim() !== baseline.name.trim()) {
+                await authContainer.useCases.accounts.updateName(draft.name.trim());
+            }
+
+            if (draft.phone.trim() !== baseline.phone.trim()) {
+                await authContainer.useCases.accounts.updatePhone(draft.phone.trim());
+            }
+
+            if (draft.avatarUrl.trim() !== baseline.avatarUrl.trim()) {
+                await authContainer.useCases.accounts.updatePhotoUrl(draft.avatarUrl.trim());
+            }
+
+            baseline = profileStore.save();
+            toastStore.success("Perfil actualizado correctamente");
+            await hydrateProfile();
+        } catch (error) {
+            toastStore.error(error instanceof Error ? error.message : "No se pudo guardar el perfil");
+        } finally {
+            saving = false;
+        }
     }
 
     function handleNameInput(event: Event) {
@@ -100,8 +149,31 @@
                             <span>Sube o reemplaza tu imagen principal.</span>
                         </div>
                         <div class="avatar-preview">
-                            {#if draft.avatarUrl}
-                                <img src={draft.avatarUrl} alt="Avatar de perfil" />
+                            {#if draft.avatarUrl && !avatarError}
+                                {#if avatarLoading}
+                                    <div class="avatar-state loading" aria-label="Cargando imagen de perfil">
+                                        <div class="avatar-spinner"></div>
+                                        <span>Cargando foto...</span>
+                                    </div>
+                                {/if}
+                                <img
+                                    class:loaded={!avatarLoading}
+                                    src={draft.avatarUrl}
+                                    alt="Avatar de perfil"
+                                    on:load={() => {
+                                        avatarLoading = false;
+                                        avatarError = false;
+                                    }}
+                                    on:error={() => {
+                                        avatarLoading = false;
+                                        avatarError = true;
+                                    }}
+                                />
+                            {:else if draft.avatarUrl && avatarError}
+                                <div class="avatar-state error" aria-label="No se pudo cargar la imagen de perfil">
+                                    <strong>Sin vista previa</strong>
+                                    <span>No se pudo cargar la imagen desde la red.</span>
+                                </div>
                             {:else}
                                 <span>{draft.name?.slice(0, 1) || "A"}</span>
                             {/if}
@@ -159,8 +231,10 @@
         </div>
 
         <div class="actions-row">
-            <Button variant="outlined" size="m" onclick={handleReset} disabled={!hasChanges}>Resetear cambios</Button>
-            <Button variant="filled" size="m" onclick={handleSave} disabled={!hasChanges}>Guardar cambios</Button>
+            <Button variant="outlined" size="m" onclick={handleReset} disabled={!hasChanges || saving}>Resetear cambios</Button>
+            <Button variant="filled" size="m" onclick={handleSave} disabled={!hasChanges || saving}>
+                {saving ? "Guardando..." : "Guardar cambios"}
+            </Button>
         </div>
     {/if}
 </section>
@@ -239,12 +313,61 @@
         color: var(--md-sys-color-on-primary-container);
         font-size: 3rem;
         font-weight: 800;
+        position: relative;
     }
 
     .avatar-preview img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        display: block;
+        opacity: 0;
+        transition: opacity 180ms ease;
+    }
+
+    .avatar-preview img.loaded {
+        opacity: 1;
+    }
+
+    .avatar-state {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        align-content: center;
+        gap: 10px;
+        padding: 18px;
+        text-align: center;
+        background: linear-gradient(
+            180deg,
+            color-mix(in srgb, var(--md-sys-color-surface-container-high) 82%, transparent),
+            color-mix(in srgb, var(--md-sys-color-surface-container) 92%, transparent)
+        );
+        color: var(--md-sys-color-on-surface);
+    }
+
+    .avatar-state span {
+        font-size: 0.88rem;
+        color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .avatar-state.error strong {
+        font-size: 1rem;
+    }
+
+    .avatar-spinner {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 3px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 72%, transparent);
+        border-top-color: var(--md-sys-color-primary);
+        animation: avatar-spin 0.9s linear infinite;
+    }
+
+    @keyframes avatar-spin {
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .field-grid {

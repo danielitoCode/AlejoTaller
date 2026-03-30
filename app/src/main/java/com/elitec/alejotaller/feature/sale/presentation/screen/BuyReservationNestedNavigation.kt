@@ -3,12 +3,15 @@ package com.elitec.alejotaller.feature.sale.presentation.screen
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
@@ -59,15 +62,29 @@ fun BuyReservationNestedNavigation(
                         )
                     }
                     entry<ReservationNestedRoutes.ReservationDetails> { key ->
-                        BuyReservationDetailsScreen(
-                            sale = sales.first { it.id == key.reservationId },
-                            findProductPrice = findProductPrice,
-                            productNamesById = productNamesById,
-                            onDeliveryTypeSelected = onDeliveryTypeSelected,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 10.dp, horizontal = 15.dp)
-                        )
+                        val sale = sales.firstOrNull { it.id == key.reservationId }
+                        if (sale != null) {
+                            BuyReservationDetailsScreen(
+                                sale = sale,
+                                findProductPrice = findProductPrice,
+                                productNamesById = productNamesById,
+                                onDeliveryTypeSelected = onDeliveryTypeSelected,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.dp, horizontal = 15.dp)
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(24.dp)
+                            ) {
+                                Text(
+                                    text = "Cargando reserva...",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
                     }
                 }
             )

@@ -52,6 +52,10 @@ fun LoginFormCard(
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var customSubmitting by remember { mutableStateOf(false) }
+    var googleSubmitting by remember { mutableStateOf(false) }
+    val normalizedEmail = email.trim().lowercase()
+    val sanitizedPassword = password.trim()
 
     Card(
         modifier = modifier,
@@ -86,6 +90,9 @@ fun LoginFormCard(
                     ) {
                         Button(
                             onClick = {
+                                if (customSubmitting || email.isBlank() || password.isBlank()) return@Button
+                                if (normalizedEmail.isBlank() || sanitizedPassword.isBlank()) return@Button
+                                customSubmitting = true
                                 toasterViewModel.showMessage(
                                     "Autenticando usuario",
                                     ToastType.Normal,
@@ -93,9 +100,10 @@ fun LoginFormCard(
                                     isInfinite = true
                                 )
                                 loginViewModel.autUser(
-                                    email = email,
-                                    pass = password,
+                                    email = normalizedEmail,
+                                    pass = sanitizedPassword,
                                     onUserLogIn = { userId ->
+                                        customSubmitting = false
                                         toasterViewModel.dismissMessage("Custom Account Charge")
                                         toasterViewModel.showMessage(
                                             "Bienvenido",
@@ -104,6 +112,7 @@ fun LoginFormCard(
                                         onNavigateTo(MainRoutesKey.MainHome(userId))
                                     },
                                     onFail = { error ->
+                                        customSubmitting = false
                                         toasterViewModel.dismissMessage("Custom Account Charge")
                                         toasterViewModel.showMessage(
                                             "No se pudo iniciar sesión : $error",
@@ -112,6 +121,7 @@ fun LoginFormCard(
                                     }
                                 )
                             },
+                            enabled = !customSubmitting && !googleSubmitting && normalizedEmail.isNotBlank() && sanitizedPassword.isNotBlank(),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
@@ -139,6 +149,8 @@ fun LoginFormCard(
                         )
                         Button(
                             onClick = {
+                                if (googleSubmitting || customSubmitting) return@Button
+                                googleSubmitting = true
                                 toasterViewModel.showMessage(
                                     "Autenticando usuario en Google",
                                     ToastType.Normal,
@@ -148,6 +160,7 @@ fun LoginFormCard(
                                 loginViewModel.authWithGoogle(
                                     context = context ,
                                     onUserLogIn = { userIdLogged ->
+                                        googleSubmitting = false
                                         toasterViewModel.dismissMessage("Google Account Charge")
                                         toasterViewModel.showMessage(
                                             "Bienvenido",
@@ -156,6 +169,7 @@ fun LoginFormCard(
                                         onNavigateTo(MainRoutesKey.MainHome(userIdLogged))
                                     },
                                     onFail = { error ->
+                                        googleSubmitting = false
                                         toasterViewModel.dismissMessage("Google Account Charge")
                                         toasterViewModel.showMessage(
                                             "No se pudo iniciar sesión en Google: $error",
@@ -165,6 +179,7 @@ fun LoginFormCard(
                                     }
                                 )
                             },
+                            enabled = !googleSubmitting && !customSubmitting,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(52.dp),
@@ -205,6 +220,9 @@ fun LoginFormCard(
                         ) {
                             Button(
                                 onClick = {
+                                    if (customSubmitting || email.isBlank() || password.isBlank()) return@Button
+                                    if (normalizedEmail.isBlank() || sanitizedPassword.isBlank()) return@Button
+                                    customSubmitting = true
                                     toasterViewModel.showMessage(
                                         "Autenticando usuario",
                                         ToastType.Normal,
@@ -212,9 +230,10 @@ fun LoginFormCard(
                                         isInfinite = true
                                     )
                                     loginViewModel.autUser(
-                                        email = email,
-                                        pass = password,
+                                        email = normalizedEmail,
+                                        pass = sanitizedPassword,
                                         onUserLogIn = { userId ->
+                                            customSubmitting = false
                                             toasterViewModel.dismissMessage("Custom Account Charge")
                                             toasterViewModel.showMessage(
                                                 "Bienvenido",
@@ -223,6 +242,7 @@ fun LoginFormCard(
                                             onNavigateTo(MainRoutesKey.MainHome(userId))
                                         },
                                         onFail = { error ->
+                                            customSubmitting = false
                                             toasterViewModel.dismissMessage("Custom Account Charge")
                                             toasterViewModel.showMessage(
                                                 "No se pudo iniciar sesión : $error",
@@ -231,6 +251,7 @@ fun LoginFormCard(
                                         }
                                     )
                                 },
+                                enabled = !customSubmitting && !googleSubmitting && normalizedEmail.isNotBlank() && sanitizedPassword.isNotBlank(),
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(52.dp),
@@ -255,6 +276,8 @@ fun LoginFormCard(
                             }
                             Button(
                                 onClick = {
+                                    if (googleSubmitting || customSubmitting) return@Button
+                                    googleSubmitting = true
                                     toasterViewModel.showMessage(
                                         "Autenticando usuario en Google",
                                         ToastType.Normal,
@@ -264,6 +287,7 @@ fun LoginFormCard(
                                     loginViewModel.authWithGoogle(
                                         context = context ,
                                         onUserLogIn = { userIdLogged ->
+                                            googleSubmitting = false
                                             toasterViewModel.dismissMessage("Google Account Charge")
                                             toasterViewModel.showMessage(
                                                 "Bienvenido",
@@ -272,6 +296,7 @@ fun LoginFormCard(
                                             onNavigateTo(MainRoutesKey.MainHome(userIdLogged))
                                         },
                                         onFail = { error ->
+                                            googleSubmitting = false
                                             toasterViewModel.dismissMessage("Google Account Charge")
                                             toasterViewModel.showMessage(
                                                 "No se pudo iniciar sesión en Google: $error",
@@ -281,6 +306,7 @@ fun LoginFormCard(
                                         }
                                     )
                                 },
+                                enabled = !googleSubmitting && !customSubmitting,
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(52.dp),

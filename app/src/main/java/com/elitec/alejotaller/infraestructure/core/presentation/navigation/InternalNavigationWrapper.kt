@@ -74,9 +74,11 @@ import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAda
 @Composable
 fun InternalNavigationWrapper(
     onNavigateBack: () -> Unit,
+    onSessionClosed: () -> Unit = {},
     userId: String,
     pendingReservationId: String? = null,
     onPendingReservationConsumed: () -> Unit = {},
+    connectionAvailable: Boolean = true,
     modifier: Modifier = Modifier,
     shopCartViewModel: ShopCartViewModel = koinViewModel(),
     productViewModel: ProductViewModel = koinViewModel(),
@@ -92,6 +94,8 @@ fun InternalNavigationWrapper(
     var isSubmittingPurchase by remember { mutableStateOf(false) }
     var isUpdatingDeliveryType by remember { mutableStateOf(false) }
     var targetReservationId by remember { mutableStateOf<String?>(pendingReservationId) }
+    var productsHydrated by remember(userId) { mutableStateOf(false) }
+    var profileHydrated by remember(userId) { mutableStateOf(false) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val directive = remember(windowAdaptiveInfo) {
@@ -124,13 +128,16 @@ fun InternalNavigationWrapper(
     val hasPendingSales = pendingSaleIds.isNotEmpty()
 
     LaunchedEffect(null) {
+        productsHydrated = false
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
         productViewModel.syncProducts(
             onProductCharge = {
+                productsHydrated = true
                 toasterViewModel.dismissMessage("product charge")
                 toasterViewModel.showMessage("Productos cargados", ToastType.Success)
             },
             onFail = {
+                productsHydrated = true
                 toasterViewModel.dismissMessage("product charge")
                 toasterViewModel.showMessage("Error al cargar los productos", ToastType.Error)
             }
@@ -138,11 +145,14 @@ fun InternalNavigationWrapper(
     }
 
     LaunchedEffect(null) {
+        profileHydrated = false
         profileViewModel.getAccountInfo(
             onGetInfo = {
+                profileHydrated = true
                 toasterViewModel.showMessage("Informacion de usuario cargada", ToastType.Success)
             },
             onFail = {
+                profileHydrated = true
                 toasterViewModel.showMessage("No se pudo cargar informacion de usuario", ToastType.Error)
                 onNavigateBack()
             }
@@ -151,6 +161,13 @@ fun InternalNavigationWrapper(
 
     LaunchedEffect(userId) {
         saleViewModel.sync(userId)
+    }
+
+    LaunchedEffect(connectionAvailable, userId) {
+        if (connectionAvailable && userId.isNotBlank()) {
+            saleViewModel.sync(userId)
+            profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
+        }
     }
 
     LaunchedEffect(userId, pendingSaleIds) {
@@ -197,6 +214,13 @@ fun InternalNavigationWrapper(
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
         FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
     )
+
+    val showShellLoading = !productsHydrated || !profileHydrated || profileInfo == null
+
+    if (showShellLoading) {
+        InternalShellShimmer(modifier = modifier)
+        return
+    }
 
     profileInfo?.let { info ->
         NavDisplay(
@@ -451,12 +475,13 @@ fun InternalNavigationWrapper(
         shopCartItemsCount = cartItems.size,
         onNavigate = { route -> backStack.navigateTo(route) },
         onLogout = {
+            realtimeSyncViewModel.stopRealtimeSync()
             authViewModel.logoutUser(
                 onLogout = {
-                    onNavigateBack()
+                    onSessionClosed()
                 },
                 onFail = {
-                    onNavigateBack()
+                    onSessionClosed()
                 }
             )
 

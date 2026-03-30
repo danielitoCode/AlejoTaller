@@ -25,6 +25,7 @@
     let error: string | null = null;
 
     $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
+    $: normalizedEmail = email.trim().toLowerCase();
 
     async function signIn() {
         if (!canSubmit) return;
@@ -34,19 +35,19 @@
 
         try {
             const userId = await authContainer.useCases.sessions.openSession.openCustomSession(
-                email.trim(),
+                normalizedEmail,
                 password
             );
             authFlowStore.setSuccess({
                 userId,
-                email: email.trim(),
+                email: normalizedEmail,
                 provider: "password"
             });
-            navController.navigate("home", { id: userId, email: email.trim(), provider: "password" });
+            navController.resetTo("home", { id: userId, email: normalizedEmail, provider: "password" });
         } catch (e) {
             error = e instanceof Error ? e.message : "No se pudo iniciar sesion";
             authFlowStore.setError(error, {
-                email: email.trim(),
+                email: normalizedEmail,
                 provider: "password"
             });
             toastStore.error(error);
@@ -85,7 +86,11 @@
     }
 
     async function handleGoogleProfile(profile: GoogleIdTokenProfile) {
-        googleProfile = profile;
+        const sanitizedProfile = {
+            ...profile,
+            email: profile.email.trim().toLowerCase()
+        };
+        googleProfile = sanitizedProfile;
 
         loading = true;
         error = null;
@@ -94,25 +99,33 @@
         try {
             try {
                 const userId = await authContainer.useCases.sessions.openSession.openCustomSession(
-                    profile.email,
-                    profile.sub
+                    sanitizedProfile.email,
+                    sanitizedProfile.sub
                 );
+                const current = await authContainer.useCases.accounts.getCurrentUser();
+                const currentPhoto =
+                    typeof current?.photo_url === "string"
+                        ? current.photo_url.trim()
+                        : "";
+                if (!currentPhoto && sanitizedProfile.picture?.trim()) {
+                    await authContainer.useCases.accounts.updatePhotoUrl(sanitizedProfile.picture.trim());
+                }
                 authFlowStore.setSuccess({
                     userId,
-                    email: profile.email,
+                    email: sanitizedProfile.email,
                     provider: "google"
                 });
-                navController.navigate("home", { id: userId, email: profile.email, provider: "google" });
+                navController.resetTo("home", { id: userId, email: sanitizedProfile.email, provider: "google" });
                 return;
             } catch {
-                googleRegisterSrc = getGoogleRegisterSrc(profile);
+                googleRegisterSrc = getGoogleRegisterSrc(sanitizedProfile);
                 registerFrameOpen = true;
                 return;
             }
         } catch (e) {
             error = e instanceof Error ? e.message : "No se pudo iniciar sesion con Google";
             authFlowStore.setError(error, {
-                email: profile.email,
+                email: sanitizedProfile.email,
                 provider: "google"
             });
             toastStore.error(error);
@@ -148,7 +161,7 @@
                 email: googleProfile.email,
                 provider: "google"
             });
-            navController.navigate("home", { id: userId, email: googleProfile.email, provider: "google" });
+            navController.resetTo("home", { id: userId, email: googleProfile.email, provider: "google" });
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
             linkError = code === 401
@@ -180,27 +193,31 @@
     }
 
     async function registerStoreFromGoogle(profile: GoogleIdTokenProfile) {
+        const sanitizedProfile = {
+            ...profile,
+            email: profile.email.trim().toLowerCase()
+        };
         loading = true;
         error = null;
 
         try {
             await registerStore.createAccount({
-                name: profile.name || profile.email.split("@")[0] || "Usuario",
-                email: profile.email,
-                password: profile.sub,
+                name: sanitizedProfile.name || sanitizedProfile.email.split("@")[0] || "Usuario",
+                email: sanitizedProfile.email,
+                password: sanitizedProfile.sub,
                 phone: "",
-                photo_url: profile.picture,
+                photo_url: sanitizedProfile.picture,
                 role: "viewer",
-                sub: profile.sub,
+                sub: sanitizedProfile.sub,
                 verification: true
             });
             const current = await authContainer.useCases.accounts.getCurrentUser();
             authFlowStore.setSuccess({
                 userId: current.id ?? "",
-                email: profile.email ?? "",
+                email: sanitizedProfile.email ?? "",
                 provider: "google"
             });
-            navController.navigate("home", { id: current.id, email: profile.email, provider: "google" });
+            navController.resetTo("home", { id: current.id, email: sanitizedProfile.email, provider: "google" });
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
             if (code === 409) {
@@ -212,7 +229,7 @@
             }
             error = e instanceof Error ? e.message : "No se pudo crear la cuenta";
             authFlowStore.setError(error, {
-                email: profile.email,
+                email: sanitizedProfile.email,
                 provider: "google"
             });
             toastStore.error(error);

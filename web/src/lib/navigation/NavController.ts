@@ -20,6 +20,17 @@ export class NavController {
         this.stackStore.update(s => [...s, { route, args }]);
     }
 
+    resetTo<T = unknown>(route: string, args?: T) {
+        this.stackStore.set([{ route, args }]);
+    }
+
+    replaceTop<T = unknown>(route: string, args?: T) {
+        this.stackStore.update((stack) => {
+            if (!stack.length) return [{ route, args }];
+            return [...stack.slice(0, -1), { route, args }];
+        });
+    }
+
     popBackStack() {
         this.stackStore.update(s =>
             s.length > 1 ? s.slice(0, -1) : s

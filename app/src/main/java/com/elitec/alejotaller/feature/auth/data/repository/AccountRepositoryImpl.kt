@@ -27,6 +27,7 @@ class AccountRepositoryImpl(
                 "sub" to userProfile.sub,
                 "phone" to userProfile.phone,
                 "photoUrl" to userProfile.photoUrl,
+                "photo_url" to userProfile.photoUrl,
                 "verification" to userProfile.verification
             )
         )
@@ -48,7 +49,10 @@ class AccountRepositoryImpl(
 
     override suspend fun updatePhotoUrl(photoUrl: String) {
         account.updatePrefs(
-            prefs = mapOf("photoUrl" to photoUrl)
+            prefs = mapOf(
+                "photoUrl" to photoUrl,
+                "photo_url" to photoUrl
+            )
         )
     }
 

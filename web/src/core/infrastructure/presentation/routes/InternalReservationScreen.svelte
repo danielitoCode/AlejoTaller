@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onDestroy, onMount } from "svelte";
     import {Button, Card, Icon} from "m3-svelte";
     import shoppingBagIcon from "@ktibow/iconset-material-symbols/inventory-2-rounded";
     import scheduleIcon from "@ktibow/iconset-material-symbols/schedule-rounded";
@@ -15,11 +16,28 @@
     export let navBackStackEntry: NavBackStackEntry;
 
     let currentUserId = "";
+    let bootstrapping = true;
 
-    sessionStore.getCurrentUser().then((user) => {
-        currentUserId = user.$id ?? "";
-    }).catch(() => {
-        currentUserId = "";
+    async function hydrateReservations() {
+        bootstrapping = true;
+        try {
+            const user = await sessionStore.getCurrentUser().catch(() => null);
+            currentUserId = user?.$id ?? "";
+            await saleStore.syncAll().catch(() => null);
+        } finally {
+            bootstrapping = false;
+        }
+    }
+
+    onMount(() => {
+        void hydrateReservations();
+        const handleOnline = () => {
+            void hydrateReservations();
+        };
+        window.addEventListener("online", handleOnline);
+        return () => {
+            window.removeEventListener("online", handleOnline);
+        };
     });
 
     function saleStatusMeta(state: BuyState) {
@@ -41,7 +59,12 @@
         <p class="support">Consulta el estado de tus pedidos y entra al detalle con el mismo lenguaje visual del modulo.</p>
     </div>
 
-    {#if !items.length}
+    {#if bootstrapping}
+        <Card variant="filled" class="empty-state">
+            <h2>Cargando reservas...</h2>
+            <p>Estamos sincronizando tus pedidos.</p>
+        </Card>
+    {:else if !items.length}
         <Card variant="outlined" class="empty-state">
             <Icon icon={shoppingBagIcon} />
             <h2>Aun no tienes compras</h2>

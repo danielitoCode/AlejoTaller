@@ -49,7 +49,7 @@ fun ProfilePhotoBox(
 ) {
     val context = LocalContext.current
 
-    var currentImage by remember { mutableStateOf(photoUrl) }
+    var currentImage by remember(photoUrl) { mutableStateOf(photoUrl) }
 
     // ✅ Lanzador del selector de fotos (galería)
     val photoPickerLauncher = rememberLauncherForActivityResult(

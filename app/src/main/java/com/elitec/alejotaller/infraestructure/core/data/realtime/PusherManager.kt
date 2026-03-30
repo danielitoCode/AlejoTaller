@@ -39,11 +39,11 @@ class  PusherManager(
                 )
             }
 
-            override fun onError(message: String, code: String, e: Exception) {
+            override fun onError(message: String?, code: String?, e: Exception?) {
                 onDisconnect()
                 Log.e(
                     "PusherManager",
-                    "Error connecting! Code: $code, Message: $message",
+                    "Error connecting! Code: ${code ?: "unknown"}, Message: ${message ?: "unknown"}",
                     e
                 )
             }

@@ -10,7 +10,10 @@ fun User<Map<String, Any>>.toDto(): UserDto =
         email = email,
         pass = password ?: "",
         sub = (prefs.data["sub"] as? String) ?: "",
-        phone = (prefs.data["sub"] as? String) ?: "",
-        photoUrl = (prefs.data["sub"] as? String) ?: "",
+        phone = (prefs.data["phone"] as? String) ?: "",
+        photoUrl = (prefs.data["photoUrl"] as? String)
+            ?: (prefs.data["photo_url"] as? String)
+            ?: (prefs.data["avatarUrl"] as? String)
+            ?: "",
         verification = (prefs.data["verification"] as? Boolean) ?: false
     )

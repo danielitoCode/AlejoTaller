@@ -21,6 +21,7 @@
     import {productStore} from "../../../feature/product/presentation/viewmodel/product.store";
     import {promotionStore} from "../../../feature/notification/presentation/viewmodel/promotion.store";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import {saleAlertStore} from "../../../feature/sale/presentation/viewmodel/sale-alert.store";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
     import {BuyState} from "../../../feature/sale/domain/entity/enums";
     import InternalProductScreen from "../../../feature/product/presentation/screens/InternalProductScreen.svelte";
@@ -33,6 +34,7 @@
     import SaleVerificationAlert from "../components/SaleVerificationAlert.svelte";
     import {toastStore} from "../viewmodel/toast.store";
     import {logger} from "../util/logger.service";
+    import {authFlowStore} from "../../../feature/auth/presentation/viewmodel/auth-flow.store";
     import {
         buy,
         buyConfirm,
@@ -74,12 +76,25 @@
     let fabOpen = false;
     let suppressHashSync = false;
 
+    function clearSessionBoundState({ clearCart = false }: { clearCart?: boolean } = {}) {
+        saleStore.reset();
+        saleAlertStore.clearAlerts();
+        promotionStore.cleanup();
+        productStore.reset();
+        categoryStore.reset();
+        sessionStore.reset();
+        authFlowStore.reset();
+        if (clearCart) {
+            cartStore.clear();
+        }
+    }
+
     function handleSaleVerificationOpen(event: Event) {
         const saleId = (event as CustomEvent<{ saleId?: string }>).detail?.saleId;
         if (!saleId) return;
         suppressHashSync = true;
         internalNavController.resetTo(reservationDetail.path, { id: saleId });
-        const nextHash = buildHomeHash(reservationDetail.path, { id: saleId });
+        const nextHash = buildHomeHash(reservationDetail.path, { reservationId: saleId });
         if (window.location.hash !== nextHash) {
             window.location.hash = nextHash;
         }
@@ -92,7 +107,10 @@
         const parsed = parseDeepLinkHash(window.location.hash);
         if (!parsed || parsed.top !== "home") return;
         const targetRoute = parsed.nested ?? dashboard.path;
-        const targetArgs = parsed.args && Object.keys(parsed.args).length ? parsed.args : undefined;
+        const targetArgs =
+            targetRoute === reservationDetail.path && parsed.args?.reservationId
+                ? { id: parsed.args.reservationId }
+                : undefined;
         const currentArgs = currentEntry?.args as Record<string, string> | undefined;
 
         if (currentPath !== targetRoute || JSON.stringify(currentArgs ?? {}) !== JSON.stringify(targetArgs ?? {})) {
@@ -116,8 +134,8 @@
         try {
             await authContainer.useCases.sessions.closeSession.execute();
         } finally {
-            saleStore.reset();
-            navController.navigate("welcome");
+            clearSessionBoundState({ clearCart: true });
+            navController.resetTo("welcome");
         }
     }
 
@@ -134,7 +152,8 @@
         }
 
         authContainer.useCases.accounts.getCurrentUser().catch(() => {
-            navController.navigate("login");
+            clearSessionBoundState({ clearCart: true });
+            navController.resetTo("login");
         });
 
         productStore.syncAll().catch(() => {
@@ -154,7 +173,7 @@
     onDestroy(() => {
         window.removeEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.removeEventListener("hashchange", applyInternalHash);
-        saleStore.reset();
+        clearSessionBoundState();
         logger.info("[InternalNavigation] disposed");
     });
 
@@ -162,7 +181,7 @@
         const args = currentEntry?.args as Record<string, string> | undefined;
         const nextHash = buildHomeHash(
             currentPath as typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settingsRoute.path,
-            { id: args?.id }
+            currentPath === reservationDetail.path ? { reservationId: args?.id } : undefined
         );
         if (window.location.hash !== nextHash) {
             window.history.replaceState({}, "", nextHash);

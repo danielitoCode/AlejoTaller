@@ -22,7 +22,9 @@ class AuthWithGoogleCaseUse(
         runCatching { sessionManager.closeCurrentSession() }
 
         return@runCatching try {
-            sessionManager.openEmailSession(googleUser.email, password)
+            val userId = sessionManager.openEmailSession(googleUser.email, password)
+            syncGooglePhotoIfMissing(googleUser.photoUrl)
+            userId
         } catch (e: Exception) {
             if (e !is AppwriteException) throw e
 
@@ -57,6 +59,17 @@ class AuthWithGoogleCaseUse(
                 }
                 else -> throw e
             }
+        }
+    }
+
+    private suspend fun syncGooglePhotoIfMissing(googlePhotoUrl: String?) {
+        val safeGooglePhoto = googlePhotoUrl?.trim().orEmpty()
+        if (safeGooglePhoto.isBlank()) return
+
+        val currentUser = accountRepository.getCurrentUserInfo()
+        val currentPhoto = currentUser.userProfile.photoUrl?.trim().orEmpty()
+        if (currentPhoto.isBlank()) {
+            accountRepository.updatePhotoUrl(safeGooglePhoto)
         }
     }
 }

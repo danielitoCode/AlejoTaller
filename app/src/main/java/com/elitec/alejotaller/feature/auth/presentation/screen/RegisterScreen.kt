@@ -52,6 +52,11 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var submitting by remember { mutableStateOf(false) }
+    val normalizedEmail = email.trim().lowercase()
+    val sanitizedName = name.trim()
+    val sanitizedPassword = password.trim()
+    val sanitizedConfirmPassword = confirmPassword.trim()
 
     when(deviceMode) {
         AppWindowType.MobilePortrait,
@@ -122,31 +127,43 @@ fun RegisterScreen(
                 )
                 Button(
                     onClick = {
-                        if(password != confirmPassword) {
+                        if (submitting) return@Button
+                        if(sanitizedPassword != sanitizedConfirmPassword) {
                             toasterViewModel.showMessage(
                                 message = "No coinciden las contrasenas",
                                 type = ToastType.Warning
                             )
+                            return@Button
                         }
+                        if (sanitizedName.isBlank() || normalizedEmail.isBlank() || sanitizedPassword.isBlank()) {
+                            toasterViewModel.showMessage(
+                                message = "Completa todos los campos requeridos",
+                                type = ToastType.Warning
+                            )
+                            return@Button
+                        }
+                        submitting = true
                         toasterViewModel.showMessage(
                             "Autenticando usuario",
                             ToastType.Normal,
                             "Custom Account Charge"
                         )
                         registerViewModel.customRegister(
-                            email = email,
-                            password = password,
-                            name = name,
-                            onUserRegister = {
+                            email = normalizedEmail,
+                            password = sanitizedPassword,
+                            name = sanitizedName,
+                            onUserRegister = { userId ->
+                                submitting = false
                                 toasterViewModel.dismissMessage("Custom Account Charge")
                                 toasterViewModel.showMessage(
                                     "Bienvenido",
                                     ToastType.Success,
                                     "Custom Account Charge"
                                 )
-                                onRegisterReady("Usuario registrado")
+                                onRegisterReady(userId)
                             },
                             onFail = {
+                                submitting = false
                                 toasterViewModel.dismissMessage("Custom Account Charge")
                                 toasterViewModel.showMessage(
                                     "Error al registrar usuario",
@@ -157,6 +174,7 @@ fun RegisterScreen(
                         )
 
                     },
+                    enabled = !submitting,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Registrarse")
