@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { saleFromDTO, saleToDTO } from "./Mappers";
-import { BuyState, DeliveryType } from "../../domain/entity/enums";
+import { saleFromDTO, saleToDTO } from "../../../../../../core/feature/sale/data/mapper/Mappers";
+import { BuyState, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
 
 describe("sale mappers", () => {
     it("serializa la direccion de entrega cuando la venta es a domicilio", () => {

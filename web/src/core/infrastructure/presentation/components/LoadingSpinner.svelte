@@ -9,7 +9,7 @@
     style={`--s:${size}px`}
     role="status"
     aria-label={label}
-/>
+></span>
 
 <style>
     .spinner {
@@ -35,4 +35,3 @@
         }
     }
 </style>
-

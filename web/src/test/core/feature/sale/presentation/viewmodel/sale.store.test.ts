@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
-import { BuyState, DeliveryType } from "../../domain/entity/enums";
-import type { Sale } from "../../domain/entity/Sale";
+import { BuyState, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
+import type { Sale } from "../../../../../../core/feature/sale/domain/entity/Sale";
 
 const mocks = vi.hoisted(() => {
     const unsubscribeFn = vi.fn();
@@ -23,7 +23,7 @@ const mocks = vi.hoisted(() => {
     };
 });
 
-vi.mock("../../di/sale.container", () => ({
+vi.mock("../../../../../../core/feature/sale/di/sale.container", () => ({
     saleContainer: {
         repositories: {
             offlineFirst: {
@@ -39,24 +39,24 @@ vi.mock("../../di/sale.container", () => ({
     }
 }));
 
-vi.mock("../../../../infrastructure/data/alset-pulse/pulse.realtime", () => ({
+vi.mock("../../../../../../core/infrastructure/data/alset-pulse/pulse.realtime", () => ({
     subscribeSaleVerification: mocks.subscribeSaleVerification,
     unsubscribeSaleVerification: mocks.unsubscribeSaleVerification
 }));
 
-vi.mock("../../../auth/presentation/viewmodel/session.store", () => ({
+vi.mock("../../../../../../core/feature/auth/presentation/viewmodel/session.store", () => ({
     sessionStore: {
         getCurrentUser: mocks.getCurrentUser
     }
 }));
 
-vi.mock("./sale-alert.store", () => ({
+vi.mock("../../../../../../core/feature/sale/presentation/viewmodel/sale-alert.store", () => ({
     saleAlertStore: {
         addAlert: mocks.addAlert
     }
 }));
 
-vi.mock("../../../../infrastructure/presentation/util/logger.service", () => ({
+vi.mock("../../../../../../core/infrastructure/presentation/util/logger.service", () => ({
     logger: {
         log: mocks.loggerLog,
         info: mocks.loggerInfo,
@@ -79,7 +79,7 @@ function buildSale(overrides: Partial<Sale> = {}): Sale {
 }
 
 async function loadSaleStore() {
-    const module = await import("./sale.store");
+    const module = await import("../../../../../../core/feature/sale/presentation/viewmodel/sale.store");
     return module.saleStore;
 }
 

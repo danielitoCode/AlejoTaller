@@ -1,7 +1,7 @@
 <script lang="ts">
     import { Modifier } from "../modifier/Modifier";
     import type { NavController } from "./NavController";
-    import AnimatedContent from "../../components/motion/AnimatedContent.svelte";
+    import AnimatedContent from "../../motion/AnimatedContent.svelte";
     import type { ContentTransition } from "../motion/ContentTransition";
     import { fade } from "../motion/contentTransitions";
 
@@ -31,8 +31,6 @@
     <AnimatedContent
             targetState={currentEntry?.route}
             transition={transition}
-            modifier={Modifier.fillMaxSize()}
-            let:value
     >
         {#if active}
             <svelte:component
