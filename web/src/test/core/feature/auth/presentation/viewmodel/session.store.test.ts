@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
     accountGet: vi.fn()
 }));
 
-vi.mock("../../../../../../../core/infrastructure/di/infrastructure.container", () => ({
+vi.mock("../../../../../../core/infrastructure/di/infrastructure.container", () => ({
     infrastructureContainer: {
         appwrite: {
             account: {
@@ -16,7 +16,7 @@ vi.mock("../../../../../../../core/infrastructure/di/infrastructure.container", 
 }));
 
 async function loadSessionStore() {
-    const module = await import("../../../../../../../core/feature/auth/presentation/viewmodel/session.store");
+    const module = await import("../../../../../../core/feature/auth/presentation/viewmodel/session.store");
     return module.sessionStore;
 }
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
-import { profileStore } from "../../../../../../../core/feature/auth/presentation/viewmodel/profile.store";
+import { profileStore } from "../../../../../../core/feature/auth/presentation/viewmodel/profile.store";
 
 function createStorageMock() {
     const data = new Map<string, string>();

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { UserNetRepositoryImpl } from "../../../../../../../core/feature/auth/data/repository/user.net.repository";
+import { UserNetRepositoryImpl } from "../../../../../../core/feature/auth/data/repository/user.net.repository";
 
 describe("UserNetRepositoryImpl", () => {
     it("lee la foto remota desde claves compatibles y resuelve el rol desde labels", async () => {
