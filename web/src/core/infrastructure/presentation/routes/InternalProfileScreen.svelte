@@ -11,6 +11,8 @@
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
+    $: void navController;
+    $: void navBackStackEntry;
 
     let baseline: ProfileDraft | null = null;
     let loading = true;

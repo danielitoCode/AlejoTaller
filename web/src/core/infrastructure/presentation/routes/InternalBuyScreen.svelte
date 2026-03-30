@@ -9,6 +9,7 @@
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
+    $: void navBackStackEntry;
 
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);

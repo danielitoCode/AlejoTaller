@@ -14,6 +14,7 @@
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
+    $: void navBackStackEntry;
 
     let currentUserId = "";
     let bootstrapping = true;

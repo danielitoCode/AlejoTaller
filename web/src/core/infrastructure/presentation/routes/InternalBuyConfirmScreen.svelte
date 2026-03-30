@@ -23,6 +23,7 @@
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
+    $: void navBackStackEntry;
 
     type PaymentMethod = "ULTRAPAY" | "TRANSFERMOVIL" | null;
     type DeliveryDraft = {

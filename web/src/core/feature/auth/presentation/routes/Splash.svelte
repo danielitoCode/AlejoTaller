@@ -2,12 +2,17 @@
     import {onMount} from "svelte";
     import {authContainer} from "../../di/auth.container";
     import alejoIcon from "/alejoicon_clean.svg";
+    import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navController;
 
     onMount(async () => {
         try {
             const user = await authContainer.useCases.accounts.getCurrentUser();
+            const pendingHash = consumePendingDeepLink();
+            if (pendingHash && typeof window !== "undefined") {
+                window.history.replaceState({}, "", pendingHash);
+            }
             navController.resetTo("home", { id: user.id ?? user.$id });
         } catch {
             navController.resetTo("welcome");

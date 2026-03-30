@@ -9,6 +9,7 @@
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;
+    $: void navController;
 
     const routeTitles: Record<string, string> = {
         dashboard: "Productos",

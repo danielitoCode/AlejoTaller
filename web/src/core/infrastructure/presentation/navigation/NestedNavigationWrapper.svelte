@@ -46,6 +46,7 @@
         settings as settingsRoute
     } from "./nested.router";
     import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
+    import { rememberPendingDeepLink } from "./pending-deeplink.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
@@ -152,6 +153,7 @@
         }
 
         authContainer.useCases.accounts.getCurrentUser().catch(() => {
+            rememberPendingDeepLink(window.location.hash);
             clearSessionBoundState({ clearCart: true });
             navController.resetTo("login");
         });

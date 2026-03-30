@@ -15,6 +15,7 @@
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { parseGoogleIdToken } from "../util/google-id-token";
     import FrameModal from "../components/FrameModal.svelte";
+    import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navController: NavController;
 
@@ -26,6 +27,13 @@
 
     $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
     $: normalizedEmail = email.trim().toLowerCase();
+
+    function restorePendingHashIfNeeded() {
+        const pendingHash = consumePendingDeepLink();
+        if (pendingHash && typeof window !== "undefined") {
+            window.history.replaceState({}, "", pendingHash);
+        }
+    }
 
     async function signIn() {
         if (!canSubmit) return;
@@ -43,6 +51,7 @@
                 email: normalizedEmail,
                 provider: "password"
             });
+            restorePendingHashIfNeeded();
             navController.resetTo("home", { id: userId, email: normalizedEmail, provider: "password" });
         } catch (e) {
             error = e instanceof Error ? e.message : "No se pudo iniciar sesion";
@@ -115,6 +124,7 @@
                     email: sanitizedProfile.email,
                     provider: "google"
                 });
+                restorePendingHashIfNeeded();
                 navController.resetTo("home", { id: userId, email: sanitizedProfile.email, provider: "google" });
                 return;
             } catch {
@@ -161,6 +171,7 @@
                 email: googleProfile.email,
                 provider: "google"
             });
+            restorePendingHashIfNeeded();
             navController.resetTo("home", { id: userId, email: googleProfile.email, provider: "google" });
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
@@ -217,6 +228,7 @@
                 email: sanitizedProfile.email ?? "",
                 provider: "google"
             });
+            restorePendingHashIfNeeded();
             navController.resetTo("home", { id: current.id, email: sanitizedProfile.email, provider: "google" });
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
