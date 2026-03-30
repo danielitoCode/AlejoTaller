@@ -117,6 +117,80 @@ class AuthCaseUsesTest {
     }
 
     @Test
+    fun `AuthWithGoogleCaseUse syncs google photo only when current profile has no photo`() = runTest {
+        val googleProvider = FakeGoogleAuthProvider().apply {
+            user = user.copy(photoUrl = "https://cdn.example.com/google-photo.jpg")
+        }
+        val accountRepository = FakeAccountRepository(
+            currentUser = defaultUser().copy(
+                userProfile = defaultUser().userProfile.copy(photoUrl = "")
+            )
+        )
+        val sessionManager = FakeSessionManager(openedSessionId = "existing-user-id")
+        val registerUseCase = CustomRegisterCaseUse(accountRepository, sessionManager)
+        val caseUse = AuthWithGoogleCaseUse(
+            googleAuthProvider = googleProvider,
+            registerCaseUse = registerUseCase,
+            accountRepository = accountRepository,
+            sessionManager = sessionManager
+        )
+
+        val result = caseUse(mockk<Context>(relaxed = true))
+
+        assertTrue(result.isSuccess)
+        assertEquals(listOf("https://cdn.example.com/google-photo.jpg"), accountRepository.updatedPhotoUrls)
+    }
+
+    @Test
+    fun `AuthWithGoogleCaseUse does not overwrite an existing custom photo with google photo`() = runTest {
+        val googleProvider = FakeGoogleAuthProvider().apply {
+            user = user.copy(photoUrl = "https://cdn.example.com/google-photo.jpg")
+        }
+        val accountRepository = FakeAccountRepository(
+            currentUser = defaultUser().copy(
+                userProfile = defaultUser().userProfile.copy(photoUrl = "https://cdn.example.com/custom-photo.jpg")
+            )
+        )
+        val sessionManager = FakeSessionManager(openedSessionId = "existing-user-id")
+        val registerUseCase = CustomRegisterCaseUse(accountRepository, sessionManager)
+        val caseUse = AuthWithGoogleCaseUse(
+            googleAuthProvider = googleProvider,
+            registerCaseUse = registerUseCase,
+            accountRepository = accountRepository,
+            sessionManager = sessionManager
+        )
+
+        val result = caseUse(mockk<Context>(relaxed = true))
+
+        assertTrue(result.isSuccess)
+        assertTrue(accountRepository.updatedPhotoUrls.isEmpty())
+    }
+
+    @Test
+    fun `AuthWithGoogleCaseUse ignores close session failure and still opens the new session`() = runTest {
+        val googleProvider = FakeGoogleAuthProvider()
+        val accountRepository = FakeAccountRepository()
+        val sessionManager = FakeSessionManager(
+            openedSessionId = "existing-user-id",
+            closeError = IllegalStateException("session already closed")
+        )
+        val registerUseCase = CustomRegisterCaseUse(accountRepository, sessionManager)
+        val caseUse = AuthWithGoogleCaseUse(
+            googleAuthProvider = googleProvider,
+            registerCaseUse = registerUseCase,
+            accountRepository = accountRepository,
+            sessionManager = sessionManager
+        )
+
+        val result = caseUse(mockk<Context>(relaxed = true))
+
+        assertTrue(result.isSuccess)
+        assertEquals("existing-user-id", result.getOrNull())
+        assertEquals(1, sessionManager.closeCalls)
+        assertEquals(1, sessionManager.openCalls.size)
+    }
+
+    @Test
     fun `AuthUserCaseUse returns failure when session manager throws`() = runTest {
         val sessionManager = FakeSessionManager(openError = IllegalStateException("no session"))
         val caseUse = AuthUserCaseUse(sessionManager)
