@@ -9,8 +9,13 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/alejotallerscan" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/mapper-processor" />
+            <option value="$PROJECT_DIR$/shared-auth" />
+            <option value="$PROJECT_DIR$/shared-core" />
+            <option value="$PROJECT_DIR$/shared-data" />
+            <option value="$PROJECT_DIR$/shared-sale" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -27,3 +27,8 @@ dependencyResolutionManagement {
 rootProject.name = "AlejoTaller"
 include(":app")
 include(":mapper-processor")
+include(":alejotallerscan")
+include(":shared-core")
+include(":shared-auth")
+include(":shared-sale")
+include(":shared-data")
