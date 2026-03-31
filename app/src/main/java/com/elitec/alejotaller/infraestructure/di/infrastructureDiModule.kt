@@ -8,7 +8,6 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessi
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
-import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBDMigrations
 import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherManager
@@ -16,6 +15,7 @@ import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManager
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.RealtimeSyncViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.pusher.client.Pusher
 import com.pusher.client.PusherOptions
 import io.appwrite.Client

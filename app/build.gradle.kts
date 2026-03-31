@@ -86,6 +86,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":shared-sale"))
     // implementation(libs.kotzilla.sdk)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

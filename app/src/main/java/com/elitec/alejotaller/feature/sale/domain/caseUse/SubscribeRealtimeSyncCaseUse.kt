@@ -2,7 +2,7 @@ package com.elitec.alejotaller.feature.sale.domain.caseUse
 
 import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 
 class SubscribeRealtimeSyncCaseUse(
     private val gateway: RealtimeSyncGateway
