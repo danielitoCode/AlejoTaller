@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.feature.notifications.domain.caseuse
 
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.notifications.domain.repository.PromotionRepository
 
 class SavePromotionCaseUse(

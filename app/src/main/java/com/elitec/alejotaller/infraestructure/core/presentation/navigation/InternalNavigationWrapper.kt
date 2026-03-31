@@ -34,7 +34,7 @@ import com.dokar.sonner.ToastType
 import com.elitec.alejotaller.feature.auth.presentation.screen.ProfileScreen
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.AuthViewModel
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.notifications.presentation.PromotionViewModel
 import com.elitec.alejotaller.feature.notifications.presentation.screen.PromotionDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
@@ -43,10 +43,10 @@ import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetails
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryAddress
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyReservationScreen
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyScreen
@@ -64,8 +64,8 @@ import org.koin.androidx.compose.koinViewModel
 import java.util.UUID
 import kotlin.time.Clock
 import androidx.core.net.toUri
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyReservationNestedNavigation
 import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
 
@@ -212,7 +212,7 @@ fun InternalNavigationWrapper(
         FabMenuItem("Reservas", Icons.Default.QrCode, InternalRoutesKey.BuyReservation),
         FabMenuItem("Perfil", Icons.Default.AccountCircle, InternalRoutesKey.Profile),
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
-        FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
+        FabMenuItem("Cerrar SesiÃƒÂ³n", Icons.Default.Logout, InternalRoutesKey.Logout)
     )
 
     val showShellLoading = !productsHydrated || !profileHydrated || profileInfo == null
@@ -321,7 +321,7 @@ fun InternalNavigationWrapper(
                             if (cartItems.isNotEmpty()) {
                                 backStack.navigateTo(InternalRoutesKey.BuyConfirm)
                             } else {
-                                toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
+                                toasterViewModel.showMessage("El carrito estÃƒÂ¡ vacÃƒÂ­o", ToastType.Error)
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -336,11 +336,11 @@ fun InternalNavigationWrapper(
                             targetReservationId = null
                             onPendingReservationConsumed()
                         },
-                        // ← Nuevo: mostrar home cuando está vacío
+                        // Ã¢â€ Â Nuevo: mostrar home cuando estÃƒÂ¡ vacÃƒÂ­o
                         onGoToShop = {
                             backStack.navigateTo(InternalRoutesKey.Home)
                         },
-                        // ← Nuevo: guardar preferencia de entrega
+                        // Ã¢â€ Â Nuevo: guardar preferencia de entrega
                         onDeliveryTypeSelected = { saleId, deliveryType ->
                             if (isUpdatingDeliveryType) {
                                 return@BuyReservationNestedNavigation
@@ -352,8 +352,8 @@ fun InternalNavigationWrapper(
                                 onSuccess = {
                                     isUpdatingDeliveryType = false
                                     val msg = when (deliveryType) {
-                                        DeliveryType.PICKUP -> "¡Perfecto! Te esperamos en el taller 🏪"
-                                        DeliveryType.DELIVERY -> "¡Listo! Coordinaremos la entrega contigo 🛵"
+                                        DeliveryType.PICKUP -> "Ã‚Â¡Perfecto! Te esperamos en el taller Ã°Å¸ÂÂª"
+                                        DeliveryType.DELIVERY -> "Ã‚Â¡Listo! Coordinaremos la entrega contigo Ã°Å¸â€ºÂµ"
                                     }
                                     toasterViewModel.showMessage(msg, ToastType.Success)
                                 },
@@ -382,12 +382,12 @@ fun InternalNavigationWrapper(
                         onSubmitPurchase = { paymentChannel, deliveryType, deliveryAddress ->
                             if (isSubmittingPurchase) return@BuyConfirmScreen
                             if (cartItems.isEmpty()) {
-                                toasterViewModel.showMessage("El carrito está vacío", ToastType.Error)
+                                toasterViewModel.showMessage("El carrito estÃƒÂ¡ vacÃƒÂ­o", ToastType.Error)
                                 backStack.navigateBack()
                             } else {
                                 isSubmittingPurchase = true
                                 toasterViewModel.showMessage(
-                                    "Procesando pedido…",
+                                    "Procesando pedidoÃ¢â‚¬Â¦",
                                     ToastType.Normal,
                                     id = "sale_charge",
                                     isInfinite = true
@@ -401,7 +401,7 @@ fun InternalNavigationWrapper(
                                             toasterViewModel.dismissMessage("sale_charge")
                                             shopCartViewModel.clearCart()
                                             toasterViewModel.showMessage(
-                                                "Reservación registrada (#${saleId.take(8)}). Espera confirmación del taller.",
+                                                "ReservaciÃƒÂ³n registrada (#${saleId.take(8)}). Espera confirmaciÃƒÂ³n del taller.",
                                                 ToastType.Success
                                             )
                                             backStack.navigateTo(InternalRoutesKey.BuyReservation)
@@ -410,7 +410,7 @@ fun InternalNavigationWrapper(
                                             isSubmittingPurchase = false
                                             toasterViewModel.dismissMessage("sale_charge")
                                             toasterViewModel.showMessage(
-                                                "No se pudo registrar la reservación: $error",
+                                                "No se pudo registrar la reservaciÃƒÂ³n: $error",
                                                 ToastType.Error
                                             )
                                         }
@@ -430,7 +430,7 @@ fun InternalNavigationWrapper(
                                             )
                                             if (checkoutUri.scheme != "https") {
                                                 toasterViewModel.showMessage(
-                                                    "Pedido registrado (#${saleId.take(8)}), pero la pasarela devolvió una URL insegura: $checkoutUrl",
+                                                    "Pedido registrado (#${saleId.take(8)}), pero la pasarela devolviÃƒÂ³ una URL insegura: $checkoutUrl",
                                                     ToastType.Warning
                                                 )
                                                 backStack.navigateTo(InternalRoutesKey.BuyReservation)
@@ -515,7 +515,7 @@ private fun fallbackPromotion(id: String): Promotion {
     return Promotion(
         id = id,
         title = "Oferta",
-        message = "Promoción no disponible",
+        message = "PromociÃƒÂ³n no disponible",
         imageUrl = null,
         validFromEpochMillis = now,
         validUntilEpochMillis = now
@@ -524,5 +524,5 @@ private fun fallbackPromotion(id: String): Promotion {
 
 private fun PaymentChannel.label(): String = when (this) {
     PaymentChannel.ULTRAPAY -> "UltraPay"
-    PaymentChannel.TRANSFERMOVIL -> "Transfermóvil"
+    PaymentChannel.TRANSFERMOVIL -> "TransfermÃƒÂ³vil"
 }

@@ -2,7 +2,7 @@ package com.elitec.alejotaller.feature.sale.data.repository
 
 import android.util.Log
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
+import com.elitec.shared.sale.feature.sale.domain.repository.PaymentGateway
 import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.bodyAsText
@@ -26,11 +26,11 @@ class SolucionesCubaPaymentGateway(
     /**
      * Crea un link de pago en la pasarela de Soluciones Cuba.
      *
-     * @param saleId    ID único de la venta — se usa como [reference] para que la
-     *                  pasarela lo devuelva en el callback y podamos identificar qué
+     * @param saleId    ID Ãºnico de la venta â€” se usa como [reference] para que la
+     *                  pasarela lo devuelva en el callback y podamos identificar quÃ©
      *                  venta fue pagada.
      * @param amount    Monto total a cobrar en CUP.
-     * @param description Descripción legible del pedido (se muestra al pagador).
+     * @param description DescripciÃ³n legible del pedido (se muestra al pagador).
      *
      * @return [Result] con la URL de checkout si la llamada fue exitosa,
      *         o un error describiendo el problema.
@@ -41,9 +41,9 @@ class SolucionesCubaPaymentGateway(
         description: String
     ): Result<String> = runCatching {
         val endpoint = BuildConfig.SOLUCIONES_CUBA_PAY_API_URL
-        require(endpoint.isNotBlank()) { "SOLUCIONES_CUBA_PAY_API_URL no está configurada" }
-        require(BuildConfig.SOLUCIONES_CUBA_API_KEY.isNotBlank()) { "SOLUCIONES_CUBA_API_KEY no está configurada" }
-        require(BuildConfig.SOLUCIONES_CUBA_MERCHANT_ID.isNotBlank()) { "SOLUCIONES_CUBA_MERCHANT_ID no está configurado" }
+        require(endpoint.isNotBlank()) { "SOLUCIONES_CUBA_PAY_API_URL no estÃ¡ configurada" }
+        require(BuildConfig.SOLUCIONES_CUBA_API_KEY.isNotBlank()) { "SOLUCIONES_CUBA_API_KEY no estÃ¡ configurada" }
+        require(BuildConfig.SOLUCIONES_CUBA_MERCHANT_ID.isNotBlank()) { "SOLUCIONES_CUBA_MERCHANT_ID no estÃ¡ configurado" }
         require(amount > 0) { "El monto debe ser mayor que 0" }
         Log.i(TAG, "event=payment_checkout_start saleId=$saleId amount=$amount endpoint=$endpoint")
         val response = httpClient.submitForm(
@@ -53,9 +53,9 @@ class SolucionesCubaPaymentGateway(
                 append("merchant_id", BuildConfig.SOLUCIONES_CUBA_MERCHANT_ID)
                 append("amount",      String.format(Locale.US, "%.2f", amount))
                 append("currency",    "CUP")
-                append("reference",   saleId)         // ← el ID de venta como referencia
+                append("reference",   saleId)         // â† el ID de venta como referencia
                 append("description", description)
-                // URLs de retorno — deben configurarse en local.properties cuando
+                // URLs de retorno â€” deben configurarse en local.properties cuando
                 // tengas el endpoint de la Appwrite Function disponible.
                 // Formato recomendado para apps Android: deeplink propio de la app
                 // o una URL de la Appwrite Function que actualice el estado de la venta.

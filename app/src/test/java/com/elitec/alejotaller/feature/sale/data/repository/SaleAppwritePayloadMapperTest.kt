@@ -1,7 +1,7 @@
 package com.elitec.alejotaller.feature.sale.data.repository
 
-import com.elitec.alejotaller.feature.sale.data.dto.SaleDto
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.data.feature.sale.data.dto.SaleDto
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import kotlinx.datetime.LocalDate

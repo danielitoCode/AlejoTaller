@@ -2,15 +2,15 @@ package com.elitec.alejotaller.feature.sale.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.elitec.alejotaller.feature.sale.domain.caseUse.GetSalesByIdCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InitiatePaymentCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.SyncSalesCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.caseUse.SyncSalesCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.GetSalesByIdCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -47,12 +47,12 @@ class SaleViewModel(
     /**
      * Registra la venta (Telegram + Room) y genera la URL de pago.
      *
-     * @param onReadyToPay Recibe (saleId, checkoutUrl) — la UI abre la URL en Chrome Tabs.
+     * @param onReadyToPay Recibe (saleId, checkoutUrl) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â la UI abre la URL en Chrome Tabs.
      * ```
-     *                       Si checkoutUrl es null, la venta está registrada pero sin pago online.
+     *                       Si checkoutUrl es null, la venta estÃƒÆ’Ã‚Â¡ registrada pero sin pago online.
      * @param onFail
      * ```
-     * Error crítico (no se pudo ni guardar la venta).
+     * Error crÃƒÆ’Ã‚Â­tico (no se pudo ni guardar la venta).
      */
     fun initiatePayment(
         sale: Sale,
@@ -76,7 +76,7 @@ class SaleViewModel(
      * VERIFIED.
      *
      * Persiste el cambio localmente y lo sincroniza con Appwrite. La UI muestra el mensaje de
-     * confirmación a través de [onSuccess]/[onFail].
+     * confirmaciÃƒÆ’Ã‚Â³n a travÃƒÆ’Ã‚Â©s de [onSuccess]/[onFail].
      */
     fun updateDeliveryType(
             saleId: String,

@@ -65,6 +65,7 @@ courier = "5.2.14"
 pusherJavaClient = "2.4.4"
 # QR
 qr = "1.1.2"
+zxingEmbedded = "4.3.0"
 playServicesAnalyticsImpl = "18.2.0"
 # SizeScreen
 sizeScreen = "1.5.0-alpha15"
@@ -171,6 +172,7 @@ pusher-java-client = { module = "com.pusher:pusher-java-client", version.ref = "
 alset-pulse = { module = "com.github.yecharlot:alset-pulse-android-kotlin", version.ref = "alset" }
 # QR
 compose-qr = { module = "io.github.alexzhirkevich:qrose", version.ref = "qr" }
+zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
 play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
 # Windows Size class
 compose-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "sizeScreen" }

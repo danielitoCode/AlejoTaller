@@ -8,13 +8,14 @@ import com.elitec.alejotaller.infraestructure.core.data.repository.AppwriteSessi
 import com.elitec.alejotaller.infraestructure.core.data.repository.GoogleAuthProviderImpl
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
-import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
+import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBDMigrations
 import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherManager
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.RealtimeSyncViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import com.elitec.shared.data.infraestructure.core.data.config.SaleRemoteConfig
 import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.pusher.client.Pusher
 import com.pusher.client.PusherOptions
@@ -47,6 +48,12 @@ val infrastructureModule = module {
     single { Databases(get()) }
     single { Account(get()) }
     single { Storage(get()) }
+    single {
+        SaleRemoteConfig(
+            databaseId = BuildConfig.APPWRITE_DATABASE_ID,
+            saleCollectionId = BuildConfig.SALE_TABLE_ID
+        )
+    }
 
     // Database
     single {
@@ -55,7 +62,7 @@ val infrastructureModule = module {
             klass = AppBD::class.java,
             name = "app_database"
         )
-            .addMigrations(*AppBDMigrations.ALL)  // ✅ Migraciones registradas
+            .addMigrations(*AppBDMigrations.ALL)  // âœ… Migraciones registradas
             .build()
     }
 

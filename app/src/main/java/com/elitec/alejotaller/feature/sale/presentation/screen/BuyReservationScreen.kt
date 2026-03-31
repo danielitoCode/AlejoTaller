@@ -53,10 +53,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.LocalDate
@@ -68,9 +68,9 @@ fun BuyReservationScreen(
     onSaleSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // ─────────────────────────────────────────────────────────────────────
-    // VACÍO 1: Estado completamente vacío — sin ninguna compra
-    // ─────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // VACÃO 1: Estado completamente vacÃ­o â€” sin ninguna compra
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (sales.isEmpty()) {
         EmptyReservationsState(onGoToShop = onGoToShop, modifier = modifier)
         return
@@ -99,7 +99,7 @@ fun BuyReservationScreen(
         }
         Spacer(Modifier.height(5.dp))
 
-        // ── Lista de reservas ────────────────────────────────────────────
+        // â”€â”€ Lista de reservas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -115,9 +115,9 @@ fun BuyReservationScreen(
         }
     }
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Empty State — primera visita, ninguna compra hecha todavía
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Empty State â€” primera visita, ninguna compra hecha todavÃ­a
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 private fun EmptyReservationsState(
     onGoToShop: () -> Unit,
@@ -138,14 +138,14 @@ private fun EmptyReservationsState(
         )
         Spacer(Modifier.height(20.dp))
         Text(
-            text = "Aún no tienes compras",
+            text = "AÃºn no tienes compras",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Aquí aparecerán tus pedidos una vez que hayas realizado alguna compra.",
+            text = "AquÃ­ aparecerÃ¡n tus pedidos una vez que hayas realizado alguna compra.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -162,20 +162,20 @@ private fun EmptyReservationsState(
         }
     }
 }
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Badge de estado visual
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 private fun SaleStatusBadge(state: BuyState) {
     val (icon, label, color) = when (state) {
         BuyState.UNVERIFIED -> Triple(
             Icons.Outlined.HourglassEmpty,
-            "Reservada — esperando confirmación del taller",
+            "Reservada â€” esperando confirmaciÃ³n del taller",
             MaterialTheme.colorScheme.tertiary
         )
         BuyState.VERIFIED -> Triple(
             Icons.Outlined.CheckCircle,
-            "¡Lista! Tu pedido está listo",
+            "Â¡Lista! Tu pedido estÃ¡ listo",
             MaterialTheme.colorScheme.primary
         )
         BuyState.DELETED -> Triple(
@@ -214,9 +214,9 @@ private fun SaleStatusBadge(state: BuyState) {
         }
     }
 }
-// ─────────────────────────────────────────────────────────────────────────────
-// Selector de entrega — aparece SOLO cuando el pedido está VERIFIED
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Selector de entrega â€” aparece SOLO cuando el pedido estÃ¡ VERIFIED
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @Composable
 private fun DeliveryOptionCard(
@@ -268,9 +268,9 @@ private fun DeliveryOptionCard(
         }
     }
 }
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Item de la lista de reservas
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @Composable
 private fun SaleListItem(
     sale: Sale,

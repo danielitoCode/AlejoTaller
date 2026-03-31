@@ -2,7 +2,7 @@ package com.elitec.alejotaller.feature.notifications.data.mappers
 
 import com.elitec.alejotaller.feature.notifications.data.dto.PromotionDto
 import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 
 fun PromotionDto.toDomain(): Promotion = Promotion(
     id = id,

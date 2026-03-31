@@ -1,7 +1,7 @@
 package com.elitec.alejotaller.feature.sale.data.repository
 
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleNotifierUser
-import com.elitec.alejotaller.feature.sale.domain.repository.SaleNotificationUserProvider
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleNotifierUser
+import com.elitec.shared.sale.feature.sale.domain.repository.SaleNotificationUserProvider
 import io.appwrite.services.Account
 
 class AppwriteSaleNotificationUserProvider(

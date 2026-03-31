@@ -34,7 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.R
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.notifications.presentation.screen.components.PromotionPriceSection
 
 @Composable

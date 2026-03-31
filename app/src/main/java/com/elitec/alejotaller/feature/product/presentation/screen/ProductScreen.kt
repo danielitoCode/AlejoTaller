@@ -63,7 +63,7 @@ import coil3.svg.SvgDecoder
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
@@ -82,10 +82,10 @@ fun ProductScreen(
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
     onPromotionClick: (String) -> Unit = {},
-    searchQuery: String = "",                          // ← nuevo parámetro
-    selectedCategoryId: String? = null,               // ← nuevo parámetro
-    onSearchQueryChanged: (String) -> Unit = {},       // ← nuevo parámetro
-    onCategorySelected: (String?) -> Unit = {},        // ← nuevo parámetro
+    searchQuery: String = "",                          // â† nuevo parÃ¡metro
+    selectedCategoryId: String? = null,               // â† nuevo parÃ¡metro
+    onSearchQueryChanged: (String) -> Unit = {},       // â† nuevo parÃ¡metro
+    onCategorySelected: (String?) -> Unit = {},        // â† nuevo parÃ¡metro
     categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
@@ -174,7 +174,7 @@ fun ProductScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Prueba con otro término o categoría",
+                        text = "Prueba con otro tÃ©rmino o categorÃ­a",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
@@ -214,12 +214,12 @@ fun SearchBar(
             )
         },
         trailingIcon = {
-            // El botón de limpiar aparece solo cuando hay texto
+            // El botÃ³n de limpiar aparece solo cuando hay texto
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClearQuery) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Limpiar búsqueda",
+                        contentDescription = "Limpiar bÃºsqueda",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -234,7 +234,7 @@ fun SearchBar(
 @Composable
 fun CategoriesSection(
     onCategorySelected: (Category) -> Unit,
-    selectedCategoryId: String? = null,              // ← cambia de Category? a String?
+    selectedCategoryId: String? = null,              // â† cambia de Category? a String?
     categories: List<Category>,
     modifier: Modifier = Modifier
 ) {
@@ -258,7 +258,7 @@ fun CategoriesSection(
         Spacer(modifier = Modifier.height(12.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(categories) { category ->
-                // CAMBIO 8: La comparación ahora es por ID, no por objeto
+                // CAMBIO 8: La comparaciÃ³n ahora es por ID, no por objeto
                 val isSelected = category.id == selectedCategoryId
                 Box(
                     modifier = Modifier

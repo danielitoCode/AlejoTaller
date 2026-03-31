@@ -1,6 +1,6 @@
-package com.elitec.alejotaller.feature.sale.data.mapper
+package com.elitec.shared.data.feature.sale.data.mapper
 
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import kotlinx.serialization.json.Json
 
 fun String.toSaleItemList(): List<SaleItem> {

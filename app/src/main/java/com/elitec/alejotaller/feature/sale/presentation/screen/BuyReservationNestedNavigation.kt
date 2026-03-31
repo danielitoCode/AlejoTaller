@@ -15,8 +15,8 @@ import androidx.compose.material3.Text
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 
 @Composable
 fun BuyReservationNestedNavigation(

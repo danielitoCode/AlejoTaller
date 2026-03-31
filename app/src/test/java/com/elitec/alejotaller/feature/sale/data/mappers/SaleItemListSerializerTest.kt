@@ -1,7 +1,7 @@
-package com.elitec.alejotaller.feature.sale.data.mappers
+package com.elitec.shared.data.feature.sale.data.mappers
 
-import com.elitec.alejotaller.feature.sale.data.mapper.toSaleItemList
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.data.feature.sale.data.mapper.toSaleItemList
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import io.appwrite.extensions.toJson
 import org.junit.Assert
 import org.junit.Test

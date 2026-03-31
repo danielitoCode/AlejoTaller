@@ -1,7 +1,7 @@
 package com.elitec.alejotaller.infraestructure.core.data.converters
 
 import androidx.room.TypeConverter
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

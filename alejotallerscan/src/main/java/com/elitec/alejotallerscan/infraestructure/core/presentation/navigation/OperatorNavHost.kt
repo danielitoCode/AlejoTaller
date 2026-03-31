@@ -20,7 +20,8 @@ fun OperatorNavHost(
         OperatorDestination.Home -> OperatorHomeScreen(
             onOpenScan = { onNavigate(OperatorDestination.Scan) },
             onOpenReservations = { onNavigate(OperatorDestination.Reservations) },
-            onOpenConfirmation = { onNavigate(OperatorDestination.ConfirmPayment) }
+            onOpenConfirmation = { onNavigate(OperatorDestination.ConfirmPayment) },
+            onLogout = { onNavigate(OperatorDestination.Login) }
         )
 
         OperatorDestination.Scan -> OperatorScanScreen(
@@ -29,11 +30,13 @@ fun OperatorNavHost(
         )
 
         OperatorDestination.ConfirmPayment -> OperatorConfirmPaymentScreen(
-            onBack = { onNavigate(OperatorDestination.Home) }
+            onBack = { onNavigate(OperatorDestination.Home) },
+            onOpenScan = { onNavigate(OperatorDestination.Scan) }
         )
 
         OperatorDestination.Reservations -> OperatorReservationsScreen(
-            onBack = { onNavigate(OperatorDestination.Home) }
+            onBack = { onNavigate(OperatorDestination.Home) },
+            onOpenSale = { onNavigate(OperatorDestination.ConfirmPayment) }
         )
     }
 }

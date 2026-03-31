@@ -48,10 +48,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.LocalDate
@@ -140,10 +140,10 @@ fun BuyReservationDetailsScreen(
                     // QR
                     Image(
                         painter = rememberQrCodePainter(qrContent),
-                        contentDescription = "Código QR del pedido",
+                        contentDescription = "CÃ³digo QR del pedido",
                         modifier = Modifier.size(160.dp)
                     )
-                    // Selector de entrega si está VERIFIED
+                    // Selector de entrega si estÃ¡ VERIFIED
                     AnimatedVisibility(
                         visible = sale.verified == BuyState.VERIFIED,
                         enter = fadeIn(tween(400)) + expandVertically(tween(400)),
@@ -238,13 +238,13 @@ private fun DeliverySelectionSection(
     ) {
         HorizontalDivider()
         Text(
-            text = "🎉 ¡Tu pedido está listo!",
+            text = "ðŸŽ‰ Â¡Tu pedido estÃ¡ listo!",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Text(
-            text = "¿Cómo prefieres recibirlo?",
+            text = "Â¿CÃ³mo prefieres recibirlo?",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -273,9 +273,9 @@ private fun DeliverySelectionSection(
         currentDeliveryType?.let { type ->
             val confirmText = when (type) {
                 DeliveryType.PICKUP   ->
-                    "✅ Perfecto, te esperamos en el taller. Trae el código QR para retirar tu pedido."
+                    "âœ… Perfecto, te esperamos en el taller. Trae el cÃ³digo QR para retirar tu pedido."
                 DeliveryType.DELIVERY ->
-                    "✅ ¡Entendido! El taller te contactará pronto para coordinar la entrega."
+                    "âœ… Â¡Entendido! El taller te contactarÃ¡ pronto para coordinar la entrega."
             }
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -348,12 +348,12 @@ private fun SaleStatusBadge(state: BuyState) {
     val (icon, label, color) = when (state) {
         BuyState.UNVERIFIED -> Triple(
             Icons.Outlined.HourglassEmpty,
-            "Reservada — esperando confirmación del taller",
+            "Reservada â€” esperando confirmaciÃ³n del taller",
             MaterialTheme.colorScheme.tertiary
         )
         BuyState.VERIFIED -> Triple(
             Icons.Outlined.CheckCircle,
-            "¡Lista! Tu pedido está listo",
+            "Â¡Lista! Tu pedido estÃ¡ listo",
             MaterialTheme.colorScheme.primary
         )
         BuyState.DELETED -> Triple(
@@ -397,7 +397,7 @@ private fun SaleStatusBadge(state: BuyState) {
 private fun BuyReservationDetailsPreviewContent(state: BuyState) {
     val products = remember {
         listOf(
-            Product("p1", "Batería 12V", "", 12000.0, "", "", 4.5),
+            Product("p1", "BaterÃ­a 12V", "", 12000.0, "", "", 4.5),
             Product("p2", "Aceite Motor", "", 4500.0, "", "", 4.8)
         )
     }

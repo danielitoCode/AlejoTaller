@@ -5,9 +5,9 @@ import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.notifications.data.mappers.toDomainPromotion
 import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
 import com.elitec.alejotaller.feature.notifications.data.realtime.processor.PromotionEventProcessor
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.sale.data.realtime.processor.SaleEventProcessor
-import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
+import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 
 class RealTimeManagerImpl(

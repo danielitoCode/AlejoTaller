@@ -3,7 +3,7 @@ package com.elitec.alejotaller.feature.notifications.data.repository
 import com.elitec.alejotaller.feature.notifications.data.dao.PromotionDao
 import com.elitec.alejotaller.feature.notifications.data.mappers.toDomain
 import com.elitec.alejotaller.feature.notifications.data.mappers.toDto
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.notifications.domain.repository.PromotionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

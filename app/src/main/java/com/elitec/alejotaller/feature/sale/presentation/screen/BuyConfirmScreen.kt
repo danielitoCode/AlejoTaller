@@ -50,9 +50,9 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryAddress
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.PaymentChannel
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 
 @Composable

@@ -9,8 +9,8 @@ import com.elitec.alejotaller.feature.notifications.data.dao.PromotionDao
 import com.elitec.alejotaller.feature.notifications.data.dto.PromotionDto
 import com.elitec.alejotaller.feature.product.data.dao.ProductDao
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
-import com.elitec.alejotaller.feature.sale.data.dao.SaleDao
-import com.elitec.alejotaller.feature.sale.data.dto.SaleDto
+import com.elitec.shared.data.feature.sale.data.dao.SaleDao
+import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.alejotaller.infraestructure.core.data.converters.DateTimeConverter
 import com.elitec.alejotaller.infraestructure.core.data.converters.ListConverter
 
