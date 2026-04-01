@@ -13,6 +13,7 @@ fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
         products = data["products"].toSaleItems(),
         verified =  data["verified"] as? String ?: "UNVERIFIED",
         userId = data["user_id"] as? String ?: "",
+        customerName = data["customer_name"] as? String,
         deliveryType = data["delivery_type"] as? String,
         deliveryAddress = data["delivery_address"] as? String
     )

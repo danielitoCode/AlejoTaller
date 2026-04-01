@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 8,
-    "identityHash": "7bb5a9746e31f01b4c443e7a2479bf73",
+    "identityHash": "63c9c0d49da7975013854689f95fbf1d",
     "entities": [
       {
         "tableName": "CategoryDto",
@@ -94,7 +94,7 @@
       },
       {
         "tableName": "SaleDto",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `date` TEXT NOT NULL, `amount` REAL NOT NULL, `verified` TEXT NOT NULL, `products` TEXT NOT NULL, `userId` TEXT NOT NULL, `deliveryType` TEXT, `deliveryAddress` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `date` TEXT NOT NULL, `amount` REAL NOT NULL, `verified` TEXT NOT NULL, `products` TEXT NOT NULL, `userId` TEXT NOT NULL, `customerName` TEXT, `deliveryType` TEXT, `deliveryAddress` TEXT, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -131,6 +131,11 @@
             "columnName": "userId",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "customerName",
+            "columnName": "customerName",
+            "affinity": "TEXT"
           },
           {
             "fieldPath": "deliveryType",
@@ -210,7 +215,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7bb5a9746e31f01b4c443e7a2479bf73')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '63c9c0d49da7975013854689f95fbf1d')"
     ]
   }
 }

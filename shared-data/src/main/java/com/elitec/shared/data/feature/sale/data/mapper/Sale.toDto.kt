@@ -12,6 +12,7 @@ fun Sale.toDto(): SaleDto =
         amount = amount,
         products = products,
         userId = userId,
+        customerName = customerName,
         deliveryType = deliveryType?.toString(),
         deliveryAddress = deliveryAddress?.let { Json.encodeToString(it) }
     )

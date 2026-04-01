@@ -11,6 +11,7 @@ data class Sale(
     val verified: BuyState,
     val products: List<SaleItem>,
     val userId: String,
+    val customerName: String? = null,
     val deliveryType: DeliveryType? = null,
     val deliveryAddress: DeliveryAddress? = null
 )

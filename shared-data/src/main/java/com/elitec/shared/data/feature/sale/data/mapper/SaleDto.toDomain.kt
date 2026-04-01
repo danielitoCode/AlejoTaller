@@ -14,6 +14,7 @@ fun SaleDto.toDomain(): Sale =
         amount = amount,
         products = products,
         userId = userId,
+        customerName = customerName,
         verified = verified.toBuyState(),
         deliveryType = deliveryType?.toDeliveryType(),
         deliveryAddress = deliveryAddress?.let {

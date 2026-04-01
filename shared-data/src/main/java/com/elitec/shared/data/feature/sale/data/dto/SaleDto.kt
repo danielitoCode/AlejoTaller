@@ -19,6 +19,8 @@ data class SaleDto(
     val products: List<SaleItem>,
     @SerialName("user_id")
     val userId: String,
+    @SerialName("customer_name")
+    val customerName: String? = null,
     @SerialName("delivery_type")
     val deliveryType: String? = null,
     @SerialName("delivery_address")

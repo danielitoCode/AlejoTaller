@@ -3,6 +3,10 @@ package com.elitec.alejotallerscan.infraestructure.di
 import androidx.room.Room
 import com.elitec.alejotallerscan.BuildConfig
 import com.elitec.alejotallerscan.feature.auth.presentation.viewmodel.OperatorAuthViewModel
+import com.elitec.alejotallerscan.feature.reservation.domain.caseuse.SearchReservationsCaseUse
+import com.elitec.alejotallerscan.feature.reservation.presentation.viewmodel.OperatorReservationSearchViewModel
+import com.elitec.alejotallerscan.feature.scan.domain.caseuse.ParseSaleScanPayloadCaseUse
+import com.elitec.alejotallerscan.feature.scan.presentation.viewmodel.OperatorScanViewModel
 import com.elitec.alejotallerscan.feature.sale.presentation.viewmodel.OperatorSalesViewModel
 import com.elitec.alejotallerscan.infraestructure.core.data.bd.OperatorAppDatabase
 import com.elitec.shared.auth.feature.auth.domain.caseuse.AuthOperatorUserCaseUse
@@ -61,9 +65,13 @@ val operatorScanDiModule = module {
     factory { GetCurrentUserInfoCaseUse(get()) }
     factory { CloseSessionCaseUse(get()) }
     factory { AuthOperatorUserCaseUse(get(), get(), get()) }
+    factory { ParseSaleScanPayloadCaseUse() }
+    factory { SearchReservationsCaseUse(get()) }
     factory { ObserveAllSalesCaseUse(get()) }
     factory { UpdateSaleVerificationFromRealtimeCaseUse(get()) }
 
     viewModel { OperatorAuthViewModel(get(), get(), get()) }
+    viewModel { OperatorReservationSearchViewModel(get()) }
+    viewModel { OperatorScanViewModel(get(), get(), get()) }
     viewModel { OperatorSalesViewModel(get(), get(), get(), get()) }
 }

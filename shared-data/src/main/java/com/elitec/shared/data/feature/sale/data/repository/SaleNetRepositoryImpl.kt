@@ -31,6 +31,29 @@ class SaleNetRepositoryImpl(
         return response.toSaleDto()
     }
 
+    override suspend fun search(field: String, query: String, limit: Int): List<SaleDto> {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        val response = netDB.listDocuments(
+            databaseId = config.databaseId,
+            collectionId = config.saleCollectionId,
+            queries = listOf(Query.limit(limit))
+        )
+
+        return response.documents
+            .map { it.toSaleDto() }
+            .filter { sale ->
+                when (field.uppercase()) {
+                    "SALE_ID" -> sale.id.contains(normalizedQuery, ignoreCase = true)
+                    "USER_ID" -> sale.userId.contains(normalizedQuery, ignoreCase = true)
+                    "CUSTOMER_NAME" -> sale.customerName?.contains(normalizedQuery, ignoreCase = true) == true
+                    "DATE" -> sale.date.toString().contains(normalizedQuery, ignoreCase = true)
+                    else -> false
+                }
+            }
+    }
+
     override suspend fun save(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
         netDB.createDocument(
@@ -78,6 +101,7 @@ internal fun SaleDto.toAppwriteData(): Map<String, Any?> = mapOf(
         )
     },
     "user_id" to userId,
+    "customer_name" to customerName,
     "delivery_type" to deliveryType,
     "delivery_address" to deliveryAddress
 ).filterValues { value -> value != null }

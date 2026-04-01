@@ -32,7 +32,13 @@ class OperatorAuthViewModel(
                         _uiState.value = _uiState.value.copy(currentUser = user, error = null)
                     } else {
                         closeSessionCaseUse()
+                        _uiState.value = OperatorAuthUiState(
+                            error = "La cuenta autenticada no tiene permisos de operador."
+                        )
                     }
+                }
+                .onFailure {
+                    _uiState.value = _uiState.value.copy(currentUser = null)
                 }
         }
     }
