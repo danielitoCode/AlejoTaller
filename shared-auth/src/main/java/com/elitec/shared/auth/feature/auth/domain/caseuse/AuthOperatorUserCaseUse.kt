@@ -1,5 +1,6 @@
 package com.elitec.shared.auth.feature.auth.domain.caseuse
 
+import com.elitec.shared.auth.feature.auth.domain.entity.hasOperatorAccess
 import com.elitec.shared.auth.feature.auth.domain.entity.User
 
 class AuthOperatorUserCaseUse(
@@ -11,9 +12,8 @@ class AuthOperatorUserCaseUse(
         authUserCaseUse(email, pass).getOrThrow()
 
         val currentUser = getCurrentUserInfoCaseUse().getOrThrow()
-        val normalizedRole = currentUser.userProfile.role?.trim()?.lowercase()
 
-        if (normalizedRole != "operator" && normalizedRole != "admin") {
+        if (!currentUser.userProfile.role.hasOperatorAccess()) {
             closeSessionCaseUse()
             throw IllegalAccessException("Solo operadores autorizados pueden acceder a esta aplicacion.")
         }

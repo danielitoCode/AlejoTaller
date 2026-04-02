@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.elitec.shared.auth.feature.auth.domain.caseuse.AuthOperatorUserCaseUse
 import com.elitec.shared.auth.feature.auth.domain.caseuse.CloseSessionCaseUse
 import com.elitec.shared.auth.feature.auth.domain.caseuse.GetCurrentUserInfoCaseUse
+import com.elitec.shared.auth.feature.auth.domain.entity.hasOperatorAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,8 +28,7 @@ class OperatorAuthViewModel(
         viewModelScope.launch {
             getCurrentUserInfoCaseUse()
                 .onSuccess { user ->
-                    val role = user.userProfile.role?.trim()?.lowercase()
-                    if (role == "operator" || role == "admin") {
+                    if (user.userProfile.role.hasOperatorAccess()) {
                         _uiState.value = _uiState.value.copy(currentUser = user, error = null)
                     } else {
                         closeSessionCaseUse()
