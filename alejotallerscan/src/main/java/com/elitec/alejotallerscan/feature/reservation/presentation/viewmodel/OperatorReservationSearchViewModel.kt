@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotallerscan.feature.reservation.domain.caseuse.SearchReservationsCaseUse
 import com.elitec.alejotallerscan.feature.reservation.domain.entity.ReservationSearchField
+import com.elitec.alejotallerscan.feature.reservation.domain.entity.ReservationStatusFilter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,10 @@ class OperatorReservationSearchViewModel(
         _uiState.value = _uiState.value.copy(field = field, error = null, notice = null)
     }
 
+    fun updateStatusFilter(filter: ReservationStatusFilter) {
+        _uiState.value = _uiState.value.copy(statusFilter = filter, error = null, notice = null)
+    }
+
     fun search() {
         val current = _uiState.value
         if (current.query.isBlank()) {
@@ -34,6 +39,11 @@ class OperatorReservationSearchViewModel(
         viewModelScope.launch {
             _uiState.value = current.copy(isLoading = true, error = null, notice = null)
             searchReservationsCaseUse(current.field, current.query)
+                .map { sales ->
+                    current.statusFilter.state?.let { targetState ->
+                        sales.filter { sale -> sale.verified == targetState }
+                    } ?: sales
+                }
                 .onSuccess { sales ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

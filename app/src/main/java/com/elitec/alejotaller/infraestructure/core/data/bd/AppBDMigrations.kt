@@ -32,9 +32,58 @@ object AppBDMigrations {
             )
         }
     }
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS `SaleDto_new` (
+                    `id` TEXT NOT NULL,
+                    `date` TEXT NOT NULL,
+                    `amount` REAL NOT NULL,
+                    `verified` TEXT NOT NULL,
+                    `products` TEXT NOT NULL,
+                    `userId` TEXT NOT NULL,
+                    `customerName` TEXT,
+                    `deliveryType` TEXT,
+                    `deliveryAddress` TEXT,
+                    PRIMARY KEY(`id`)
+                )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                INSERT INTO `SaleDto_new` (
+                    `id`,
+                    `date`,
+                    `amount`,
+                    `verified`,
+                    `products`,
+                    `userId`,
+                    `customerName`,
+                    `deliveryType`,
+                    `deliveryAddress`
+                )
+                SELECT
+                    `id`,
+                    `date`,
+                    `amount`,
+                    `verified`,
+                    `products`,
+                    `userId`,
+                    NULL,
+                    `deliveryType`,
+                    `deliveryAddress`
+                FROM `SaleDto`
+                """.trimIndent()
+            )
+            db.execSQL("DROP TABLE `SaleDto`")
+            db.execSQL("ALTER TABLE `SaleDto_new` RENAME TO `SaleDto`")
+        }
+    }
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_5_6,
         MIGRATION_6_7,
-        MIGRATION_7_8
+        MIGRATION_7_8,
+        MIGRATION_8_9
     )
 }

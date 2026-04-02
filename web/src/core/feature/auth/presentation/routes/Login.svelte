@@ -16,6 +16,7 @@
     import { parseGoogleIdToken } from "../util/google-id-token";
     import FrameModal from "../components/FrameModal.svelte";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import { redirectAdminIfNeeded } from "../util/admin-redirect";
 
     export let navController: NavController;
 
@@ -46,6 +47,13 @@
                 normalizedEmail,
                 password
             );
+            const currentUser = await authContainer.useCases.accounts.getCurrentUser();
+            if (
+                await redirectAdminIfNeeded(
+                    currentUser,
+                    async () => await authContainer.useCases.sessions.closeSession.execute()
+                )
+            ) return;
             authFlowStore.setSuccess({
                 userId,
                 email: normalizedEmail,
@@ -112,6 +120,12 @@
                     sanitizedProfile.sub
                 );
                 const current = await authContainer.useCases.accounts.getCurrentUser();
+                if (
+                    await redirectAdminIfNeeded(
+                        current,
+                        async () => await authContainer.useCases.sessions.closeSession.execute()
+                    )
+                ) return;
                 const currentPhoto =
                     typeof current?.photo_url === "string"
                         ? current.photo_url.trim()
@@ -163,6 +177,13 @@
                 name: googleProfile.name || googleProfile.email.split("@")[0] || "Usuario",
                 photoUrl: googleProfile.picture || ""
             });
+            const currentUser = await authContainer.useCases.accounts.getCurrentUser();
+            if (
+                await redirectAdminIfNeeded(
+                    currentUser,
+                    async () => await authContainer.useCases.sessions.closeSession.execute()
+                )
+            ) return;
 
             linkOpen = false;
             linkPassword = "";
@@ -223,6 +244,12 @@
                 verification: true
             });
             const current = await authContainer.useCases.accounts.getCurrentUser();
+            if (
+                await redirectAdminIfNeeded(
+                    current,
+                    async () => await authContainer.useCases.sessions.closeSession.execute()
+                )
+            ) return;
             authFlowStore.setSuccess({
                 userId: current.id ?? "",
                 email: sanitizedProfile.email ?? "",

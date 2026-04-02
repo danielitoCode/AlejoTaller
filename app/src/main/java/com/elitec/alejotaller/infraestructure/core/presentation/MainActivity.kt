@@ -95,48 +95,43 @@ class MainActivity : ComponentActivity() {
                         MaterialTheme.colorScheme.background
                     )
                 )
-                Scaffold(
+                Box(
                     modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
+                ) {
+                    Image(
+                        painter = image,
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
                     Box(
-                        modifier = Modifier.fillMaxSize().padding(innerPadding)
-                    ) {
-                        Image(
-                            painter = image,
-                            contentDescription = "",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        Box(
-                            modifier = Modifier.fillMaxSize()
-                                .background(brush = verticalBrush)
-                        )
-                        Scaffold(
-                            containerColor = Color.Transparent,
-                            modifier = Modifier.fillMaxSize()
-                        ) { innerPadding ->
-                            MainNavigationWrapper(
-                                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                                pendingReservationId = pendingReservationId,
-                                onPendingReservationConsumed = { pendingReservationId = null }
-                            )
-                        }
-                        Toaster(
-                            richColors = true,
-                            state = toasterState,
-                            iconSlot = { toast ->
-                                // ICON_LOADING can be anything, it's just a mark
-                                if (toast.icon == "LOADING") {
-                                    LoadingIndicator()
-                                } else {
-                                    // Fallback to the default icon slot
-                                    ToasterDefaults.iconSlot(toast)
-                                }
-                            },
+                        modifier = Modifier.fillMaxSize()
+                            .background(brush = verticalBrush)
+                    )
+                    Scaffold(
+                        containerColor = Color.Transparent,
+                        modifier = Modifier.fillMaxSize()
+                    ) { innerPadding ->
+                        MainNavigationWrapper(
+                            modifier = Modifier.fillMaxSize().padding(innerPadding),
+                            pendingReservationId = pendingReservationId,
+                            onPendingReservationConsumed = { pendingReservationId = null }
                         )
                     }
+                    Toaster(
+                        richColors = true,
+                        state = toasterState,
+                        iconSlot = { toast ->
+                            // ICON_LOADING can be anything, it's just a mark
+                            if (toast.icon == "LOADING") {
+                                LoadingIndicator()
+                            } else {
+                                // Fallback to the default icon slot
+                                ToasterDefaults.iconSlot(toast)
+                            }
+                        },
+                    )
                 }
-
             }
         }
     }

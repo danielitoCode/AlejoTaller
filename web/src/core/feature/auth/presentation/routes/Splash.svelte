@@ -3,12 +3,19 @@
     import {authContainer} from "../../di/auth.container";
     import alejoIcon from "/alejoicon_clean.svg";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import { redirectAdminIfNeeded } from "../util/admin-redirect";
 
     export let navController;
 
     onMount(async () => {
         try {
             const user = await authContainer.useCases.accounts.getCurrentUser();
+            if (
+                await redirectAdminIfNeeded(
+                    user,
+                    async () => await authContainer.useCases.sessions.closeSession.execute()
+                )
+            ) return;
             const pendingHash = consumePendingDeepLink();
             if (pendingHash && typeof window !== "undefined") {
                 window.history.replaceState({}, "", pendingHash);

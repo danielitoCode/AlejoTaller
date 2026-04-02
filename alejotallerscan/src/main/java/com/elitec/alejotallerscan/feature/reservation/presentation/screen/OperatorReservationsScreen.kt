@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotallerscan.feature.reservation.domain.entity.ReservationSearchField
+import com.elitec.alejotallerscan.feature.reservation.domain.entity.ReservationStatusFilter
 import com.elitec.alejotallerscan.feature.reservation.presentation.viewmodel.OperatorReservationSearchViewModel
 import com.elitec.alejotallerscan.feature.sale.presentation.viewmodel.OperatorSalesViewModel
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorScreen
@@ -42,6 +43,9 @@ fun OperatorReservationsScreen(
     val searchViewModel: OperatorReservationSearchViewModel = koinViewModel()
     val recentSales by salesViewModel.recentSales.collectAsState()
     val searchState by searchViewModel.uiState.collectAsState()
+    val filteredRecentSales = recentSales.filter { sale ->
+        searchState.statusFilter.state?.let { targetState -> sale.verified == targetState } ?: true
+    }
 
     OperatorScreen(
         title = "Reservas y ventas",
@@ -110,6 +114,36 @@ fun OperatorReservationsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        ReservationStatusFilter.entries.forEach { filter ->
+                            val selected = filter == searchState.statusFilter
+                            AssistChip(
+                                onClick = { searchViewModel.updateStatusFilter(filter) },
+                                label = {
+                                    Text(
+                                        when (filter) {
+                                            ReservationStatusFilter.ALL -> "Todos"
+                                            ReservationStatusFilter.PENDING -> "Pendientes"
+                                            ReservationStatusFilter.CONFIRMED -> "Confirmadas"
+                                            ReservationStatusFilter.REJECTED -> "Rechazadas"
+                                        }
+                                    )
+                                },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = if (selected) {
+                                        MaterialTheme.colorScheme.secondaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                )
+                            )
+                        }
+                    }
 
                     searchState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     searchState.notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
@@ -180,11 +214,11 @@ fun OperatorReservationsScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text("Recientes en caché", style = MaterialTheme.typography.titleMedium)
-                    if (recentSales.isEmpty()) {
+                    if (filteredRecentSales.isEmpty()) {
                         Text("Todavia no hay reservas en cache local.")
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(recentSales, key = { it.id }) { sale ->
+                            items(filteredRecentSales, key = { it.id }) { sale ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()

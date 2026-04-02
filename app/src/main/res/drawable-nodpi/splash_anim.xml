@@ -1,0 +1,8 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/alejoicon_clean">
+
+    <target android:name="logo_group" android:animation="@animator/logo_scale"/>
+    <target android:name="logo_group" android:animation="@animator/logo_fade"/>
+    <target android:name="logo_group" android:animation="@animator/logo_pulse"/>
+
+</animated-vector>

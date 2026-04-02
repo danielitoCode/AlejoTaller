@@ -47,6 +47,7 @@
     } from "./nested.router";
     import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
     import { rememberPendingDeepLink } from "./pending-deeplink.store";
+    import { redirectAdminIfNeeded } from "../../../feature/auth/presentation/util/admin-redirect";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
@@ -152,11 +153,20 @@
             });
         }
 
-        authContainer.useCases.accounts.getCurrentUser().catch(() => {
-            rememberPendingDeepLink(window.location.hash);
-            clearSessionBoundState({ clearCart: true });
-            navController.resetTo("login");
-        });
+        authContainer.useCases.accounts.getCurrentUser()
+            .then(async (user) => {
+                if (
+                    await redirectAdminIfNeeded(
+                        user,
+                        async () => await authContainer.useCases.sessions.closeSession.execute()
+                    )
+                ) return;
+            })
+            .catch(() => {
+                rememberPendingDeepLink(window.location.hash);
+                clearSessionBoundState({ clearCart: true });
+                navController.resetTo("login");
+            });
 
         productStore.syncAll().catch(() => {
             toastStore.error("Error al sincronizar productos");
