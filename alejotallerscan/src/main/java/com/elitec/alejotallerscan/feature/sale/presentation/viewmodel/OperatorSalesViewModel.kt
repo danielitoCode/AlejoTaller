@@ -1,5 +1,9 @@
 package com.elitec.alejotallerscan.feature.sale.presentation.viewmodel
 
+import android.util.Log
+import com.elitec.alejotallerscan.feature.confirmation.domain.caseuse.NotifyOperatorSaleDecisionCaseUse
+import com.elitec.alejotallerscan.feature.history.domain.caseuse.RegisterOperatorSaleRecordCaseUse
+import com.elitec.alejotallerscan.feature.history.domain.entity.OperatorSaleRecordAction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.shared.data.feature.sale.data.dao.SaleDao
@@ -21,8 +25,26 @@ class OperatorSalesViewModel(
     observeAllSalesCaseUse: ObserveAllSalesCaseUse,
     private val saleNetRepository: SaleNetRepository,
     private val saleDao: SaleDao,
-    private val updateSaleVerificationFromRealtimeCaseUse: UpdateSaleVerificationFromRealtimeCaseUse
+    private val updateSaleVerificationFromRealtimeCaseUse: UpdateSaleVerificationFromRealtimeCaseUse,
+    private val notifyOperatorSaleDecisionCaseUse: NotifyOperatorSaleDecisionCaseUse,
+    private val registerOperatorSaleRecordCaseUse: RegisterOperatorSaleRecordCaseUse
 ) : ViewModel() {
+    companion object {
+        const val TAG = "OperatorSalesVM"
+        fun extractSaleId(rawPayload: String): String {
+            val trimmed = rawPayload.trim()
+            if (trimmed.isBlank()) return ""
+
+            val queryId = Regex("""(?:^|[?&])(id|saleId|reservationId)=([^&]+)""", RegexOption.IGNORE_CASE)
+                .find(trimmed)
+                ?.groupValues
+                ?.getOrNull(2)
+                ?.trim()
+            if (!queryId.isNullOrBlank()) return queryId
+
+            return trimmed.substringAfterLast('/').substringAfterLast('=').trim()
+        }
+    }
 
     val recentSales = observeAllSalesCaseUse()
         .map { sales -> sales.sortedByDescending { it.date }.take(20) }
@@ -89,17 +111,61 @@ class OperatorSalesViewModel(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, notice = null)
+            Log.i(
+                TAG,
+                "event=operator_sale_update_start saleId=${selectedSale.id} " +
+                    "userId=${selectedSale.userId} decision=${if (isSuccess) "confirmed" else "rejected"}"
+            )
             updateSaleVerificationFromRealtimeCaseUse(selectedSale.id, isSuccess)
                 .onSuccess {
                     val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
+                    val updatedSale = selectedSale.copy(verified = nextState)
+                    val action = if (isSuccess) {
+                        OperatorSaleRecordAction.CONFIRMED
+                    } else {
+                        OperatorSaleRecordAction.REJECTED
+                    }
+
+                    Log.i(
+                        TAG,
+                        "event=operator_sale_update_success saleId=${updatedSale.id} " +
+                            "nextState=$nextState"
+                    )
+                    val notificationResult = runCatching {
+                        notifyOperatorSaleDecisionCaseUse(updatedSale, isSuccess)
+                    }
+                    notificationResult.onSuccess {
+                        Log.i(TAG, "event=operator_pusher_success saleId=${updatedSale.id}")
+                    }.onFailure { error ->
+                        Log.e(TAG, "event=operator_pusher_failure saleId=${updatedSale.id} cause=${error.message}", error)
+                    }
+
+                    val recordResult = runCatching {
+                        registerOperatorSaleRecordCaseUse(updatedSale, action)
+                    }
+                    recordResult.onSuccess {
+                        Log.i(TAG, "event=operator_local_record_saved saleId=${updatedSale.id} action=$action")
+                    }.onFailure { error ->
+                        Log.e(TAG, "event=operator_local_record_failure saleId=${updatedSale.id} cause=${error.message}", error)
+                    }
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        selectedSale = selectedSale.copy(verified = nextState),
-                        notice = if (isSuccess) "Pago confirmado y cliente notificado." else "Reserva marcada como rechazada."
+                        selectedSale = updatedSale,
+                        notice = when {
+                            notificationResult.isFailure -> "Venta actualizada y guardada localmente, pero fallo la notificacion Pusher."
+                            isSuccess -> "Pago confirmado y cliente notificado."
+                            else -> "Reserva rechazada y cliente notificado."
+                        }
                     )
                     onDone()
                 }
                 .onFailure { error ->
+                    Log.e(
+                        TAG,
+                        "event=operator_sale_update_failure saleId=${selectedSale.id} cause=${error.message}",
+                        error
+                    )
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         error = error.message ?: "No se pudo actualizar la venta."
@@ -110,21 +176,5 @@ class OperatorSalesViewModel(
 
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(error = null, notice = null)
-    }
-
-    companion object {
-        fun extractSaleId(rawPayload: String): String {
-            val trimmed = rawPayload.trim()
-            if (trimmed.isBlank()) return ""
-
-            val queryId = Regex("""(?:^|[?&])(id|saleId|reservationId)=([^&]+)""", RegexOption.IGNORE_CASE)
-                .find(trimmed)
-                ?.groupValues
-                ?.getOrNull(2)
-                ?.trim()
-            if (!queryId.isNullOrBlank()) return queryId
-
-            return trimmed.substringAfterLast('/').substringAfterLast('=').trim()
-        }
     }
 }

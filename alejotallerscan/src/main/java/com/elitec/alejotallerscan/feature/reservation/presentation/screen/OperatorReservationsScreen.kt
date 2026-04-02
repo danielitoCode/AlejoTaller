@@ -32,6 +32,7 @@ import com.elitec.alejotallerscan.feature.reservation.domain.entity.ReservationS
 import com.elitec.alejotallerscan.feature.reservation.presentation.viewmodel.OperatorReservationSearchViewModel
 import com.elitec.alejotallerscan.feature.sale.presentation.viewmodel.OperatorSalesViewModel
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorScreen
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -49,7 +50,7 @@ fun OperatorReservationsScreen(
 
     OperatorScreen(
         title = "Reservas y ventas",
-        subtitle = "Busca por ID visual del pedido, ID del cliente, nombre o fecha. El nombre funcionara cuando backend persista customer_name."
+        subtitle = "Busca en Appwrite por pedido, cliente, nombre o fecha, revisa sus items y luego confirma."
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Card(
@@ -110,7 +111,7 @@ fun OperatorReservationsScreen(
                     }
 
                     Text(
-                        "Si una venta todavia no guarda customer_name en backend, la busqueda por nombre no devolvera coincidencias.",
+                        "Si una venta no guarda customer_name en backend, la busqueda por nombre no devolvera coincidencias.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -160,99 +161,106 @@ fun OperatorReservationsScreen(
             }
 
             if (searchState.results.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Text("Resultados remotos", style = MaterialTheme.typography.titleMedium)
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(searchState.results, key = { it.id }) { sale ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            salesViewModel.selectSale(sale, onOpenSale)
-                                        },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(sale.id, style = MaterialTheme.typography.titleMedium)
-                                        Text("Nombre: ${sale.customerName ?: "No disponible"}")
-                                        Text("Cliente: ${sale.userId}")
-                                        Text("Fecha: ${sale.date}")
-                                        Text("Estado: ${sale.verified}")
-                                        Text("Importe: \$${"%.2f".format(sale.amount)}")
-                                    }
-                                }
-                            }
-                        }
+                ReservationSection(
+                    title = "Resultados remotos",
+                    sales = searchState.results,
+                    onSelect = { sale ->
+                        salesViewModel.selectSale(sale, onOpenSale)
+                    }
+                )
+            }
+
+            ReservationSection(
+                title = "Recientes en cache",
+                sales = filteredRecentSales,
+                emptyText = "Todavia no hay reservas en cache local.",
+                onSelect = { sale ->
+                    salesViewModel.selectSale(sale, onOpenSale)
+                }
+            )
+
+            OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Rounded.ArrowBack, contentDescription = null)
+                Text("Volver", modifier = Modifier.padding(start = 10.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReservationSection(
+    title: String,
+    sales: List<Sale>,
+    emptyText: String = "No hay resultados.",
+    onSelect: (Sale) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            if (sales.isEmpty()) {
+                Text(emptyText)
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(sales, key = { it.id }) { sale ->
+                        ReservationSaleCard(
+                            sale = sale,
+                            onClick = { onSelect(sale) }
+                        )
                     }
                 }
             }
+        }
+    }
+}
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text("Recientes en caché", style = MaterialTheme.typography.titleMedium)
-                    if (filteredRecentSales.isEmpty()) {
-                        Text("Todavia no hay reservas en cache local.")
-                    } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(filteredRecentSales, key = { it.id }) { sale ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            salesViewModel.selectSale(sale, onOpenSale)
-                                        },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                    )
-                                ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(sale.id, style = MaterialTheme.typography.titleMedium)
-                                        Text("Nombre: ${sale.customerName ?: "No disponible"}")
-                                        Text("Cliente: ${sale.userId}")
-                                        Text("Fecha: ${sale.date}")
-                                        Text("Estado: ${sale.verified}")
-                                        Text("Importe: \$${"%.2f".format(sale.amount)}")
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = null)
-                        Text("Volver", modifier = Modifier.padding(start = 10.dp))
-                    }
-                }
+@Composable
+private fun ReservationSaleCard(
+    sale: Sale,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(sale.id, style = MaterialTheme.typography.titleMedium)
+            Text("Nombre: ${sale.customerName ?: "No disponible"}")
+            Text("Cliente: ${sale.userId}")
+            Text("Fecha: ${sale.date}")
+            Text("Estado: ${sale.verified}")
+            Text("Importe: \$${"%.2f".format(sale.amount)}")
+            Text(
+                "Items: ${sale.products.size} - Unidades: ${sale.products.sumOf { it.quantity }}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            sale.products.forEach { item ->
+                Text(
+                    "• ${item.productName ?: item.productId} x${item.quantity}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+            Text(
+                "Toca para revisar y confirmar",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
     }
 }

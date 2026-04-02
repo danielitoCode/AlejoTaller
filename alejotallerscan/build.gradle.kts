@@ -127,6 +127,7 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
     // Realtime
     implementation(libs.pusher.java.client)
     // Datetime
@@ -142,9 +143,13 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
-    implementation(libs.zxing.android.embedded)
     implementation(libs.androidx.appcompat)
-
+    implementation(libs.okhttp)
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+    implementation(libs.mlkit.barcode.scanning)
 }
 
 fun com.android.build.api.dsl.BuildType.injectLocalProperties() {

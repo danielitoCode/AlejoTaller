@@ -23,8 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotallerscan.feature.confirmation.presentation.entity.OperatorPaymentMethod
@@ -44,8 +44,8 @@ fun OperatorConfirmPaymentScreen(
     var operatorNote by rememberSaveable { mutableStateOf("") }
 
     OperatorScreen(
-        title = "Confirmar pago",
-        subtitle = "Actualiza la reserva del cliente y dispara la confirmacion hacia su app."
+        title = "Confirmar reservacion",
+        subtitle = "Revisa la venta cargada, valida sus items y decide si se confirma o se rechaza."
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -61,7 +61,7 @@ fun OperatorConfirmPaymentScreen(
                     Text("Aun no hay una venta cargada.")
                     Button(onClick = onOpenScan, modifier = Modifier.fillMaxWidth()) {
                         androidx.compose.material3.Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
-                        Text("Escanear reserva", modifier = Modifier.padding(start = 10.dp))
+                        Text("Abrir registro de venta", modifier = Modifier.padding(start = 10.dp))
                     }
                 } else {
                     Text("Venta: ${sale.id}", style = MaterialTheme.typography.titleLarge)
@@ -72,9 +72,10 @@ fun OperatorConfirmPaymentScreen(
                     Text("Cliente: ${sale.userId}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Entrega: ${sale.deliveryType ?: "Sin definir"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        "Lineas del pedido: ${sale.products.size}  •  Unidades: ${sale.products.sumOf { it.quantity }}",
+                        "Lineas del pedido: ${sale.products.size} - Unidades: ${sale.products.sumOf { it.quantity }}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
                     sale.deliveryAddress?.let { address ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -141,7 +142,7 @@ fun OperatorConfirmPaymentScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Observacion del operador") },
                                 supportingText = {
-                                    Text("Se usa como apoyo visual en caja. Aun no se persiste en backend.")
+                                    Text("Aun se conserva solo como apoyo visual local.")
                                 }
                             )
                             Text(
@@ -151,14 +152,18 @@ fun OperatorConfirmPaymentScreen(
                         }
                     }
 
-                    Text("Productos", style = MaterialTheme.typography.titleMedium)
+                    Text("Items del pedido", style = MaterialTheme.typography.titleMedium)
                     sale.products.forEach { item ->
-                        Text("- ${item.productId} x${item.quantity}")
+                        Text("- ${item.productName ?: item.productId} x${item.quantity}")
                     }
                 }
 
-                uiState.notice?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-                uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                if (uiState.notice != null) {
+                    Text(uiState.notice ?: "", color = MaterialTheme.colorScheme.primary)
+                }
+                if (uiState.error != null) {
+                    Text(uiState.error ?: "", color = MaterialTheme.colorScheme.error)
+                }
 
                 Button(
                     onClick = { salesViewModel.confirmSelectedSale() },
@@ -166,7 +171,7 @@ fun OperatorConfirmPaymentScreen(
                     enabled = sale != null && !uiState.isLoading
                 ) {
                     androidx.compose.material3.Icon(Icons.Rounded.CheckCircle, contentDescription = null)
-                    Text("Confirmar pago", modifier = Modifier.padding(start = 10.dp))
+                    Text("Confirmar venta", modifier = Modifier.padding(start = 10.dp))
                 }
                 OutlinedButton(
                     onClick = { salesViewModel.rejectSelectedSale() },
@@ -174,7 +179,7 @@ fun OperatorConfirmPaymentScreen(
                     enabled = sale != null && !uiState.isLoading
                 ) {
                     androidx.compose.material3.Icon(Icons.Rounded.Cancel, contentDescription = null)
-                    Text("Rechazar reserva", modifier = Modifier.padding(start = 10.dp))
+                    Text("Marcar como rechazada", modifier = Modifier.padding(start = 10.dp))
                 }
                 OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
                     androidx.compose.material3.Icon(Icons.Rounded.ArrowBack, contentDescription = null)

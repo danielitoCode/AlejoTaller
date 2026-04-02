@@ -39,6 +39,10 @@ function createSaleStore() {
             const state = get({ subscribe });
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
             const currentUserId = currentUser?.$id ?? null;
+            logger.log(
+                `[SaleStore] managePusherSubscription userId=${currentUserId ?? "null"} ` +
+                `sales=${state.items.length} pending=${state.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length}`
+            );
 
             if (!currentUserId) {
                 if (pusherUnsubscribe) {
@@ -47,6 +51,7 @@ function createSaleStore() {
                 }
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
+                logger.log("[SaleStore] Pusher disabled because there is no active user");
                 return;
             }
 
@@ -61,20 +66,26 @@ function createSaleStore() {
                 }
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
+                logger.log(`[SaleStore] Resetting sale subscription because user changed to ${currentUserId}`);
             }
 
             if (hasUnverified && !pusherUnsubscribe) {
-                logger.log("Suscribiendo a eventos de verificacion de ventas");
+                logger.log(`[SaleStore] Suscribiendo a eventos de verificacion de ventas para userId=${currentUserId}`);
                 pusherUnsubscribe = subscribeSaleVerification(currentUserId, (eventName, payload) => {
                     handleSaleVerificationEvent(eventName, payload);
                 });
                 subscribedUserId = currentUserId;
             } else if (!hasUnverified && pusherUnsubscribe) {
-                logger.log("Desuscribiendo de eventos de verificacion de ventas");
+                logger.log(`[SaleStore] Desuscribiendo de eventos de verificacion de ventas para userId=${currentUserId}`);
                 pusherUnsubscribe();
                 pusherUnsubscribe = null;
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
+            } else {
+                logger.log(
+                    `[SaleStore] Subscription unchanged hasUnverified=${hasUnverified} ` +
+                    `alreadySubscribed=${pusherUnsubscribe != null} subscribedUserId=${subscribedUserId ?? "null"}`
+                );
             }
         } finally {
             isSubscriptionPending = false;
@@ -88,11 +99,14 @@ function createSaleStore() {
         const { saleId, decision } = payload;
 
         if (!saleId || !decision) {
-            logger.error("[Pusher Event] Invalid payload:", payload.decision);
+            logger.error(`[Pusher Event] Invalid payload: ${JSON.stringify(payload)}`);
             return;
         }
 
-        logger.log(`[Pusher Event] ${eventName} - Sale: ${saleId}, Decision: ${decision}`);
+        logger.log(
+            `[Pusher Event] ${eventName} - saleId=${saleId} decision=${decision} ` +
+            `timestamp=${payload.timestamp} amount=${payload.amount ?? "null"} productCount=${payload.productCount ?? "null"}`
+        );
 
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
         update((state) => ({
@@ -149,6 +163,7 @@ function createSaleStore() {
         update((state) => ({ ...state, loading: true, error: null }));
         try {
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
+            logger.log(`[SaleStore] syncAll currentUser=${currentUser?.$id ?? "null"}`);
 
             if (!currentUser?.$id) {
                 if (pusherUnsubscribe) {
@@ -162,9 +177,11 @@ function createSaleStore() {
             }
 
             const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUser.$id);
+            logger.log(`[SaleStore] syncAll loaded sales=${sales.length} userId=${currentUser.$id}`);
             update((state) => ({ ...state, items: sales }));
             await managePusherSubscription();
         } catch (error) {
+            logger.error(`[SaleStore] syncAll failed: ${normalizeError(error)}`);
             update((state) => ({ ...state, error: normalizeError(error) }));
             throw error;
         } finally {

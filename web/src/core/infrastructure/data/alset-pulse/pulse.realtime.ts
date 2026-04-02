@@ -101,10 +101,12 @@ export function subscribeSaleVerification(
 
     const channelName = `sale-verification-${userId}`;
     const channel = pusher.subscribe(channelName);
+    console.log(`[Pusher] Sale verification subscribe requested -> channel=${channelName} userId=${userId}`);
 
     const events = ["sale:confirmed", "sale:rejected"];
     for (const eventName of events) {
         channel.bind(eventName, (payload: unknown) => {
+            console.log(`[Pusher] Sale verification event received -> channel=${channelName} event=${eventName}`, payload);
             handler(eventName, payload as any);
         });
     }
@@ -112,6 +114,7 @@ export function subscribeSaleVerification(
     saleVerificationSubscription = {
         channel,
         unsubscribe: () => {
+            console.log(`[Pusher] Sale verification unsubscribe -> channel=${channelName}`);
             for (const eventName of events) channel.unbind(eventName);
             pusher.unsubscribe(channelName);
             saleVerificationSubscription = null;

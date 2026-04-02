@@ -2,6 +2,7 @@ package com.elitec.alejotallerscan.feature.scan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elitec.alejotallerscan.feature.product.domain.caseuse.EnrichSaleProductsCaseUse
 import com.elitec.alejotallerscan.feature.scan.domain.caseuse.ParseSaleScanPayloadCaseUse
 import com.elitec.shared.data.feature.sale.data.dao.SaleDao
 import com.elitec.shared.data.feature.sale.data.mapper.toDomain
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 class OperatorScanViewModel(
     private val parseSaleScanPayloadCaseUse: ParseSaleScanPayloadCaseUse,
     private val saleNetRepository: SaleNetRepository,
-    private val saleDao: SaleDao
+    private val saleDao: SaleDao,
+    private val enrichSaleProductsCaseUse: EnrichSaleProductsCaseUse
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OperatorScanUiState())
@@ -25,14 +27,15 @@ class OperatorScanViewModel(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null, notice = null)
             parseSaleScanPayloadCaseUse(rawPayload)
-                .mapCatching { saleId ->
-                    val remoteSale = saleNetRepository.getById(saleId)
+                .mapCatching { parsedPayload ->
+                    val remoteSale = saleNetRepository.getById(parsedPayload.saleId)
                     saleDao.insert(remoteSale)
-                    remoteSale.toDomain()
+                    parsedPayload to enrichSaleProductsCaseUse(remoteSale.toDomain())
                 }
-                .onSuccess { sale ->
+                .onSuccess { (parsedPayload, sale) ->
                     _uiState.value = OperatorScanUiState(
                         lastPayload = rawPayload,
+                        parsedPayload = parsedPayload,
                         notice = "Venta cargada correctamente."
                     )
                     onLoaded(sale)
@@ -40,6 +43,7 @@ class OperatorScanViewModel(
                 .onFailure { error ->
                     _uiState.value = OperatorScanUiState(
                         lastPayload = rawPayload,
+                        parsedPayload = null,
                         error = error.message ?: "No se pudo cargar la venta escaneada."
                     )
                 }

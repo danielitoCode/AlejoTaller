@@ -66,6 +66,8 @@ pusherJavaClient = "2.4.4"
 # QR
 qr = "1.1.2"
 zxingEmbedded = "4.3.0"
+camerax = "1.4.2"
+mlkitBarcode = "17.3.0"
 playServicesAnalyticsImpl = "18.2.0"
 # SizeScreen
 sizeScreen = "1.5.0-alpha15"
@@ -145,6 +147,7 @@ konnection-status = { module = "dev.tmapps:konnection", version.ref = "konnectio
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationCore" }
 androidx-material3-adaptive-navigation3 = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation3", version.ref = "material3AdaptiveNav3" }
 # Coil
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -173,6 +176,11 @@ alset-pulse = { module = "com.github.yecharlot:alset-pulse-android-kotlin", vers
 # QR
 compose-qr = { module = "io.github.alexzhirkevich:qrose", version.ref = "qr" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+mlkit-barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkitBarcode" }
 play-services-analytics-impl = { group = "com.google.android.gms", name = "play-services-analytics-impl", version.ref = "playServicesAnalyticsImpl" }
 # Windows Size class
 compose-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "sizeScreen" }

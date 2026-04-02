@@ -23,6 +23,10 @@ sealed interface OperatorDestination {
         override val route: String = "reservations"
     }
 
+    data object Records : OperatorDestination {
+        override val route: String = "records"
+    }
+
     companion object {
         fun fromRoute(route: String): OperatorDestination =
             when (route) {
@@ -31,6 +35,7 @@ sealed interface OperatorDestination {
                 Scan.route -> Scan
                 ConfirmPayment.route -> ConfirmPayment
                 Reservations.route -> Reservations
+                Records.route -> Records
                 else -> Login
             }
     }

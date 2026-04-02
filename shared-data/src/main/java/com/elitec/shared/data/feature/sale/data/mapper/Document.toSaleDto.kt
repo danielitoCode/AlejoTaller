@@ -34,11 +34,17 @@ private fun parseToLocalDate(rawDate: String): LocalDate =
 private fun Any?.toSaleItems(): List<SaleItem> = when (this) {
     is List<*> -> this.mapNotNull { item ->
         when (item) {
-            is String -> SaleItem(productId = item, quantity = 1)
+            is String -> item.trim().takeIf { it.isNotBlank() }?.let { productId ->
+                SaleItem(productId = productId, quantity = 1)
+            }
             is Map<*, *> -> {
-                val productId = item["productId"] as? String ?: return@mapNotNull null
+                val productId = listOf("productId", "product_id", "id", "\$id")
+                    .firstNotNullOfOrNull { key -> (item[key] as? String)?.trim()?.takeIf { it.isNotBlank() } }
+                    ?: return@mapNotNull null
                 val quantity = (item["quantity"] as? Number)?.toInt() ?: 1
-                SaleItem(productId = productId, quantity = quantity)
+                val productName = listOf("productName", "product_name", "name", "title")
+                    .firstNotNullOfOrNull { key -> (item[key] as? String)?.trim()?.takeIf { it.isNotBlank() } }
+                SaleItem(productId = productId, quantity = quantity, productName = productName)
             }
             else -> null
         }

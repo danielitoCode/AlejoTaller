@@ -38,13 +38,27 @@ class RealtimeSyncViewModel(
     val uiMessages = _uiMessages.asSharedFlow()
 
     fun startRealtimeSync() {
-        if (activeUserId.isBlank()) return
-        if (activePendingSaleIds.value.isEmpty()) return
-        if (isSubscribed && subscribedUserId == activeUserId) return
+        if (activeUserId.isBlank()) {
+            Log.i(TAG, "event=realtime_start_skipped reason=blank_user")
+            return
+        }
+        if (activePendingSaleIds.value.isEmpty()) {
+            Log.i(TAG, "event=realtime_start_skipped reason=no_pending_sales userId=$activeUserId")
+            return
+        }
+        if (isSubscribed && subscribedUserId == activeUserId) {
+            Log.i(TAG, "event=realtime_start_skipped reason=already_subscribed userId=$activeUserId")
+            return
+        }
 
         if (isSubscribed && subscribedUserId != activeUserId) {
             stopRealtimeSync()
         }
+
+        Log.i(
+            TAG,
+            "event=realtime_start userId=$activeUserId pendingSaleIds=${activePendingSaleIds.value.joinToString(",")}"
+        )
 
         subscribeRealtimeSyncCaseUse(
             userId = activeUserId,
@@ -60,6 +74,11 @@ class RealtimeSyncViewModel(
         val previousUserId = activeUserId
         activeUserId = userId
         activePendingSaleIds.value = pendingSaleIds
+        Log.i(
+            TAG,
+            "event=realtime_scope_updated previousUserId=$previousUserId userId=$userId " +
+                "pendingSaleIds=${pendingSaleIds.joinToString(",")}"
+        )
 
         if (previousUserId.isNotBlank() && previousUserId != userId) {
             stopRealtimeSync()
@@ -69,9 +88,11 @@ class RealtimeSyncViewModel(
     fun stopRealtimeSync() {
         if (!isSubscribed) {
             subscribedUserId = ""
+            Log.i(TAG, "event=realtime_stop_skipped reason=not_subscribed")
             return
         }
 
+        Log.i(TAG, "event=realtime_stop userId=$subscribedUserId")
         subscribeRealtimeSyncCaseUse.unsubscribeAll()
         isSubscribed = false
         subscribedUserId = ""

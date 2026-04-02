@@ -1,5 +1,6 @@
 package com.elitec.shared.data.feature.sale.data.repository
 
+import android.util.Log
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.data.feature.sale.data.mapper.toSaleDto
 import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
@@ -14,20 +15,24 @@ class SaleNetRepositoryImpl(
     private val config: SaleRemoteConfig
 ): SaleNetRepository {
     override suspend fun getAll(userId: String): List<SaleDto> {
+        Log.i(TAG, "event=sale_net_get_all_start userId=$userId collection=${config.saleCollectionId}")
         val response = netDB.listDocuments(
             databaseId = config.databaseId,
             collectionId = config.saleCollectionId,
             queries = listOf(Query.equal("user_id", userId))
         )
+        Log.i(TAG, "event=sale_net_get_all_success userId=$userId count=${response.documents.size}")
         return response.documents.map { document -> document.toSaleDto() }
     }
 
     override suspend fun getById(itemId: String): SaleDto {
+        Log.i(TAG, "event=sale_net_get_by_id_start saleId=$itemId collection=${config.saleCollectionId}")
         val response = netDB.getDocument(
             databaseId = config.databaseId,
             collectionId = config.saleCollectionId,
             documentId = itemId
         )
+        Log.i(TAG, "event=sale_net_get_by_id_success saleId=$itemId")
         return response.toSaleDto()
     }
 
@@ -56,17 +61,20 @@ class SaleNetRepositoryImpl(
 
     override suspend fun save(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
+        Log.i(TAG, "event=sale_net_save_start saleId=$resolvedId userId=${item.userId} verified=${item.verified}")
         netDB.createDocument(
             databaseId = config.databaseId,
             collectionId = config.saleCollectionId,
             documentId = resolvedId,
             data = item.toAppwriteData()
         )
+        Log.i(TAG, "event=sale_net_save_success saleId=$resolvedId")
     }
 
     override suspend fun upsert(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
         val payload = item.copy(id = resolvedId).toAppwriteData()
+        Log.i(TAG, "event=sale_net_upsert_start saleId=$resolvedId userId=${item.userId} verified=${item.verified}")
         runCatching {
             netDB.createDocument(
                 databaseId = config.databaseId,
@@ -74,19 +82,27 @@ class SaleNetRepositoryImpl(
                 documentId = resolvedId,
                 data = payload
             )
+            Log.i(TAG, "event=sale_net_upsert_created saleId=$resolvedId")
         }.recoverCatching { throwable ->
             val appwriteError = throwable as? AppwriteException
             if (appwriteError?.code == 409) {
+                Log.i(TAG, "event=sale_net_upsert_conflict saleId=$resolvedId action=update_document")
                 netDB.updateDocument(
                     databaseId = config.databaseId,
                     collectionId = config.saleCollectionId,
                     documentId = resolvedId,
                     data = payload
                 )
+                Log.i(TAG, "event=sale_net_upsert_updated saleId=$resolvedId")
             } else {
+                Log.e(TAG, "event=sale_net_upsert_failure saleId=$resolvedId cause=${throwable.message}", throwable)
                 throw throwable
             }
         }.getOrThrow()
+    }
+
+    companion object {
+        private const val TAG = "SaleNetRepository"
     }
 }
 

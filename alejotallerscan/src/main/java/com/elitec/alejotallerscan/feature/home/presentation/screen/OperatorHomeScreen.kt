@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.PointOfSale
 import androidx.compose.material.icons.rounded.QrCodeScanner
@@ -33,6 +34,7 @@ fun OperatorHomeScreen(
     onOpenScan: () -> Unit,
     onOpenReservations: () -> Unit,
     onOpenConfirmation: () -> Unit,
+    onOpenRecords: () -> Unit,
     onLogout: () -> Unit
 ) {
     val authViewModel: OperatorAuthViewModel = koinViewModel()
@@ -45,7 +47,7 @@ fun OperatorHomeScreen(
 
     OperatorScreen(
         title = "Panel operador",
-        subtitle = "Confirmacion de efectivo, pagos directos y reservas del MVP."
+        subtitle = "Registra reservas desde QR o Appwrite, confirma su estado y conserva un historial interno."
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -92,7 +94,7 @@ fun OperatorHomeScreen(
 
                 Button(onClick = onOpenScan, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
-                    Text("Escanear pedido", modifier = Modifier.padding(start = 10.dp))
+                    Text("Registrar venta o reservacion", modifier = Modifier.padding(start = 10.dp))
                 }
                 Button(onClick = onOpenConfirmation, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.PointOfSale, contentDescription = null)
@@ -100,7 +102,11 @@ fun OperatorHomeScreen(
                 }
                 OutlinedButton(onClick = onOpenReservations, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.ReceiptLong, contentDescription = null)
-                    Text("Reservas recientes", modifier = Modifier.padding(start = 10.dp))
+                    Text("Busqueda manual y filtros", modifier = Modifier.padding(start = 10.dp))
+                }
+                OutlinedButton(onClick = onOpenRecords, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Rounded.History, contentDescription = null)
+                    Text("Registro interno", modifier = Modifier.padding(start = 10.dp))
                 }
                 OutlinedButton(
                     onClick = { authViewModel.logout(onLogout) },
