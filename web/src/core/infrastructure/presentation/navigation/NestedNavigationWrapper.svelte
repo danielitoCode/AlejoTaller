@@ -47,7 +47,13 @@
     } from "./nested.router";
     import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
     import { rememberPendingDeepLink } from "./pending-deeplink.store";
-    import { redirectAdminIfNeeded } from "../../../feature/auth/presentation/util/admin-redirect";
+    import AdminRoleChoiceCard from "../../../feature/auth/presentation/components/AdminRoleChoiceCard.svelte";
+    import {
+        getStoredAdminChoice,
+        goToAdminDashboard,
+        rememberAdminChoice,
+        shouldOfferAdminChoice
+    } from "../../../feature/auth/presentation/util/admin-redirect";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
@@ -77,6 +83,8 @@
 
     let fabOpen = false;
     let suppressHashSync = false;
+    let adminChoicePending = false;
+    let adminRedirecting = false;
 
     function clearSessionBoundState({ clearCart = false }: { clearCart?: boolean } = {}) {
         saleStore.reset();
@@ -141,6 +149,20 @@
         }
     }
 
+    function continueAsClient() {
+        rememberAdminChoice("client");
+        adminChoicePending = false;
+    }
+
+    async function continueToAdmin() {
+        adminRedirecting = true;
+        rememberAdminChoice("admin");
+        await goToAdminDashboard(
+            async () => await authContainer.useCases.sessions.closeSession.execute()
+        );
+        adminRedirecting = false;
+    }
+
     onMount(() => {
         window.addEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.addEventListener("hashchange", applyInternalHash);
@@ -155,12 +177,15 @@
 
         authContainer.useCases.accounts.getCurrentUser()
             .then(async (user) => {
-                if (
-                    await redirectAdminIfNeeded(
-                        user,
-                        async () => await authContainer.useCases.sessions.closeSession.execute()
-                    )
-                ) return;
+                if (!shouldOfferAdminChoice(user)) return;
+                const choice = getStoredAdminChoice();
+                if (choice === "admin") {
+                    await continueToAdmin();
+                    return;
+                }
+                if (choice !== "client") {
+                    adminChoicePending = true;
+                }
             })
             .catch(() => {
                 rememberPendingDeepLink(window.location.hash);
@@ -274,6 +299,14 @@
         {/key}
 
         <SaleVerificationAlert navController={internalNavController} />
+
+        {#if adminChoicePending}
+            <AdminRoleChoiceCard
+                busy={adminRedirecting}
+                on:stayClient={continueAsClient}
+                on:goAdmin={continueToAdmin}
+            />
+        {/if}
 
         <div class="fab-layer compact-only">
             {#if fabOpen}

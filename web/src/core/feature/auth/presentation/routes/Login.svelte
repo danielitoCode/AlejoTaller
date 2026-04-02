@@ -16,7 +16,13 @@
     import { parseGoogleIdToken } from "../util/google-id-token";
     import FrameModal from "../components/FrameModal.svelte";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
-    import { redirectAdminIfNeeded } from "../util/admin-redirect";
+    import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
+    import {
+        getStoredAdminChoice,
+        goToAdminDashboard,
+        rememberAdminChoice,
+        shouldOfferAdminChoice
+    } from "../util/admin-redirect";
 
     export let navController: NavController;
 
@@ -25,6 +31,8 @@
     let showPassword = false;
     let loading = false;
     let error: string | null = null;
+    let pendingAdminUser: any = null;
+    let pendingAuthContext: { userId: string; email: string; provider: "password" | "google" } | null = null;
 
     $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
     $: normalizedEmail = email.trim().toLowerCase();
@@ -34,6 +42,52 @@
         if (pendingHash && typeof window !== "undefined") {
             window.history.replaceState({}, "", pendingHash);
         }
+    }
+
+    function completeClientLogin(context: { userId: string; email: string; provider: "password" | "google" }) {
+        authFlowStore.setSuccess(context);
+        restorePendingHashIfNeeded();
+        navController.resetTo("home", context);
+    }
+
+    async function maybeHandleAdminChoice(
+        user: any,
+        context: { userId: string; email: string; provider: "password" | "google" }
+    ): Promise<boolean> {
+        if (!shouldOfferAdminChoice(user)) return false;
+
+        const choice = getStoredAdminChoice();
+        if (choice === "admin") {
+            await goToAdminDashboard(
+                async () => await authContainer.useCases.sessions.closeSession.execute()
+            );
+            return true;
+        }
+        if (choice === "client") return false;
+
+        pendingAdminUser = user;
+        pendingAuthContext = context;
+        return true;
+    }
+
+    function continueAsClient() {
+        if (!pendingAuthContext) return;
+        rememberAdminChoice("client");
+        const context = pendingAuthContext;
+        pendingAdminUser = null;
+        pendingAuthContext = null;
+        completeClientLogin(context);
+    }
+
+    async function continueToAdmin() {
+        rememberAdminChoice("admin");
+        pendingAdminUser = null;
+        pendingAuthContext = null;
+        loading = true;
+        await goToAdminDashboard(
+            async () => await authContainer.useCases.sessions.closeSession.execute()
+        );
+        loading = false;
     }
 
     async function signIn() {
@@ -48,19 +102,13 @@
                 password
             );
             const currentUser = await authContainer.useCases.accounts.getCurrentUser();
-            if (
-                await redirectAdminIfNeeded(
-                    currentUser,
-                    async () => await authContainer.useCases.sessions.closeSession.execute()
-                )
-            ) return;
-            authFlowStore.setSuccess({
+            const authContext = {
                 userId,
                 email: normalizedEmail,
                 provider: "password"
-            });
-            restorePendingHashIfNeeded();
-            navController.resetTo("home", { id: userId, email: normalizedEmail, provider: "password" });
+            } as const;
+            if (await maybeHandleAdminChoice(currentUser, authContext)) return;
+            completeClientLogin(authContext);
         } catch (e) {
             error = e instanceof Error ? e.message : "No se pudo iniciar sesion";
             authFlowStore.setError(error, {
@@ -120,12 +168,6 @@
                     sanitizedProfile.sub
                 );
                 const current = await authContainer.useCases.accounts.getCurrentUser();
-                if (
-                    await redirectAdminIfNeeded(
-                        current,
-                        async () => await authContainer.useCases.sessions.closeSession.execute()
-                    )
-                ) return;
                 const currentPhoto =
                     typeof current?.photo_url === "string"
                         ? current.photo_url.trim()
@@ -133,13 +175,13 @@
                 if (!currentPhoto && sanitizedProfile.picture?.trim()) {
                     await authContainer.useCases.accounts.updatePhotoUrl(sanitizedProfile.picture.trim());
                 }
-                authFlowStore.setSuccess({
+                const authContext = {
                     userId,
                     email: sanitizedProfile.email,
                     provider: "google"
-                });
-                restorePendingHashIfNeeded();
-                navController.resetTo("home", { id: userId, email: sanitizedProfile.email, provider: "google" });
+                } as const;
+                if (await maybeHandleAdminChoice(current, authContext)) return;
+                completeClientLogin(authContext);
                 return;
             } catch {
                 googleRegisterSrc = getGoogleRegisterSrc(sanitizedProfile);
@@ -178,22 +220,16 @@
                 photoUrl: googleProfile.picture || ""
             });
             const currentUser = await authContainer.useCases.accounts.getCurrentUser();
-            if (
-                await redirectAdminIfNeeded(
-                    currentUser,
-                    async () => await authContainer.useCases.sessions.closeSession.execute()
-                )
-            ) return;
 
             linkOpen = false;
             linkPassword = "";
-            authFlowStore.setSuccess({
+            const authContext = {
                 userId,
                 email: googleProfile.email,
                 provider: "google"
-            });
-            restorePendingHashIfNeeded();
-            navController.resetTo("home", { id: userId, email: googleProfile.email, provider: "google" });
+            } as const;
+            if (await maybeHandleAdminChoice(currentUser, authContext)) return;
+            completeClientLogin(authContext);
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
             linkError = code === 401
@@ -244,19 +280,13 @@
                 verification: true
             });
             const current = await authContainer.useCases.accounts.getCurrentUser();
-            if (
-                await redirectAdminIfNeeded(
-                    current,
-                    async () => await authContainer.useCases.sessions.closeSession.execute()
-                )
-            ) return;
-            authFlowStore.setSuccess({
+            const authContext = {
                 userId: current.id ?? "",
                 email: sanitizedProfile.email ?? "",
                 provider: "google"
-            });
-            restorePendingHashIfNeeded();
-            navController.resetTo("home", { id: current.id, email: sanitizedProfile.email, provider: "google" });
+            } as const;
+            if (await maybeHandleAdminChoice(current, authContext)) return;
+            completeClientLogin(authContext);
         } catch (e: any) {
             const code = typeof e?.code === "number" ? e.code : null;
             if (code === 409) {
@@ -421,6 +451,14 @@
         </footer>
     </main>
 </Screen>
+
+{#if pendingAdminUser}
+    <AdminRoleChoiceCard
+        busy={loading}
+        on:stayClient={continueAsClient}
+        on:goAdmin={continueToAdmin}
+    />
+{/if}
 
 <FrameModal
     open={googleFrameOpen}

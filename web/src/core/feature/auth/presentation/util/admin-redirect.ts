@@ -4,6 +4,8 @@ type AuthenticatedUser = {
     role?: string | null;
 };
 
+export type AdminClientChoice = "client" | "admin";
+
 function normalizeRole(role: string | null | undefined): string {
     return (role || "").trim().toLowerCase();
 }
@@ -19,27 +21,38 @@ function resolveAdminDashboardUrl(): string | null {
     return rawUrl;
 }
 
-export function shouldRedirectAdmin(user: AuthenticatedUser | null | undefined): boolean {
-    return isAdminLikeRole(user?.role);
+function getChoiceStorageKey(): string {
+    return "alejo-admin-client-choice";
 }
 
-export async function redirectAdminIfNeeded(
-    user: AuthenticatedUser | null | undefined,
+export function shouldOfferAdminChoice(user: AuthenticatedUser | null | undefined): boolean {
+    return isAdminLikeRole(user?.role) && !!resolveAdminDashboardUrl();
+}
+
+export function getStoredAdminChoice(): AdminClientChoice | null {
+    if (typeof window === "undefined") return null;
+    const choice = window.sessionStorage.getItem(getChoiceStorageKey());
+    return choice === "client" || choice === "admin" ? choice : null;
+}
+
+export function rememberAdminChoice(choice: AdminClientChoice): void {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(getChoiceStorageKey(), choice);
+}
+
+export function clearAdminChoice(): void {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.removeItem(getChoiceStorageKey());
+}
+
+export async function goToAdminDashboard(
     beforeRedirect?: () => Promise<void>
 ): Promise<boolean> {
     if (typeof window === "undefined") return false;
-    if (!shouldRedirectAdmin(user)) return false;
-
     const targetUrl = resolveAdminDashboardUrl();
     if (!targetUrl) return false;
-
-    const currentUrl = window.location.href;
-    if (currentUrl === targetUrl) return false;
-
-    if (beforeRedirect) {
-        await beforeRedirect();
-    }
-
+    if (window.location.href === targetUrl) return false;
+    if (beforeRedirect) await beforeRedirect();
     window.location.replace(targetUrl);
     return true;
 }
