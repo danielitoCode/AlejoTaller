@@ -28,7 +28,11 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.kotlinx.serialization.core)
 
-    testImplementation(libs.junit)
     testImplementation(libs.mock.test)
+    testImplementation(libs.turbine.test)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.koin.test)
+    testImplementation(libs.koin.test.junit4)
+    testImplementation(libs.ktor.client.test)
 }

@@ -60,7 +60,7 @@ class MainActivity : ComponentActivity() {
                 /*MatosNoteScreen(
                     modifier = Modifier.fillMaxSize()
                 )*/
-               val toasterViewModel: ToasterViewModel = koinViewModel()
+                val toasterViewModel: ToasterViewModel = koinViewModel()
                 val toasterState = rememberToasterState()
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -84,6 +84,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+
                 val image = if(isSystemInDarkTheme())
                     painterResource(R.drawable.bcb)
                 else
@@ -94,43 +95,48 @@ class MainActivity : ComponentActivity() {
                         MaterialTheme.colorScheme.background
                     )
                 )
-                Box(
+                Scaffold(
                     modifier = Modifier.fillMaxSize()
-                ) {
-                    Image(
-                        painter = image,
-                        contentDescription = "",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                ) { innerPadding ->
                     Box(
-                        modifier = Modifier.fillMaxSize()
-                            .background(brush = verticalBrush)
-                    )
-                    Scaffold(
-                        containerColor = Color.Transparent,
-                        modifier = Modifier.fillMaxSize()
-                    ) { innerPadding ->
-                        MainNavigationWrapper(
-                            modifier = Modifier.fillMaxSize().padding(innerPadding),
-                            pendingReservationId = pendingReservationId,
-                            onPendingReservationConsumed = { pendingReservationId = null }
+                        modifier = Modifier.fillMaxSize().padding(innerPadding)
+                    ) {
+                        Image(
+                            painter = image,
+                            contentDescription = "",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        Box(
+                            modifier = Modifier.fillMaxSize()
+                                .background(brush = verticalBrush)
+                        )
+                        Scaffold(
+                            containerColor = Color.Transparent,
+                            modifier = Modifier.fillMaxSize()
+                        ) { innerPadding ->
+                            MainNavigationWrapper(
+                                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                                pendingReservationId = pendingReservationId,
+                                onPendingReservationConsumed = { pendingReservationId = null }
+                            )
+                        }
+                        Toaster(
+                            richColors = true,
+                            state = toasterState,
+                            iconSlot = { toast ->
+                                // ICON_LOADING can be anything, it's just a mark
+                                if (toast.icon == "LOADING") {
+                                    LoadingIndicator()
+                                } else {
+                                    // Fallback to the default icon slot
+                                    ToasterDefaults.iconSlot(toast)
+                                }
+                            },
                         )
                     }
-                    Toaster(
-                        richColors = true,
-                        state = toasterState,
-                        iconSlot = { toast ->
-                            // ICON_LOADING can be anything, it's just a mark
-                            if (toast.icon == "LOADING") {
-                                LoadingIndicator()
-                            } else {
-                                // Fallback to the default icon slot
-                                ToasterDefaults.iconSlot(toast)
-                            }
-                        },
-                    )
                 }
+
             }
         }
     }

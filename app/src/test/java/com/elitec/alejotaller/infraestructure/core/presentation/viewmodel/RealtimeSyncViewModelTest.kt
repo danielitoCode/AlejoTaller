@@ -3,12 +3,12 @@ package com.elitec.alejotaller.infraestructure.core.presentation.viewmodel
 import com.elitec.alejotaller.core.MainDispatcherRule
 import com.elitec.alejotaller.feature.notifications.domain.caseuse.SavePromotionCaseUse
 import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
-import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
-import com.elitec.shared.sale.feature.sale.domain.caseUse.
 import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
+import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
