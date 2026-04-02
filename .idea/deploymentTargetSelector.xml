@@ -19,12 +19,6 @@
       <SelectionState runConfigName="when_sale_is_verified_delivery_selection_is_shown()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="when_sale_is_unverified_delivery_selection_is_hidden()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="LandScreenTest">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="alejotallerscan">
         <option name="selectionMode" value="DROPDOWN" />
         <DropdownSelection timestamp="2026-03-31T09:38:55.083891900Z">
