@@ -84,6 +84,8 @@ kover = "0.9.3"
 alset = "1.0.0"
 appcompat = "1.6.1"
 material = "1.10.0"
+# Events and trakcing logs
+posthog = "3.4.0"
 
 [libraries]
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browserVersion" }
@@ -194,6 +196,8 @@ androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTes
 roboelectric-test = { module = "org.robolectric:robolectric", version.ref = "roboelectric" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+# Posthog
+posthog-android = { module = "com.posthog:posthog-android", version.ref = "posthog" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

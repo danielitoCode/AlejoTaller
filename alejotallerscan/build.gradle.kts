@@ -150,6 +150,7 @@ dependencies {
     implementation(libs.camerax.lifecycle)
     implementation(libs.camerax.view)
     implementation(libs.mlkit.barcode.scanning)
+    implementation(libs.posthog.android)
 }
 
 fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
@@ -195,4 +196,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("SOLUCIONES_CUBA_SUCCESS_URL")
     prop("SOLUCIONES_CUBA_CANCEL_URL")
     prop("SOLUCIONES_CUBA_CALLBACK_URL")
+    // posthog
+    prop("POSTHOG_TOKEN")
+    prop("POSTHOG_HOST")
 }

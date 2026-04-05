@@ -191,6 +191,8 @@ dependencies {
     // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))
+
+    implementation(libs.posthog.android)
 }
 
 kover {
@@ -270,4 +272,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("SOLUCIONES_CUBA_SUCCESS_URL")
     prop("SOLUCIONES_CUBA_CANCEL_URL")
     prop("SOLUCIONES_CUBA_CALLBACK_URL")
+    // posthog
+    prop("POSTHOG_TOKEN")
+    prop("POSTHOG_HOST")
 }

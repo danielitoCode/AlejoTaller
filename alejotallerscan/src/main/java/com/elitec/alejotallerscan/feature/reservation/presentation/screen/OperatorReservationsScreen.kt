@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.PersonSearch
@@ -208,12 +206,9 @@ private fun ReservationSection(
             if (sales.isEmpty()) {
                 Text(emptyText)
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    items(sales, key = { it.id }) { sale ->
-                        ReservationSaleCard(
-                            sale = sale,
-                            onClick = { onSelect(sale) }
-                        )
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    sales.forEach { sale ->
+                        ReservationSaleCard(sale = sale, onClick = { onSelect(sale) })
                     }
                 }
             }

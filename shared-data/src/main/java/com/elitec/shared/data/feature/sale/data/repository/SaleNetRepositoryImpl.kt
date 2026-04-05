@@ -9,6 +9,9 @@ import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.exceptions.AppwriteException
 import io.appwrite.services.Databases
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 class SaleNetRepositoryImpl(
     private val netDB: Databases,
@@ -72,10 +75,23 @@ class SaleNetRepositoryImpl(
     }
 
     override suspend fun upsert(item: SaleDto) {
+        if (item.id.isBlank()) return
+        Log.i(TAG, "event=sale_net_upsert_start saleId=${item.id} userId=${item.userId} verified=${item.verified}")
+        netDB.updateDocument(
+            databaseId = config.databaseId,
+            collectionId = config.saleCollectionId,
+            documentId = item.id,
+            data = item.toAppwriteData()
+        )
+        Log.i(TAG, "event=sale_net_upsert_updated saleId=${item.id}")
+    }
+
+    /*override suspend fun upsert(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
         val payload = item.copy(id = resolvedId).toAppwriteData()
         Log.i(TAG, "event=sale_net_upsert_start saleId=$resolvedId userId=${item.userId} verified=${item.verified}")
         runCatching {
+            Log.i(TAG, "Try to create sale $resolvedId")
             netDB.createDocument(
                 databaseId = config.databaseId,
                 collectionId = config.saleCollectionId,
@@ -84,6 +100,7 @@ class SaleNetRepositoryImpl(
             )
             Log.i(TAG, "event=sale_net_upsert_created saleId=$resolvedId")
         }.recoverCatching { throwable ->
+
             val appwriteError = throwable as? AppwriteException
             if (appwriteError?.code == 409) {
                 Log.i(TAG, "event=sale_net_upsert_conflict saleId=$resolvedId action=update_document")
@@ -99,7 +116,7 @@ class SaleNetRepositoryImpl(
                 throw throwable
             }
         }.getOrThrow()
-    }
+    }*/
 
     companion object {
         private const val TAG = "SaleNetRepository"
@@ -109,15 +126,25 @@ class SaleNetRepositoryImpl(
 internal fun SaleDto.toAppwriteData(): Map<String, Any?> = mapOf(
     "date" to date.toString(),
     "amount" to amount,
-    "verified" to verified,
-    "products" to products.map { product ->
-        mapOf(
-            "productId" to product.productId,
-            "quantity" to product.quantity
-        )
-    },
+    "buy_state" to verified,
+    "products" to Json.encodeToString(
+        products.map { product ->
+            AppwriteSaleProductPayload(
+                productId = product.productId,
+                quantity = product.quantity,
+                price = null
+            )
+        }
+    ),
     "user_id" to userId,
     "customer_name" to customerName,
     "delivery_type" to deliveryType,
     "delivery_address" to deliveryAddress
 ).filterValues { value -> value != null }
+
+@Serializable
+private data class AppwriteSaleProductPayload(
+    val productId: String,
+    val quantity: Int,
+    val price: Double? = null
+)

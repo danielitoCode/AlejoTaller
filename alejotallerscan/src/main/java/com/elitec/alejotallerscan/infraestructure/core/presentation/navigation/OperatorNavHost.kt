@@ -43,7 +43,8 @@ fun OperatorNavHost(
         )
 
         OperatorDestination.Records -> OperatorSaleRecordsScreen(
-            onBack = { onNavigate(OperatorDestination.Home) }
+            onBack = { onNavigate(OperatorDestination.Home) },
+            onOpenSale = { onNavigate(OperatorDestination.ConfirmPayment) }
         )
     }
 }

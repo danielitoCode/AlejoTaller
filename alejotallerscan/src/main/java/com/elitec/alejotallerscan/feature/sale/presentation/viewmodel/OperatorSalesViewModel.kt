@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.shared.data.feature.sale.data.dao.SaleDao
 import com.elitec.shared.data.feature.sale.data.mapper.toDomain
+import com.elitec.shared.data.feature.sale.data.mapper.toDto
 import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
@@ -131,31 +132,74 @@ class OperatorSalesViewModel(
                         "event=operator_sale_update_success saleId=${updatedSale.id} " +
                             "nextState=$nextState"
                     )
-                    val notificationResult = runCatching {
-                        notifyOperatorSaleDecisionCaseUse(updatedSale, isSuccess)
+
+                    val remoteVerification = runCatching {
+                        verifyRemoteSaleState(updatedSale.id, nextState)
                     }
-                    notificationResult.onSuccess {
-                        Log.i(TAG, "event=operator_pusher_success saleId=${updatedSale.id}")
-                    }.onFailure { error ->
-                        Log.e(TAG, "event=operator_pusher_failure saleId=${updatedSale.id} cause=${error.message}", error)
+                    val confirmedRemoteSale = remoteVerification.getOrElse { error ->
+                        rollbackLocalSale(selectedSale)
+                        Log.e(
+                            TAG,
+                            "event=operator_remote_verification_failure saleId=${updatedSale.id} cause=${error.message}",
+                            error
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            selectedSale = selectedSale,
+                            error = error.message ?: "Appwrite no confirmo el cambio de estado."
+                        )
+                        return@onSuccess
                     }
 
+                    Log.i(
+                        TAG,
+                        "event=operator_remote_verification_success saleId=${confirmedRemoteSale.id} " +
+                            "verified=${confirmedRemoteSale.verified}"
+                    )
+
+                    val notificationResult = runCatching {
+                        notifyOperatorSaleDecisionCaseUse(confirmedRemoteSale, isSuccess)
+                    }
+                    notificationResult.onFailure { error ->
+                        Log.e(
+                            TAG,
+                            "event=operator_pusher_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                            error
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            selectedSale = confirmedRemoteSale,
+                            error = error.message ?: "Pusher no pudo notificar al cliente."
+                        )
+                        return@onSuccess
+                    }
+                    Log.i(TAG, "event=operator_pusher_success saleId=${confirmedRemoteSale.id}")
+
                     val recordResult = runCatching {
-                        registerOperatorSaleRecordCaseUse(updatedSale, action)
+                        registerOperatorSaleRecordCaseUse(confirmedRemoteSale, action)
                     }
-                    recordResult.onSuccess {
-                        Log.i(TAG, "event=operator_local_record_saved saleId=${updatedSale.id} action=$action")
-                    }.onFailure { error ->
-                        Log.e(TAG, "event=operator_local_record_failure saleId=${updatedSale.id} cause=${error.message}", error)
+                    recordResult.onFailure { error ->
+                        Log.e(
+                            TAG,
+                            "event=operator_local_record_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                            error
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            selectedSale = confirmedRemoteSale,
+                            error = error.message ?: "No se pudo registrar la venta en el dispositivo."
+                        )
+                        return@onSuccess
                     }
+                    Log.i(TAG, "event=operator_local_record_saved saleId=${confirmedRemoteSale.id} action=$action")
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        selectedSale = updatedSale,
-                        notice = when {
-                            notificationResult.isFailure -> "Venta actualizada y guardada localmente, pero fallo la notificacion Pusher."
-                            isSuccess -> "Pago confirmado y cliente notificado."
-                            else -> "Reserva rechazada y cliente notificado."
+                        selectedSale = confirmedRemoteSale,
+                        notice = if (isSuccess) {
+                            "Venta confirmada, notificada y registrada correctamente."
+                        } else {
+                            "Venta rechazada, notificada y registrada correctamente."
                         }
                     )
                     onDone()
@@ -176,5 +220,25 @@ class OperatorSalesViewModel(
 
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(error = null, notice = null)
+    }
+
+    private suspend fun verifyRemoteSaleState(saleId: String, expectedState: BuyState): Sale {
+        val remoteSale = saleNetRepository.getById(saleId).toDomain()
+        if (remoteSale.verified != expectedState) {
+            error(
+                "Appwrite no confirmo el estado esperado para la venta $saleId. " +
+                    "Esperado=$expectedState actual=${remoteSale.verified}"
+            )
+        }
+        return remoteSale
+    }
+
+    private suspend fun rollbackLocalSale(originalSale: Sale) {
+        runCatching {
+            saleDao.insert(originalSale.toDto())
+            Log.i(TAG, "event=operator_local_rollback_success saleId=${originalSale.id}")
+        }.onFailure { error ->
+            Log.e(TAG, "event=operator_local_rollback_failure saleId=${originalSale.id} cause=${error.message}", error)
+        }
     }
 }
