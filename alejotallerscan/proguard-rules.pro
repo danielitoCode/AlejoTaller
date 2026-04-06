@@ -19,3 +19,57 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Mantener metadata consultada en runtime por Kotlin/serialización/reflexión.
+-keepattributes *Annotation*,InnerClasses,EnclosingMethod,Signature
+
+# Preservar nombres de archivo y líneas para retrace de crashes.
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+
+# ---------- KOTLINX SERIALIZATION ----------
+-keepclassmembers class **$$serializer { *; }
+-keepclassmembers class * {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclassmembers class * {
+    *** Companion;
+}
+-keep @kotlinx.serialization.Serializable class *
+
+# ---------- ROOM ----------
+-keep class androidx.room.RoomDatabaseConstructor { *; }
+-keep class * extends androidx.room.RoomDatabase
+-keep class * implements androidx.room.RoomDatabase$Callback
+-keep @androidx.room.Database class *
+-keep @androidx.room.Entity class *
+-keep @androidx.room.Dao class *
+
+# ---------- APP COMPONENTS (ANDROID FRAMEWORK) ----------
+# Instanciados por nombre desde AndroidManifest o framework.
+-keep class com.elitec.alejotallerscan.OperatorScanApplication { *; }
+-keep class com.elitec.alejotallerscan.infraestructure.core.presentation.MainActivity { *; }
+-keep class io.appwrite.views.CallbackActivity { *; }
+
+# ---------- APPWRITE ----------
+-keep class io.appwrite.** { *; }
+-keep interface io.appwrite.** { *; }
+-dontwarn io.appwrite.**
+
+# ---------- KTOR ----------
+-keep class io.ktor.** { *; }
+-dontwarn io.ktor.**
+
+# ---------- PUSHER ----------
+-keep class com.pusher.client.** { *; }
+-keep class com.pusher.java_websocket.** { *; }
+-dontwarn com.pusher.client.**
+
+# ---------- KOIN / VIEWMODELS ----------
+-keep class com.elitec.alejotaller.**.*ViewModel { *; }
+-keep class kotlin.Metadata { *; }
+
+# ---------- WARNINGS COMUNES ----------
+-dontwarn javax.naming.**
+-dontwarn org.slf4j.**
+-dontwarn java.lang.invoke.StringConcatFactory

@@ -23,4 +23,7 @@ export const ENV = {
     pusherPromoChannel: import.meta.env.VITE_PUSHER_PROMO_CHANNEL,
     pusherNotificationChannel: import.meta.env.VITE_PUSHER_NOTIFICATION_CHANNEL,
     pusherIaChannel: import.meta.env.VITE_PUSHER_IA_CHANNEL,
+    clientAndroidApkUrl: import.meta.env.VITE_CLIENT_ANDROID_APK_URL,
+    operatorAndroidApkUrl: import.meta.env.VITE_OPERATOR_ANDROID_APK_URL,
+    githubReleasesUrl: import.meta.env.VITE_GITHUB_RELEASES_URL,
 }
