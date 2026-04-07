@@ -13,6 +13,7 @@ export interface Sale {
 
 export interface SaleItem {
     productId: string
+    productName?: string | null
     quantity: number
     price: number
 }

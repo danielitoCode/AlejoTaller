@@ -28,7 +28,7 @@
     }
   ].filter((item) => Boolean(item.url));
 
-  const hasApkDownloads = apkOptions.length > 0;
+  const hasApkDownloads = apkOptions.length > 0 || Boolean(ENV.githubReleasesUrl);
 
   onMount(() => {
     isAndroidDevice = /android/i.test(window.navigator.userAgent);
@@ -165,7 +165,7 @@
                     <Button variant="text" size="m" onclick={() => openDownload(ENV.githubReleasesUrl)}>
                       <span class="btn-content apk-btn-content apk-secondary-link">
                         <Download size={18} />
-                        <span>Ver todos los releases</span>
+                        <span>{apkOptions.length > 0 ? "Ver todos los releases" : "Descargar desde GitHub Releases"}</span>
                       </span>
                     </Button>
                   {/if}

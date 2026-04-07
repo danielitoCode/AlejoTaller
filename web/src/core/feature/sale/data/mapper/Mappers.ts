@@ -11,6 +11,7 @@ export type SaleWriteDTO = Pick<
 function saleItemFromDTO(item: SaleItemDTO): SaleItem {
     return {
         productId: item.productId,
+        productName: item.productName ?? null,
         quantity: item.quantity,
         price: item.price,
     };
@@ -19,6 +20,7 @@ function saleItemFromDTO(item: SaleItemDTO): SaleItem {
 function saleItemToDTO(item: SaleItem): SaleItemDTO {
     return {
         productId: item.productId,
+        productName: item.productName ?? null,
         quantity: item.quantity,
         price: item.price
     };
