@@ -4,6 +4,7 @@
         <domain includeSubdomains="true">appwrite.io</domain>
         <domain includeSubdomains="true">cloud.appwrite.io</domain>
         <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
         <domain includeSubdomains="true">api.telegram.org</domain>
         <domain includeSubdomains="true">api.pusher.com</domain>
     </domain-config>

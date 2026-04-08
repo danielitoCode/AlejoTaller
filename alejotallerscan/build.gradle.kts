@@ -199,4 +199,7 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     // posthog
     prop("POSTHOG_TOKEN")
     prop("POSTHOG_HOST")
+    // Publisher service
+    prop("PUBLISHER_BASE_URL")
+    prop("PUBLISHER_API_KEY")
 }

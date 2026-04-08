@@ -22,8 +22,8 @@ import com.elitec.alejotallerscan.feature.sync.domain.caseuse.SyncPendingOperato
 import com.elitec.alejotallerscan.feature.sync.domain.repository.OperatorSyncNotificationService
 import com.elitec.alejotallerscan.infraestructure.core.data.bd.OperatorAppDatabase
 import com.elitec.alejotallerscan.infraestructure.core.data.bd.OperatorAppDatabaseMigrations
-import com.elitec.alejotallerscan.infraestructure.core.data.realtime.OperatorPusherConfig
-import com.elitec.alejotallerscan.infraestructure.core.data.realtime.PusherSaleRealtimeNotifier
+import com.elitec.alejotallerscan.infraestructure.core.data.realtime.OperatorPublisherConfig
+import com.elitec.alejotallerscan.infraestructure.core.data.realtime.PublisherSaleRealtimeNotifier
 import com.elitec.alejotallerscan.infraestructure.core.presentation.services.OperatorSaleSyncNotificationService
 import com.elitec.shared.auth.feature.auth.domain.caseuse.AuthOperatorUserCaseUse
 import com.elitec.shared.auth.feature.auth.domain.caseuse.AuthUserCaseUse
@@ -76,12 +76,9 @@ val operatorScanDiModule = module {
     single { get<OperatorAppDatabase>().operatorSaleRecordDao() }
     single { OkHttpClient() }
     single {
-        OperatorPusherConfig(
-            appId = BuildConfig.PUSHER_APP_ID,
-            apiKey = BuildConfig.PUSHER_API_KEY,
-            apiSecret = BuildConfig.PUSHER_API_SECRETS,
-            cluster = BuildConfig.PUSHER_CLUSTER,
-            saleChannelPrefix = BuildConfig.PUSHER_SALE_CHANNEL.ifBlank { "sale-verification" }
+        OperatorPublisherConfig(
+            baseUrl = BuildConfig.PUBLISHER_BASE_URL.ifBlank { "http://10.0.2.2:3000" },
+            apiKey = BuildConfig.PUBLISHER_API_KEY.ifBlank { "tallerAlejoTestApiKey" }
         )
     }
 
@@ -89,7 +86,7 @@ val operatorScanDiModule = module {
     single<AccountRepository> { AccountRepositoryImpl(get()) }
     single<SaleNetRepository> { SaleNetRepositoryImpl(get(), get()) }
     single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
-    single<OperatorSaleRealtimeNotifier> { PusherSaleRealtimeNotifier(get(), get()) }
+    single<OperatorSaleRealtimeNotifier> { PublisherSaleRealtimeNotifier(get(), get()) }
     single<OperatorSaleRecordRepository> { RoomOperatorSaleRecordRepository(get()) }
     single<OperatorProductNameRepository> { AppwriteOperatorProductNameRepository(get()) }
     single<OperatorSyncNotificationService> { OperatorSaleSyncNotificationService(get()) }
