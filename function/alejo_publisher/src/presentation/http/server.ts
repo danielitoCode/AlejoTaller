@@ -5,7 +5,6 @@ import Pusher from "pusher";
 import { PublishSaleVerificationUseCase } from "../../application/usecase/PublishSaleVerificationUseCase";
 import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand";
 import { PusherSaleRealtimePublisher } from "../../infrastructure/realtime/PusherSaleRealtimePublisher";
-import {readEnv} from "../../infrastructure/config/env";
 
 const env = readEnv();
 const app = express();
@@ -75,4 +74,38 @@ function requireApiKey(req: Request, res: Response, next: NextFunction): void {
   }
 
   next();
+}
+
+type PublisherEnv = {
+  port: number;
+  apiKey: string;
+  allowOrigin: string;
+  pusherAppId: string;
+  pusherKey: string;
+  pusherSecret: string;
+  pusherCluster: string;
+};
+
+function readEnv(): PublisherEnv {
+  const apiKey = process.env.PUBLISHER_API_KEY?.trim() ?? "";
+  const pusherAppId = process.env.PUSHER_APP_ID?.trim() ?? "";
+  const pusherKey = process.env.PUSHER_KEY?.trim() ?? "";
+  const pusherSecret = process.env.PUSHER_SECRET?.trim() ?? "";
+  const pusherCluster = process.env.PUSHER_CLUSTER?.trim() ?? "";
+
+  if (!apiKey) throw new Error("Falta PUBLISHER_API_KEY");
+  if (!pusherAppId) throw new Error("Falta PUSHER_APP_ID");
+  if (!pusherKey) throw new Error("Falta PUSHER_KEY");
+  if (!pusherSecret) throw new Error("Falta PUSHER_SECRET");
+  if (!pusherCluster) throw new Error("Falta PUSHER_CLUSTER");
+
+  return {
+    port: Number(process.env.PORT ?? 3000),
+    apiKey,
+    allowOrigin: process.env.ALLOW_ORIGIN?.trim() || "*",
+    pusherAppId,
+    pusherKey,
+    pusherSecret,
+    pusherCluster
+  };
 }
