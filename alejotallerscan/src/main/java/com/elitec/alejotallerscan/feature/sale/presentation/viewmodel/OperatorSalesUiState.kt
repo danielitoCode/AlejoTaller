@@ -4,6 +4,7 @@ import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 
 data class OperatorSalesUiState(
     val isLoading: Boolean = false,
+    val loadingMessage: String? = null,
     val selectedSale: Sale? = null,
     val lastScannedPayload: String = "",
     val error: String? = null,

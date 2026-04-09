@@ -56,7 +56,7 @@ fun OperatorScanApp(
             authState.isLoading -> "Restaurando sesion del operador..."
             authState.isSyncing -> "Sincronizando ventas pendientes..."
             scanState.isLoading -> "Cargando datos de la reserva..."
-            salesState.isLoading -> "Actualizando venta y enviando notificacion..."
+            salesState.isLoading -> salesState.loadingMessage ?: "Actualizando venta y enviando notificacion..."
             reservationState.isLoading -> "Buscando ventas y reservaciones..."
             else -> null
         }

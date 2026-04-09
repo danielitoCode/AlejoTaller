@@ -44,6 +44,7 @@ import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
 import okhttp3.OkHttpClient
+import java.util.concurrent.TimeUnit
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -74,7 +75,14 @@ val operatorScanDiModule = module {
     }
     single { get<OperatorAppDatabase>().saleDao() }
     single { get<OperatorAppDatabase>().operatorSaleRecordDao() }
-    single { OkHttpClient() }
+    single {
+        OkHttpClient.Builder()
+            .connectTimeout(130, TimeUnit.SECONDS)
+            .readTimeout(130, TimeUnit.SECONDS)
+            .writeTimeout(130, TimeUnit.SECONDS)
+            .callTimeout(140, TimeUnit.SECONDS)
+            .build()
+    }
     single {
         OperatorPublisherConfig(
             baseUrl = BuildConfig.PUBLISHER_BASE_URL.ifBlank { "http://10.0.2.2:3000" },

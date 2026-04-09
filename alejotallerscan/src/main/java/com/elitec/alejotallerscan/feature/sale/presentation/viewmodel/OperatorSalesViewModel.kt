@@ -62,7 +62,12 @@ class OperatorSalesViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, notice = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                loadingMessage = "Cargando datos de la reserva...",
+                error = null,
+                notice = null
+            )
             runCatching {
                 val remoteSale = saleNetRepository.getById(saleId)
                 saleDao.insert(remoteSale)
@@ -111,7 +116,12 @@ class OperatorSalesViewModel(
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null, notice = null)
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                loadingMessage = "Actualizando la venta en Appwrite...",
+                error = null,
+                notice = null
+            )
             Log.i(
                 TAG,
                 "event=operator_sale_update_start saleId=${selectedSale.id} " +
@@ -134,6 +144,10 @@ class OperatorSalesViewModel(
                     )
 
                     val remoteVerification = runCatching {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = true,
+                            loadingMessage = "Verificando el cambio remoto de la venta..."
+                        )
                         verifyRemoteSaleState(updatedSale.id, nextState)
                     }
                     val confirmedRemoteSale = remoteVerification.getOrElse { error ->
@@ -145,6 +159,7 @@ class OperatorSalesViewModel(
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
+                            loadingMessage = null,
                             selectedSale = selectedSale,
                             error = error.message ?: "Appwrite no confirmo el cambio de estado."
                         )
@@ -158,6 +173,10 @@ class OperatorSalesViewModel(
                     )
 
                     val notificationResult = runCatching {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = true,
+                            loadingMessage = "Esperando al servicio de notificaciones en Render..."
+                        )
                         notifyOperatorSaleDecisionCaseUse(confirmedRemoteSale, isSuccess)
                     }
                     notificationResult.onFailure { error ->
@@ -168,14 +187,19 @@ class OperatorSalesViewModel(
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
+                            loadingMessage = null,
                             selectedSale = confirmedRemoteSale,
-                            error = error.message ?: "Pusher no pudo notificar al cliente."
+                            error = error.message ?: "El servicio de notificaciones no pudo responder."
                         )
                         return@onSuccess
                     }
                     Log.i(TAG, "event=operator_pusher_success saleId=${confirmedRemoteSale.id}")
 
                     val recordResult = runCatching {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = true,
+                            loadingMessage = "Guardando el registro local de la operacion..."
+                        )
                         registerOperatorSaleRecordCaseUse(confirmedRemoteSale, action)
                     }
                     recordResult.onFailure { error ->
@@ -186,6 +210,7 @@ class OperatorSalesViewModel(
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
+                            loadingMessage = null,
                             selectedSale = confirmedRemoteSale,
                             error = error.message ?: "No se pudo registrar la venta en el dispositivo."
                         )
@@ -195,6 +220,7 @@ class OperatorSalesViewModel(
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        loadingMessage = null,
                         selectedSale = confirmedRemoteSale,
                         notice = if (isSuccess) {
                             "Venta confirmada, notificada y registrada correctamente."
@@ -212,6 +238,7 @@ class OperatorSalesViewModel(
                     )
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        loadingMessage = null,
                         error = error.message ?: "No se pudo actualizar la venta."
                     )
                 }
