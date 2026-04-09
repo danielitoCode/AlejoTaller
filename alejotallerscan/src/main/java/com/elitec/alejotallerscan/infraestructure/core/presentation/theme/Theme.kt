@@ -1,6 +1,5 @@
 package com.elitec.alejotallerscan.infraestructure.core.presentation.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -9,49 +8,57 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFF81C784),
-    onPrimary = Color(0xFF0F2F18),
-    primaryContainer = Color(0xFF1B5E20),
-    onPrimaryContainer = Color(0xFFA5D6A7),
-    secondary = Color(0xFF66BB6A),
-    onSecondary = Color(0xFF0C2E16),
-    secondaryContainer = Color(0xFF2E7D32),
-    onSecondaryContainer = Color(0xFFA5D6A7),
-    tertiary = Color(0xFF4CAF50),
-    onTertiary = Color(0xFF0B2A14),
-    background = Color(0xFF121412),
-    onBackground = Color(0xFFE2E3DE),
-    surface = Color(0xFF1A1C19),
-    onSurface = Color(0xFFE2E3DE),
-    surfaceVariant = Color(0xFF44483E),
-    onSurfaceVariant = Color(0xFFC4C8BE),
-    outline = Color(0xFF8E9287),
-    outlineVariant = Color(0xFF44483E),
+    primary = OperatorTeal,
+    onPrimary = OperatorNight,
+    primaryContainer = Color(0xFF123B45),
+    onPrimaryContainer = Color(0xFFCFF6F1),
+    secondary = OperatorBlue,
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFF18304A),
+    onSecondaryContainer = Color(0xFFDCE9FF),
+    tertiary = OperatorAmber,
+    onTertiary = OperatorNight,
+    tertiaryContainer = Color(0xFF4A3310),
+    onTertiaryContainer = Color(0xFFFFE5BF),
+    background = OperatorNight,
+    onBackground = Color(0xFFEAF1F8),
+    surface = Color(0xFF111B25),
+    onSurface = Color(0xFFEAF1F8),
+    surfaceVariant = Color(0xFF223041),
+    onSurfaceVariant = Color(0xFFBFCCDB),
+    outline = Color(0xFF708195),
+    outlineVariant = Color(0xFF2D3A4B),
     error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005)
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6)
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF388E3C),
+    primary = OperatorTeal,
     onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFFC8E6C9),
-    onPrimaryContainer = Color(0xFF102015),
-    secondary = Color(0xFF4CAF50),
+    primaryContainer = OperatorTealContainer,
+    onPrimaryContainer = OperatorInk,
+    secondary = OperatorBlue,
     onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFD8F3DC),
-    onSecondaryContainer = Color(0xFF0F1F13),
-    tertiary = Color(0xFF2E7D32),
-    onTertiary = Color(0xFFFFFFFF),
-    background = Color(0xFFF6F8F5),
-    onBackground = Color(0xFF1A1C19),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF1A1C19),
-    surfaceVariant = Color(0xFFE0E3DD),
-    onSurfaceVariant = Color(0xFF44483E),
-    outline = Color(0xFF74796E),
-    outlineVariant = Color(0xFFC4C8BE),
-    error = Color(0xFFBA1A1A),
-    onError = Color(0xFFFFFFFF)
+    secondaryContainer = OperatorBlueContainer,
+    onSecondaryContainer = OperatorInk,
+    tertiary = OperatorAmber,
+    onTertiary = OperatorNight,
+    tertiaryContainer = OperatorAmberContainer,
+    onTertiaryContainer = Color(0xFF563300),
+    background = OperatorMist,
+    onBackground = OperatorInk,
+    surface = OperatorCard,
+    onSurface = OperatorInk,
+    surfaceVariant = Color(0xFFE8EEF6),
+    onSurfaceVariant = OperatorSlate,
+    outline = Color(0xFF7A8796),
+    outlineVariant = OperatorBorder,
+    error = OperatorRed,
+    onError = Color(0xFFFFFFFF),
+    errorContainer = OperatorRedContainer,
+    onErrorContainer = Color(0xFF5D1616)
 )
 
 @Composable

@@ -53,4 +53,8 @@ class OperatorScanViewModel(
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(error = null, notice = null)
     }
+
+    fun resetState() {
+        _uiState.value = OperatorScanUiState()
+    }
 }

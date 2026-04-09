@@ -249,6 +249,10 @@ class OperatorSalesViewModel(
         _uiState.value = _uiState.value.copy(error = null, notice = null)
     }
 
+    fun resetState() {
+        _uiState.value = OperatorSalesUiState()
+    }
+
     private suspend fun verifyRemoteSaleState(saleId: String, expectedState: BuyState): Sale {
         val remoteSale = saleNetRepository.getById(saleId).toDomain()
         if (remoteSale.verified != expectedState) {

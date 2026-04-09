@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.PointOfSale
@@ -17,6 +18,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -26,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotallerscan.feature.auth.presentation.viewmodel.OperatorAuthViewModel
 import com.elitec.alejotallerscan.feature.sale.presentation.viewmodel.OperatorSalesViewModel
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorPanelCard
+import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorSectionLabel
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorScreen
 import org.koin.androidx.compose.koinViewModel
 
@@ -47,29 +51,42 @@ fun OperatorHomeScreen(
 
     OperatorScreen(
         title = "Panel operador",
-        subtitle = "Registra reservas desde QR o Appwrite, confirma su estado y conserva un historial interno."
+        subtitle = "Controla confirmaciones, escanea pedidos y revisa el estado del flujo operativo desde una sola vista.",
+        heroIcon = Icons.Rounded.PointOfSale
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = authState.currentUser?.name ?: "Operador",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    text = "Rol activo: ${authState.currentUser?.userProfile?.role ?: "sin rol"}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            OperatorPanelCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = CardDefaults.shape
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.padding(14.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OperatorSectionLabel("Sesion activa")
+                        Text(
+                            text = authState.currentUser?.name ?: "Operador",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = "Rol activo: ${authState.currentUser?.userProfile?.role ?: "sin rol"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -78,20 +95,26 @@ fun OperatorHomeScreen(
                     OperatorMetricCard(
                         modifier = Modifier.weight(1f),
                         label = "Pendientes",
-                        value = pendingCount.toString()
+                        value = pendingCount.toString(),
+                        highlight = MaterialTheme.colorScheme.tertiaryContainer
                     )
                     OperatorMetricCard(
                         modifier = Modifier.weight(1f),
                         label = "Confirmadas",
-                        value = confirmedCount.toString()
+                        value = confirmedCount.toString(),
+                        highlight = MaterialTheme.colorScheme.primaryContainer
                     )
                     OperatorMetricCard(
                         modifier = Modifier.weight(1f),
                         label = "Rechazadas",
-                        value = rejectedCount.toString()
+                        value = rejectedCount.toString(),
+                        highlight = MaterialTheme.colorScheme.errorContainer
                     )
                 }
+            }
 
+            OperatorPanelCard {
+                OperatorSectionLabel("Acciones principales")
                 Button(onClick = onOpenScan, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
                     Text("Registrar venta o reservacion", modifier = Modifier.padding(start = 10.dp))
@@ -124,12 +147,13 @@ fun OperatorHomeScreen(
 private fun OperatorMetricCard(
     modifier: Modifier = Modifier,
     label: String,
-    value: String
+    value: String,
+    highlight: androidx.compose.ui.graphics.Color
 ) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = highlight
         )
     ) {
         Column(

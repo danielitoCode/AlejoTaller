@@ -1,5 +1,5 @@
 <script lang="ts">
-    import {Button, Card, Dialog, Icon, TextFieldOutlined} from "m3-svelte";
+    import {Button, Card, CircularProgressEstimate, Dialog, Icon, TextFieldOutlined} from "m3-svelte";
     import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import paymentsIcon from "@ktibow/iconset-material-symbols/payments-rounded";
     import qrCodeIcon from "@ktibow/iconset-material-symbols/qr-code-rounded";
@@ -152,6 +152,20 @@
 </script>
 
 <section class="screen">
+    {#if isSubmitting}
+        <div class="processing-overlay" aria-live="polite" aria-busy="true">
+            <Card variant="filled" class="processing-card">
+                <div class="processing-content">
+                    <CircularProgressEstimate sToHalfway={2} title="Procesando..." />
+                    <div class="processing-copy">
+                        <strong>Procesando...</strong>
+                        <span>Estamos registrando tu solicitud.</span>
+                    </div>
+                </div>
+            </Card>
+        </div>
+    {/if}
+
     <Button variant="text" size="s" iconType="left" onclick={() => navController.navigate(buy.path)}>
         <Icon icon={arrowBackIcon} />
         Volver
@@ -353,10 +367,46 @@
 
 <style>
     .screen {
+        position: relative;
         display: grid;
         gap: 14px;
         align-content: start;
         padding-bottom: 12px;
+    }
+    .processing-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2100;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: color-mix(in srgb, var(--md-sys-color-scrim) 34%, transparent);
+        backdrop-filter: blur(4px);
+    }
+    .processing-card {
+        width: min(100%, 360px);
+        border-radius: 24px;
+        box-shadow: 0 18px 40px color-mix(in srgb, black 22%, transparent);
+    }
+    .processing-content {
+        display: grid;
+        justify-items: center;
+        gap: 14px;
+        padding: 24px 22px;
+        text-align: center;
+    }
+    .processing-copy {
+        display: grid;
+        gap: 6px;
+    }
+    .processing-copy strong {
+        font-size: 1rem;
+        line-height: 1.2;
+    }
+    .processing-copy span {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.95rem;
+        line-height: 1.4;
     }
     .eyebrow,
     h1,

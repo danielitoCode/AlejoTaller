@@ -14,10 +14,14 @@
     {#each $toastStore.queue as toast (toast.id)}
         <article class={`toast ${toast.type}`} role="status">
             <div class="toast-copy">
-                <strong>{toneLabel[toast.type]}</strong>
+                <div class="toast-header">
+                    <strong>{toneLabel[toast.type]}</strong>
+                </div>
                 <span>{toast.text}</span>
             </div>
-            <button aria-label="Cerrar notificacion" on:click={() => toastStore.remove(toast.id)}>x</button>
+            <div class="toast-actions">
+                <button aria-label="Cerrar notificacion" on:click={() => toastStore.remove(toast.id)}>×</button>
+            </div>
         </article>
     {/each}
 </section>
@@ -26,10 +30,10 @@
     .toast-host {
         position: fixed;
         right: 16px;
-        bottom: 16px;
-        z-index: 1000;
+        top: 16px;
+        z-index: 1900;
         display: grid;
-        gap: 8px;
+        gap: 12px;
         width: min(360px, calc(100vw - 24px));
         pointer-events: none;
     }
@@ -38,71 +42,117 @@
         pointer-events: auto;
         display: grid;
         grid-template-columns: 1fr auto;
-        align-items: start;
+        align-items: center;
         gap: 12px;
-        border-radius: 18px;
-        padding: 12px 14px;
-        border-left: 6px solid var(--md-sys-color-outline);
-        border-top: 1px solid var(--md-sys-color-outline-variant);
-        border-right: 1px solid var(--md-sys-color-outline-variant);
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
-        background: var(--md-sys-color-surface-container-high);
-        color: var(--md-sys-color-on-surface);
-        box-shadow: 0 14px 28px color-mix(in srgb, var(--md-sys-color-outline) 24%, transparent);
+        padding: 14px 16px;
+        border-radius: 12px;
+        color: white;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        animation: slideIn 0.3s ease-out;
     }
 
     .toast.success {
-        border-left-color: #2f8f3a;
-        background: color-mix(in srgb, var(--md-sys-color-primary-container) 78%, var(--md-sys-color-surface-container-high));
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(34, 197, 94, 0.85));
+        border-left: 4px solid #22c55e;
     }
 
     .toast.error {
-        border-left-color: #d92d20;
-        background: color-mix(in srgb, var(--md-sys-color-error-container) 82%, var(--md-sys-color-surface-container-high));
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(239, 68, 68, 0.85));
+        border-left: 4px solid #ef4444;
     }
 
     .toast.warning {
-        border-left-color: #f59e0b;
-        background: color-mix(in srgb, #f59e0b 18%, var(--md-sys-color-surface-container-high));
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(217, 119, 6, 0.88));
+        border-left: 4px solid #f59e0b;
     }
 
     .toast.info {
-        border-left-color: #0ea5e9;
-        background: color-mix(in srgb, var(--md-sys-color-secondary-container) 78%, var(--md-sys-color-surface-container-high));
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.95), rgba(2, 132, 199, 0.85));
+        border-left: 4px solid #0ea5e9;
     }
 
     .toast.promo {
-        border-left-color: #a855f7;
         background: linear-gradient(
             135deg,
-            color-mix(in srgb, var(--md-sys-color-tertiary-container) 84%, var(--md-sys-color-surface-container-high)) 0%,
-            color-mix(in srgb, var(--md-sys-color-primary-container) 72%, var(--md-sys-color-surface-container-high)) 100%
+            rgba(168, 85, 247, 0.96) 0%,
+            rgba(99, 102, 241, 0.88) 100%
         );
+        border-left: 4px solid #a855f7;
     }
 
     .toast-copy {
         display: grid;
-        gap: 3px;
+        gap: 6px;
+    }
+
+    .toast-header {
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
 
     .toast-copy strong {
-        font-size: 0.82rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        font-weight: 700;
+        font-size: 14px;
     }
 
     .toast-copy span {
-        line-height: 1.35;
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.3;
     }
 
     button {
         border: 0;
-        width: 28px;
-        height: 28px;
-        border-radius: 10px;
+        padding: 4px 8px;
+        min-width: 28px;
+        border-radius: 8px;
         cursor: pointer;
-        color: inherit;
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 55%, transparent);
+        color: white;
+        background: transparent;
         font-size: 1rem;
+        opacity: 0.7;
+        transition: opacity 0.2s, background 0.2s;
+    }
+
+    button:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .toast-actions {
+        display: flex;
+        gap: 8px;
+        align-self: start;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .toast-host {
+            left: 8px;
+            right: 8px;
+            width: auto;
+            max-width: none;
+        }
+
+        .toast {
+            grid-template-columns: 1fr;
+        }
+
+        .toast-actions {
+            justify-self: end;
+        }
     }
 </style>
