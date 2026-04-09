@@ -10,7 +10,11 @@ import { PusherSaleRealtimePublisher } from "../../infrastructure/realtime/Pushe
 const env = readEnv();
 const app = express();
 
-app.use(cors({ origin: env.allowOrigin === "*" ? true : env.allowOrigin.split(",").map((item) => item.trim()) }));
+app.use(cors({
+  origin: env.allowOrigin === "*"
+    ? true
+    : env.allowOrigin.split(",").map((item: string) => item.trim())
+}));
 app.use(express.json());
 
 const pusher = new Pusher({
