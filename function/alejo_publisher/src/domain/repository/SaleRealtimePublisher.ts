@@ -1,4 +1,4 @@
-import type { PublishSaleVerificationCommand } from "../entity/PublishSaleVerificationCommand.js";
+import type { PublishSaleVerificationCommand } from "../entity/PublishSaleVerificationCommand";
 
 export interface SaleRealtimePublisher {
   publishSaleVerification(command: PublishSaleVerificationCommand): Promise<{

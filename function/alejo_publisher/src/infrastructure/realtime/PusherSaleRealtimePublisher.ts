@@ -1,6 +1,6 @@
 import Pusher from "pusher";
-import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand.js";
-import type { SaleRealtimePublisher } from "../../domain/repository/SaleRealtimePublisher.js";
+import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand";
+import type { SaleRealtimePublisher } from "../../domain/repository/SaleRealtimePublisher";
 
 export class PusherSaleRealtimePublisher implements SaleRealtimePublisher {
   constructor(private readonly pusher: Pusher) {}

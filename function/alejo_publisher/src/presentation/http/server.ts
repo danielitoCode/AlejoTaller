@@ -2,10 +2,10 @@ import "dotenv/config";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
 import Pusher from "pusher";
-import { PublishSaleVerificationUseCase } from "../../application/usecase/PublishSaleVerificationUseCase.js";
-import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand.js";
-import { readEnv } from "../../infrastructure/config/env.js";
-import { PusherSaleRealtimePublisher } from "../../infrastructure/realtime/PusherSaleRealtimePublisher.js";
+import { PublishSaleVerificationUseCase } from "../../application/usecase/PublishSaleVerificationUseCase";
+import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand";
+import { readEnv } from "../../infrastructure/config/env";
+import { PusherSaleRealtimePublisher } from "../../infrastructure/realtime/PusherSaleRealtimePublisher";
 
 const env = readEnv();
 const app = express();

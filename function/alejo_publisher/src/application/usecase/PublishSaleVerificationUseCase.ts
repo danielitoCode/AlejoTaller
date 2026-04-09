@@ -1,5 +1,5 @@
-import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand.js";
-import type { SaleRealtimePublisher } from "../../domain/repository/SaleRealtimePublisher.js";
+import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand";
+import type { SaleRealtimePublisher } from "../../domain/repository/SaleRealtimePublisher";
 
 export class PublishSaleVerificationUseCase {
   constructor(private readonly publisher: SaleRealtimePublisher) {}

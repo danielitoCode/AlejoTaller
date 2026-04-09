@@ -1,4 +1,4 @@
-import type { SaleDecision } from "./SaleDecision.js";
+import type { SaleDecision } from "./SaleDecision";
 
 export interface PublishSaleVerificationCommand {
   saleId: string;
