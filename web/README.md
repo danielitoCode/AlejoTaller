@@ -1,47 +1,94 @@
-# Svelte + TS + Vite
+# TallerAlejo Web Cliente
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+[<- Volver al README general](../README.md)
 
-## Recommended IDE Setup
+<p align="center">
+  <img src="https://img.shields.io/badge/Surface-Web%20Cliente-0A7C66?style=for-the-badge" alt="Web Cliente" />
+  <img src="https://img.shields.io/badge/Stack-Svelte%20%7C%20TypeScript%20%7C%20Dexie-1B3A57?style=for-the-badge" alt="Stack Web" />
+  <img src="https://img.shields.io/badge/UI-M3%20Svelte%20%7C%20Lucide-FF9F1C?style=for-the-badge" alt="UI Web" />
+</p>
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+## Rol Dentro Del Monorepo
 
-## Need an official Svelte framework?
+Esta superficie representa la experiencia web del cliente final.
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+Responsabilidades:
 
-## Technical considerations
+- onboarding y experiencia comercial desde navegador
+- compra o reservacion web
+- persistencia offline en IndexedDB
+- recepcion de eventos realtime de verificacion
+- descarga guiada de APK para Android
 
-**Why use this over SvelteKit?**
+## Principales Tecnologias
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+- Svelte
+- TypeScript
+- Vite
+- Dexie
+- Appwrite Web SDK
+- Pusher JS
+- M3 Svelte
+- Lucide Svelte
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
+## Filosofia Tecnica
 
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
+La implementacion web sigue la misma linea del producto:
 
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
+- capas por feature
+- estado y logica separados de la UI
+- sincronizacion local/remota
+- suscripcion realtime al mismo contrato que Android
 
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
+Esto evita que la version web sea una implementacion aislada o paralela sin reglas compartidas.
 
-**Why include `.vscode/extensions.json`?**
+## Flujo De Venta
 
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
+1. El cliente genera una compra o reservacion.
+2. La app persiste la informacion y notifica a los canales correspondientes.
+3. El operador valida la reserva.
+4. La app web escucha el evento `sale:confirmed` o `sale:rejected`.
+5. La UI se actualiza en funcion del estado final.
 
-**Why enable `allowJs` in the TS template?**
+## Desarrollo
 
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
+Dentro de `web/`:
 
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
+```bash
+pnpm install
+pnpm dev
 ```
+
+Chequeo de tipos:
+
+```bash
+npm run -s check
+```
+
+## Configuracion Esperada
+
+Variables frecuentes:
+
+- Appwrite endpoint
+- Appwrite project id
+- Pusher key y cluster
+- URL de dashboard admin
+- URLs de APK y releases
+- Telegram bot settings si aplica el flujo comercial actual
+
+## Estado Actual
+
+La app web ya esta alineada con el MVP comercial:
+
+- toasts unificados
+- carga visual durante procesamiento de compra
+- redirect administrativo controlado
+- suscripcion realtime consistente con Android
+- descarga de APK desde releases
+
+## Navegacion Relacionada
+
+- [README general del monorepo](../README.md)
+- [Android Cliente](../app/README.md)
+- [Android Operador](../alejotallerscan/README.md)
+- [Function Publisher](../function/alejo_publisher/README.md)
