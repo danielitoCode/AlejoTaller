@@ -4,8 +4,8 @@ import express, { type NextFunction, type Request, type Response } from "express
 import Pusher from "pusher";
 import { PublishSaleVerificationUseCase } from "../../application/usecase/PublishSaleVerificationUseCase";
 import type { PublishSaleVerificationCommand } from "../../domain/entity/PublishSaleVerificationCommand";
-import { readEnv } from "../../infrastructure/config/env";
 import { PusherSaleRealtimePublisher } from "../../infrastructure/realtime/PusherSaleRealtimePublisher";
+import {readEnv} from "../../infrastructure/config/env";
 
 const env = readEnv();
 const app = express();
