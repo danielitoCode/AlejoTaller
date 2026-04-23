@@ -23,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -48,6 +51,7 @@ fun MainNavigationWrapper(
 ) {
     val backStack = rememberNavBackStack(MainRoutesKey.Splash)
     val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(true)
+    var lastHandledPendingReservationId by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun resetRoot(destination: MainRoutesKey) {
         while (backStack.isNotEmpty()) {
@@ -58,7 +62,13 @@ fun MainNavigationWrapper(
 
     LaunchedEffect(pendingReservationId) {
         val current = backStack.lastOrNull()
-        if (pendingReservationId != null && current is MainRoutesKey.MainHome && current.pendingReservationId != pendingReservationId) {
+        if (
+            pendingReservationId != null &&
+            pendingReservationId != lastHandledPendingReservationId &&
+            current is MainRoutesKey.MainHome &&
+            current.pendingReservationId != pendingReservationId
+        ) {
+            lastHandledPendingReservationId = pendingReservationId
             resetRoot(
                 MainRoutesKey.MainHome(
                     userId = current.userId,
@@ -118,6 +128,7 @@ fun MainNavigationWrapper(
                     InternalNavigationWrapper(
                         onNavigateBack = { backStack.navigateBack() },
                         onSessionClosed = {
+                            lastHandledPendingReservationId = null
                             onPendingReservationConsumed()
                             resetRoot(MainRoutesKey.Landing)
                         },
@@ -140,6 +151,7 @@ fun MainNavigationWrapper(
                         onNavigateTo = { route ->
                             when (route) {
                                 is MainRoutesKey.MainHome -> {
+                                    lastHandledPendingReservationId = pendingReservationId
                                     resetRoot(
                                         MainRoutesKey.MainHome(
                                             userId = route.userId,
@@ -164,7 +176,10 @@ fun MainNavigationWrapper(
                 entry<MainRoutesKey.Register> {
                     RegisterScreen(
                         onNavigateBack = { backStack.navigateBack() },
-                        onRegisterReady = { userId -> resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId)) },
+                        onRegisterReady = { userId ->
+                            lastHandledPendingReservationId = pendingReservationId
+                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId))
+                        },
                         modifier = Modifier.fillMaxSize()
                     )
                 }

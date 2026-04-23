@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.feature.auth.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,17 +16,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -52,7 +50,6 @@ import com.elitec.alejotaller.feature.auth.presentation.components.ProfilePhotoB
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import org.koin.androidx.compose.koinViewModel
 
-
 @Composable
 fun ProfileScreen(
     profileName: String,
@@ -74,6 +71,7 @@ fun ProfileScreen(
     val uiState by profileViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scrollState = rememberScrollState()
 
     val hasChanges = name != profileName || phone != profilePhone.orEmpty() || photoUrl?.toString() != profilePhotoUrl
 
@@ -90,58 +88,166 @@ fun ProfileScreen(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = "Account Circle",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(Modifier.width(5.dp))
-            Text(
-                color = MaterialTheme.colorScheme.onBackground,
-                text = "Mi perfil",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.headlineSmall
-            )
-        }
-        Card(
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                ProfilePhotoBox(
-                    photoUrl = photoUrl,
-                    onSelected = { photoSelected -> photoUrl = photoSelected },
-                    onFailSelected = {},
-                    modifier = Modifier
-                )
+        val isWideLayout = maxWidth >= 900.dp
+        val contentPadding = if (isWideLayout) 24.dp else 16.dp
 
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Account Circle",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.width(5.dp))
                 Text(
-                    text = if (isGoogleUser) "Cuenta vinculada con Google" else "Cuenta estándar",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onBackground,
+                    text = "Mi perfil",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineSmall
                 )
             }
+
+            if (isWideLayout) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    ProfileIdentityCard(
+                        photoUrl = photoUrl,
+                        isGoogleUser = isGoogleUser,
+                        onPhotoSelected = { photoSelected -> photoUrl = photoSelected },
+                        modifier = Modifier.weight(0.85f)
+                    )
+                    ProfileFormCard(
+                        name = name,
+                        phone = phone,
+                        profileEmail = profileEmail,
+                        uiStateSaving = uiState.isSaving,
+                        hasChanges = hasChanges,
+                        onNameChange = { name = it },
+                        onPhoneChange = { phone = it },
+                        onSave = {
+                            profileViewModel.updateProfile(
+                                userId = userId,
+                                newName = name,
+                                currentName = profileName,
+                                newPhone = phone,
+                                currentPhone = profilePhone.orEmpty(),
+                                photoUri = photoUrl,
+                                currentPhotoUrl = profilePhotoUrl,
+                                context = context,
+                                onSuccess = onEditProfile
+                            )
+                        },
+                        modifier = Modifier.weight(1.15f)
+                    )
+                }
+            } else {
+                ProfileIdentityCard(
+                    photoUrl = photoUrl,
+                    isGoogleUser = isGoogleUser,
+                    onPhotoSelected = { photoSelected -> photoUrl = photoSelected },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ProfileFormCard(
+                    name = name,
+                    phone = phone,
+                    profileEmail = profileEmail,
+                    uiStateSaving = uiState.isSaving,
+                    hasChanges = hasChanges,
+                    onNameChange = { name = it },
+                    onPhoneChange = { phone = it },
+                    onSave = {
+                        profileViewModel.updateProfile(
+                            userId = userId,
+                            newName = name,
+                            currentName = profileName,
+                            newPhone = phone,
+                            currentPhone = profilePhone.orEmpty(),
+                            photoUri = photoUrl,
+                            currentPhotoUrl = profilePhotoUrl,
+                            context = context,
+                            onSuccess = onEditProfile
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Surface(shape = CircleShape, tonalElevation = 0.dp) {
+                SnackbarHost(hostState = snackbarHostState)
+            }
         }
+    }
+}
+
+@Composable
+private fun ProfileIdentityCard(
+    photoUrl: android.net.Uri?,
+    isGoogleUser: Boolean,
+    onPhotoSelected: (android.net.Uri?) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ProfilePhotoBox(
+                photoUrl = photoUrl,
+                onSelected = onPhotoSelected,
+                onFailSelected = {},
+                modifier = Modifier
+            )
+
+            Text(
+                text = if (isGoogleUser) "Cuenta vinculada con Google" else "Cuenta estandar",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileFormCard(
+    name: String,
+    phone: String,
+    profileEmail: String,
+    uiStateSaving: Boolean,
+    hasChanges: Boolean,
+    onNameChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         OutlinedTextField(
             value = name,
-            onValueChange = { name = it },
+            onValueChange = onNameChange,
             label = { Text("Nombre") },
             leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
@@ -164,31 +270,20 @@ fun ProfileScreen(
         )
         OutlinedTextField(
             value = phone,
-            onValueChange = { phone = it },label = { Text("Teléfono") },
+            onValueChange = onPhoneChange,
+            label = { Text("Telefono") },
             leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             shape = RoundedCornerShape(14.dp)
         )
-        if (uiState.isSaving) {
+        if (uiStateSaving) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         }
 
         Button(
-            onClick = {
-                profileViewModel.updateProfile(
-                    userId = userId,
-                    newName = name,
-                    currentName = profileName,
-                    newPhone = phone,
-                    currentPhone = profilePhone.orEmpty(),
-                    photoUri = photoUrl,
-                    currentPhotoUrl = profilePhotoUrl,
-                    context = context,
-                    onSuccess = onEditProfile
-                )
-            },
-            enabled = hasChanges && !uiState.isSaving,
+            onClick = onSave,
+            enabled = hasChanges && !uiStateSaving,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp)
         ) {
@@ -196,9 +291,5 @@ fun ProfileScreen(
             Spacer(Modifier.size(8.dp))
             Text("Guardar cambios")
         }
-        Surface(shape = CircleShape, tonalElevation = 0.dp) {
-            SnackbarHost(hostState = snackbarHostState)
-        }
     }
 }
-

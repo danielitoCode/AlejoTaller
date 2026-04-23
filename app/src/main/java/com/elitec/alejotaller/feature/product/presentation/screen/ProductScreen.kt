@@ -2,12 +2,12 @@ package com.elitec.alejotaller.feature.product.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,14 +24,15 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -52,27 +53,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import coil3.svg.SvgDecoder
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
-import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
-import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
-import com.elitec.alejotaller.infraestructure.core.presentation.util.DevicePosture
 import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
@@ -82,46 +77,110 @@ fun ProductScreen(
     navigateToDetails: (String) -> Unit,
     products: List<Product> = productTestList,
     onPromotionClick: (String) -> Unit = {},
-    searchQuery: String = "",                          // â† nuevo parÃ¡metro
-    selectedCategoryId: String? = null,               // â† nuevo parÃ¡metro
-    onSearchQueryChanged: (String) -> Unit = {},       // â† nuevo parÃ¡metro
-    onCategorySelected: (String?) -> Unit = {},        // â† nuevo parÃ¡metro
+    searchQuery: String = "",
+    selectedCategoryId: String? = null,
+    onSearchQueryChanged: (String) -> Unit = {},
+    onCategorySelected: (String?) -> Unit = {},
     categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
-
     val layoutSpec = rememberAdaptiveLayoutSpec()
+    val useSplitPaneCatalog = layoutSpec.showListAndDetail
     var isBannerVisible by rememberSaveable { mutableStateOf(true) }
     val categoriesList by categoryViewModel.categoriesFlow.collectAsStateWithLifecycle()
+
+    if (useSplitPaneCatalog) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            SearchBar(
+                query = searchQuery,
+                onQueryChanged = onSearchQueryChanged,
+                onClearQuery = { onSearchQueryChanged("") }
+            )
+            if (isBannerVisible) {
+                Box(
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    BannerSection(
+                        visible = true,
+                        promotions = promotions,
+                        onPromotionClick = onPromotionClick
+                    )
+                    Surface(
+                        onClick = { isBannerVisible = false },
+                        modifier = Modifier.padding(top = 5.dp, end = 10.dp),
+                        shadowElevation = 5.dp,
+                        tonalElevation = 3.dp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        shape = RoundedCornerShape(15.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.surface
+                            )
+                            Text(
+                                color = MaterialTheme.colorScheme.surface,
+                                text = "Cerrar"
+                            )
+                        }
+                    }
+                }
+            }
+            CategoriesSection(
+                onCategorySelected = { category -> onCategorySelected(category.id) },
+                selectedCategoryId = selectedCategoryId,
+                categories = categoriesList
+            )
+            if (products.isEmpty()) {
+                EmptyProductsContent(compact = true)
+            } else {
+                products.forEach { product ->
+                    CompactLandscapeProductItem(
+                        product = product,
+                        onClick = { navigateToDetails(product.id) }
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+        return
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
-            .fillMaxSize()
     ) {
-        // CAMBIO 3: SearchBar ahora es controlado (stateless)
         SearchBar(
             query = searchQuery,
             onQueryChanged = onSearchQueryChanged,
             onClearQuery = { onSearchQueryChanged("") }
         )
-        if(layoutSpec.posture != DevicePosture.CompactLandscape) {
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        if (isBannerVisible) {
             Box(
                 contentAlignment = Alignment.TopEnd
             ) {
                 BannerSection(
-                    visible = isBannerVisible,
+                    visible = true,
                     promotions = promotions,
                     onPromotionClick = onPromotionClick
                 )
                 Surface(
                     onClick = { isBannerVisible = false },
-                    modifier = Modifier.padding(
-                        top = 5.dp,
-                        end = 10.dp
-                    ),
+                    modifier = Modifier.padding(top = 5.dp, end = 10.dp),
                     shadowElevation = 5.dp,
                     tonalElevation = 3.dp,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -130,8 +189,7 @@ fun ProductScreen(
                     Row(
                         modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement
-                            .spacedBy(3.dp)
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -146,44 +204,30 @@ fun ProductScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
-        Spacer(modifier = Modifier.height(16.dp))
         CategoriesSection(
             onCategorySelected = { category -> onCategorySelected(category.id) },
             selectedCategoryId = selectedCategoryId,
             categories = categoriesList
         )
         Spacer(modifier = Modifier.height(16.dp))
-        // CAMBIO 5: Mensaje cuando no hay resultados
         if (products.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "Sin resultados",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Prueba con otro tÃ©rmino o categorÃ­a",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
+                EmptyProductsContent(compact = false)
             }
         } else {
             ProductGrid(
                 onProductClick = navigateToDetails,
-                products = products
+                products = products,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             )
         }
     }
@@ -214,12 +258,11 @@ fun SearchBar(
             )
         },
         trailingIcon = {
-            // El botÃ³n de limpiar aparece solo cuando hay texto
             if (query.isNotEmpty()) {
                 IconButton(onClick = onClearQuery) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Limpiar bÃºsqueda",
+                        contentDescription = "Limpiar busqueda",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -234,7 +277,7 @@ fun SearchBar(
 @Composable
 fun CategoriesSection(
     onCategorySelected: (Category) -> Unit,
-    selectedCategoryId: String? = null,              // â† cambia de Category? a String?
+    selectedCategoryId: String? = null,
     categories: List<Category>,
     modifier: Modifier = Modifier
 ) {
@@ -257,8 +300,7 @@ fun CategoriesSection(
         }
         Spacer(modifier = Modifier.height(12.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(categories) { category ->
-                // CAMBIO 8: La comparaciÃ³n ahora es por ID, no por objeto
+            items(categories, key = { it.id }) { category ->
                 val isSelected = category.id == selectedCategoryId
                 Box(
                     modifier = Modifier
@@ -273,6 +315,7 @@ fun CategoriesSection(
                             else MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(10.dp)
                         )
+                        .clickable { onCategorySelected(category) }
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
@@ -286,7 +329,6 @@ fun CategoriesSection(
         }
     }
 }
-
 
 @Composable
 fun BannerSection(
@@ -309,9 +351,7 @@ fun BannerSection(
         }
     }
 
-    AnimatedVisibility(
-        visible = visible
-    ) {
+    AnimatedVisibility(visible = visible) {
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -322,8 +362,7 @@ fun BannerSection(
                     activePromotion?.let { onPromotionClick(it.id) }
                 }
         ) {
-            Crossfade(targetState = activePromotion?.id ?: "default") { it ->
-                val promo = it
+            Crossfade(targetState = activePromotion?.id ?: "default", label = "promotion-banner") {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
@@ -367,13 +406,108 @@ fun BannerSection(
                             .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
-                        Image(
-                            contentScale = ContentScale.Crop,
-                            painter = painterResource(R.drawable.echoflow_transparent),
-                            contentDescription = "Banner Image"
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(R.drawable.echoflow_transparent)
+                                .build(),
+                            contentDescription = "Banner Image",
+                            contentScale = ContentScale.Fit,
+                            placeholder = painterResource(R.drawable.echoflow_transparent),
+                            error = painterResource(R.drawable.echoflow_transparent)
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyProductsContent(compact: Boolean) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(
+            imageVector = Icons.Default.Search,
+            contentDescription = null,
+            modifier = Modifier.size(if (compact) 40.dp else 48.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Sin resultados",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = if (compact) "Prueba con otro termino o categoria" else "Prueba con otro termino o categoria",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        )
+    }
+}
+
+@Composable
+private fun CompactLandscapeProductItem(
+    product: Product,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        tonalElevation = 3.dp,
+        shadowElevation = 4.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(product.photoUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    placeholder = painterResource(R.drawable.image),
+                    error = painterResource(R.drawable.errorimage),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = product.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = product.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "$${String.format("%.2f", product.price)}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
         }
     }
@@ -385,32 +519,39 @@ fun ProductGrid(
     products: List<Product>,
     modifier: Modifier = Modifier
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.fillMaxSize()
-    ) {
-        items(products) { product ->
-            ProductItem(
-                onClick = { onProductClick(product.id) },
-                product = product
-            )
+    BoxWithConstraints(modifier = modifier) {
+        val minCellSize = when {
+            maxWidth < 600.dp -> 160.dp
+            maxWidth < 900.dp -> 190.dp
+            else -> 220.dp
+        }
+
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(minSize = minCellSize),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(products, key = { it.id }) { product ->
+                ProductItem(
+                    onClick = { onProductClick(product.id) },
+                    product = product
+                )
+            }
         }
     }
 }
 
-@OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
 fun ProductItem(
     onClick: () -> Unit,
     product: Product,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier.fillMaxWidth()
-        .clickable {
-            onClick()
-        }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Box(
             modifier = Modifier
@@ -426,25 +567,23 @@ fun ProductItem(
                     .crossfade(true)
                     .build(),
                 contentDescription = null,
-                onLoading = { },
                 placeholder = painterResource(R.drawable.image),
                 error = painterResource(R.drawable.errorimage),
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
             Box(
-                modifier = Modifier.fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background.copy(0.5f))
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth().padding(
-                        top = 5.dp,
-                        bottom = 5.dp,
-                        end = 10.dp,
-                        start = 10.dp
-                    )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp, bottom = 5.dp, end = 10.dp, start = 10.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Outlined.HeartBroken,
@@ -460,19 +599,13 @@ fun ProductItem(
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = product.name,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
-        }
-
+        Text(
+            text = product.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -486,4 +619,20 @@ fun IconPlaceholder(
             .background(color = color.copy(alpha = 0.1f))
             .border(1.dp, color, RoundedCornerShape(2.dp))
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ProductScreenPreview() {
+    AlejoTallerTheme {
+        Surface(
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            ProductScreen(
+                navigateToDetails = {},
+                products = productTestList
+            )
+        }
+    }
 }

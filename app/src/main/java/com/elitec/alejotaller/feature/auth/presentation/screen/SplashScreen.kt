@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -25,7 +29,13 @@ fun SplashScreen(
     profileViewModel: ProfileViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(null) {
+    var hasRequestedSessionCheck by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(hasRequestedSessionCheck) {
+        if (hasRequestedSessionCheck) {
+            return@LaunchedEffect
+        }
+        hasRequestedSessionCheck = true
         profileViewModel.getAccountInfo(
             onGetInfo = { userId ->
                 onUserAuth(userId)

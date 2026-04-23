@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -79,11 +80,13 @@ fun BuyReservationDetailsScreen(
             appendLine("- $name x${item.quantity}")
         }
     }
-    Column(
-        verticalArrangement = Arrangement.spacedBy(15.dp),
-        modifier = modifier
+    LazyColumn(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
-        Column {
+        item {
+            Column {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -106,6 +109,9 @@ fun BuyReservationDetailsScreen(
                 fontWeight = FontWeight.Bold
             )
         }
+        }
+
+        item {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -119,8 +125,14 @@ fun BuyReservationDetailsScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+        }
+
+        item {
         // Estado visual del pedido
         SaleStatusBadge(sale.verified)
+        }
+
+        item {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxWidth()
@@ -157,69 +169,69 @@ fun BuyReservationDetailsScreen(
                 }
             }
         }
+        }
 
-        Column(
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
             Text(
                 text = "Productos en su compra:",
                 style = MaterialTheme.typography.headlineSmall
             )
+            }
+        }
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-                modifier = Modifier.fillMaxWidth()
+        items(
+            items = sale.products,
+            key = { "${sale.id}:${it.productId}" }
+        ) { product ->
+            val productPrice = findProductPrice(product.productId)
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(15.dp)
             ) {
-                items(sale.products) { product ->
-                    val productPrice = findProductPrice(product.productId)
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(15.dp)
-                    ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = product.productName ?: productNamesById[product.productId] ?: product.productId
+                        )
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(5.dp),
                         ) {
-                            Column {
-                                Text(
-
-                                    text = productNamesById[product.productId] ?: ""
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        fontWeight = FontWeight.Bold,
-                                        text = "Cant.:"
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        fontWeight = FontWeight.Bold,
-                                        text = "${product.quantity}"
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(8.dp))
-
-                            Column(
-                                modifier = Modifier.wrapContentSize(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "Prec.:"
-                                )
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    fontWeight = FontWeight.Bold,
-                                    text = "$productPrice CUP"
-                                )
-                            }
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "Cant.:"
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "${product.quantity}"
+                            )
                         }
+                    }
+                    Spacer(Modifier.width(8.dp))
+
+                    Column(
+                        modifier = Modifier.wrapContentSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Prec.:"
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            fontWeight = FontWeight.Bold,
+                            text = "$productPrice CUP"
+                        )
                     }
                 }
             }

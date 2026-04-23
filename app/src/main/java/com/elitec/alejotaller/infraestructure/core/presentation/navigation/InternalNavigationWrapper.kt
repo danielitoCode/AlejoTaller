@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -91,11 +92,13 @@ fun InternalNavigationWrapper(
 ) {
     val backStack = rememberNavBackStack(InternalRoutesKey.Home)
 
-    var isSubmittingPurchase by remember { mutableStateOf(false) }
-    var isUpdatingDeliveryType by remember { mutableStateOf(false) }
-    var targetReservationId by remember { mutableStateOf<String?>(pendingReservationId) }
-    var productsHydrated by remember(userId) { mutableStateOf(false) }
-    var profileHydrated by remember(userId) { mutableStateOf(false) }
+    var isSubmittingPurchase by rememberSaveable(userId) { mutableStateOf(false) }
+    var isUpdatingDeliveryType by rememberSaveable(userId) { mutableStateOf(false) }
+    var targetReservationId by rememberSaveable(userId) { mutableStateOf(pendingReservationId) }
+    var hasAttemptedProductHydration by rememberSaveable(userId) { mutableStateOf(false) }
+    var hasAttemptedProfileHydration by rememberSaveable(userId) { mutableStateOf(false) }
+    var hasPerformedInitialSaleSync by rememberSaveable(userId) { mutableStateOf(false) }
+    var lastKnownConnectionAvailable by rememberSaveable(userId) { mutableStateOf(connectionAvailable) }
 
     val windowAdaptiveInfo = currentWindowAdaptiveInfo()
     val directive = remember(windowAdaptiveInfo) {
@@ -126,33 +129,42 @@ fun InternalNavigationWrapper(
             .toSet()
     }
     val hasPendingSales = pendingSaleIds.isNotEmpty()
+    val productsHydrated = hasAttemptedProductHydration || products.isNotEmpty()
+    val profileHydrated = hasAttemptedProfileHydration || profileInfo != null
 
-    LaunchedEffect(null) {
-        productsHydrated = false
+    LaunchedEffect(userId, productsHydrated) {
+        if (productsHydrated) {
+            hasAttemptedProductHydration = true
+            toasterViewModel.dismissMessage("product charge")
+            return@LaunchedEffect
+        }
         toasterViewModel.showMessage("Cargando productos", ToastType.Normal, id = "product charge", isInfinite = true)
         productViewModel.syncProducts(
             onProductCharge = {
-                productsHydrated = true
+                hasAttemptedProductHydration = true
                 toasterViewModel.dismissMessage("product charge")
                 toasterViewModel.showMessage("Productos cargados", ToastType.Success)
             },
             onFail = {
-                productsHydrated = true
+                hasAttemptedProductHydration = true
                 toasterViewModel.dismissMessage("product charge")
                 toasterViewModel.showMessage("Error al cargar los productos", ToastType.Error)
             }
         )
     }
 
-    LaunchedEffect(null) {
-        profileHydrated = false
+    LaunchedEffect(userId, profileInfo) {
+        if (profileInfo != null) {
+            hasAttemptedProfileHydration = true
+            return@LaunchedEffect
+        }
         profileViewModel.getAccountInfo(
             onGetInfo = {
-                profileHydrated = true
+                hasAttemptedProfileHydration = true
                 toasterViewModel.showMessage("Informacion de usuario cargada", ToastType.Success)
             },
             onFail = {
-                profileHydrated = true
+                hasAttemptedProfileHydration = true
                 toasterViewModel.showMessage("No se pudo cargar informacion de usuario", ToastType.Error)
                 onNavigateBack()
             }
@@ -160,14 +172,19 @@ fun InternalNavigationWrapper(
     }
 
     LaunchedEffect(userId) {
-        saleViewModel.sync(userId)
+        if (userId.isNotBlank() && !hasPerformedInitialSaleSync) {
+            hasPerformedInitialSaleSync = true
+            saleViewModel.sync(userId)
+        }
     }
 
     LaunchedEffect(connectionAvailable, userId) {
-        if (connectionAvailable && userId.isNotBlank()) {
+        val connectionRecovered = !lastKnownConnectionAvailable && connectionAvailable
+        if (connectionRecovered && userId.isNotBlank()) {
             saleViewModel.sync(userId)
             profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
         }
+        lastKnownConnectionAvailable = connectionAvailable
     }
 
     LaunchedEffect(userId, pendingSaleIds) {
@@ -272,16 +289,38 @@ fun InternalNavigationWrapper(
                 entry<InternalRoutesKey.ProductDetail>(
                     metadata = ListDetailSceneStrategy.detailPane()
                 ) { key ->
-                    ProductDetailScreen(
-                        modifier = Modifier.fillMaxSize(),
-                        product = products.first { it.id == key.productId },
-                        showTopBar = layoutSpec.showTopBarInDetail,
-                        onBackClick = { backStack.navigateBack() },
-                        onAddToCartClick = {
-                            val productSelected = products.first { it.id == key.productId }
-                            shopCartViewModel.addProductToACart(productSelected, 1)
+                    var resolvedProduct by remember(key.productId, products) {
+                        mutableStateOf(products.firstOrNull { it.id == key.productId })
+                    }
+
+                    LaunchedEffect(key.productId, resolvedProduct) {
+                        if (resolvedProduct == null) {
+                            productViewModel.getProductById(key.productId) { product ->
+                                resolvedProduct = product
+                                if (product == null) {
+                                    backStack.navigateBack()
+                                    toasterViewModel.showMessage(
+                                        "El producto ya no esta disponible en el listado actual",
+                                        ToastType.Warning
+                                    )
+                                }
+                            }
                         }
-                    )
+                    }
+
+                    if (resolvedProduct != null) {
+                        ProductDetailScreen(
+                            modifier = Modifier.fillMaxSize(),
+                            product = resolvedProduct!!,
+                            showTopBar = layoutSpec.showTopBarInDetail,
+                            onBackClick = { backStack.navigateBack() },
+                            onAddToCartClick = {
+                                shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
+                            }
+                        )
+                    } else {
+                        ProductDetailsPlaceholder(modifier = Modifier.fillMaxSize())
+                    }
                 }
                 entry<InternalRoutesKey.Profile> {
                     ProfileScreen(
@@ -367,7 +406,7 @@ fun InternalNavigationWrapper(
                             )
                         },
                         findProductPrice = { productId ->
-                            products.first { it.id == productId }.price
+                            products.firstOrNull { it.id == productId }?.price ?: 0.0
                         },
                         modifier = Modifier.fillMaxSize()
                     )

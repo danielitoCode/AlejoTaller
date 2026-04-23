@@ -42,54 +42,51 @@ fun BuyReservationNestedNavigation(
         onInitialReservationConsumed()
     }
 
-    when (sales.isNotEmpty()) {
-        true -> {
-            NavDisplay(
-                backStack = backStack,
-                modifier = modifier,
-                predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
-                onBack = { backStack.removeLastOrNull() },
-                entryProvider = entryProvider {
-                    entry<ReservationNestedRoutes.Reservations> {
-                        BuyReservationScreen(
-                            sales = sales,
-                            onGoToShop = onGoToShop,
-                            onSaleSelected = { saleSelectedId ->
-                                backStack.add(ReservationNestedRoutes.ReservationDetails(saleSelectedId))
-                            },
-                            modifier = Modifier.fillMaxSize(),
+    NavDisplay(
+        backStack = backStack,
+        modifier = modifier,
+        predictivePopTransitionSpec = { fadeIn() togetherWith fadeOut() },
+        transitionSpec = { fadeIn() togetherWith fadeOut() },
+        onBack = { backStack.removeLastOrNull() },
+        entryProvider = entryProvider {
+            entry<ReservationNestedRoutes.Reservations> {
+                BuyReservationScreen(
+                    sales = sales,
+                    onGoToShop = onGoToShop,
+                    onSaleSelected = { saleSelectedId ->
+                        backStack.add(ReservationNestedRoutes.ReservationDetails(saleSelectedId))
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            entry<ReservationNestedRoutes.ReservationDetails> { key ->
+                val sale = sales.firstOrNull { it.id == key.reservationId }
+                if (sale != null) {
+                    BuyReservationDetailsScreen(
+                        sale = sale,
+                        findProductPrice = findProductPrice,
+                        productNamesById = productNamesById,
+                        onDeliveryTypeSelected = onDeliveryTypeSelected,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(vertical = 10.dp, horizontal = 15.dp)
+                    )
+                } else {
+                    LaunchedEffect(key.reservationId, sales) {
+                        backStack.removeLastOrNull()
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp)
+                    ) {
+                        Text(
+                            text = "Actualizando reserva...",
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     }
-                    entry<ReservationNestedRoutes.ReservationDetails> { key ->
-                        val sale = sales.firstOrNull { it.id == key.reservationId }
-                        if (sale != null) {
-                            BuyReservationDetailsScreen(
-                                sale = sale,
-                                findProductPrice = findProductPrice,
-                                productNamesById = productNamesById,
-                                onDeliveryTypeSelected = onDeliveryTypeSelected,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.dp, horizontal = 15.dp)
-                            )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(24.dp)
-                            ) {
-                                Text(
-                                    text = "Cargando reserva...",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
-                        }
-                    }
                 }
-            )
+            }
         }
-
-        else -> {}
-    }
+    )
 }
