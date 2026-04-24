@@ -49,15 +49,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
-import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import io.github.alexzhirkevich.qrose.rememberQrCodePainter
 import kotlinx.datetime.LocalDate
 
-// Constantes para testing
 const val DELIVERY_SECTION_TAG = "delivery_section"
 const val OPTION_PICKUP_TAG = "option_pickup"
 const val OPTION_DELIVERY_TAG = "option_delivery"
@@ -80,6 +79,7 @@ fun BuyReservationDetailsScreen(
             appendLine("- $name x${item.quantity}")
         }
     }
+
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -87,88 +87,76 @@ fun BuyReservationDetailsScreen(
     ) {
         item {
             Column {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    imageVector = Icons.Default.ShoppingBag,
-                    contentDescription = ""
-                )
-                Spacer(Modifier.width(5.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        imageVector = Icons.Default.ShoppingBag,
+                        contentDescription = ""
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        color = MaterialTheme.colorScheme.onBackground,
+                        style = MaterialTheme.typography.headlineMedium,
+                        text = "Estado de su pedido"
+                    )
+                }
                 Text(
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.headlineMedium,
-                    text = "Estado de su pedido"
+                    color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                    text = "Id: ${sale.id.take(8)}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
-            Text(
-                color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
-                text = "Id: ${sale.id.take(8)}",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
         }
 
         item {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Monto total:"
-            )
-            Spacer(Modifier.width(5.dp))
-            Text(
-                fontWeight = FontWeight.Bold,
-                text = "${"%.2f".format(sale.amount)} CUP",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "Monto total:")
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    fontWeight = FontWeight.Bold,
+                    text = "${"%.2f".format(sale.amount)} CUP",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
         item {
-        // Estado visual del pedido
-        SaleStatusBadge(sale.verified)
+            SaleStatusBadge(sale.verified)
         }
 
         item {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White
-                ),
-                shape = RoundedCornerShape(16.dp)
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    // QR
-                    Image(
-                        painter = rememberQrCodePainter(qrContent),
-                        contentDescription = "CÃ³digo QR del pedido",
-                        modifier = Modifier.size(160.dp)
-                    )
-                    // Selector de entrega si estÃ¡ VERIFIED
-                    AnimatedVisibility(
-                        visible = sale.verified == BuyState.VERIFIED,
-                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
-                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        DeliverySelectionSection(
-                            currentDeliveryType = sale.deliveryType,
-                            onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                        Image(
+                            painter = rememberQrCodePainter(qrContent),
+                            contentDescription = "Código QR del pedido",
+                            modifier = Modifier.size(160.dp)
                         )
+                        AnimatedVisibility(
+                            visible = sale.verified == BuyState.VERIFIED,
+                            enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                            modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                        ) {
+                            DeliverySelectionSection(
+                                currentDeliveryType = sale.deliveryType,
+                                onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                            )
+                        }
                     }
                 }
             }
-        }
         }
 
         item {
@@ -176,10 +164,10 @@ fun BuyReservationDetailsScreen(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-            Text(
-                text = "Productos en su compra:",
-                style = MaterialTheme.typography.headlineSmall
-            )
+                Text(
+                    text = "Productos en su compra:",
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
         }
 
@@ -198,35 +186,22 @@ fun BuyReservationDetailsScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(8.dp)
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = product.productName ?: productNamesById[product.productId] ?: product.productId
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                fontWeight = FontWeight.Bold,
-                                text = "Cant.:"
-                            )
+                        Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(fontWeight = FontWeight.Bold, text = "Cant.:")
                             Spacer(Modifier.width(4.dp))
-                            Text(
-                                fontWeight = FontWeight.Bold,
-                                text = "${product.quantity}"
-                            )
+                            Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
                         }
                     }
                     Spacer(Modifier.width(8.dp))
-
                     Column(
                         modifier = Modifier.wrapContentSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = "Prec.:"
-                        )
+                        Text(text = "Prec.:")
                         Spacer(Modifier.width(4.dp))
                         Text(
                             fontWeight = FontWeight.Bold,
@@ -250,13 +225,13 @@ private fun DeliverySelectionSection(
     ) {
         HorizontalDivider()
         Text(
-            text = "ðŸŽ‰ Â¡Tu pedido estÃ¡ listo!",
+            text = "🎉 ¡Tu pedido está listo!",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
         Text(
-            text = "Â¿CÃ³mo prefieres recibirlo?",
+            text = "¿Cómo prefieres recibirlo?",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -284,10 +259,10 @@ private fun DeliverySelectionSection(
         }
         currentDeliveryType?.let { type ->
             val confirmText = when (type) {
-                DeliveryType.PICKUP   ->
-                    "âœ… Perfecto, te esperamos en el taller. Trae el cÃ³digo QR para retirar tu pedido."
+                DeliveryType.PICKUP ->
+                    "✅ Perfecto, te esperamos en el taller. Trae el código QR para retirar tu pedido."
                 DeliveryType.DELIVERY ->
-                    "âœ… Â¡Entendido! El taller te contactarÃ¡ pronto para coordinar la entrega."
+                    "✅ ¡Entendido! El taller te contactará pronto para coordinar la entrega."
             }
             Surface(
                 shape = RoundedCornerShape(12.dp),
@@ -314,8 +289,7 @@ private fun DeliveryOptionCard(
     modifier: Modifier = Modifier
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer
-        else MaterialTheme.colorScheme.surface,
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         animationSpec = tween(300),
         label = "cardColor"
     )
@@ -335,16 +309,14 @@ private fun DeliveryOptionCard(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp)
             )
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
@@ -360,12 +332,12 @@ private fun SaleStatusBadge(state: BuyState) {
     val (icon, label, color) = when (state) {
         BuyState.UNVERIFIED -> Triple(
             Icons.Outlined.HourglassEmpty,
-            "Reservada â€” esperando confirmaciÃ³n del taller",
+            "Reservada - esperando confirmación del taller",
             MaterialTheme.colorScheme.tertiary
         )
         BuyState.VERIFIED -> Triple(
             Icons.Outlined.CheckCircle,
-            "Â¡Lista! Tu pedido estÃ¡ listo",
+            "¡Lista! Tu pedido está listo",
             MaterialTheme.colorScheme.primary
         )
         BuyState.DELETED -> Triple(
@@ -409,7 +381,7 @@ private fun SaleStatusBadge(state: BuyState) {
 private fun BuyReservationDetailsPreviewContent(state: BuyState) {
     val products = remember {
         listOf(
-            Product("p1", "BaterÃ­a 12V", "", 12000.0, "", "", 4.5),
+            Product("p1", "Batería 12V", "", 12000.0, "", "", 4.5),
             Product("p2", "Aceite Motor", "", 4500.0, "", "", 4.8)
         )
     }
@@ -433,7 +405,9 @@ private fun BuyReservationDetailsPreviewContent(state: BuyState) {
                 productNamesById = translateMap,
                 findProductPrice = { id -> products.find { it.id == id }?.price ?: 0.0 },
                 onDeliveryTypeSelected = { _, _ -> },
-                modifier = Modifier.fillMaxSize().padding(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             )
         }
     }

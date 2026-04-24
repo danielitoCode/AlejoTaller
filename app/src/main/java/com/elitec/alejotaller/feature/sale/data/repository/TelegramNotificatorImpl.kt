@@ -2,7 +2,6 @@ package com.elitec.alejotaller.feature.sale.data.repository
 
 import android.util.Log
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleNotifierUser
 import com.elitec.shared.sale.feature.sale.domain.repository.TelegramNotificator
@@ -28,7 +27,7 @@ class TelegramNotificatorImpl(
 
     override suspend fun notify(sale: Sale, user: SaleNotifierUser) {
         val chatId = BuildConfig.TELEGRAM_CHAT_ID.trim()
-        require(chatId.isNotBlank()) { "TELEGRAM_CHAT_ID no estÃƒÂ¡ configurado" }
+        require(chatId.isNotBlank()) { "TELEGRAM_CHAT_ID no está configurado" }
 
         val endpoint = resolveTelegramSendMessageEndpoint()
         Log.i(TAG, "event=telegram_notify_start saleId=${sale.id} endpoint=$endpoint")
@@ -48,7 +47,7 @@ class TelegramNotificatorImpl(
         Log.i(TAG, "event=telegram_notify_response saleId=${sale.id} ok=${response.ok} errorCode=${response.errorCode}")
 
         check(response.ok) {
-            "Telegram API devolviÃƒÂ³ error${response.errorCode?.let { " (code=$it)" } ?: ""}: ${response.description ?: "sin descripciÃƒÂ³n"}"
+            "Telegram API devolvió error${response.errorCode?.let { " (code=$it)" } ?: ""}: ${response.description ?: "sin descripción"}"
         }
 
         Log.i(TAG, "event=telegram_notify_success saleId=${sale.id}")
@@ -61,7 +60,7 @@ class TelegramNotificatorImpl(
 
         return when {
             configuredUrl.isBlank() -> {
-                require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no estÃƒÂ¡ configurado" }
+                require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no está configurado" }
                 "$baseUrl/bot$botToken/sendMessage"
             }
 
@@ -69,7 +68,7 @@ class TelegramNotificatorImpl(
             configuredUrl.contains("/bot") -> "$baseUrl/sendMessage"
 
             else -> {
-                require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no estÃƒÂ¡ configurado" }
+                require(botToken.isNotBlank()) { "TELEGRAM_BOT_KEY no está configurado" }
                 "$baseUrl/bot$botToken/sendMessage"
             }
         }
@@ -92,18 +91,18 @@ private data class TelegramApiResponse(
 
 fun Sale.toFormattedMessage(user: SaleNotifierUser): String {
     val header = """
-        Ã°Å¸â€ºÂÃ¯Â¸Â LISTA DE DESEOS
-        Ã°Å¸â€˜Â¤ Usuario: ${user.name}
-        Ã°Å¸â€œÂ§ Correo: ${user.email}
-        Ã°Å¸â€œÂ± TelÃƒÂ©fono: ${user.phone ?: "No registrado"}
+        🛍️ NUEVA RESERVA
+        👤 Usuario: ${user.name}
+        📧 Correo: ${user.email}
+        📱 Teléfono: ${user.phone ?: "No registrado"}
 
-        Ã°Å¸â€œÂ DETALLES DEL PEDIDO
+        🧾 DETALLES DEL PEDIDO
     """.trimIndent()
 
     val itemsDetails = products.joinToString(separator = "\n") { item ->
         val productDisplayName = item.productName ?: "ID: ${item.productId}"
-        "Ã°Å¸â€Â¹ Producto: $productDisplayName | Cantidad: ${item.quantity}"
+        "🔹 Producto: $productDisplayName | Cantidad: ${item.quantity}"
     }
 
-    return "$header\n$itemsDetails\n\nÃ°Å¸â€™Âµ Monto total: ${"%.2f".format(amount)}"
+    return "$header\n$itemsDetails\n\n💵 Monto total: ${"%.2f".format(amount)} CUP"
 }
