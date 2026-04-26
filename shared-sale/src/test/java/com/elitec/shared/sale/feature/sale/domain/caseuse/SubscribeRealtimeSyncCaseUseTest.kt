@@ -23,7 +23,7 @@ class SubscribeRealtimeSyncCaseUseTest {
     }
 
     @Test
-    fun `unsubscribeAll delega en el gateway`() {
+    fun `unsubscribeAll delegator to a gateway`() {
         val gateway = FakeRealtimeSyncGateway()
         val caseUse = SubscribeRealtimeSyncCaseUse(gateway)
 

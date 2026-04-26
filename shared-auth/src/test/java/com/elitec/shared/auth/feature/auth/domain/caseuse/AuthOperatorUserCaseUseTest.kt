@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
 class AuthOperatorUserCaseUseTest {
 
     @Test
-    fun `permite acceso a operador`() = runTest {
+    fun `allow pass a operator user role`() = runTest {
         val sessionManager = FakeSessionManager()
         val caseUse = AuthOperatorUserCaseUse(
             authUserCaseUse = AuthUserCaseUse(sessionManager),
@@ -27,7 +27,7 @@ class AuthOperatorUserCaseUseTest {
     }
 
     @Test
-    fun `permite acceso a admin aunque el rol venga como administrator`() = runTest {
+    fun `allow pass a admin user role so coming like administrator`() = runTest {
         val sessionManager = FakeSessionManager()
         val caseUse = AuthOperatorUserCaseUse(
             authUserCaseUse = AuthUserCaseUse(sessionManager),
@@ -42,7 +42,7 @@ class AuthOperatorUserCaseUseTest {
     }
 
     @Test
-    fun `cierra la sesion cuando el rol no tiene acceso de operador`() = runTest {
+    fun `close session when rol do not access of operator`() = runTest {
         val sessionManager = FakeSessionManager()
         val caseUse = AuthOperatorUserCaseUse(
             authUserCaseUse = AuthUserCaseUse(sessionManager),

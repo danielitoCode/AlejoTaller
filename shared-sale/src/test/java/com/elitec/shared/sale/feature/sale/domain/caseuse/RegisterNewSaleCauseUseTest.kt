@@ -14,7 +14,7 @@ import org.junit.Assert.assertTrue
 class RegisterNewSaleCauseUseTest {
 
     @Test
-    fun `genera id notifica y guarda la venta`() = runTest {
+    fun `run id notification and save the sale`() = runTest {
         val repository = FakeSaleRepository()
         val notificator = FakeTelegramNotificator()
         val caseUse = RegisterNewSaleCauseUse(

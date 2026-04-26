@@ -11,7 +11,7 @@ import org.junit.Assert.assertTrue
 class InterpretSaleRealtimeEventCaseUseTest {
 
     @Test
-    fun `genera mensaje y push de exito para evento confirmado`() {
+    fun `run a success message and push notification for confirmed events`() {
         val commands = InterpretSaleRealtimeEventCaseUse()(
             SaleRealtimeEvent(
                 saleId = "sale-1",
@@ -33,7 +33,7 @@ class InterpretSaleRealtimeEventCaseUseTest {
     }
 
     @Test
-    fun `descarta eventos sin identificadores necesarios`() {
+    fun `denied event with not necessary id`() {
         val commands = InterpretSaleRealtimeEventCaseUse()(
             SaleRealtimeEvent(
                 saleId = "",

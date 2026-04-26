@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 class AuthUserCaseUseTest {
 
     @Test
-    fun `normaliza el email antes de abrir la sesion`() = runTest {
+    fun `normalize a email before open a session`() = runTest {
         val sessionManager = FakeSessionManager()
         val caseUse = AuthUserCaseUse(sessionManager)
 

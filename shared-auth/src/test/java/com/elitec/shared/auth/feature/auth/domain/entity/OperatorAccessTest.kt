@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 class OperatorAccessTest {
 
     @Test
-    fun `acepta operator y roles administrativos relacionados`() {
+    fun `accept a operator and administrators relationship users roles`() {
         assertTrue("operator".hasOperatorAccess())
         assertTrue("admin".hasOperatorAccess())
         assertTrue("administrator".hasOperatorAccess())
@@ -15,7 +15,7 @@ class OperatorAccessTest {
     }
 
     @Test
-    fun `rechaza roles ajenos a operacion`() {
+    fun `denied a not know users roles`() {
         assertFalse("viewer".hasOperatorAccess())
         assertFalse("customer".hasOperatorAccess())
         assertFalse(null.hasOperatorAccess())

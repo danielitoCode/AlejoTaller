@@ -12,7 +12,7 @@ import org.junit.Assert.assertTrue
 class UpdateSaleVerificationFromRealtimeCaseUseTest {
 
     @Test
-    fun `guarda VERIFIED cuando el realtime confirma la venta`() = runTest {
+    fun `save VERIFIED when the realtime confirm the sale`() = runTest {
         val repository = FakeSaleRepository(sampleSale(verified = BuyState.UNVERIFIED))
 
         val result = UpdateSaleVerificationFromRealtimeCaseUse(repository)("sale-1", true)
@@ -23,7 +23,7 @@ class UpdateSaleVerificationFromRealtimeCaseUseTest {
     }
 
     @Test
-    fun `no guarda si la venta ya estaba en el estado esperado`() = runTest {
+    fun `not save the sale if the sale is save in the desired state`() = runTest {
         val repository = FakeSaleRepository(sampleSale(verified = BuyState.DELETED))
 
         val result = UpdateSaleVerificationFromRealtimeCaseUse(repository)("sale-1", false)
