@@ -69,7 +69,7 @@ class ProfileViewModel(
                 if (hasNameChange) updateNameCaseUse(newName).getOrThrow()
                 if (hasPhoneChange) updatePhoneCaseUse(newPhone).getOrThrow()
                 if (hasPhotoChange) {
-                    val compressedFile = compressImage(context, photoUri!!)
+                    val compressedFile = compressImage(context, photoUri)
                     updatePhotoUrlCaseUse(compressedFile, userId).getOrThrow()
                 }
             }.onSuccess {
