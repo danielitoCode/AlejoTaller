@@ -33,6 +33,8 @@ dependencies {
     implementation(libs.koin.android)
 
     testImplementation(libs.junit)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.junit.jupiter)
     testImplementation(libs.mock.test)
     testImplementation(libs.turbine.test)
     testImplementation(libs.kotlinx.coroutines.test)

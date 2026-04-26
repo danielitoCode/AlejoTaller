@@ -1,5 +1,6 @@
-package com.elitec.shared.sale.feature.sale.domain.caseUse
+package com.elitec.shared.sale.feature.sale.domain.caseuse
 
+import com.elitec.shared.sale.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
 import com.elitec.shared.sale.feature.sale.fakes.FakeSaleIdProvider
 import com.elitec.shared.sale.feature.sale.fakes.FakeSaleNotificationUserProvider
 import com.elitec.shared.sale.feature.sale.fakes.FakeSaleRepository

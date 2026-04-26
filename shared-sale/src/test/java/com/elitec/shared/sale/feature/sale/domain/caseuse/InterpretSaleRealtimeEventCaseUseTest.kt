@@ -1,4 +1,4 @@
-package com.elitec.shared.sale.feature.sale.domain.caseUse
+package com.elitec.shared.sale.feature.sale.domain.caseuse
 
 import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
 import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeMessageKind

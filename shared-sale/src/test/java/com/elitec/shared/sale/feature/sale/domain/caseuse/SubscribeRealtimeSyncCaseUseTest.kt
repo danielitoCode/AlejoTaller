@@ -1,5 +1,6 @@
-package com.elitec.shared.sale.feature.sale.domain.caseUse
+package com.elitec.shared.sale.feature.sale.domain.caseuse
 
+import com.elitec.shared.sale.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
 import com.elitec.shared.sale.feature.sale.fakes.FakeRealtimeSyncGateway
 import org.junit.Test
 import org.junit.Assert.assertEquals

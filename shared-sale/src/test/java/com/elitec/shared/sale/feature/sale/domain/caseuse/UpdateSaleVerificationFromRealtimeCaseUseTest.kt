@@ -1,5 +1,6 @@
-package com.elitec.shared.sale.feature.sale.domain.caseUse
+package com.elitec.shared.sale.feature.sale.domain.caseuse
 
+import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.fakes.FakeSaleRepository
 import com.elitec.shared.sale.feature.sale.fakes.sampleSale

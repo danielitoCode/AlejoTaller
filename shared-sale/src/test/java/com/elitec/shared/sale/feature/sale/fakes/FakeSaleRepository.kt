@@ -1,5 +1,6 @@
 package com.elitec.shared.sale.feature.sale.fakes
 
+import android.content.res.Resources
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
@@ -18,7 +19,10 @@ class FakeSaleRepository(
 
     override fun observeAll(): Flow<List<Sale>> = flowOf(listOf(currentSale))
 
-    override suspend fun getById(itemId: String): Sale = currentSale
+    override suspend fun getById(itemId: String): Sale {
+        if ( itemId != currentSale.id ) throw Exception()
+        return currentSale
+    }
 
     override suspend fun save(item: Sale) {
         currentSale = item
@@ -30,6 +34,8 @@ class FakeSaleRepository(
         return syncResult
     }
 }
+
+
 
 fun sampleSale(
     id: String = "sale-1",
