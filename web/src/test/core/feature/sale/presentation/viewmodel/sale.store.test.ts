@@ -104,7 +104,7 @@ describe("saleStore realtime subscription", () => {
         mocks.subscribeSaleVerification.mockReturnValue(mocks.unsubscribeFn);
     });
 
-    it("se suscribe solo cuando el usuario actual tiene ventas pendientes", async () => {
+    it("subscribe hin when the current user have a pending sales", async () => {
         mocks.getByUser.mockResolvedValue([
             buildSale(),
             buildSale({ id: "sale-2", verified: BuyState.VERIFIED })
@@ -119,7 +119,7 @@ describe("saleStore realtime subscription", () => {
         expect(get(saleStore.unverifiedCount)).toBe(1);
     });
 
-    it("no se suscribe si no hay ventas pendientes y corta la suscripcion al verificar la ultima", async () => {
+    it("don't subscribe if not have pending sales and end a subscription on verify the last", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
         mocks.updateVerified.mockResolvedValue(buildSale({ verified: BuyState.VERIFIED }));
 
@@ -133,7 +133,7 @@ describe("saleStore realtime subscription", () => {
         expect(get(saleStore.unverifiedCount)).toBe(0);
     });
 
-    it("resetea la suscripcion realtime al limpiar el store", async () => {
+    it("reset the realtime subscription on clean the store", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
 
         const saleStore = await loadSaleStore();
@@ -145,7 +145,7 @@ describe("saleStore realtime subscription", () => {
         expect(get(saleStore.hasData)).toBe(false);
     });
 
-    it("no abre canal si no hay usuario autenticado", async () => {
+    it("not open the canan if not auth user yet", async () => {
         mocks.getCurrentUser.mockResolvedValue(null);
 
         const saleStore = await loadSaleStore();
@@ -156,7 +156,7 @@ describe("saleStore realtime subscription", () => {
         expect(mocks.unsubscribeSaleVerification).toHaveBeenCalledTimes(1);
     });
 
-    it("mantiene intacto el flujo de entrega sin tocar la suscripcion", async () => {
+    it("keep the delivery flow is not touch the subscription", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
         mocks.updateDeliveryType.mockResolvedValue(buildSale({ deliveryType: DeliveryType.PICKUP }));
 

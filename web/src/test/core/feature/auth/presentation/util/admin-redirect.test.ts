@@ -28,7 +28,7 @@ describe("admin redirect", () => {
         vi.resetModules();
     });
 
-    it("ofrece selector cuando el usuario es admin y existe URL configurada", async () => {
+    it("give a selector when the user role is admin and the URL is correctly", async () => {
         const { shouldOfferAdminChoice } = await import("../../../../../../core/feature/auth/presentation/util/admin-redirect");
 
         const redirected = shouldOfferAdminChoice({ role: "admin" });
@@ -37,7 +37,7 @@ describe("admin redirect", () => {
         expect(window.location.replace).not.toHaveBeenCalled();
     });
 
-    it("persiste la eleccion de continuar en cliente", async () => {
+    it("save a continue desition in to client side", async () => {
         const { rememberAdminChoice, getStoredAdminChoice } = await import("../../../../../../core/feature/auth/presentation/util/admin-redirect");
 
         rememberAdminChoice("client");
@@ -46,7 +46,7 @@ describe("admin redirect", () => {
         expect(window.location.replace).not.toHaveBeenCalled();
     });
 
-    it("redirige al dashboard cuando se ejecuta la accion explicita", async () => {
+    it("redirect to a dashboard when the action is explicit", async () => {
         const { goToAdminDashboard } = await import("../../../../../../core/feature/auth/presentation/util/admin-redirect");
 
         const redirected = await goToAdminDashboard();

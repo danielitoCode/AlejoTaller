@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { UserNetRepositoryImpl } from "../../../../../../core/feature/auth/data/repository/user.net.repository";
 
 describe("UserNetRepositoryImpl", () => {
-    it("lee la foto remota desde claves compatibles y resuelve el rol desde labels", async () => {
+    it("read a remote photo from shared keys and take the rol from labels", async () => {
         const account = {
             get: vi.fn().mockResolvedValue({
                 $id: "user-1",
@@ -26,7 +26,7 @@ describe("UserNetRepositoryImpl", () => {
         expect(currentUser.sub).toBe("google-sub");
     });
 
-    it("persiste la foto en todas las claves compatibles al actualizarla", async () => {
+    it("save a photo in all success keys on update her", async () => {
         const account = {
             updatePrefs: vi.fn()
         };
@@ -41,7 +41,7 @@ describe("UserNetRepositoryImpl", () => {
         });
     });
 
-    it("solo rellena la foto de Google si la cuenta actual no tenia una foto propia", async () => {
+    it("just take a picture if the google account don't have a self photo", async () => {
         const account = {
             get: vi.fn().mockResolvedValue({
                 prefs: {

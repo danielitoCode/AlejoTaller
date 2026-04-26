@@ -30,7 +30,7 @@ describe("profileStore", () => {
         });
     });
 
-    it("hidrata la foto remota compatible desde photo_url cuando no hay borrador local", () => {
+    it("refresh the remote photo equal from photo_url when don't have local eraser", () => {
         profileStore.hydrateFromUser({
             $id: "user-1",
             email: "user@test.dev",
@@ -45,7 +45,7 @@ describe("profileStore", () => {
         expect(get(profileStore).phone).toBe("+53");
     });
 
-    it("preserva el avatar local si el usuario ya habia elegido uno sobre la foto remota", () => {
+    it("save the local avatar if the user have a desition into the remote photo", () => {
         window.localStorage.setItem(
             "alejo-taller-web-profile:user-1",
             JSON.stringify({
@@ -67,7 +67,7 @@ describe("profileStore", () => {
         expect(get(profileStore).bio).toBe("Bio local");
     });
 
-    it("persiste el borrador actual en localStorage con la clave del usuario", () => {
+    it("save a actual eraser photo to a localStorage when the user key", () => {
         profileStore.reset({
             userId: "user-9",
             email: "user9@test.dev",

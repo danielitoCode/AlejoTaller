@@ -32,7 +32,7 @@ describe("deeplink helpers", () => {
         clearPendingDeepLink();
     });
 
-    it("parsea correctamente un deep link interno al detalle de reserva", () => {
+    it("correctly parsing a inside deeplink to reservation details", () => {
         expect(parseDeepLinkHash("#/home/reservation-detail?reservationId=sale-1")).toEqual({
             top: "home",
             nested: "reservation-detail",
@@ -40,7 +40,7 @@ describe("deeplink helpers", () => {
         });
     });
 
-    it("normaliza rutas top-level y genera hashes estables", () => {
+    it("normalize the top-level routes and make stable hashes", () => {
         expect(buildTopLevelHash("login")).toBe("#/login");
         expect(buildHomeHash("dashboard")).toBe("#/home/dashboard");
         expect(parseDeepLinkHash("#/home/unknown")).toEqual({
@@ -50,7 +50,7 @@ describe("deeplink helpers", () => {
         });
     });
 
-    it("recuerda y consume un deep link pendiente una sola vez", () => {
+    it("remember and consume a pending deeplink one time", () => {
         rememberPendingDeepLink("#/home/reservation-detail?reservationId=sale-22");
 
         expect(peekPendingDeepLink()).toBe("#/home/reservation-detail?reservationId=sale-22");

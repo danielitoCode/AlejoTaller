@@ -26,7 +26,7 @@ describe("sessionStore", () => {
         mocks.accountGet.mockReset();
     });
 
-    it("marca el ultimo action cuando getCurrentUser termina correctamente", async () => {
+    it("sign the last action when getCurrentUser end correctly", async () => {
         mocks.accountGet.mockResolvedValue({ $id: "user-1" });
 
         const sessionStore = await loadSessionStore();
@@ -38,7 +38,7 @@ describe("sessionStore", () => {
         expect(get(sessionStore).error).toBeNull();
     });
 
-    it("expone error legible cuando Appwrite falla y permite limpiarlo", async () => {
+    it("give legible error when Appwrite fall and permit cleaned him", async () => {
         mocks.accountGet.mockRejectedValue(new Error("session expired"));
 
         const sessionStore = await loadSessionStore();

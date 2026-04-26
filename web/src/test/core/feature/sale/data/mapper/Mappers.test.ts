@@ -3,7 +3,7 @@ import { saleFromDTO, saleToDTO } from "../../../../../../core/feature/sale/data
 import { BuyState, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
 
 describe("sale mappers", () => {
-    it("serializa la direccion de entrega cuando la venta es a domicilio", () => {
+    it("serialize the delivery address when the sale is a DeliveryType.DELIVERY", () => {
         const dto = saleToDTO({
             id: "sale-1",
             date: "2026-03-29",
@@ -27,7 +27,7 @@ describe("sale mappers", () => {
         expect(dto.delivery_type).toBe(DeliveryType.DELIVERY);
     });
 
-    it("hidrata la direccion de entrega desde el dto", () => {
+    it("refresh the delivery address from dto", () => {
         const sale = saleFromDTO({
             $id: "sale-1",
             $sequence: 1,
