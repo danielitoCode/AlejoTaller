@@ -5,7 +5,6 @@ import com.elitec.shared.data.feature.sale.data.dao.SaleDao
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.data.feature.sale.data.mapper.toDomain
 import com.elitec.shared.data.feature.sale.data.mapper.toDto
-import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.repository.SaleRepository
 import kotlinx.coroutines.flow.Flow

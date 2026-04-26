@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,13 +33,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.LoginScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.RegisterScreen
-import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.SplashScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateBack
 import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigateTo
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailScreen
+import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
 import dev.tmapps.konnection.Konnection
 
 @Composable

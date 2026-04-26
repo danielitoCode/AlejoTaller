@@ -4,7 +4,6 @@ import android.util.Log
 import com.elitec.alejotaller.feature.sale.data.model.SaleEventResponse
 import com.elitec.alejotaller.infraestructure.core.data.realtime.ChainedRealtimeEventProcessor
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealtimeEventEnvelope
-import com.pusher.client.channel.PusherEvent
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive

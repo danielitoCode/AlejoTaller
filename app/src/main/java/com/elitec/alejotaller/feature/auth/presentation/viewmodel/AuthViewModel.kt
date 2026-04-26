@@ -6,9 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthUserCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.AuthWithGoogleCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
-import com.elitec.alejotaller.feature.auth.domain.entity.User
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthViewModel(

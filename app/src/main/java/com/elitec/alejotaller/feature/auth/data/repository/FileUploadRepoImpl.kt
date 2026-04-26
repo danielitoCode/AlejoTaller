@@ -1,14 +1,13 @@
 package com.elitec.alejotaller.feature.auth.data.repository
 
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.auth.data.dto.CustomFileDto
 import com.elitec.alejotaller.feature.auth.domain.entity.CustomFile
 import com.elitec.alejotaller.feature.auth.domain.repositories.FileRepository
 import io.appwrite.ID
-import io.appwrite.models.InputFile
-import io.appwrite.services.Storage
 import io.appwrite.Permission
 import io.appwrite.Role
+import io.appwrite.models.InputFile
+import io.appwrite.services.Storage
 import java.io.File
 
 class FileUploadRepoImpl(

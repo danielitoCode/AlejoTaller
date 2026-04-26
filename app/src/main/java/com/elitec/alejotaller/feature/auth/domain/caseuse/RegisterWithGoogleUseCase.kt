@@ -1,12 +1,11 @@
 package com.elitec.alejotaller.feature.auth.domain.caseuse
 
 import android.content.Context
-import com.elitec.alejotaller.feature.auth.domain.caseuse.util.hashEmailWithSub
 import com.elitec.alejotaller.feature.auth.domain.entity.User
 import com.elitec.alejotaller.feature.auth.domain.entity.UserProfile
-import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider
 import com.elitec.alejotaller.feature.auth.domain.ports.SessionManager
+import com.elitec.alejotaller.feature.auth.domain.repositories.AccountRepository
 
 class RegisterWithGoogleUseCase(
     private val googleAuthProvider: GoogleAuthProvider,

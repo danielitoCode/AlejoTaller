@@ -3,13 +3,11 @@ package com.elitec.alejotaller.infraestructure.core.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.elitec.alejotaller.feature.notifications.data.models.PromotionEvent
 import com.elitec.alejotaller.feature.notifications.domain.caseuse.SavePromotionCaseUse
-import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
-import com.elitec.shared.sale.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
-import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
 import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeMessageKind
 import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeCommand

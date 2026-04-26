@@ -3,10 +3,10 @@ package com.elitec.alejotaller.feature.sale.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InitiatePaymentCaseUse
-import com.elitec.shared.sale.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.GetSalesByIdCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.SyncSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateDeliveryTypeCaseUse
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel

@@ -1,12 +1,9 @@
 package com.elitec.alejotaller.feature.product.data.repository
 
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.category.data.mapper.toCategoryDto
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
 import com.elitec.alejotaller.feature.product.data.mapper.toProductDto
-import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
-import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import io.appwrite.services.Databases
 
 class ProductNetRepositoryImpl(

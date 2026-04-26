@@ -3,14 +3,11 @@ package com.elitec.shared.data.feature.sale.data.repository
 import android.util.Log
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.data.feature.sale.data.mapper.toSaleDto
-import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import com.elitec.shared.data.infraestructure.core.data.config.SaleRemoteConfig
 import io.appwrite.ID
 import io.appwrite.Query
-import io.appwrite.exceptions.AppwriteException
 import io.appwrite.services.Databases
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SaleNetRepositoryImpl(

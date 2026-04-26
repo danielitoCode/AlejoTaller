@@ -14,7 +14,6 @@ import com.elitec.alejotaller.feature.settigns.presentation.viewmodel.SettingsVi
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
-import kotlin.coroutines.EmptyCoroutineContext.get
 
 private const val SETTINGS_DATASTORE = "app_settings.preferences_pb"
 

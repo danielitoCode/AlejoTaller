@@ -1,6 +1,5 @@
 package com.elitec.alejotaller.feature.auth.data.dto
 
-import com.elitec.alejotaller.feature.auth.domain.entity.UserProfile
 import kotlinx.serialization.Serializable
 
 @Serializable

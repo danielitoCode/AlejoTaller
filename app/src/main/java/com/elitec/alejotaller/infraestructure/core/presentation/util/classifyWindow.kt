@@ -1,10 +1,5 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.util
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.window.core.layout.WindowHeightSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
-
 /*@Composable
 fun classifyWindow(): AppWindowType {
     val windowSize = calculateWindowSizeClass()

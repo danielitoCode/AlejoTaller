@@ -1,7 +1,7 @@
 package com.elitec.shared.auth.feature.auth.domain.caseuse
 
-import com.elitec.shared.auth.feature.auth.domain.entity.hasOperatorAccess
 import com.elitec.shared.auth.feature.auth.domain.entity.User
+import com.elitec.shared.auth.feature.auth.domain.entity.hasOperatorAccess
 
 class AuthOperatorUserCaseUse(
     private val authUserCaseUse: AuthUserCaseUse,

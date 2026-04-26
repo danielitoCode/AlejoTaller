@@ -3,13 +3,9 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 import android.util.Log
 import com.pusher.client.Pusher
 import com.pusher.client.channel.Channel
-import com.pusher.client.channel.PusherEvent
 import com.pusher.client.connection.ConnectionEventListener
 import com.pusher.client.connection.ConnectionState
 import com.pusher.client.connection.ConnectionStateChange
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 class  PusherManager(
     private val pusher: Pusher

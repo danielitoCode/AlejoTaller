@@ -3,8 +3,8 @@ package com.elitec.alejotaller.infraestructure.core.data.repository
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import androidx.credentials.GetCredentialRequest
 import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
 import com.elitec.alejotaller.BuildConfig
 import com.elitec.alejotaller.feature.auth.domain.entity.GoogleUser
 import com.elitec.alejotaller.feature.auth.domain.ports.GoogleAuthProvider

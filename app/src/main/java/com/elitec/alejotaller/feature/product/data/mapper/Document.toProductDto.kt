@@ -1,6 +1,5 @@
 package com.elitec.alejotaller.feature.product.data.mapper
 
-import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
 import io.appwrite.models.Document
 

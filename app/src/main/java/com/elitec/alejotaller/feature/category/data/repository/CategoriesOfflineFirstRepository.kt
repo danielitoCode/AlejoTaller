@@ -1,12 +1,10 @@
 package com.elitec.alejotaller.feature.category.data.repository
 
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
-import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
 import com.elitec.alejotaller.feature.category.data.mapper.toDomain
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.domain.repository.CategoriesRepository
 import com.elitec.alejotaller.feature.category.domain.repository.CategoryNetRepository
-import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
