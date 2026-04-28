@@ -181,18 +181,35 @@
         padding: 12px 16px;
         border-radius: 20px;
         font-weight: 800;
+        border: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
     }
     .status-card.pending {
-        background: rgba(255, 151, 60, 0.14);
-        color: #d97706;
+        background: linear-gradient(
+            135deg,
+            color-mix(in srgb, #f59e0b 14%, var(--md-sys-color-surface-container-high)) 0%,
+            color-mix(in srgb, #f59e0b 6%, var(--md-sys-color-surface-container)) 100%
+        );
+        border-color: color-mix(in srgb, #f59e0b 24%, transparent);
+        color: #e59a17;
     }
     .status-card.ready {
-        background: color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent);
-        color: var(--md-sys-color-primary);
+        background: linear-gradient(
+            135deg,
+            color-mix(in srgb, #7fd98f 14%, var(--md-sys-color-surface-container-high)) 0%,
+            color-mix(in srgb, #7fd98f 6%, var(--md-sys-color-surface-container)) 100%
+        );
+        border-color: color-mix(in srgb, #7fd98f 22%, transparent);
+        color: #84d99a;
     }
     .status-card.cancelled {
-        background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent);
-        color: var(--md-sys-color-error);
+        background: linear-gradient(
+            135deg,
+            color-mix(in srgb, #ff8f8f 14%, var(--md-sys-color-surface-container-high)) 0%,
+            color-mix(in srgb, #ff8f8f 6%, var(--md-sys-color-surface-container)) 100%
+        );
+        border-color: color-mix(in srgb, #ff8f8f 22%, transparent);
+        color: #ff9d9d;
     }
     .layout {
         display: grid;
