@@ -126,11 +126,11 @@
     }
 </script>
 
-<section class="screen">
+<section class="screen profile-screen">
     <div class="hero">
         <p class="eyebrow">Perfil</p>
-        <h1>Cuenta</h1>
-        <p class="support">Edita tu identidad visible, telefono, bio y foto con una distribucion mas cercana a escritorio.</p>
+        <h1>Mi perfil</h1>
+        <p class="support">Edita tu identidad visible, telefono, biografia y foto desde una vista dedicada de perfil.</p>
     </div>
 
     {#if loading}
@@ -249,6 +249,10 @@
         min-height: 100%;
         grid-template-rows: auto auto minmax(0, 1fr) auto;
         padding-bottom: 8px;
+    }
+
+    .profile-screen {
+        overflow: visible;
     }
 
     .eyebrow,

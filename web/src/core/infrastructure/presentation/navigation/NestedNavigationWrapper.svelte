@@ -74,6 +74,7 @@
     $: internalStack = $internalStackStore;
     $: currentEntry = internalStack.at(-1);
     $: currentPath = currentEntry?.route ?? dashboard.path;
+    $: routeUsesStageScroll = ![dashboard.path, product.path].includes(currentPath);
     $: cartCount = $cartStore.items.reduce((sum, item) => sum + item.quantity, 0);
     $: pendingSales = $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
     $: navItems = items.map((item) => ({
@@ -281,7 +282,12 @@
         </div>
 
         {#key currentPath}
-            <div class="route-stage" in:fade={{ duration: 180 }} out:fade={{ duration: 120 }}>
+            <div
+                class="route-stage"
+                class:route-stage-scroll={routeUsesStageScroll}
+                in:fade={{ duration: 180 }}
+                out:fade={{ duration: 120 }}
+            >
                 <NavHost
                     navController={internalNavController}
                     routes={[
@@ -522,6 +528,13 @@
         overflow: hidden;
     }
 
+    .route-stage.route-stage-scroll {
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 4px;
+    }
+
     .top-mobile {
         display: none;
     }
@@ -671,13 +684,15 @@
     }
 
     .rail-wrap :global(.rail::-webkit-scrollbar),
-    .content::-webkit-scrollbar {
+    .content::-webkit-scrollbar,
+    .route-stage::-webkit-scrollbar {
         width: 10px;
         height: 10px;
     }
 
     .rail-wrap :global(.rail::-webkit-scrollbar-thumb),
-    .content::-webkit-scrollbar-thumb {
+    .content::-webkit-scrollbar-thumb,
+    .route-stage::-webkit-scrollbar-thumb {
         background: color-mix(in srgb, var(--md-sys-color-outline) 30%, transparent);
         border-radius: 999px;
         border: 2px solid transparent;
@@ -685,7 +700,8 @@
     }
 
     .rail-wrap :global(.rail::-webkit-scrollbar-track),
-    .content::-webkit-scrollbar-track {
+    .content::-webkit-scrollbar-track,
+    .route-stage::-webkit-scrollbar-track {
         background: transparent;
     }
 </style>
