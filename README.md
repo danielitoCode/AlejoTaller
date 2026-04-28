@@ -62,6 +62,11 @@ Este repositorio representa un **MVP serio**, ya con decisiones de arquitectura,
 - [Web Cliente](./web/README.md)
 - [Function Publisher](./function/alejo_publisher/README.md)
 
+### Enlaces utiles
+
+- Web desplegada en Render: [https://alejotaller.onrender.com/](https://alejotaller.onrender.com/)
+- Dashboard de administracion: [https://github.com/danielitoCode/dash_alejo_taller](https://github.com/danielitoCode/dash_alejo_taller)
+
 ### Cuando leer cada uno
 
 - usa este README para entender la vision general, arquitectura y roadmap del producto
