@@ -1,0 +1,1 @@
+// This file contains de mapper to change the CupExchange into a DTO data layer and invert the mapper
