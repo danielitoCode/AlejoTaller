@@ -29,4 +29,6 @@ export const ENV = {
     clientAndroidApkUrl: import.meta.env.VITE_CLIENT_ANDROID_APK_URL,
     operatorAndroidApkUrl: import.meta.env.VITE_OPERATOR_ANDROID_APK_URL,
     githubReleasesUrl: import.meta.env.VITE_GITHUB_RELEASES_URL,
+    elToqueApiKey: import.meta.env.VITE_EL_TOQUE_API_KEY,
+    elToqueApiUrl: import.meta.env.VITE_EL_TOQUE_API_URL,
 }

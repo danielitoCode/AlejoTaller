@@ -2,8 +2,6 @@ package com.elitec.alejotaller.feature.product.domain.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 
 data class Product(
     val id: String,
