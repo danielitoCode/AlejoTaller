@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { Button, Card, Icon, Switch } from "m3-svelte";
+    import { Button, Card, Icon } from "m3-svelte";
     import refreshIcon from "@ktibow/iconset-material-symbols/refresh-rounded";
     import { exchangeStore } from "../viewmodels/exchanges.store";
 
@@ -14,10 +14,18 @@
                 ? `1 USD = ${usdRate.toFixed(2)} CUP`
                 : "Consulta la tasa de elTOQUE";
 
-    function onSwitchClick() {
-        const nextCurrency = $exchangeStore.selectedCurrency === "USD" ? "CUP" : "USD";
-        exchangeStore.setCurrency(nextCurrency);
-        if (nextCurrency === "USD" && !$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.refresh();
+    let isDropdownOpen = false;
+
+    const currencyOptions = [
+        { value: "CUP", label: "CUP" },
+        { value: "USD", label: "USD" }
+    ] as const;
+
+    function selectCurrency(currency: "CUP" | "USD") {
+        exchangeStore.setCurrency(currency);
+        isDropdownOpen = false;
+
+        if (currency === "USD" && !$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.refresh();
     }
 </script>
 
@@ -29,9 +37,34 @@
                 <span>{statusText}</span>
             </div>
             <div class="control">
-                <span class:active={$exchangeStore.selectedCurrency === "CUP"}>CUP</span>
-                <label aria-label="Cambiar entre CUP y USD"><Switch checked={$exchangeStore.selectedCurrency === "USD"} onclick={onSwitchClick} /></label>
-                <span class:active={$exchangeStore.selectedCurrency === "USD"}>USD</span>
+                <div class="currency-menu">
+                    <button
+                            class="currency-trigger"
+                            type="button"
+                            aria-haspopup="listbox"
+                            aria-expanded={isDropdownOpen}
+                            on:click={() => (isDropdownOpen = !isDropdownOpen)}
+                    >
+                        <span>{$exchangeStore.selectedCurrency}</span>
+                        <span class="chevron" aria-hidden="true">⌄</span>
+                    </button>
+
+                    {#if isDropdownOpen}
+                        <div class="currency-options" role="listbox" aria-label="Seleccionar moneda">
+                            {#each currencyOptions as option}
+                                <button
+                                        class:active={$exchangeStore.selectedCurrency === option.value}
+                                        role="option"
+                                        aria-selected={$exchangeStore.selectedCurrency === option.value}
+                                        type="button"
+                                        on:click={() => selectCurrency(option.value)}
+                                >
+                                    {option.label}
+                                </button>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
                 <Button variant="text" size="s" iconType="left" onclick={() => exchangeStore.refresh()} disabled={$exchangeStore.loading}>
                     <Icon icon={refreshIcon} />
                     {compact ? "" : "Actualizar"}
@@ -85,14 +118,63 @@
         white-space: nowrap;
     }
 
-    .control span {
-        font-size: 0.78rem;
-        font-weight: 800;
-        color: var(--md-sys-color-on-surface-variant);
+    .currency-menu {
+        position: relative;
     }
 
-    .control span.active {
-        color: var(--md-sys-color-primary);
+    .currency-trigger {
+        min-width: 86px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 16px;
+        background: var(--md-sys-color-surface-container);
+        color: var(--md-sys-color-on-surface);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 12px;
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .chevron {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.9rem;
+        line-height: 1;
+    }
+
+    .currency-options {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 12;
+        min-width: 100%;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 16px;
+        background: var(--md-sys-color-surface-container-high);
+        box-shadow: 0 14px 34px color-mix(in srgb, black 18%, transparent);
+        display: grid;
+        gap: 4px;
+        padding: 6px;
+    }
+
+    .currency-options button {
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+        color: var(--md-sys-color-on-surface);
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 800;
+        padding: 9px 12px;
+        text-align: left;
+    }
+
+    .currency-options button:hover,
+    .currency-options button.active {
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
     }
 
     .source,

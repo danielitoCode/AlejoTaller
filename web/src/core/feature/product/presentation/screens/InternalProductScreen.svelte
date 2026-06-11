@@ -86,6 +86,9 @@
         toastStore.success(`${selectedProduct.name} agregado al carrito`);
     };
 
+    const closeProductDetail = () => {
+        selectedProduct = null;
+    };
 </script>
 
 <div class="internal-product-screen" class:has-selection={hasSelection}>
@@ -114,10 +117,34 @@
             <ProductDetailScreen
                 product={selectedProduct}
                 showTopBar={true}
-                onBackClick={() => (selectedProduct = null)}
+                onBackClick={closeProductDetail}
                 onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
                 onAddToCartClick={handleAddToCartClick}
             />
+        </div>
+        <div class="mobile-detail-sheet" role="presentation" out:fade={{ duration: 120 }}>
+            <button
+                    class="mobile-detail-scrim"
+                    type="button"
+                    aria-label="Cerrar detalle del producto"
+                    on:click={closeProductDetail}
+            ></button>
+            <div
+                    class="mobile-detail-panel"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Detalle de ${selectedProduct.name}`}
+                    in:fly={{ y: 40, duration: 220, opacity: 0.3 }}
+                    out:fly={{ y: 40, duration: 150, opacity: 0.2 }}
+            >
+                <ProductDetailScreen
+                        product={selectedProduct}
+                        showTopBar={true}
+                        onBackClick={closeProductDetail}
+                        onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
+                        onAddToCartClick={handleAddToCartClick}
+                />
+            </div>
         </div>
     {/if}
 </div>
@@ -154,18 +181,53 @@
         padding-left: 14px;
     }
 
+    .mobile-detail-sheet {
+        display: none;
+    }
+
+    .mobile-detail-scrim {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: color-mix(in srgb, black 38%, transparent);
+    }
+
+    .mobile-detail-panel {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        min-height: 0;
+        background: var(--md-sys-color-background);
+        border-radius: 28px 28px 0 0;
+        overflow: hidden;
+        box-shadow: 0 -18px 48px color-mix(in srgb, black 24%, transparent);
+    }
+
     /* Responsive: Stack on smaller screens */
     @media (max-width: 1100px) {
         .internal-product-screen {
             grid-template-columns: 1fr;
         }
 
-        .product-list-panel {
+        .internal-product-screen.has-selection .product-list-panel {
             border-right: none;
         }
 
         .product-detail-panel {
             display: none;
+        }
+
+        .mobile-detail-sheet {
+            position: fixed;
+            inset: 0;
+            z-index: 80;
+            display: grid;
+            background: transparent;
+        }
+
+        .mobile-detail-panel {
+            border-radius: 0;
+            padding-bottom: env(safe-area-inset-bottom);
         }
     }
 </style>
