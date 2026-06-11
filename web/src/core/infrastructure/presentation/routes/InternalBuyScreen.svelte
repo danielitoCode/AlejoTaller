@@ -6,6 +6,8 @@
     import type {NavController} from "../../../../lib/navigation/NavController";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
     import {buyConfirm, dashboard} from "../navigation/nested.router";
+    import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
+    import { exchangeStore, formatMoney } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -13,6 +15,7 @@
 
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    $: displayTotalAmount = formatMoney(totalAmount, $exchangeStore);
 </script>
 
 <section class="screen">
@@ -23,7 +26,7 @@
             <p class="support">Revisa cantidades y prepara tu reserva con una visual mas consistente.</p>
         </div>
         {#if items.length}
-            <div class="total-pill">Total ${totalAmount.toFixed(2)}</div>
+            <div class="total-pill">Total {displayTotalAmount}</div>
         {/if}
     </div>
 
@@ -39,6 +42,7 @@
             </Card>
         </div>
     {:else}
+        <CurrencySwitch />
         <div class="list">
             {#each items as item}
                 <div class="cart-card">
@@ -50,7 +54,7 @@
                                 </div>
                                 <div class="item-copy">
                                     <strong>{item.product.name}</strong>
-                                    <span>${item.product.price.toFixed(2)} c/u</span>
+                                    <span>{formatMoney(item.product.price, $exchangeStore)} c/u</span>
                                 </div>
                             </div>
                             <div class="controls">

@@ -9,6 +9,7 @@
     import type { Product } from "../../domain/entity/Product";
     import type { Promotion } from "../../../notification/domain/entity/Promotion";
     import type { Category } from "../../../category/domain/entity/Category";
+    import CurrencySwitch from "../../../exchange/presentation/components/CurrencySwitch.svelte";
 
     export let products: Product[] = [];
     export let promotions: Promotion[] = [];
@@ -91,6 +92,10 @@
             {/if}
         </div>
 
+        <div class="exchange-section">
+            <CurrencySwitch />
+        </div>
+
         {#if categories.length > 0}
             <div class="category-section">
                 <CategoryFilter
@@ -148,9 +153,13 @@
         min-height: 0;
         overflow: hidden;
         display: grid;
-        grid-template-rows: auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr);
         gap: 16px;
         padding: 0;
+    }
+
+    .exchange-section {
+        padding: 0 16px;
     }
 
     .top-row {
@@ -296,6 +305,10 @@
             gap: 12px;
         }
 
+        .exchange-section {
+            padding: 0 12px;
+        }
+
         .top-row {
             padding: 12px 12px 0;
             grid-template-columns: 1fr;
@@ -319,6 +332,10 @@
     @media (max-width: 480px) {
         .screen-content {
             gap: 8px;
+        }
+
+        .exchange-section {
+            padding: 0 8px;
         }
 
         .top-row {

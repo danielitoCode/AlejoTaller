@@ -2,6 +2,7 @@
     import { Icon } from "m3-svelte";
     import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
     import type { Product } from "../../domain/entity/Product";
+    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodel/exchange.store";
 
     export let product: Product;
     export let onClick: () => void = () => {};
@@ -32,7 +33,7 @@
     <div class="card-footer">
         <h3 class="product-name">{product.name}</h3>
         {#if product.price}
-            <p class="product-price">${product.price.toFixed(2)}</p>
+            <p class="product-price">{formatMoney(product.price, $exchangeStore)}</p>
         {/if}
     </div>
 </div>

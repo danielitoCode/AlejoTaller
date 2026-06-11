@@ -20,6 +20,8 @@
     import {toastStore} from "../viewmodel/toast.store";
     import {buy, reservationDetail} from "../navigation/nested.router";
     import type {DeliveryAddress} from "../../../feature/sale/domain/entity/Sale";
+    import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
+    import { exchangeStore, formatMoney } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -52,6 +54,7 @@
 
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    $: displayTotalAmount = formatMoney(totalAmount, $exchangeStore);
     $: needsAddress = selectedDeliveryType === DeliveryType.DELIVERY;
     $: missingDeliveryType = !selectedDeliveryType;
     $: invalidAddress = needsAddress && !isAddressValid(address);
@@ -185,20 +188,21 @@
                 <Icon icon={shoppingCartIcon} />
                 <h2>Resumen</h2>
             </div>
+            <CurrencySwitch />
             <div class="summary-list">
                 {#each items as item}
                     <div class="summary-row">
                         <div>
                             <strong>{item.product.name}</strong>
-                            <span>{item.quantity} x ${item.product.price.toFixed(2)}</span>
+                            <span>{item.quantity} x {formatMoney(item.product.price, $exchangeStore)}</span>
                         </div>
-                        <b>${(item.product.price * item.quantity).toFixed(2)}</b>
+                        <b>{formatMoney(item.product.price * item.quantity, $exchangeStore)}</b>
                     </div>
                 {/each}
             </div>
             <div class="total-row">
                 <span>Total final</span>
-                <strong>${totalAmount.toFixed(2)}</strong>
+                <strong>{displayTotalAmount}</strong>
             </div>
         </Card>
 

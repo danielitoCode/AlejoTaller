@@ -5,6 +5,8 @@
     import ShareRounded from "@ktibow/iconset-material-symbols/share-eta-rounded";
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import type { Product } from "../../domain/entity/Product";
+    import CurrencySwitch from "../../../exchange/presentation/components/CurrencySwitch.svelte";
+    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodel/exchange.store";
 
     export let product: Product;
     export let showTopBar: boolean = true;
@@ -61,8 +63,9 @@
 
             {#if product.price}
                 <div class="price-section">
-                    <span class="price-value">${product.price.toFixed(2)}</span>
+                    <span class="price-value">{formatMoney(product.price, $exchangeStore)}</span>
                 </div>
+                <CurrencySwitch compact />
             {/if}
         </section>
 
