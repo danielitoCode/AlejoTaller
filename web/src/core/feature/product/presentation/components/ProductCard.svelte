@@ -2,7 +2,7 @@
     import { Icon } from "m3-svelte";
     import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
     import type { Product } from "../../domain/entity/Product";
-    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodel/exchange.store";
+    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
 
     export let product: Product;
     export let onClick: () => void = () => {};
