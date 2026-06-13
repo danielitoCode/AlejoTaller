@@ -4,6 +4,7 @@ export interface SaleDTO extends Models.Document {
     date: string
     amount: number
     buy_state: string
+    currency: string
     products: string  // JSON string serialization of SaleItemDTO[]
     user_id: string
     delivery_type?: string | null

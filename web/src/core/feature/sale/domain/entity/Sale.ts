@@ -1,4 +1,4 @@
-import {type BuyState, DeliveryType} from "./enums";
+import {type BuyState, Currency, DeliveryType} from "./enums";
 
 export interface Sale {
     id: string
@@ -6,6 +6,7 @@ export interface Sale {
     amount: number
     verified: BuyState
     products: SaleItem[]
+    currency: Currency
     userId: string
     deliveryType?: DeliveryType | null
     deliveryAddress?: DeliveryAddress | null
@@ -27,3 +28,5 @@ export interface DeliveryAddress {
     houseNumber: string
     referenceName?: string | null
 }
+
+

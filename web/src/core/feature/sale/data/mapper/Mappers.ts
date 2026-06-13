@@ -1,11 +1,11 @@
 import type {SaleDTO} from "../dto/SaleDTO";
-import type {DeliveryAddress, Sale, SaleItem} from "../../domain/entity/Sale";
-import {type BuyState, DeliveryType} from "../../domain/entity/enums";
+import {type DeliveryAddress, type Sale, type SaleItem} from "../../domain/entity/Sale";
+import { type BuyState, Currency, DeliveryType} from "../../domain/entity/enums";
 import type {SaleItemDTO} from "../dto/SaleItemDTO";
 
 export type SaleWriteDTO = Pick<
     SaleDTO,
-    "$id" | "date" | "amount" | "buy_state" | "products" | "user_id" | "delivery_type" | "delivery_address"
+    "$id" | "date" | "amount" | "currency" | "buy_state" | "products" | "user_id" | "delivery_type" | "delivery_address"
 >;
 
 function saleItemFromDTO(item: SaleItemDTO): SaleItem {
@@ -49,6 +49,7 @@ export function saleFromDTO(dto: SaleDTO): Sale {
         id: dto.$id,
         date: dto.date,
         amount: dto.amount,
+        currency: stringToCurrency(dto.currency),
         verified: dto.buy_state as BuyState,
         products: productsArray,
         userId: dto.user_id,
@@ -57,6 +58,18 @@ export function saleFromDTO(dto: SaleDTO): Sale {
     };
 }
 
+function stringToCurrency(currency: string): Currency {
+    switch (currency) {
+        case "CUP":
+            return Currency.CUP;
+        case "USD":
+            return Currency.USD;
+        case "MLC":
+            return Currency.MLC;
+        default:
+            throw new Error(`Unknown currency: ${currency}`);
+    }
+}
 /**
  * Domain → DTO (create/update payload)
  * El id de dominio se serializa en $id de Appwrite.
@@ -66,6 +79,7 @@ export function saleToDTO(sale: Sale): SaleWriteDTO {
         $id: sale.id,
         date: sale.date,
         amount: sale.amount,
+        currency: sale.currency.toString(),
         buy_state: sale.verified,
         products: JSON.stringify(sale.products.map(saleItemToDTO)),
         user_id: sale.userId,
