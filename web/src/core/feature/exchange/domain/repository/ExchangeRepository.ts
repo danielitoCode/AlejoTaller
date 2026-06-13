@@ -5,5 +5,7 @@ export interface ExchangeRepository {
 
     getToADay(date: Date): Promise<CupExchange>
 
+    getCachedToday(): Promise<CupExchange | null>
+
     getToARankOfDays(dateFrom: Date, dateTo: Date): Promise<CupExchange[]>
 }

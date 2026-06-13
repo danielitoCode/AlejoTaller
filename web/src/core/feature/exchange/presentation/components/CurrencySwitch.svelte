@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { Button, Card, Icon } from "m3-svelte";
-    import refreshIcon from "@ktibow/iconset-material-symbols/refresh-rounded";
     import { exchangeStore } from "../viewmodels/exchanges.store";
 
     export let compact = false;
@@ -25,117 +23,64 @@
         exchangeStore.setCurrency(currency);
         isDropdownOpen = false;
 
-        if (currency === "USD" && !$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.refresh();
+        if (!$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.hydrateCachedToday();
     }
 </script>
 
-<div class:compact>
-    <Card variant="outlined">
-        <div class="currency-switch">
-            <div class="copy">
-                <strong>Moneda</strong>
-                <span>{statusText}</span>
-            </div>
-            <div class="control">
-                <div class="currency-menu">
-                    <button
-                            class="currency-trigger"
-                            type="button"
-                            aria-haspopup="listbox"
-                            aria-expanded={isDropdownOpen}
-                            on:click={() => (isDropdownOpen = !isDropdownOpen)}
-                    >
-                        <span>{$exchangeStore.selectedCurrency}</span>
-                        <span class="chevron" aria-hidden="true">⌄</span>
-                    </button>
+<div class="currency-menu">
+    <button
+            class="currency-trigger"
+            type="button"
+            aria-haspopup="listbox"
+            aria-expanded={isDropdownOpen}
+            on:click={() => (isDropdownOpen = !isDropdownOpen)}
+    >
+        <span>{$exchangeStore.selectedCurrency}</span>
+        <span class="chevron" aria-hidden="true">⌄</span>
+    </button>
 
-                    {#if isDropdownOpen}
-                        <div class="currency-options" role="listbox" aria-label="Seleccionar moneda">
-                            {#each currencyOptions as option}
-                                <button
-                                        class:active={$exchangeStore.selectedCurrency === option.value}
-                                        role="option"
-                                        aria-selected={$exchangeStore.selectedCurrency === option.value}
-                                        type="button"
-                                        on:click={() => selectCurrency(option.value)}
-                                >
-                                    {option.label}
-                                </button>
-                            {/each}
-                        </div>
-                    {/if}
-                </div>
-                <Button variant="text" size="s" iconType="left" onclick={() => exchangeStore.refresh()} disabled={$exchangeStore.loading}>
-                    <Icon icon={refreshIcon} />
-                    {compact ? "" : "Actualizar"}
-                </Button>
-            </div>
+    {#if isDropdownOpen}
+        <div class="currency-options" role="listbox" aria-label="Seleccionar moneda">
+            {#each currencyOptions as option}
+                <button
+                        class:active={$exchangeStore.selectedCurrency === option.value}
+                        role="option"
+                        aria-selected={$exchangeStore.selectedCurrency === option.value}
+                        type="button"
+                        on:click={() => selectCurrency(option.value)}
+                >
+                    {option.label}
+                </button>
+            {/each}
         </div>
-        {#if $exchangeStore.error && !compact}
-            <p class="error">{$exchangeStore.error}</p>
-        {/if}
-        {#if $exchangeStore.exchange && !compact}
-            <p class="source">Fuente referencial: elTOQUE. Actualizado: {new Date($exchangeStore.exchange.updatedAt).toLocaleString("es-CU")}</p>
-        {/if}
-    </Card>
+    {/if}
 </div>
 
 <style>
-    .compact :global(.m3-card) {
-        border-radius: 18px;
-    }
-
-    .currency-switch {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-    }
-
-    .copy {
-        display: grid;
-        gap: 3px;
-        min-width: 0;
-    }
-
-    .copy strong {
-        color: var(--md-sys-color-on-surface);
-        font-size: 0.9rem;
-    }
-
-    .copy span,
-    .source,
-    .error {
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 0.78rem;
-    }
-
-    .control {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    }
-
     .currency-menu {
+        max-width: min-content;
         position: relative;
     }
 
     .currency-trigger {
-        min-width: 86px;
+        min-width: 92px;
         border: 1px solid var(--md-sys-color-outline-variant);
         border-radius: 16px;
-        background: var(--md-sys-color-surface-container);
+        background: var(--md-sys-color-surface-container-high);
         color: var(--md-sys-color-on-surface);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
+        gap: 12px;
         padding: 9px 12px;
         font-size: 0.82rem;
         font-weight: 800;
+        box-shadow: 0 8px 18px color-mix(in srgb, black 8%, transparent);
+    }
+
+    .currency-trigger:hover {
+        background: var(--md-sys-color-surface-container-highest);
     }
 
     .chevron {
@@ -148,12 +93,13 @@
         position: absolute;
         top: calc(100% + 6px);
         right: 0;
-        z-index: 12;
+        z-index: 100;
         min-width: 100%;
         border: 1px solid var(--md-sys-color-outline-variant);
         border-radius: 16px;
-        background: var(--md-sys-color-surface-container-high);
-        box-shadow: 0 14px 34px color-mix(in srgb, black 18%, transparent);
+        background-color: #1f211e; /* Solid dark theme background fallback */
+        background: var(--md-sys-color-surface-container-highest, #1f211e);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
         display: grid;
         gap: 4px;
         padding: 6px;
@@ -175,21 +121,5 @@
     .currency-options button.active {
         background: var(--md-sys-color-primary-container);
         color: var(--md-sys-color-on-primary-container);
-    }
-
-    .source,
-    .error {
-        margin: -4px 12px 12px;
-    }
-
-    .error {
-        color: var(--md-sys-color-error);
-    }
-
-    @media (max-width: 520px) {
-        .currency-switch {
-            align-items: start;
-            flex-direction: column;
-        }
     }
 </style>

@@ -4,16 +4,16 @@ import {ENV} from "../../../../infrastructure/env";
 
 export class ExchangeNetRepository {
     private get baseUrl(): string {
-        const url = (ENV.elToqueApiUrl || "https://tasas.eltoque.com/v1/trmi").trim();
-        if (!url) throw new Error("VITE_EL_TOQUE_API_URL no esta configurado");
+        const url = (ENV.directorioCubanoApiUrl || "https://widgets.directoriocubano.info/api/tasas").trim();
+        if (!url) throw new Error("VITE_DIRECTORIO_CUBANO_API_URL no esta configurado");
         return url.replace(/\/+$/, "");
     }
 
-    private get elToqueAuthKey(): string {
+    /*private get elToqueAuthKey(): string {
         const key = (ENV.elToqueApiKey || "").trim();
         if (!key) throw new Error("VITE_EL_TOQUE_API_KEY no esta configurado");
         return key;
-    }
+    }*/
 
     async getExchangeToday(): Promise<CupExchangeDTO> {
         return this.request()
@@ -48,20 +48,19 @@ export class ExchangeNetRepository {
         const res = await fetch(url, {
             method: "GET",
             headers: {
-                Authorization: `Bearer ${this.elToqueAuthKey}`,
                 Accept: "application/json"
             }
         });
 
         const text = await res.text();
         if (!res.ok) {
-            throw new Error(`elTOQUE respondio ${res.status}: ${text || res.statusText}`);
+            throw new Error(`directorioCubano respondio ${res.status}: ${text || res.statusText}`);
         }
 
         try {
             return JSON.parse(text || "{}");
         } catch {
-            throw new Error("El servidor de cambio elTOQUE devolvio una respuesta invalida.");
+            throw new Error("El servidor de cambio directorioCubano devolvio una respuesta invalida.");
         }
     }
  }

@@ -4,7 +4,6 @@
     import { productStore } from "../viewmodel/product.store";
     import { promotionStore } from "../../../notification/presentation/viewmodel/promotion.store";
     import { categoryStore } from "../../../category/presentation/viewmodel/category.store";
-    import { LoadingIndicator } from "m3-svelte";
     import { cartStore } from "../../../sale/presentation/viewmodel/cart.store";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import ProductScreen from "./ProductScreen.svelte";
@@ -14,7 +13,6 @@
     let selectedCategoryId: string | null = null;
     let selectedProduct: any = null;
     let isLoading = false;
-    $: hasSelection = !!selectedProduct;
 
     // Subscribe to stores
     let products: any[] = [];
@@ -91,7 +89,7 @@
     };
 </script>
 
-<div class="internal-product-screen" class:has-selection={hasSelection}>
+<div class="internal-product-screen">
     <div class="product-list-panel">
         <ProductScreen
             {products}
@@ -99,7 +97,7 @@
             {categories}
             {searchQuery}
             {selectedCategoryId}
-            loading={false}
+            loading={isLoading}
             onSearchQueryChanged={handleSearchQueryChanged}
             onCategorySelected={handleCategorySelected}
             onProductClick={handleProductClick}
@@ -109,33 +107,20 @@
     </div>
 
     {#if selectedProduct}
-        <div
-            class="product-detail-panel"
-            in:fly={{ x: 28, duration: 220, opacity: 0.2 }}
-            out:fade={{ duration: 150 }}
-        >
-            <ProductDetailScreen
-                product={selectedProduct}
-                showTopBar={true}
-                onBackClick={closeProductDetail}
-                onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
-                onAddToCartClick={handleAddToCartClick}
-            />
-        </div>
-        <div class="mobile-detail-sheet" role="presentation" out:fade={{ duration: 120 }}>
+        <div class="product-detail-modal" role="presentation" out:fade={{ duration: 120 }}>
             <button
-                    class="mobile-detail-scrim"
+                    class="product-detail-scrim"
                     type="button"
                     aria-label="Cerrar detalle del producto"
                     on:click={closeProductDetail}
             ></button>
             <div
-                    class="mobile-detail-panel"
+                    class="product-detail-dialog"
                     role="dialog"
                     aria-modal="true"
                     aria-label={`Detalle de ${selectedProduct.name}`}
-                    in:fly={{ y: 40, duration: 220, opacity: 0.3 }}
-                    out:fly={{ y: 40, duration: 150, opacity: 0.2 }}
+                    in:fly={{ y: 32, duration: 220, opacity: 0.25 }}
+                    out:fly={{ y: 32, duration: 150, opacity: 0.2 }}
             >
                 <ProductDetailScreen
                         product={selectedProduct}
@@ -160,73 +145,60 @@
         background: var(--md-sys-color-background);
     }
 
-    .internal-product-screen.has-selection {
-        grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
-    }
-
     .product-list-panel {
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
-    .internal-product-screen.has-selection .product-list-panel {
-        border-right: 1px solid var(--md-sys-color-outline-variant);
+    .product-detail-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 90;
+        display: grid;
+        place-items: stretch;
+        padding: 18px;
     }
 
-    .product-detail-panel {
-        height: 100%;
-        min-height: 0;
-        overflow: hidden;
-        padding-left: 14px;
-    }
-
-    .mobile-detail-sheet {
-        display: none;
-    }
-
-    .mobile-detail-scrim {
+    .product-detail-scrim {
         position: absolute;
         inset: 0;
         border: 0;
-        background: color-mix(in srgb, black 38%, transparent);
+        background:
+                radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent), transparent 42%),
+                color-mix(in srgb, black 68%, transparent);
+        backdrop-filter: blur(4px);
+        cursor: pointer;
     }
 
-    .mobile-detail-panel {
-        position: absolute;
-        inset: 0;
+    .product-detail-dialog {
+        position: relative;
+        z-index: 1;
+        width: min(100%, 980px);
+        height: min(100%, 900px);
+        justify-self: center;
+        align-self: center;
         display: grid;
         min-height: 0;
-        background: var(--md-sys-color-background);
-        border-radius: 28px 28px 0 0;
+        background-color: #1a1c19; /* Solid dark background fallback */
+        background: var(--md-sys-color-surface-container, #1a1c19);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
+        border-radius: 32px;
         overflow: hidden;
-        box-shadow: 0 -18px 48px color-mix(in srgb, black 24%, transparent);
+        box-shadow: 0 28px 72px color-mix(in srgb, black 42%, transparent);
     }
 
     /* Responsive: Stack on smaller screens */
-    @media (max-width: 1100px) {
-        .internal-product-screen {
-            grid-template-columns: 1fr;
+    @media (max-width: 768px) {
+        .product-detail-modal {
+            padding: 0;
         }
 
-        .internal-product-screen.has-selection .product-list-panel {
-            border-right: none;
-        }
-
-        .product-detail-panel {
-            display: none;
-        }
-
-        .mobile-detail-sheet {
-            position: fixed;
-            inset: 0;
-            z-index: 80;
-            display: grid;
-            background: transparent;
-        }
-
-        .mobile-detail-panel {
+        .product-detail-dialog {
+            width: 100%;
+            height: 100%;
             border-radius: 0;
+            border: 0;
             padding-bottom: env(safe-area-inset-bottom);
         }
     }

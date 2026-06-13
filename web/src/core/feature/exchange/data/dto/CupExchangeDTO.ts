@@ -1,4 +1,13 @@
-// This file contain the DTO from data layer for reference to a EL_TOQUE API call
-// DTO flexible para la respuesta OpenAPI de elTOQUE (/v1/trmi).
-// El contrato externo puede variar entre objetos directos, listas o envoltorios `data`/`rates`.
-export type CupExchangeDTO = Record<string, unknown>;
+export interface CurrencyRateDTO {
+    CUP: number | null;
+    MLC: number | null;
+    USD: number | null;
+}
+
+export interface CupExchangeDTO {
+    ok: boolean;
+    fecha: string;
+    hora: string;
+    actualizado: string;
+    tasas: Record<string, CurrencyRateDTO>;
+}

@@ -31,4 +31,5 @@ export const ENV = {
     githubReleasesUrl: import.meta.env.VITE_GITHUB_RELEASES_URL,
     elToqueApiKey: import.meta.env.VITE_EL_TOQUE_API_KEY,
     elToqueApiUrl: import.meta.env.VITE_EL_TOQUE_API_URL,
+    directorioCubanoApiUrl: import.meta.env.VITE_DIRECTORIOCUBO_API_URL,
 }

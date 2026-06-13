@@ -5,6 +5,8 @@
     import alejoIcon from "/alejoicon_clean.svg";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
     import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
+    import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
+
     import {
         getStoredAdminChoice,
         goToAdminDashboard,
@@ -45,6 +47,7 @@
 
     onMount(async () => {
         try {
+            await exchangeStore.refreshForSplash();
             const user = await authContainer.useCases.accounts.getCurrentUser();
             if (shouldOfferAdminChoice(user)) {
                 const choice = getStoredAdminChoice();

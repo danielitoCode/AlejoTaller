@@ -10,7 +10,7 @@ class AppDatabase extends Dexie {
     categories!: Table<CategoryDTO>
     promotions!: Table<PromotionDTO>
     sales!: Table<SaleDTO>
-    exchanges!: Table<CupExchange>
+    exchangeRates!: Table<CupExchange>
 
     constructor() {
         super("alejo-taller-business-db")

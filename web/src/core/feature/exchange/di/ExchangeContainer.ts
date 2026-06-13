@@ -1,10 +1,12 @@
 import { ExchangeNetRepository } from "../data/repository/exchange.net.repository";
-import { ExchangeOfflineFirsRepository } from "../data/repository/exchange.offline-firs.repository";
+import { ExchangeOfflineFirstRepository } from "../data/repository/exchange-offline-first.repository";
 import { GetTodayExchangeCaseUse } from "../domain/caseuse/GetTodayExchangeCaseUse";
+import { GetCachedTodayExchangeCaseUse } from "../domain/caseuse/GetCachedTodayExchangeCaseUse";
 
 const exchangeNetRepository = new ExchangeNetRepository();
-const exchangeOfflineFirstRepository = new ExchangeOfflineFirsRepository(exchangeNetRepository);
+const exchangeOfflineFirstRepository = new ExchangeOfflineFirstRepository(exchangeNetRepository);
 const getTodayExchangeCaseUse = new GetTodayExchangeCaseUse(exchangeOfflineFirstRepository);
+const getCachedTodayExchangeCaseUse = new GetCachedTodayExchangeCaseUse(exchangeOfflineFirstRepository);
 
 export const exchangeContainer = {
     repositories: {
@@ -12,6 +14,7 @@ export const exchangeContainer = {
         offlineFirst: exchangeOfflineFirstRepository
     },
     useCases: {
-        getToday: getTodayExchangeCaseUse
+        getToday: getTodayExchangeCaseUse,
+        getCachedToday: getCachedTodayExchangeCaseUse
     }
 };

@@ -5,7 +5,6 @@
     import ShareRounded from "@ktibow/iconset-material-symbols/share-eta-rounded";
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import type { Product } from "../../domain/entity/Product";
-    import CurrencySwitch from "../../../exchange/presentation/components/CurrencySwitch.svelte";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
 
     export let product: Product;
@@ -65,7 +64,6 @@
                 <div class="price-section">
                     <span class="price-value">{formatMoney(product.price, $exchangeStore)}</span>
                 </div>
-                <CurrencySwitch compact />
             {/if}
         </section>
 
@@ -96,7 +94,8 @@
         min-height: 0;
         display: grid;
         grid-template-rows: auto minmax(170px, 230px) minmax(0, 1fr) auto;
-        background: var(--md-sys-color-background);
+        background-color: #1a1c19; /* Opaque surface background */
+        background: var(--md-sys-color-surface-container, #1a1c19);
         overflow: hidden;
     }
 

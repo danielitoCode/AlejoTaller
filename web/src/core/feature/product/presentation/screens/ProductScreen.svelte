@@ -2,6 +2,7 @@
     import { LoadingIndicator, Icon } from "m3-svelte";
     import { fly } from "svelte/transition";
     import SearchBar from "../components/SearchBar.svelte";
+    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import CategoryFilter from "../components/CategoryFilter.svelte";
     import ProductCard from "../components/ProductCard.svelte";
     import closeIcon from "@ktibow/iconset-material-symbols/close-rounded";
@@ -22,19 +23,27 @@
     export let onProductClick: (productId: string) => void = () => {};
     export let onPromotionClick: (promotionId: string) => void = () => {};
     export let onFavoriteClick: (productId: string) => void = () => {};
+    $: exchangeState = $exchangeStore;
 
     let isPromoVisible = true;
 
-    $: filteredProducts = products.filter((product) => {
-        const matchesSearch =
-            product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    $: filteredProducts = products
+        .filter((product) => {
+            const matchesSearch =
+                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                product.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-        const matchesCategory =
-            !selectedCategoryId || product.categoryId === selectedCategoryId;
+            const matchesCategory =
+                !selectedCategoryId || product.categoryId === selectedCategoryId;
 
-        return matchesSearch && matchesCategory;
-    });
+            return matchesSearch && matchesCategory;
+        })
+        .map((product) => {
+            return {
+                ...product,
+                displayPrice: formatMoney(product.price, exchangeState)
+            };
+        });
 
     const testPromotion = {
         id: "promo-local-test",
@@ -336,6 +345,8 @@
 
         .exchange-section {
             padding: 0 8px;
+            display: flex;
+            justify-content: flex-end;
         }
 
         .top-row {
