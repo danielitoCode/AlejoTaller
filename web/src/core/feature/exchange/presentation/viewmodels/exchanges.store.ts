@@ -1,5 +1,5 @@
 import { derived, writable } from "svelte/store";
-import { exchangeContainer } from "../../di/ExchangeContainer";
+import { exchangeContainer } from "../../di/exchange.container";
 import type { CupExchange, DisplayCurrency } from "../../domain/entity/CupExchange";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 
