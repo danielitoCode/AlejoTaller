@@ -1,7 +1,7 @@
 import { ExchangeNetRepository } from "../data/repository/exchange.net.repository";
 import { ExchangeOfflineFirstRepository } from "../data/repository/exchange-offline-first.repository";
 import { GetTodayExchangeCaseUse } from "../domain/caseuse/GetTodayExchangeCaseUse";
-import { GetCachedTodayExchangeCaseUse } from "../domain/caseuse/GetCachedTodayExchangeCaseUse";
+import { GetCachedTodayExchangeCaseUse } from "../domain/caseuse/GetCachedTodayExchangeCaseUse"
 
 const exchangeNetRepository = new ExchangeNetRepository();
 const exchangeOfflineFirstRepository = new ExchangeOfflineFirstRepository(exchangeNetRepository);
