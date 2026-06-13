@@ -13,7 +13,7 @@
     import editLocationIcon from "@ktibow/iconset-material-symbols/edit-location-alt-rounded";
     import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../lib/navigation/NavController";
-    import {BuyState, DeliveryType} from "../../../feature/sale/domain/entity/enums";
+    import {BuyState, Currency, DeliveryType} from "../../../feature/sale/domain/entity/enums";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
     import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
@@ -21,7 +21,11 @@
     import {buy, reservationDetail} from "../navigation/nested.router";
     import type {DeliveryAddress} from "../../../feature/sale/domain/entity/Sale";
     import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
-    import { exchangeStore, formatMoney } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
+    import {
+        exchangeStore,
+        formatMoney,
+        selectedCurrencyStore
+    } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -52,6 +56,7 @@
         referenceName: ""
     };
 
+    $: selectedCurrencyState = $selectedCurrencyStore
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     $: displayTotalAmount = formatMoney(totalAmount, $exchangeStore);
@@ -99,6 +104,21 @@
         isAddressDialogOpen = true;
     }
 
+    function stringToCurrency(currency: String): Currency {
+        let temCurrency = Currency.USD;
+        switch (currency) {
+            case "USD":
+                temCurrency = Currency.USD;
+                break;
+            case "CUP":
+                temCurrency = Currency.CUP;
+                break;
+            default:
+                temCurrency = Currency.USD;
+        }
+        return  temCurrency
+    }
+
     async function submitPurchase() {
         if (!items.length || isSubmitting) return;
         if (!selectedDeliveryType) {
@@ -120,11 +140,13 @@
             return;
         }
 
+
         try {
             const created = await saleStore.create({
                 id: crypto.randomUUID(),
                 date: new Date().toISOString(),
                 amount: totalAmount,
+                currency: stringToCurrency(selectedCurrencyState),
                 verified: BuyState.UNVERIFIED,
                 userId: currentUser.$id,
                 deliveryType: selectedDeliveryType,

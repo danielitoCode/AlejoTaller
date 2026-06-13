@@ -16,7 +16,7 @@
 
     const currencyOptions = [
         { value: "CUP", label: "CUP" },
-        { value: "USD", label: "USD" }
+        { value: "USD", label: "USD" },
     ] as const;
 
     function selectCurrency(currency: "CUP" | "USD") {

@@ -1,11 +1,12 @@
-import type { Sale } from "../../domain/entity/Sale";
-import { BuyState, DeliveryType } from "../../domain/entity/enums";
+import type {Sale} from "../../domain/entity/Sale";
+import {BuyState, Currency, DeliveryType} from "../../domain/entity/enums";
 
 export const saleFixtures: Sale[] = [
     {
         id: "rv-1204",
         date: "2026-03-22",
         amount: 210.0,
+        currency: Currency.CUP,
         verified: BuyState.UNVERIFIED,
         userId: "user-1",
         deliveryType: DeliveryType.DELIVERY,
@@ -27,6 +28,7 @@ export const saleFixtures: Sale[] = [
         id: "rv-1207",
         date: "2026-03-20",
         amount: 89.5,
+        currency: Currency.CUP,
         verified: BuyState.VERIFIED,
         userId: "user-1",
         deliveryType: DeliveryType.PICKUP,
