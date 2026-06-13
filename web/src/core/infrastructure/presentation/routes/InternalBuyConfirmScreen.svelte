@@ -22,6 +22,7 @@
     import type {DeliveryAddress} from "../../../feature/sale/domain/entity/Sale";
     import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
     import {
+        convertProductAmount,
         exchangeStore,
         formatMoney,
         selectedCurrencyStore
@@ -56,6 +57,7 @@
         referenceName: ""
     };
 
+    $: exchangeState = $exchangeStore;
     $: selectedCurrencyState = $selectedCurrencyStore
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
@@ -140,7 +142,6 @@
             return;
         }
 
-
         try {
             const created = await saleStore.create({
                 id: crypto.randomUUID(),
@@ -155,7 +156,7 @@
                     productId: item.product.id,
                     productName: item.product.name,
                     quantity: item.quantity,
-                    price: item.product.price
+                    price: convertProductAmount(item.product.price, exchangeState)
                 }))
             });
 
