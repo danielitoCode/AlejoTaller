@@ -175,7 +175,7 @@
         position: relative;
         z-index: 1;
         width: min(100%, 980px);
-        height: min(100%, 900px);
+        height: min(100dvh, 900px);
         justify-self: center;
         align-self: center;
         display: grid;
@@ -184,7 +184,8 @@
         background: var(--md-sys-color-surface-container, #1a1c19);
         border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
         border-radius: 32px;
-        overflow: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
         box-shadow: 0 28px 72px color-mix(in srgb, black 42%, transparent);
     }
 

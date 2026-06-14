@@ -569,7 +569,7 @@
 
     .login-brand h2 {
         margin: 0;
-        font-size: clamp(1.95rem, 8vw, 2.5rem);
+        font-size: clamp(1.5rem, 6vw, 2.5rem);
         line-height: 1.1;
     }
 
@@ -771,6 +771,7 @@
             gap: 8px;
             padding-top: max(10px, calc(env(safe-area-inset-top) + 4px));
             padding-bottom: max(10px, calc(env(safe-area-inset-bottom) + 6px));
+            overflow-y: auto;
         }
 
         .login-brand h2 {

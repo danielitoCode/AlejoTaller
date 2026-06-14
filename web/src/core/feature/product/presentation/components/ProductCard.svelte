@@ -50,7 +50,7 @@
     .card-image {
         position: relative;
         width: 100%;
-        aspect-ratio: 1 / 1.08;
+        aspect-ratio: 1 / 1;
         max-height: 220px;
         background: var(--md-sys-color-surface-variant);
         overflow: hidden;
@@ -115,6 +115,12 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         word-break: break-word;
+    }
+
+    @media (max-width: 480px) {
+        .product-name {
+            font-size: 0.85rem;
+        }
     }
 
     .product-price {

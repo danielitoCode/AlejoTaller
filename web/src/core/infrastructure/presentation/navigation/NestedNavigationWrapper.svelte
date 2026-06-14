@@ -560,7 +560,7 @@
         display: none;
     }
 
-    @media (max-width: 1100px) {
+    @media (max-width: 840px) {
         .nested-shell {
             grid-template-columns: 1fr;
         }
@@ -570,7 +570,7 @@
         }
 
         .content {
-            padding: 12px 12px max(28px, env(safe-area-inset-bottom) + 12px);
+            padding: 12px 12px max(80px, calc(env(safe-area-inset-bottom) + 12px));
         }
 
         .top-mobile {

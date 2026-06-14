@@ -40,7 +40,7 @@
         gap: 8px;
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0;
+        padding: 0 12px;
         scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
