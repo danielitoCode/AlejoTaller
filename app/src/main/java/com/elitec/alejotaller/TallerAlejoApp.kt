@@ -3,6 +3,7 @@ package com.elitec.alejotaller
 import android.app.Application
 import com.elitec.alejotaller.feature.auth.di.authFeatureDiModule
 import com.elitec.alejotaller.feature.category.di.categoryFeatureModule
+import com.elitec.alejotaller.feature.exchange.di.exchangeFeatureModule
 import com.elitec.alejotaller.feature.notifications.di.notificationsFeatureModule
 import com.elitec.alejotaller.feature.product.di.productFeatureModule
 import com.elitec.alejotaller.feature.sale.di.saleFeatureModule
@@ -31,6 +32,7 @@ class TallerAlejoApp : Application() {
                 productFeatureModule,
                 settingsFeatureModule,
                 saleFeatureModule,
+                exchangeFeatureModule,
             )
         }
         val config = PostHogAndroidConfig(

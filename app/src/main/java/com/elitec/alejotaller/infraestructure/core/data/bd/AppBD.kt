@@ -5,6 +5,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.elitec.alejotaller.feature.category.data.dao.CategoryDao
 import com.elitec.alejotaller.feature.category.data.dto.CategoryDto
+import com.elitec.alejotaller.feature.exchange.data.dao.ExchangeDao
+import com.elitec.alejotaller.feature.exchange.data.dto.CupExchangeLocalDto
 import com.elitec.alejotaller.feature.notifications.data.dao.PromotionDao
 import com.elitec.alejotaller.feature.notifications.data.dto.PromotionDto
 import com.elitec.alejotaller.feature.product.data.dao.ProductDao
@@ -19,9 +21,10 @@ import com.elitec.shared.data.feature.sale.data.dto.SaleDto
         CategoryDto::class,
         ProductDto::class,
         SaleDto::class,
-        PromotionDto::class
+        PromotionDto::class,
+        CupExchangeLocalDto::class
     ],
-    version = 9,
+    version = 10,
 )
 @TypeConverters(
     DateTimeConverter::class,
@@ -33,4 +36,5 @@ abstract class AppBD: RoomDatabase() {
     abstract fun productsDao(): ProductDao
     abstract fun saleDao(): SaleDao
     abstract fun promotionDao(): PromotionDao
+    abstract fun exchangeDao(): ExchangeDao
 }
