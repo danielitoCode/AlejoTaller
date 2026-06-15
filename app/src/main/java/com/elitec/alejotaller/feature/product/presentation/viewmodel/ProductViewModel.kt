@@ -62,6 +62,7 @@ class ProductViewModel(
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }
+
     fun onCategorySelected(categoryId: String?) {
         // Si se selecciona la misma categoría, se deselecciona (toggle)
         _selectedCategoryId.value =

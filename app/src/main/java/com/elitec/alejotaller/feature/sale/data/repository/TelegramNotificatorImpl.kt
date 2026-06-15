@@ -95,6 +95,7 @@ fun Sale.toFormattedMessage(user: SaleNotifierUser): String {
         👤 Usuario: ${user.name}
         📧 Correo: ${user.email}
         📱 Teléfono: ${user.phone ?: "No registrado"}
+        🪙 Moneda ${this}
 
         🧾 DETALLES DEL PEDIDO
     """.trimIndent()

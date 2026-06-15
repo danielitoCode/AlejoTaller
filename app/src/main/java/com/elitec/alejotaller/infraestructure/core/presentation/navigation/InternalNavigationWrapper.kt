@@ -58,6 +58,7 @@ import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.Realti
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
 import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel
@@ -426,7 +427,7 @@ fun InternalNavigationWrapper(
                                     id = "sale_charge",
                                     isInfinite = true
                                 )
-                                val sale = cartItems.toSale(userId, deliveryType, deliveryAddress)
+                                val sale = cartItems.toSale(userId, Currency.USD, deliveryType, deliveryAddress)
                                 if (paymentChannel == null) {
                                     saleViewModel.newSale(
                                         sale = sale,
@@ -524,6 +525,7 @@ fun InternalNavigationWrapper(
 
 private fun List<UiSaleItem>.toSale(
     userId: String,
+    currency: Currency = Currency.USD,
     deliveryType: DeliveryType,
     deliveryAddress: DeliveryAddress?
 ): Sale {
@@ -535,6 +537,7 @@ private fun List<UiSaleItem>.toSale(
         id = UUID.randomUUID().toString(),
         date = Clock.System.todayIn(TimeZone.currentSystemDefault()),
         amount = sumOf { item -> item.product.price * item.quantity },
+        currency = currency,
         products = products,
         verified = BuyState.UNVERIFIED,
         userId = userId,

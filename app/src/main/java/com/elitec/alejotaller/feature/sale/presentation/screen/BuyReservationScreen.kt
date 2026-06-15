@@ -41,6 +41,7 @@ import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
@@ -280,6 +281,7 @@ private fun BuyReservationScreenPreview() {
                 id = "sale1",
                 date = LocalDate(2023, 1, 12),
                 amount = totalAmount,
+                currency = Currency.CUP,
                 verified = BuyState.UNVERIFIED,
                 products = salesItemsList,
                 userId = "userId test",
@@ -289,6 +291,7 @@ private fun BuyReservationScreenPreview() {
                 id = "sale2",
                 date = LocalDate(2023, 1, 13),
                 amount = totalAmount2,
+                currency = Currency.CUP,
                 verified = BuyState.VERIFIED,
                 products = salesItemsList2,
                 userId = "userId test",
@@ -298,6 +301,7 @@ private fun BuyReservationScreenPreview() {
                 id = "sale3",
                 date = LocalDate(2023, 1, 14),
                 amount = totalAmount3,
+                currency = Currency.CUP,
                 verified = BuyState.DELETED,
                 products = salesItemsList3,
                 userId = "userId test",

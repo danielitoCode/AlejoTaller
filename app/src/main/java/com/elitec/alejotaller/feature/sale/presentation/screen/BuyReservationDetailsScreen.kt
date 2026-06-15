@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
@@ -396,6 +397,7 @@ private fun BuyReservationDetailsPreviewContent(state: BuyState) {
                     id = "ORD-777",
                     date = LocalDate(2023, 10, 25),
                     amount = 16500.0,
+                    currency = Currency.CUP,
                     verified = state,
                     products = salesItems,
                     userId = "user123",
