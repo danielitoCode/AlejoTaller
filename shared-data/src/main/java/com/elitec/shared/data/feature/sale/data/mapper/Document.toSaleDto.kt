@@ -1,6 +1,7 @@
 package com.elitec.shared.data.feature.sale.data.mapper
 
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import io.appwrite.models.Document
 import kotlinx.datetime.LocalDate
@@ -16,6 +17,7 @@ fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
         id = id,
         date = data["date"].toLocalDate(),
         amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
+        currency = (data["currency"] as? String) ?: Currency.USD.name,
         products = data["products"].toSaleItems(),
         verified = data["buy_state"] as? String
             ?: data["verified"] as? String

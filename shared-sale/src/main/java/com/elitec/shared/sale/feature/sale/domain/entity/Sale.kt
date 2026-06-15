@@ -8,6 +8,7 @@ data class Sale(
     val id: String,
     val date: LocalDate,
     val amount: Double,
+    val currency: Currency,
     val verified: BuyState,
     val products: List<SaleItem>,
     val userId: String,
@@ -28,6 +29,8 @@ enum class DeliveryType {
     PICKUP,   // El cliente va a recogerlo al taller
     DELIVERY  // El cliente solicita domicilio (el taller coordina)
 }
+
+enum class Currency { CUP, USD, MLC }
 
 @Serializable
 data class DeliveryAddress(

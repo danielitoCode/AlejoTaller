@@ -10,6 +10,7 @@ fun Sale.toDto(): SaleDto =
         date = date,
         verified = verified.toString(),
         amount = amount,
+        currency = currency.name,
         products = products,
         userId = userId,
         customerName = customerName,

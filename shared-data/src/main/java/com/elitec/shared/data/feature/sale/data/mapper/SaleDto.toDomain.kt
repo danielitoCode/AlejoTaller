@@ -2,6 +2,7 @@ package com.elitec.shared.data.feature.sale.data.mapper
 
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.data.feature.sale.data.dto.toBuyState
+import com.elitec.shared.data.feature.sale.data.dto.toCurrency
 import com.elitec.shared.data.feature.sale.data.dto.toDeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
@@ -12,6 +13,7 @@ fun SaleDto.toDomain(): Sale =
         id = id,
         date = date,
         amount = amount,
+        currency = currency.toCurrency(),
         products = products,
         userId = userId,
         customerName = customerName,

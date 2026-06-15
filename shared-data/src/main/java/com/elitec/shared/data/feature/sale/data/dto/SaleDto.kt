@@ -3,6 +3,7 @@ package com.elitec.shared.data.feature.sale.data.dto
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import kotlinx.datetime.LocalDate
@@ -15,6 +16,7 @@ data class SaleDto(
     @PrimaryKey val id: String,
     val date: LocalDate,
     val amount: Double,
+    val currency: String,
     val verified: String,
     val products: List<SaleItem>,
     @SerialName("user_id")
@@ -32,6 +34,13 @@ fun String.toBuyState(): BuyState = when(this) {
     "VERIFIED" -> BuyState.VERIFIED
     "DELETED" -> BuyState.DELETED
     else -> BuyState.UNVERIFIED
+}
+
+fun String.toCurrency(): Currency = when (this) {
+    "CUP" -> Currency.CUP
+    "USD" -> Currency.USD
+    "MLC" -> Currency.MLC
+    else -> Currency.USD
 }
 
 fun String.toDeliveryType(): DeliveryType = when(this) {
