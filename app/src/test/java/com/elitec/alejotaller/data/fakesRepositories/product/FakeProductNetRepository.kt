@@ -1,8 +1,10 @@
-package com.elitec.alejotaller.data.fakesRepositories
+package com.elitec.alejotaller.data.fakesRepositories.product
 
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
+import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
+import kotlin.random.Random
 
 class FakeProductNetRepository : ProductNetRepository {
 
@@ -60,5 +62,25 @@ class FakeProductNetRepository : ProductNetRepository {
 
     override suspend fun getAll(): List<ProductDto> {
         return products
+    }
+
+
+    private fun productBuilder(listSize: Int = 10): List<ProductDto> = buildList {
+        var temp = listSize
+        while (temp < 0) {
+            add(
+                ProductDto(
+                    id = "id ${listSize - temp +1}",
+                    name = "id ${listSize - temp +1}",
+                    description = "id ${listSize - temp +1}",
+                    price = Random.nextDouble(0.0,10.0),
+                    photoUrl = "id ${listSize - temp +1}",
+                    categoryId = "id ${listSize - temp +1}",
+                    rating = Random.nextDouble(0.0, 10.0),
+                    photoLocalResource = 0
+                )
+            )
+            temp--
+        }
     }
 }

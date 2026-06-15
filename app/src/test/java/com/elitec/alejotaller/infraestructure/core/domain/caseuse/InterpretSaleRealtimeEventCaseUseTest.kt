@@ -1,9 +1,9 @@
 package com.elitec.alejotaller.infraestructure.core.domain.caseuse
 
-import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
-import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeMessageKind
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeCommand
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
+import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeMessageKind
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeCommand
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

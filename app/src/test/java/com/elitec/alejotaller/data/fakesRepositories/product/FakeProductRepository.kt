@@ -1,4 +1,4 @@
-package com.elitec.alejotaller.data.fakesRepositories
+package com.elitec.alejotaller.data.fakesRepositories.product
 
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository

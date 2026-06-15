@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.viewmodel
 
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import org.junit.Test

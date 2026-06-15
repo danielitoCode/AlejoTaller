@@ -1,7 +1,7 @@
 package com.elitec.alejotaller.feature.product.domain.caseuse
 
 import android.nfc.FormatException
-import com.elitec.alejotaller.data.fakesRepositories.FakeProductRepository
+import com.elitec.alejotaller.data.fakesRepositories.product.FakeProductRepository
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse

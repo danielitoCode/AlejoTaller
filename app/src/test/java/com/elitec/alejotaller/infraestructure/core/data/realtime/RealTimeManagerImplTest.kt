@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.data.realtime
 
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import com.pusher.client.Pusher
 import com.pusher.client.channel.Channel
 import com.pusher.client.channel.SubscriptionEventListener
