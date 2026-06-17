@@ -1,101 +1,40 @@
-# AGENTS.md
+# AGENTS — Guía rápida para agentes de IA
 
-## Overview
-This codebase consists of two main projects:
-1. **Web Frontend**: A Svelte + TypeScript + Vite application located in `web/`.
-2. **Dashboard Backend**: A Svelte + TypeScript + Vite dashboard with supporting services and workers located in `dash_alejo_taller/`.
+Objetivo: instrucciones concretas para ser productivo en este repo frontend (Svelte + TypeScript + Vite).
 
-Both projects follow modular structures with clear separation of concerns. The backend integrates with Appwrite, Render, and Cloudflare services.
+- Estructura clave:
+  - feature-first: `src/core/feature/<feature>/presentation/...` contiene screens, viewmodels y componentes específicos.
+  - infraestructura compartida: `src/core/infrastructure/` (routing, utilidades, componentes contenedores).
+  - libs reutilizables: `src/lib/` y `src/demo/`.
 
----
+- Reglas prácticas para cambios:
+  - Prioridad 1: corregir imports rotos (errores de Vite). Busca rutas relativas exactas desde el archivo que importa.
+  - Prioridad 2: evitar romper boundaries feature↔infrastructure. Features pueden usar infra utilities, no viceversa.
+  - Prioridad 3: mantener stores tipadas; exportar métodos explícitos (p.ej. `saleAlertStore.addAlert`).
 
-## Architecture
+- Convenciones de código:
+  - Stores: usar Svelte `writable/derived`, exponer funciones (subscribe + api). Ejemplo: `src/core/feature/sale/presentation/viewmodel/sale-alert.store.ts`.
+  - Evitar `any` salvo justificado con comentario TODO.
+  - Proteger acceso a `window` / `Notification` / `localStorage` con `if (typeof window !== 'undefined')`.
 
-### Web Frontend (`web/`)
-- **Purpose**: Provides the main user interface for the application.
-- **Structure**:
-  - `src/core/feature/`: Contains domain-specific features (e.g., `auth`, `product`, `sale`).
-  - `src/core/infrastructure/`: Handles environment configurations and data access.
-  - `src/demo/`: Demonstrates reusable UI components.
-  - `src/lib/`: Contains shared libraries (e.g., `motion`, `navigation`).
-- **Build Tool**: Vite is used for development and production builds.
+- Patterns específicos detectados:
+  - Pusher/realtime: `saleStore` gestiona suscripción según usuario y ventas sin verificar (ver `sale.store.ts`).
+  - Notificaciones: se usan `toastStore`, `Notification` del navegador y `saleAlertStore` para mostrar alertas y persistir estado en memoria.
+  - Logging: hay un interceptor global en `src/core/infrastructure/presentation/util/console.interceptor.ts` y `log.store` para persistir logs.
 
-### Dashboard Backend (`dash_alejo_taller/`)
-- **Purpose**: Provides administrative tools and backend services.
-- **Structure**:
-  - `functions/`: Contains serverless functions (e.g., `password_reset`).
-  - `services/`: Node.js services for specific tasks (e.g., `password_reset_render`).
-  - `workers/`: Cloudflare Workers for infrastructure monitoring.
-  - `src/core/feature/`: Similar to the frontend, organizes domain-specific features.
+- Qué arreglar primero (lista mínima de acciones):
+  1. Corregir imports que den error de Vite (p.ej. `../../../feature/...` vs `../../../sale/...`).
+ 2. Adecuar tipos en stores que reciben valores opcionales (p.ej. `auth-flow.store.ts::setSuccess`).
+ 3. Mejorar interceptación de `console` para respetar tipos y evitar errores TSC.
+ 4. Añadir comprobaciones `event.target` en handlers de input (`InternalProfileScreen.svelte`).
+ 5. Asegurar padding inferior seguro en `Screen.svelte` para evitar contenido oculto por FAB/barras.
 
----
+- Comandos útiles (PowerShell):
+  pnpm install; pnpm dev
+  pnpm tsc --noEmit
 
-## Developer Workflows
+- Buenas prácticas para commits por agente:
+  - Hacer commits pequeños y atómicos: `fix(store): ...`, `chore(ui): ...`.
+  - Ejecutar typecheck y `pnpm dev` tras cambios que afecten imports o tipos.
 
-### Building and Running
-- **Frontend**:
-  ```bash
-  pnpm install
-  pnpm dev
-  ```
-- **Backend**:
-  - Functions and services have their own `package.json` files. Install dependencies and run them individually.
-
-### Testing
-- No explicit testing framework is mentioned. Add tests under `test/` directories.
-
-### Debugging
-- Use `.env` files to configure environment variables for local development.
-- For Cloudflare Workers, use `wrangler` CLI.
-
----
-
-## Conventions and Patterns
-
-### State Management
-- Use Svelte stores for shared state. Example:
-  ```ts
-  import { writable } from 'svelte/store';
-  export const count = writable(0);
-  ```
-
-### API Integration
-- Appwrite is the primary backend. Use environment variables for configuration.
-- Example for password reset:
-  - Request code: `{ "action": "request" }`
-  - Confirm code: `{ "action": "confirm", "code": "123456", "newPassword": "NuevaPassSegura123" }`
-
-### Environment Variables
-- `.env` files are used extensively. Key variables include:
-  - `APPWRITE_FUNCTION_API_ENDPOINT`
-  - `GMAIL_FROM`
-  - `PASSWORD_RESET_TTL_SECONDS`
-
----
-
-## Key Files and Directories
-
-### Frontend
-- `src/core/feature/`: Domain-specific features.
-- `src/demo/`: UI component demos.
-- `vite.config.ts`: Vite configuration.
-
-### Backend
-- `functions/password_reset/`: Appwrite function for password reset.
-- `services/password_reset_render/`: Node.js service for password reset.
-- `workers/infra_status/`: Cloudflare Worker for infrastructure monitoring.
-
----
-
-## External Dependencies
-- **Appwrite**: Backend-as-a-service for user management.
-- **Render**: Hosting for backend services.
-- **Cloudflare**: Workers for serverless functions and Pages for static hosting.
-
----
-
-## Notes for AI Agents
-- Follow the modular structure when adding new features.
-- Use existing patterns for state management and API integration.
-- Ensure environment variables are documented and used securely.
-- Refer to `README.md` files in subdirectories for detailed instructions on specific components.
+Leer antes de cambiar: `src/core/feature/**/README.md` y `src/core/infrastructure/README.md` cuando existan.
