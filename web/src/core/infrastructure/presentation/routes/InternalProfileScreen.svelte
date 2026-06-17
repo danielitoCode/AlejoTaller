@@ -111,14 +111,22 @@
         }
     }
 
-    function handleNameInput(event: Event) {
-        updateField({ name: (event.target as HTMLInputElement).value });
+    function handleNameInput(event: InputEvent) {
+        const target = event.target as HTMLInputElement | null;
+        if (!target) return;
+        updateField({ name: target.value });
     }
-    function handlePhoneInput(event: Event) {
-        updateField({ phone: (event.target as HTMLInputElement).value });
+
+    function handlePhoneInput(event: InputEvent) {
+        const target = event.target as HTMLInputElement | null;
+        if (!target) return;
+        updateField({ phone: target.value });
     }
-    function handleBioInput(event: Event) {
-        updateField({ bio: (event.target as HTMLTextAreaElement).value });
+
+    function handleBioInput(event: InputEvent) {
+        const target = event.target as HTMLTextAreaElement | null;
+        if (!target) return;
+        updateField({ bio: target.value });
     }
 </script>
 

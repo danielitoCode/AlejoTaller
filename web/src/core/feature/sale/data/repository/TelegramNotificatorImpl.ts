@@ -99,6 +99,7 @@ function formatTelegramMessage(sale: Sale, user: SaleNotifierUser): string {
         `❤️ Usuario: ${user.name}`,
         `📧 Correo: ${user.email}`,
         `📱 Telefono: ${user.phone || "No registrado"}`,
+        `🪙 Moneda: ${sale.currency}`,
         "",
         "📝 DETALLES DEL PEDIDO",
         itemsDetails,

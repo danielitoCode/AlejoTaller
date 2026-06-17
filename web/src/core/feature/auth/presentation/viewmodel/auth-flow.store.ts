@@ -21,7 +21,14 @@ const initialState: AuthFlowSnapshot = {
 function createAuthFlowStore() {
     const { subscribe, set, update } = writable<AuthFlowSnapshot>(initialState);
 
-    function setSuccess(payload: { userId: string; email?: string | null; provider?: LoginProvider }) {
+    function setSuccess(payload: { userId: string | null; email?: string | null; provider?: LoginProvider | null }) {
+        // Aceptamos userId nullable por seguridad; los call-sites deben validar antes de usar.
+        if (!payload?.userId) {
+            // Si no hay userId válido, no establecemos estado de éxito.
+            set(initialState);
+            return;
+        }
+
         set({
             userId: payload.userId,
             email: payload.email ?? null,

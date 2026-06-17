@@ -13,6 +13,8 @@
         min-height: 100dvh;
         overflow-x: hidden;
         overflow-y: hidden;
+        /* Espacio inferior seguro para FAB / bottom nav */
+        padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     }
 
     .screen.scrollable {
