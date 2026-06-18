@@ -1,18 +1,11 @@
 <script lang="ts">
+    import { onMount } from "svelte";
     import { exchangeStore } from "../viewmodels/exchanges.store";
 
     export let compact = false;
 
-    $: usdRate = $exchangeStore.exchange?.usdReference;
-    $: statusText = $exchangeStore.loading
-        ? "Consultando tasa..."
-        : $exchangeStore.error
-            ? "Tasa no disponible"
-            : usdRate
-                ? `1 USD = ${usdRate.toFixed(2)} CUP`
-                : "Consulta la tasa de elTOQUE";
-
     let isDropdownOpen = false;
+    let menuRef: HTMLDivElement;
 
     const currencyOptions = [
         { value: "CUP", label: "CUP" },
@@ -23,15 +16,24 @@
         exchangeStore.setCurrency(currency);
         isDropdownOpen = false;
 
-        if (!$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.hydrateCachedToday();
+        if (!$exchangeStore.exchange && !$exchangeStore.loading) {
+            void exchangeStore.hydrateCachedToday();
+        }
     }
 
-    function close() {
-        isDropdownOpen = false;
+    function handleClickOutside(event: MouseEvent) {
+        if (menuRef && !menuRef.contains(event.target as Node)) {
+            isDropdownOpen = false;
+        }
     }
+
+    onMount(() => {
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
+    });
 </script>
 
-<div class="currency-menu" on:focusout={close}>
+<div class="currency-menu" bind:this={menuRef}>
     <button
             class="currency-trigger"
             type="button"
@@ -47,10 +49,9 @@
         <div class="currency-options" role="listbox" aria-label="Seleccionar moneda">
             {#each currencyOptions as option}
                 <button
-                        class:active={$exchangeStore.selectedCurrency === option.value}
-                        role="option"
-                        aria-selected={$exchangeStore.selectedCurrency === option.value}
                         type="button"
+                        class:active={$exchangeStore.selectedCurrency === option.value}
+                        aria-selected={!(option.value!==$exchangeStore.selectedCurrency)}
                         on:click={() => selectCurrency(option.value)}
                 >
                     {option.label}

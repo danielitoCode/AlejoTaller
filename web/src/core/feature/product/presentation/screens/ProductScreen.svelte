@@ -433,7 +433,7 @@
         .exchange-section {
             padding: 0 8px;
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
         }
 
         .top-row {
