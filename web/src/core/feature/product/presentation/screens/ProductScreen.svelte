@@ -25,7 +25,7 @@
     export let onFavoriteClick: (productId: string) => void = () => {};
     $: exchangeState = $exchangeStore;
 
-    let isPromoVisible = true;
+    let isPromoVisible = false;
 
     $: filteredProducts = products
         .filter((product) => {
@@ -132,13 +132,27 @@
                     </p>
                 </div>
             {:else}
+                {#if filteredProducts.length > 0}
+                    <div class="featured-strip">
+                        <span>🔥 Más vendidos</span>
+                    </div>
+                {/if}
                 <div class="products-grid">
-                    {#each filteredProducts as product (product.id)}
-                        <ProductCard
-                            {product}
-                            onClick={() => onProductClick(product.id)}
-                            onFavoriteClick={() => onFavoriteClick(product.id)}
-                        />
+                    {#each filteredProducts as product, index (product.id)}
+                        <div
+                                transition:fly={{
+                                    y: 16,
+                                    duration: 250,
+                                    delay: index * 25
+                                }}
+                        >
+                            <ProductCard
+                                    {product}
+                                    onClick={() => onProductClick(product.id)}
+                                    onFavoriteClick={() => onFavoriteClick(product.id)}
+                            />
+                        </div>
+
                     {/each}
                 </div>
             {/if}
@@ -151,7 +165,14 @@
         width: 100%;
         height: 100%;
         min-height: 0;
-        background: var(--md-sys-color-background);
+        background:
+                linear-gradient(
+                        180deg,
+                        var(--md-sys-color-surface-container-low)
+                        0%,
+                        var(--md-sys-color-background)
+                        25%
+                );
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -172,34 +193,73 @@
     }
 
     .top-row {
-        padding: 16px 16px 0;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-        gap: 12px;
-        align-items: start;
+        position: sticky;
+
+        top: 0;
+
+        z-index: 20;
+
+        padding-top: 16px;
+
+        backdrop-filter: blur(20px);
+
+        background:
+                color-mix(
+                        in srgb,
+                        var(--md-sys-color-background)
+                        85%,
+                        transparent
+                );
+
+        border-bottom:
+                1px solid
+                var(--md-sys-color-outline-variant);
     }
 
     .search-section {
         min-width: 0;
     }
 
-    .promo-inline {
-        min-width: 0;
-        border: 0;
-        border-radius: 24px;
-        padding: 10px 12px;
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: 10px;
+    .featured-strip {
+        display: flex;
         align-items: center;
-        background: linear-gradient(
-            135deg,
-            var(--md-sys-color-tertiary-container) 0%,
-            color-mix(in srgb, var(--md-sys-color-primary-container) 78%, var(--md-sys-color-tertiary-container)) 100%
-        );
-        color: var(--md-sys-color-on-tertiary-container);
-        cursor: pointer;
-        box-shadow: 0 10px 24px color-mix(in srgb, black 10%, transparent);
+
+        margin-bottom: 18px;
+
+        font-size: .9rem;
+
+        font-weight: 700;
+
+        color:
+                var(--md-sys-color-primary);
+    }
+
+    .products-region {
+        scroll-behavior: smooth;
+    }
+
+    .promo-inline {
+        min-height: 110px;
+
+        border-radius: 28px;
+
+        overflow: hidden;
+
+        position: relative;
+
+        box-shadow:
+                0 12px 32px rgba(0,0,0,.18);
+
+        transition:
+                transform .25s ease,
+                box-shadow .25s ease;
+    }
+
+    .promo-inline:hover {
+        transform: translateY(-2px);
+
+        box-shadow:
+                0 20px 42px rgba(0,0,0,.22);
     }
 
     .promo-image,
@@ -243,7 +303,24 @@
     }
 
     .category-section {
-        padding: 0 16px;
+        position: sticky;
+
+        top: 84px;
+
+        z-index: 15;
+
+        backdrop-filter: blur(20px);
+
+        background:
+                color-mix(
+                        in srgb,
+                        var(--md-sys-color-background)
+                        92%,
+                        transparent
+                );
+
+        padding-top: 8px;
+        padding-bottom: 8px;
     }
 
     .products-region {
@@ -309,6 +386,16 @@
         align-content: start;
     }
 
+    @media (min-width: 1200px) {
+        .products-grid {
+            grid-template-columns:
+            repeat(
+                auto-fill,
+                minmax(240px, 1fr)
+            );
+        }
+    }
+
     @media (max-width: 768px) {
         .screen-content {
             gap: 12px;
@@ -358,8 +445,15 @@
         }
 
         .products-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
+            display: grid;
+
+            grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(190px, 1fr)
+        );
+
+            gap: 20px;
         }
 
         .category-section {

@@ -25,9 +25,13 @@
 
         if (!$exchangeStore.exchange && !$exchangeStore.loading) void exchangeStore.hydrateCachedToday();
     }
+
+    function close() {
+        isDropdownOpen = false;
+    }
 </script>
 
-<div class="currency-menu">
+<div class="currency-menu" on:focusout={close}>
     <button
             class="currency-trigger"
             type="button"
@@ -91,18 +95,43 @@
 
     .currency-options {
         position: absolute;
-        top: calc(100% + 6px);
+        top: calc(100% + 8px);
         right: 0;
         z-index: 100;
+
         min-width: 100%;
-        border: 1px solid var(--md-sys-color-outline-variant);
+
         border-radius: 16px;
-        background-color: #1f211e; /* Solid dark theme background fallback */
-        background: var(--md-sys-color-surface-container-highest, #1f211e);
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+
+        border: 1px solid var(--md-sys-color-outline-variant);
+
+        background: var(--md-sys-color-surface-container);
+
+        box-shadow:
+                0 10px 24px rgba(0, 0, 0, 0.10),
+                0 24px 64px rgba(0, 0, 0, 0.18);
+
+        padding: 6px;
+
         display: grid;
         gap: 4px;
-        padding: 6px;
+
+        backdrop-filter: blur(14px);
+
+        transform-origin: top right;
+
+        animation: popIn .18s ease-out;
+    }
+
+    @keyframes popIn {
+        from {
+            opacity: 0;
+            transform: scale(0.96) translateY(-6px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
     }
 
     .currency-options button {
