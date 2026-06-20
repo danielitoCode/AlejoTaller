@@ -163,6 +163,8 @@
 <style>
     .product-screen {
         width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         height: 100%;
         min-height: 0;
         background:
@@ -180,6 +182,8 @@
 
     .screen-content {
         flex: 1;
+        max-width: 100%;
+        box-sizing: border-box;
         min-height: 0;
         overflow: hidden;
         display: grid;
@@ -189,10 +193,18 @@
     }
 
     .exchange-section {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         padding: 0 16px;
     }
 
     .top-row {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         position: sticky;
 
         top: 0;
@@ -217,7 +229,10 @@
     }
 
     .search-section {
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
+        box-sizing: border-box;
     }
 
     .featured-strip {
@@ -235,6 +250,11 @@
     }
 
     .products-region {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        overflow-x: hidden;
         scroll-behavior: smooth;
     }
 
@@ -303,6 +323,10 @@
     }
 
     .category-section {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         position: sticky;
 
         top: 84px;
@@ -381,10 +405,20 @@
 
     .products-grid {
         display: grid;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
         grid-auto-rows: max-content;
         gap: 16px;
         align-content: start;
+    }
+
+    .products-grid > div {
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     @media (min-width: 1200px) {
@@ -412,7 +446,7 @@
         }
 
         .products-region {
-            padding: 0 12px calc(96px + env(safe-area-inset-bottom, 0px));
+            padding: 0 12px calc(128px + env(safe-area-inset-bottom, 0px));
         }
 
         .products-grid {
@@ -438,20 +472,23 @@
         }
 
         .top-row {
-            padding: 8px 8px 0;
+            padding: 6px 8px 0;
+            border-bottom-color: transparent;
         }
 
         .products-region {
-            padding: 0 8px calc(96px + env(safe-area-inset-bottom, 0px));
+            padding: 0 8px calc(128px + env(safe-area-inset-bottom, 0px));
         }
 
         .products-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 12px;
         }
 
         .category-section {
+            top: 56px;
+            padding-top: 6px;
             padding-left: 8px;
             padding-right: 8px;
         }

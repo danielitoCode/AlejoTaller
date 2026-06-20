@@ -623,7 +623,7 @@
         }
 
         .content {
-            padding: 12px 12px max(96px, calc(env(safe-area-inset-bottom) + 12px));
+            padding: 8px 8px max(96px, calc(env(safe-area-inset-bottom) + 12px));
         }
 
         /* Ensure route-stage scroller leaves space for FAB */
@@ -633,7 +633,7 @@
 
         .top-mobile {
             display: grid;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
         }
 
         .compact-only {
@@ -659,8 +659,8 @@
 
         .fab-stack {
             position: fixed;
-            right: 16px;
-            bottom: 16px;
+            right: max(16px, env(safe-area-inset-right));
+            bottom: max(24px, calc(env(safe-area-inset-bottom) + 24px));
             display: grid;
             justify-items: end;
             gap: 14px;
@@ -742,6 +742,8 @@
             position: relative;
             pointer-events: auto;
             z-index: 122;
+            filter: drop-shadow(0 16px 28px color-mix(in srgb, black 28%, transparent))
+            drop-shadow(0 6px 12px color-mix(in srgb, black 18%, transparent));
         }
     }
 

@@ -43,18 +43,30 @@
 <style>
     .search-bar {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .search-bar :global(.m3-textfield) {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .search-bar :global(.m3-textfield-wrapper) {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .search-bar :global(input) {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     .search-input--custom :global(input::placeholder) {

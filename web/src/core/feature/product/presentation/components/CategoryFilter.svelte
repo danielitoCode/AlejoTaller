@@ -32,10 +32,17 @@
 <style>
     .category-filter {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         overflow: hidden;
     }
 
     .filter-scroll {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         display: flex;
         gap: 8px;
         overflow-x: auto;

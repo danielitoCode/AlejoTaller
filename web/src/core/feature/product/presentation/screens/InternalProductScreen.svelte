@@ -137,6 +137,9 @@
 <style>
     .internal-product-screen {
         width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         height: 100%;
         min-height: 0;
         display: grid;
@@ -146,6 +149,10 @@
     }
 
     .product-list-panel {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
         height: 100%;
         min-height: 0;
         overflow: hidden;
