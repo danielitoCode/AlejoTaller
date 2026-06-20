@@ -623,7 +623,12 @@
         }
 
         .content {
-            padding: 12px 12px max(80px, calc(env(safe-area-inset-bottom) + 12px));
+            padding: 12px 12px max(96px, calc(env(safe-area-inset-bottom) + 12px));
+        }
+
+        /* Ensure route-stage scroller leaves space for FAB */
+        .route-stage.route-stage-scroll {
+            padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
         }
 
         .top-mobile {
@@ -640,7 +645,8 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            z-index: 60;
+            /* Ensure floating above most UI elements */
+            z-index: 120;
         }
 
         .fab-scrim {
@@ -659,6 +665,8 @@
             justify-items: end;
             gap: 14px;
             pointer-events: none;
+            /* Elevate above route-stage scroll content */
+            z-index: 121;
         }
 
         .fab-menu {
@@ -733,6 +741,7 @@
         .fab-main-wrap {
             position: relative;
             pointer-events: auto;
+            z-index: 122;
         }
     }
 

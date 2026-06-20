@@ -329,7 +329,8 @@
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
-        padding: 0 16px 28px;
+        /* Reserve space for FAB / bottom-nav + safe-area */
+        padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px));
     }
 
     .loading-container {
@@ -411,7 +412,7 @@
         }
 
         .products-region {
-            padding: 0 12px 24px;
+            padding: 0 12px calc(96px + env(safe-area-inset-bottom, 0px));
         }
 
         .products-grid {
@@ -427,7 +428,7 @@
 
     @media (max-width: 480px) {
         .screen-content {
-            gap: 8px;
+            gap: 6px;
         }
 
         .exchange-section {
@@ -441,19 +442,13 @@
         }
 
         .products-region {
-            padding: 0 8px 22px;
+            padding: 0 8px calc(96px + env(safe-area-inset-bottom, 0px));
         }
 
         .products-grid {
             display: grid;
-
-            grid-template-columns:
-        repeat(
-            auto-fill,
-            minmax(190px, 1fr)
-        );
-
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
         }
 
         .category-section {
