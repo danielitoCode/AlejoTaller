@@ -645,16 +645,19 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            /* Ensure floating above most UI elements */
-            z-index: 120;
+            /* Keep the mobile FAB overlay above route content/cards. */
+            z-index: 1000;
         }
 
         .fab-scrim {
             position: fixed;
             inset: 0;
             border: 0;
-            background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+            background: color-mix(in srgb, var(--md-sys-color-scrim) 54%, transparent);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
             pointer-events: auto;
+            z-index: 1000;
         }
 
         .fab-stack {
@@ -665,14 +668,16 @@
             justify-items: end;
             gap: 14px;
             pointer-events: none;
-            /* Elevate above route-stage scroll content */
-            z-index: 121;
+            /* Elevate above route-stage scroll content and the expanded scrim. */
+            z-index: 1001;
         }
 
         .fab-menu {
             display: grid;
             gap: 12px;
             pointer-events: auto;
+            position: relative;
+            z-index: 1002;
         }
 
         .fab-item-row {
@@ -741,7 +746,7 @@
         .fab-main-wrap {
             position: relative;
             pointer-events: auto;
-            z-index: 122;
+            z-index: 1003;
             filter: drop-shadow(0 16px 28px color-mix(in srgb, black 28%, transparent))
             drop-shadow(0 6px 12px color-mix(in srgb, black 18%, transparent));
         }
