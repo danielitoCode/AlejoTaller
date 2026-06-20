@@ -6,6 +6,9 @@
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import type { Product } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
+    import { parseProductImageUrls } from "../util/product-images";
+
+    const placeholderImageUrl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f5f5f5' width='400' height='400'/%3E%3C/svg%3E`;
 
     export let product: Product;
     export let showTopBar: boolean = true;
@@ -13,6 +16,8 @@
     export let onFavoriteClick: () => void = () => {};
     export let onShareClick: () => void = () => {};
     export let onAddToCartClick: () => void = () => {};
+
+    $: productImageUrls = parseProductImageUrls(product.photoUrl);
 </script>
 
 <div class="product-detail-screen">
@@ -49,11 +54,23 @@
     {/if}
 
     <div class="product-image-section">
-        <img
-            src={product.photoUrl || `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f5f5f5' width='400' height='400'/%3E%3C/svg%3E`}
-            alt={product.name}
-            class="product-image"
-        />
+        {#if productImageUrls.length > 0}
+            <div class="product-image-gallery" aria-label={`Imagenes de ${product.name}`}>
+                {#each productImageUrls as imageUrl, imageIndex}
+                    <img
+                            src={imageUrl}
+                            alt={productImageUrls.length === 1 ? product.name : `${product.name} - imagen ${imageIndex + 1}`}
+                            class="product-image"
+                    />
+                {/each}
+            </div>
+        {:else}
+            <img
+                    src={placeholderImageUrl}
+                    alt={product.name}
+                    class="product-image"
+            />
+        {/if}
     </div>
 
     <div class="detail-copy-card">
@@ -191,11 +208,38 @@
                 0 8px 32px rgba(0, 0, 0, 0.18);
     }
 
+    .product-image-gallery {
+        width: 100%;
+        height: 100%;
+
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 100%;
+
+        overflow-x: auto;
+        overflow-y: hidden;
+
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+    }
+
+    .product-image-gallery::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .product-image-gallery::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+
+        background:
+                var(--md-sys-color-outline-variant);
+    }
+
     .product-image {
         width: 100%;
         height: 100%;
         object-fit: cover;
         object-position: center;
+        scroll-snap-align: center;
     }
 
     .product-image:hover {
