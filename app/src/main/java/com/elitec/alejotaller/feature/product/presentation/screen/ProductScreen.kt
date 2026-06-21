@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,11 +25,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.HeartBroken
 import androidx.compose.material3.Icon
@@ -63,7 +70,6 @@ import coil3.request.crossfade
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.category.domain.entity.Category
 import com.elitec.alejotaller.feature.category.presentation.viewmodel.CategoriesViewModel
-import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
@@ -75,7 +81,7 @@ import org.koin.androidx.compose.koinViewModel
 fun ProductScreen(
     promotions: List<Promotion> = listOf(),
     navigateToDetails: (String) -> Unit,
-    products: List<Product> = productTestList,
+    products: List<Product> = listOf(),
     onPromotionClick: (String) -> Unit = {},
     searchQuery: String = "",
     selectedCategoryId: String? = null,
@@ -84,153 +90,20 @@ fun ProductScreen(
     categoryViewModel: CategoriesViewModel = koinViewModel(),
     modifier: Modifier = Modifier,
 ) {
-    val layoutSpec = rememberAdaptiveLayoutSpec()
-    val useSplitPaneCatalog = layoutSpec.showListAndDetail
-    var isBannerVisible by rememberSaveable { mutableStateOf(true) }
     val categoriesList by categoryViewModel.categoriesFlow.collectAsStateWithLifecycle()
 
-    if (useSplitPaneCatalog) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SearchBar(
-                query = searchQuery,
-                onQueryChanged = onSearchQueryChanged,
-                onClearQuery = { onSearchQueryChanged("") }
-            )
-            if (isBannerVisible) {
-                Box(
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    BannerSection(
-                        visible = true,
-                        promotions = promotions,
-                        onPromotionClick = onPromotionClick
-                    )
-                    Surface(
-                        onClick = { isBannerVisible = false },
-                        modifier = Modifier.padding(top = 5.dp, end = 10.dp),
-                        shadowElevation = 5.dp,
-                        tonalElevation = 3.dp,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        shape = RoundedCornerShape(15.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(3.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Close",
-                                modifier = Modifier.size(15.dp),
-                                tint = MaterialTheme.colorScheme.surface
-                            )
-                            Text(
-                                color = MaterialTheme.colorScheme.surface,
-                                text = "Cerrar"
-                            )
-                        }
-                    }
-                }
-            }
-            CategoriesSection(
-                onCategorySelected = { category -> onCategorySelected(category.id) },
-                selectedCategoryId = selectedCategoryId,
-                categories = categoriesList
-            )
-            if (products.isEmpty()) {
-                EmptyProductsContent(compact = true)
-            } else {
-                products.forEach { product ->
-                    CompactLandscapeProductItem(
-                        product = product,
-                        onClick = { navigateToDetails(product.id) }
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-        return
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        SearchBar(
-            query = searchQuery,
-            onQueryChanged = onSearchQueryChanged,
-            onClearQuery = { onSearchQueryChanged("") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        if (isBannerVisible) {
-            Box(
-                contentAlignment = Alignment.TopEnd
-            ) {
-                BannerSection(
-                    visible = true,
-                    promotions = promotions,
-                    onPromotionClick = onPromotionClick
-                )
-                Surface(
-                    onClick = { isBannerVisible = false },
-                    modifier = Modifier.padding(top = 5.dp, end = 10.dp),
-                    shadowElevation = 5.dp,
-                    tonalElevation = 3.dp,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    shape = RoundedCornerShape(15.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            modifier = Modifier.size(15.dp),
-                            tint = MaterialTheme.colorScheme.surface
-                        )
-                        Text(
-                            color = MaterialTheme.colorScheme.surface,
-                            text = "Cerrar"
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-        CategoriesSection(
-            onCategorySelected = { category -> onCategorySelected(category.id) },
-            selectedCategoryId = selectedCategoryId,
-            categories = categoriesList
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        if (products.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                EmptyProductsContent(compact = false)
-            }
-        } else {
-            ProductGrid(
-                onProductClick = navigateToDetails,
-                products = products,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            )
-        }
-    }
+    ProductScreenContent(
+        modifier = modifier,
+        products = products,
+        searchQuery = searchQuery,
+        selectedCategoryId = selectedCategoryId,
+        promotions = promotions,
+        onCategorySelected = onCategorySelected,
+        onQueryChanged = onSearchQueryChanged,
+        navigateToDetails = navigateToDetails,
+        onPromotionClick = onPromotionClick,
+        categoriesList = categoriesList
+    )
 }
 
 @Composable
@@ -363,6 +236,7 @@ fun BannerSection(
                 }
         ) {
             Crossfade(targetState = activePromotion?.id ?: "default", label = "promotion-banner") {
+                var item = it
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
@@ -586,7 +460,7 @@ fun ProductItem(
                         .padding(top = 5.dp, bottom = 5.dp, end = 10.dp, start = 10.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Outlined.HeartBroken,
+                        imageVector = Icons.Default.Favorite,
                         contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
@@ -621,15 +495,242 @@ fun IconPlaceholder(
     )
 }
 
-@Preview(showBackground = true)
+@Composable
+private fun ProductScreenContent(
+    modifier: Modifier = Modifier,
+    products: List<Product> = emptyList(),
+    searchQuery: String = "",
+    selectedCategoryId: String? = null,
+    promotions: List<Promotion> = emptyList(),
+    onCategorySelected: (String?) -> Unit = {},
+    onQueryChanged: (String) -> Unit = {},
+    navigateToDetails: (String) -> Unit,
+    onPromotionClick: (String) -> Unit = {},
+    categoriesList: List<Category> = listOf(),
+) {
+    val layoutSpec = rememberAdaptiveLayoutSpec()
+    val useSplitPaneCatalog = layoutSpec.showListAndDetail
+    var isBannerVisible by rememberSaveable { mutableStateOf(true) }
+
+    if (useSplitPaneCatalog) {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                //.verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            SearchBar(
+                query = searchQuery,
+                onQueryChanged = onQueryChanged,
+                onClearQuery = { onQueryChanged("") }
+            )
+
+            /* if (isBannerVisible) {
+                Box(
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    BannerSection(
+                        visible = true,
+                        promotions = promotions,
+                        onPromotionClick = onPromotionClick
+                    )
+                    Surface(
+                        onClick = { isBannerVisible = false },
+                        modifier = Modifier.padding(top = 5.dp, end = 10.dp),
+                        shadowElevation = 5.dp,
+                        tonalElevation = 3.dp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        shape = RoundedCornerShape(15.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.surface
+                            )
+                            Text(
+                                color = MaterialTheme.colorScheme.surface,
+                                text = "Cerrar"
+                            )
+                        }
+                    }
+                }
+            }*/
+
+            CategoriesSection(
+                onCategorySelected = { category -> onCategorySelected(category.id) },
+                selectedCategoryId = selectedCategoryId,
+                categories = categoriesList
+            )
+            if (products.isEmpty()) {
+                EmptyProductsContent(compact = true)
+            } else {
+                /*products.forEach { product ->
+                    CompactLandscapeProductItem(
+                        product = product,
+                        onClick = { navigateToDetails(product.id) }
+                    )
+                }*/
+                LazyVerticalStaggeredGrid(
+                    contentPadding = PaddingValues(5.dp),
+                    verticalItemSpacing = 5.dp,
+                    columns = StaggeredGridCells.Fixed(count = 2)
+                ) {
+                    items(products) { product ->
+                        CompactLandscapeProductItem(
+                            product = product,
+                            onClick = { navigateToDetails(product.id) }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+        return
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp)
+    ) {
+        SearchBar(
+            query = searchQuery,
+            onQueryChanged = onQueryChanged,
+            onClearQuery = { onQueryChanged("") }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        /* if (isBannerVisible) {
+            Box(
+                contentAlignment = Alignment.TopEnd
+            ) {
+                BannerSection(
+                    visible = true,
+                    promotions = promotions,
+                    onPromotionClick = onPromotionClick
+                )
+                Surface(
+                    onClick = { isBannerVisible = false },
+                    modifier = Modifier.padding(top = 5.dp, end = 10.dp),
+                    shadowElevation = 5.dp,
+                    tonalElevation = 3.dp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    shape = RoundedCornerShape(15.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.surface
+                        )
+                        Text(
+                            color = MaterialTheme.colorScheme.surface,
+                            text = "Cerrar"
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        } */
+
+        CategoriesSection(
+            onCategorySelected = { category -> onCategorySelected(category.id) },
+            selectedCategoryId = selectedCategoryId,
+            categories = categoriesList
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        if (products.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyProductsContent(compact = false)
+            }
+        } else {
+            ProductGrid(
+                onProductClick = navigateToDetails,
+                products = products,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            )
+        }
+    }
+}
+
+//@Preview(showBackground = true)
+@Preview(showBackground = true,
+    name = "Mobile Landscape"
+)
 @Composable
 private fun ProductScreenPreview() {
+    val productTestList = listOf(
+        Product(
+            id = "1",
+            name = "Baterias de litio LiFPo4 3.2Ah",
+            description = "Baterias de litio a 3.25 AH,perfecta para reparacion de unidades de acumulacion en mal estado o el montaje personalizado de sistemas de respaldo de alta capacidad",
+            price = 45.50,
+            photoUrl = "https://example.com/photos/aceite.jpg",
+            categoryId = "baterias",
+            photoLocalResource = R.drawable.li3_2a
+        ),
+        Product(
+            id = "2",
+            name = "BMS 5v",
+            description = "BMS para baterias de 5v, dele a su bateria la energia necesaria, ni mas ni menos",
+            price = 18.25,
+            photoUrl = "https://example.com/photos/filtro_aire.jpg",
+            categoryId = "bms",
+            photoLocalResource = R.drawable.bms5v
+        ),
+        Product(
+            id = "3",
+            name = "EchoFlow delta max",
+            description = "Unidad de respaldo inteligente de alta eficiencia, bateria LifPo4 con una capacidad de carga de 2800Wh , y un pico de 3600W",
+            price = 65.00,
+            photoUrl = "https://example.com/photos/pastillas_freno.jpg",
+            categoryId = "equipos",
+            photoLocalResource = R.drawable.echoflow_deltamax
+        ),
+        Product(
+            id = "4",
+            name = "Batería LiOn 3.2v 1Ah",
+            description = "Bateria hecha para sus dispositivos que ocupen poco espacio o espacio reducido, con una capacidad suficiente para uso promedio",
+            price = 110.99,
+            photoUrl = "https://example.com/photos/bateria.jpg",
+            categoryId = "baterias",
+            photoLocalResource = R.drawable.li1a
+        ),
+        Product(
+            id = "5",
+            name = "Transistor 2N3904",
+            description = "Transistos NPN, para uso promedio",
+            price = 12.50,
+            photoUrl = "https://example.com/photos/bujia.jpg",
+            categoryId = "componentes",
+            photoLocalResource = R.drawable.t2n3904
+        ),
+    )
     AlejoTallerTheme {
         Surface(
             color = MaterialTheme.colorScheme.background,
             modifier = Modifier.fillMaxSize()
         ) {
-            ProductScreen(
+            ProductScreenContent(
                 navigateToDetails = {},
                 products = productTestList
             )

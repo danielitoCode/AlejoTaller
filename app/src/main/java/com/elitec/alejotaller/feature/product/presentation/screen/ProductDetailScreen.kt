@@ -44,9 +44,7 @@ import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import coil3.svg.SvgDecoder
 import com.elitec.alejotaller.R
-import com.elitec.alejotaller.feature.product.data.test.productTestList
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 
@@ -360,6 +358,6 @@ private fun PriceAndAddToCartSection(
 @Composable
 private fun ProductDetailScreenPreview() {
     AlejoTallerTheme {
-        ProductDetailScreen(product = productTestList[3])
+        //ProductDetailScreen(product = productTestList[3])
     }
 }
