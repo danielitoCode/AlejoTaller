@@ -8,6 +8,7 @@
     import {buyConfirm, dashboard} from "../navigation/nested.router";
     import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
     import { exchangeStore, formatMoney } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
+    import { getPrimaryProductImageUrl } from "../../../feature/product/presentation/utils/product.images";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -50,7 +51,7 @@
                         <div class="cart-card-body">
                             <div class="item-top">
                                 <div class="item-thumb">
-                                    <img src={item.product.photoUrl || "/alejoicon_clean.svg"} alt="" />
+                                    <img src={getPrimaryProductImageUrl(item.product.photoUrl) ?? "/alejoicon_clean.svg"} alt="" />
                                 </div>
                                 <div class="item-copy">
                                     <strong>{item.product.name}</strong>

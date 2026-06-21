@@ -17,7 +17,29 @@
     export let onShareClick: () => void = () => {};
     export let onAddToCartClick: () => void = () => {};
 
-    $: primaryImageUrl = parseProductImageUrls(product.photoUrl);
+    $: imageUrls = parseProductImageUrls(product.photoUrl);
+
+    let activeIndex = 0;
+    let galleryEl: HTMLDivElement;
+
+    function goToImage(index: number) {
+        if (!galleryEl || imageUrls.length === 0) return;
+        const total = imageUrls.length;
+        const target = ((index % total) + total) % total;
+        galleryEl.scrollTo({
+            left: target * galleryEl.clientWidth,
+            behavior: "smooth"
+        });
+        activeIndex = target;
+    }
+
+    function onGalleryScroll() {
+        if (!galleryEl) return;
+        const idx = Math.round(galleryEl.scrollLeft / galleryEl.clientWidth);
+        if (idx !== activeIndex && idx >= 0 && idx < imageUrls.length) {
+            activeIndex = idx;
+        }
+    }
 </script>
 
 <div class="product-detail-screen">
@@ -27,6 +49,7 @@
                 class="icon-button back-button"
                 type="button"
                 aria-label="Volver"
+                title="Volver"
                 on:click={onBackClick}
             >
                 <Icon icon={ArrowBackRounded} />
@@ -37,6 +60,7 @@
                     class="icon-button action-button"
                     type="button"
                     aria-label="Agregar a favoritos"
+                    title="Favoritos"
                     on:click={onFavoriteClick}
                 >
                     <Icon icon={FavoriteBorderRounded} />
@@ -45,6 +69,7 @@
                     class="icon-button action-button"
                     type="button"
                     aria-label="Compartir"
+                    title="Compartir"
                     on:click={onShareClick}
                 >
                     <Icon icon={ShareRounded} />
@@ -54,21 +79,64 @@
     {/if}
 
     <div class="product-image-section">
-        {#if primaryImageUrl.length > 0}
-            <div class="product-image-gallery" aria-label={`Imagenes de ${product.name}`}>
-                {#each primaryImageUrl as imageUrl, imageIndex}
-                    <img
+        {#if imageUrls.length > 0}
+            <div class="carousel-container">
+                <div
+                    class="product-image-gallery"
+                    aria-label={`Imagenes de ${product.name}`}
+                    bind:this={galleryEl}
+                    on:scroll={onGalleryScroll}
+                >
+                    {#each imageUrls as imageUrl, imageIndex}
+                        <img
                             src={imageUrl}
-                            alt={primaryImageUrl.length === 1 ? product.name : `${product.name} - imagen ${imageIndex + 1}`}
+                            alt={imageUrls.length === 1 ? product.name : `${product.name} - imagen ${imageIndex + 1}`}
                             class="product-image"
-                    />
-                {/each}
+                        />
+                    {/each}
+                </div>
+
+                {#if imageUrls.length > 1}
+                    <button
+                        class="carousel-btn carousel-btn--prev"
+                        type="button"
+                        aria-label="Imagen anterior"
+                        title="Imagen anterior"
+                        on:click={() => goToImage(activeIndex - 1)}
+                    >
+                        <span class="carousel-btn-icon">&#9664;</span>
+                    </button>
+                    <button
+                        class="carousel-btn carousel-btn--next"
+                        type="button"
+                        aria-label="Imagen siguiente"
+                        title="Imagen siguiente"
+                        on:click={() => goToImage(activeIndex + 1)}
+                    >
+                        <span class="carousel-btn-icon">&#9654;</span>
+                    </button>
+                {/if}
             </div>
+
+            {#if imageUrls.length > 1}
+                <div class="carousel-dots" role="tablist" aria-label="Selector de imagen">
+                    {#each imageUrls as _, dotIndex}
+                        <button
+                            class="carousel-dot"
+                            class:active={dotIndex === activeIndex}
+                            role="tab"
+                            aria-selected={dotIndex === activeIndex}
+                            aria-label={`Imagen ${dotIndex + 1}`}
+                            on:click={() => goToImage(dotIndex)}
+                        />
+                    {/each}
+                </div>
+            {/if}
         {:else}
             <img
-                    src={placeholderImageUrl}
-                    alt={product.name}
-                    class="product-image"
+                src={placeholderImageUrl}
+                alt={product.name}
+                class="product-image"
             />
         {/if}
     </div>
@@ -142,9 +210,6 @@
 
         border-radius: 999px;
 
-        /* MEJOR CONTRASTE: surface real, no blanco transparente */
-        background: var(--md-sys-color-surface-container-high);
-
         border: 1px solid var(--md-sys-color-outline-variant);
 
         color: var(--md-sys-color-on-surface);
@@ -154,8 +219,6 @@
         justify-content: center;
 
         cursor: pointer;
-
-        backdrop-filter: blur(14px);
 
         box-shadow:
                 0 6px 18px rgba(0, 0, 0, 0.25);
@@ -168,7 +231,6 @@
 
     .icon-button:hover {
         transform: scale(1.05);
-        background: var(--md-sys-color-surface-container);
         box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
     }
 
@@ -181,12 +243,22 @@
     }
 
     .back-button {
-        background: var(--md-sys-color-primary-container);
+        background:
+            radial-gradient(
+                circle at center,
+                var(--md-sys-color-primary) 0%,
+                var(--md-sys-color-primary-container) 100%
+            );
         color: var(--md-sys-color-on-primary-container);
     }
 
     .action-button {
-        background: var(--md-sys-color-surface-container-high);
+        background:
+            radial-gradient(
+                circle at center,
+                var(--md-sys-color-primary) 0%,
+                var(--md-sys-color-surface-container-high) 100%
+            );
     }
 
     .header-actions {
@@ -232,6 +304,127 @@
 
         background:
                 var(--md-sys-color-outline-variant);
+    }
+
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: none;
+        background:
+            radial-gradient(
+                circle at center,
+                var(--md-sys-color-primary) 0%,
+                var(--md-sys-color-inverse-surface) 100%
+            );
+        color: var(--md-sys-color-inverse-on-surface);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: transform 0.15s ease, opacity 0.2s ease;
+        opacity: 0;
+    }
+
+    .carousel-container:hover .carousel-btn {
+        opacity: 1;
+    }
+
+    .carousel-btn:hover {
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-btn:active {
+        transform: translateY(-50%) scale(0.95);
+    }
+
+    .carousel-btn--prev {
+        left: 12px;
+    }
+
+    .carousel-btn--next {
+        right: 12px;
+    }
+
+    .carousel-btn-icon {
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    .carousel-dots {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--md-sys-color-inverse-surface);
+    }
+
+    .carousel-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        border: none;
+        background: color-mix(in srgb, var(--md-sys-color-inverse-on-surface) 35%, transparent);
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .carousel-dot.active {
+        background: var(--md-sys-color-inverse-on-surface);
+        transform: scale(1.4);
+    }
+
+    .carousel-dot:hover {
+        background: var(--md-sys-color-inverse-on-surface);
+    }
+
+    @media (hover: none) {
+        .carousel-btn {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .carousel-btn {
+            width: 36px;
+            height: 36px;
+            opacity: 1;
+        }
+
+        .carousel-btn--prev {
+            left: 8px;
+        }
+
+        .carousel-btn--next {
+            right: 8px;
+        }
+
+        .carousel-dots {
+            bottom: 10px;
+            gap: 6px;
+            padding: 4px 10px;
+        }
+
+        .carousel-dot {
+            width: 6px;
+            height: 6px;
+        }
     }
 
     .product-image {

@@ -3,6 +3,7 @@
     import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
     import type { Product } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
+    import { getPrimaryProductImageUrl } from "../utils/product.images";
 
     export let product: Product;
     export let onClick: () => void = () => {};
@@ -19,7 +20,7 @@
     <div class="card-image">
         <img
                 src={
-                product.photoUrl ||
+                getPrimaryProductImageUrl(product.photoUrl) ??
                 `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect fill='%23f5f5f5' width='300' height='300'/%3E%3C/svg%3E`
             }
                 alt={product.name}
@@ -31,6 +32,7 @@
                     class="favorite-btn"
                     type="button"
                     aria-label="Agregar a favoritos"
+                    title="Favoritos"
                     on:click={(e) => {
                     e.stopPropagation();
                     onFavoriteClick(e);
@@ -155,19 +157,17 @@
 
         cursor: pointer;
 
-        color: var(--md-sys-color-primary);
+        color: var(--md-sys-color-inverse-on-surface);
 
         background:
-                color-mix(
-                        in srgb,
-                        var(--md-sys-color-surface) 88%,
-                        transparent
+                radial-gradient(
+                    circle at center,
+                    var(--md-sys-color-primary) 0%,
+                    var(--md-sys-color-inverse-surface) 100%
                 );
 
-        backdrop-filter: blur(10px);
-
         box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.12);
+                0 2px 8px rgba(0, 0, 0, 0.15);
 
         transition:
                 transform 0.2s ease,
