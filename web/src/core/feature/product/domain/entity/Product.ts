@@ -7,6 +7,7 @@ export interface Product {
     categoryId: string
     rating?: number
     photoLocalResource?: number | null
+    createdAtIso?: string
 }
 
 /**

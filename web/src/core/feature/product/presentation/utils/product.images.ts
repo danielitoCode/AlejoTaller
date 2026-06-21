@@ -42,3 +42,7 @@ export function parseProductImageUrls(photoUrl: string | null | undefined): stri
         return [];
     }
 }
+
+export function getPrimaryProductImageUrl(photoUrl: string | null | undefined): string | null {
+    return parseProductImageUrls(photoUrl)[0] ?? null;
+}

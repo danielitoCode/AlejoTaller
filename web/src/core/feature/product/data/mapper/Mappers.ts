@@ -19,6 +19,7 @@ export function productFromDTO(dto: ProductDTO): Product {
         photoUrl: dto.photo_url,
         categoryId: dto.category_id,
         rating: dto.rating ?? 0,
+        createdAtIso: dto.$createdAt,
     };
 }
 

@@ -56,7 +56,7 @@ vi.mock("../../../../../../core/feature/sale/presentation/viewmodel/sale-alert.s
     }
 }));
 
-vi.mock("../../../../../../core/infrastructure/presentation/util/logger.service", () => ({
+vi.mock("../../../../../../core/infrastructure/presentation/utils/logger.service", () => ({
     logger: {
         log: mocks.loggerLog,
         info: mocks.loggerInfo,

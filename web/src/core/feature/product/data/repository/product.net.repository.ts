@@ -1,10 +1,14 @@
 
 import type { ProductDTO } from "../dto/ProductDTO";
-import { type Databases, ID, Query } from "appwrite";
+import type { Models } from "appwrite";
+import {type Databases, ID,  Query} from "appwrite";
 import type { ProductWriteDTO } from "../mapper/Mappers";
 import { ENV } from "../../../../infrastructure/env";
 
+const PAGE_SIZE = 100;
+
 const COLLECTION_ID = "product";
+
 
 class ProductNetRepository {
     constructor(private readonly databases: Databases) {}
@@ -15,13 +19,35 @@ class ProductNetRepository {
         return id;
     }
 
-    async getAll(): Promise<ProductDTO[]> {
-        const response = await this.databases.listDocuments<ProductDTO>(
-            this.databaseId,
-            COLLECTION_ID
-        )
+    private async listAll(queries: string[] = []): Promise<ProductDTO[]> {
+        const documents: ProductDTO[] = []
+        let cursor: string | null = null
 
-        return response.documents
+        while (true) {
+            const page: Models.DocumentList<ProductDTO> = await this.databases.listDocuments<ProductDTO>(
+                this.databaseId,
+                COLLECTION_ID,
+                [
+                    ...queries,
+                    Query.orderDesc("$createdAt"),
+                    Query.limit(PAGE_SIZE),
+                    ...(cursor ? [Query.cursorAfter(cursor)] : [])
+                ]
+            )
+
+            documents.push(...page.documents)
+
+            if (page.documents.length < PAGE_SIZE) break
+
+            cursor = page.documents.at(-1)?.$id ?? null
+            if (!cursor) break
+        }
+
+        return documents
+    }
+
+    async getAll(): Promise<ProductDTO[]> {
+        return await this.listAll()
     }
 
     async getById(id: string): Promise<ProductDTO> {

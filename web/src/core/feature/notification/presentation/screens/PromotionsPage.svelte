@@ -5,7 +5,7 @@
      */
     import PromotionList from "../feature/notification/presentation/screens/PromotionList.svelte";
     import { promotionStore } from "../feature/notification/presentation/viewmodel/promotion.store";
-    import { logger } from "../infrastructure/presentation/util/logger.service";
+    import { logger } from "../infrastructure/presentation/utils/logger.service";
     import { onMount } from "svelte";
 
     let statsText = "";

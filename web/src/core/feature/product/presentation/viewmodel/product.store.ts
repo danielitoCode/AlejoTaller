@@ -22,6 +22,11 @@ function normalizeError(error: unknown): string {
     return error instanceof Error ? error.message : "Unexpected error"
 }
 
+function sortNewestFirst(products: Product[]): Product[] {
+    return [...products].sort((a, b) => (b.createdAtIso ?? "").localeCompare(a.createdAtIso ?? ""))
+}
+
+
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
 
@@ -52,7 +57,7 @@ function createProductStore() {
     async function syncAll(): Promise<void> {
         await runLoading(async () => {
             const products = await productContainer.useCases.getAll.execute()
-            update((state) => ({...state, items: products}))
+            update((state) => ({...state, items: sortNewestFirst(products)}))
         })
     }
 

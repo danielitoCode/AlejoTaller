@@ -5,6 +5,11 @@ import {db} from "../../../../infrastructure/di/dexie.db";
 import {productFromDTO, productToDTO} from "../mapper/Mappers";
 import type Dexie from "dexie";
 import {logger} from "../../../../infrastructure/presentation/util/logger.service";
+import type {ProductDTO} from "../dto/ProductDTO";
+
+function sortNewestFirst(products: ProductDTO[]): ProductDTO[] {
+    return [...products].sort((a, b) => (b.$createdAt ?? "").localeCompare(a.$createdAt ?? ""))
+}
 
 export class ProductOfflineFirstRepository implements ProductRepository {
     constructor(
@@ -19,7 +24,7 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         } catch(error: any) {
             logger.error(error.message, error.stack);
             const local = await db.products.toArray()
-            return local.map(productFromDTO)
+            return sortNewestFirst(local).map(productFromDTO)
         }
     }
 

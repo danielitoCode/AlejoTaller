@@ -28,7 +28,7 @@ Este formato es muy comprimido y se reduce considerablemente el tamaño del QR, 
 ### Generar QR desde una Venta
 
 ```typescript
-import { generateSaleQRDataUrl } from '@/core/infrastructure/presentation/util/qr.service';
+import { generateSaleQRDataUrl } from '@/core/infrastructure/presentation/utils/qr.service';
 import type { Sale } from '@/core/feature/sale/domain/entity/Sale';
 
 const sale: Sale = { /* ... */ };
@@ -39,7 +39,7 @@ const qrDataUrl = await generateSaleQRDataUrl(sale);
 ### Parsear QR Escaneado
 
 ```typescript
-import { parseSaleQRData } from '@/core/infrastructure/presentation/util/qr.service';
+import { parseSaleQRData } from '@/core/infrastructure/presentation/utils/qr.service';
 
 const scannedData = "abc123|99.99|p1:2:50";
 const parsed = parseSaleQRData(scannedData);
