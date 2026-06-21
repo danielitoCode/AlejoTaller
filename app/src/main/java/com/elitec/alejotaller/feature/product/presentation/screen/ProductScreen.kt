@@ -526,6 +526,7 @@ private fun ProductScreenContent(
                 onClearQuery = { onQueryChanged("") }
             )
 
+
             /* if (isBannerVisible) {
                 Box(
                     contentAlignment = Alignment.TopEnd
