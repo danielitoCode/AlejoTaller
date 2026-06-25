@@ -40,11 +40,13 @@ import kotlin.time.Duration
 
 class MainActivity : ComponentActivity() {
     private var pendingReservationId: String? by androidx.compose.runtime.mutableStateOf(null)
+    private var pendingProductId: String? by androidx.compose.runtime.mutableStateOf(null)
 
     @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingReservationId = extractReservationId(intent)
+        pendingProductId = extractProductId(intent)
         enableEdgeToEdge()
         setContent {
             val settingsViewModel: SettingsViewModel = koinViewModel()
@@ -109,6 +111,7 @@ class MainActivity : ComponentActivity() {
                         MainNavigationWrapper(
                             modifier = Modifier.fillMaxSize().padding(innerPadding),
                             pendingReservationId = pendingReservationId,
+                            pendingProductId = pendingProductId,
                             onPendingReservationConsumed = { pendingReservationId = null }
                         )
                     }
@@ -134,6 +137,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         pendingReservationId = extractReservationId(intent)
+        pendingProductId = extractProductId(intent)
     }
 
     private fun extractReservationId(intent: Intent?): String? {
@@ -141,6 +145,16 @@ class MainActivity : ComponentActivity() {
         intent.getStringExtra(
             com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService.EXTRA_SALE_ID
         )?.takeIf { it.isNotBlank() }?.let { return it }
-        return intent.data?.lastPathSegment?.takeIf { it.isNotBlank() }
+        val uri = intent.data ?: return null
+        if (uri.scheme != "alejotaller") return null
+        return uri.lastPathSegment?.takeIf { it.isNotBlank() }
+    }
+
+    private fun extractProductId(intent: Intent?): String? {
+        if (intent == null) return null
+        val uri = intent.data ?: return null
+        if (uri.scheme != "https" || uri.host != "talleralejo.com") return null
+        val segment = uri.lastPathSegment ?: return null
+        return segment.takeIf { it.isNotBlank() }
     }
 }

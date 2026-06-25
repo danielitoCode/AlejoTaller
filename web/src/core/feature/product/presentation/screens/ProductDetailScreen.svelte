@@ -244,21 +244,21 @@
 
     .back-button {
         background:
-            radial-gradient(
-                circle at center,
-                var(--md-sys-color-primary) 0%,
-                var(--md-sys-color-primary-container) 100%
-            );
+                radial-gradient(
+                        circle at center,
+                        #242724 0%,
+                        var(--m3c-outline-variant) 100%
+                );
         color: var(--md-sys-color-on-primary-container);
     }
 
     .action-button {
         background:
-            radial-gradient(
-                circle at center,
-                var(--md-sys-color-primary) 0%,
-                var(--md-sys-color-surface-container-high) 100%
-            );
+                radial-gradient(
+                        circle at center,
+                        #242724 0%,
+                        var(--m3c-outline-variant) 100%
+                );
     }
 
     .header-actions {
@@ -322,12 +322,12 @@
         border-radius: 999px;
         border: none;
         background:
-            radial-gradient(
-                circle at center,
-                var(--md-sys-color-primary) 0%,
-                var(--md-sys-color-inverse-surface) 100%
-            );
-        color: var(--md-sys-color-inverse-on-surface);
+                radial-gradient(
+                        circle at center,
+                        #242724 0%,
+                        var(--m3c-outline-variant) 100%
+                );
+        color: var(--md-sys-color-on-surface);
         cursor: pointer;
         display: grid;
         place-items: center;
@@ -371,7 +371,7 @@
         z-index: 5;
         padding: 6px 12px;
         border-radius: 999px;
-        background: var(--md-sys-color-inverse-surface);
+        background: var(--md-sys-color-surface-container-high);
     }
 
     .carousel-dot {
@@ -379,19 +379,19 @@
         height: 8px;
         border-radius: 999px;
         border: none;
-        background: color-mix(in srgb, var(--md-sys-color-inverse-on-surface) 35%, transparent);
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 40%, transparent);
         cursor: pointer;
         padding: 0;
         transition: background 0.2s ease, transform 0.2s ease;
     }
 
     .carousel-dot.active {
-        background: var(--md-sys-color-inverse-on-surface);
+        background: var(--md-sys-color-primary);
         transform: scale(1.4);
     }
 
     .carousel-dot:hover {
-        background: var(--md-sys-color-inverse-on-surface);
+        background: var(--md-sys-color-primary);
     }
 
     @media (hover: none) {

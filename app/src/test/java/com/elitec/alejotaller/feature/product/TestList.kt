@@ -1,4 +1,3 @@
-package com.elitec.alejotaller.feature.product.data.test
 
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product

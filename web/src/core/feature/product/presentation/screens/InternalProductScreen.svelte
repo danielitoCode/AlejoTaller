@@ -8,10 +8,17 @@
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import ProductScreen from "./ProductScreen.svelte";
     import ProductDetailScreen from "./ProductDetailScreen.svelte";
+    import type {NavBackStackEntry} from "../../../../../lib/navigation/NavBackStackEntry";
+    import type {NavController} from "../../../../../lib/navigation/NavController";
+    import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
+
+    export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
+    export let navController: NavController | undefined = undefined;
 
     let searchQuery = "";
     let selectedCategoryId: string | null = null;
     let selectedProduct: any = null;
+    let pendingProductId: string | null = null;
     let isLoading = false;
 
     // Subscribe to stores
@@ -53,6 +60,18 @@
         };
     });
 
+    $: if (navBackStackEntry?.args?.productId) {
+        pendingProductId = navBackStackEntry.args.productId;
+    }
+
+    $: if (pendingProductId && products.length > 0) {
+        const product = products.find(p => p.id === pendingProductId);
+        if (product) {
+            selectedProduct = product;
+            pendingProductId = null;
+        }
+    }
+
     const handleSearchQueryChanged = (query: string) => {
         searchQuery = query;
     };
@@ -86,6 +105,20 @@
 
     const closeProductDetail = () => {
         selectedProduct = null;
+        if (navBackStackEntry?.route === productDetail.path && navController) {
+            navController.popBackStack();
+        }
+    };
+
+    const handleShareClick = () => {
+        if (!selectedProduct) return;
+        const url = `https://talleralejo.com/#/home/product-detail?productId=${selectedProduct.id}`;
+        if (navigator.share) {
+            navigator.share({ title: selectedProduct.name, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).catch(() => {});
+            toastStore.success("Enlace copiado al portapapeles");
+        }
     };
 </script>
 
@@ -127,6 +160,7 @@
                         showTopBar={true}
                         onBackClick={closeProductDetail}
                         onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
+                        onShareClick={handleShareClick}
                         onAddToCartClick={handleAddToCartClick}
                 />
             </div>

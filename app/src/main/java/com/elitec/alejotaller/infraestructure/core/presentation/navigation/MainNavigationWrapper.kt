@@ -46,11 +46,13 @@ import dev.tmapps.konnection.Konnection
 fun MainNavigationWrapper(
     modifier: Modifier = Modifier,
     pendingReservationId: String? = null,
+    pendingProductId: String? = null,
     onPendingReservationConsumed: () -> Unit = {}
 ) {
     val backStack = rememberNavBackStack(MainRoutesKey.Splash)
     val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(true)
     var lastHandledPendingReservationId by rememberSaveable { mutableStateOf<String?>(null) }
+    var lastHandledPendingProductId by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun resetRoot(destination: MainRoutesKey) {
         while (backStack.isNotEmpty()) {
@@ -71,7 +73,27 @@ fun MainNavigationWrapper(
             resetRoot(
                 MainRoutesKey.MainHome(
                     userId = current.userId,
-                    pendingReservationId = pendingReservationId
+                    pendingReservationId = pendingReservationId,
+                    pendingProductId = current.pendingProductId
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(pendingProductId) {
+        val current = backStack.lastOrNull()
+        if (
+            pendingProductId != null &&
+            pendingProductId != lastHandledPendingProductId &&
+            current is MainRoutesKey.MainHome &&
+            current.pendingProductId != pendingProductId
+        ) {
+            lastHandledPendingProductId = pendingProductId
+            resetRoot(
+                MainRoutesKey.MainHome(
+                    userId = current.userId,
+                    pendingReservationId = current.pendingReservationId,
+                    pendingProductId = pendingProductId
                 )
             )
         }
@@ -115,7 +137,7 @@ fun MainNavigationWrapper(
                 entry<MainRoutesKey.Splash> {
                     SplashScreen(
                         onUserAuth = { userId ->
-                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId))
+                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId, pendingProductId))
                         },
                         onUserNotAuth = {
                             resetRoot(MainRoutesKey.Landing)
@@ -128,11 +150,13 @@ fun MainNavigationWrapper(
                         onNavigateBack = { backStack.navigateBack() },
                         onSessionClosed = {
                             lastHandledPendingReservationId = null
+                            lastHandledPendingProductId = null
                             onPendingReservationConsumed()
                             resetRoot(MainRoutesKey.Landing)
                         },
                         userId = key.userId,
                         pendingReservationId = key.pendingReservationId,
+                        pendingProductId = key.pendingProductId,
                         onPendingReservationConsumed = onPendingReservationConsumed,
                         connectionAvailable = connectionStatus,
                         modifier = Modifier.fillMaxSize()
@@ -151,10 +175,12 @@ fun MainNavigationWrapper(
                             when (route) {
                                 is MainRoutesKey.MainHome -> {
                                     lastHandledPendingReservationId = pendingReservationId
+                                    lastHandledPendingProductId = pendingProductId
                                     resetRoot(
                                         MainRoutesKey.MainHome(
                                             userId = route.userId,
-                                            pendingReservationId = pendingReservationId
+                                            pendingReservationId = pendingReservationId,
+                                            pendingProductId = pendingProductId
                                         )
                                     )
                                 }
@@ -177,7 +203,8 @@ fun MainNavigationWrapper(
                         onNavigateBack = { backStack.navigateBack() },
                         onRegisterReady = { userId ->
                             lastHandledPendingReservationId = pendingReservationId
-                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId))
+                            lastHandledPendingProductId = pendingProductId
+                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId, pendingProductId))
                         },
                         modifier = Modifier.fillMaxSize()
                     )

@@ -157,13 +157,13 @@
 
         cursor: pointer;
 
-        color: var(--md-sys-color-inverse-on-surface);
+        color: var(--md-sys-color-on-surface);
 
         background:
                 radial-gradient(
                     circle at center,
-                    var(--md-sys-color-primary) 0%,
-                    var(--md-sys-color-inverse-surface) 100%
+                    #242724 0%,
+                    var(--m3c-outline-variant) 100%
                 );
 
         box-shadow:

@@ -40,6 +40,7 @@
         buyConfirm,
         dashboard,
         product,
+        productDetail,
         profile,
         reservation,
         reservationDetail,
@@ -75,7 +76,7 @@
     $: internalStack = $internalStackStore;
     $: currentEntry = internalStack.at(-1);
     $: currentPath = currentEntry?.route ?? dashboard.path;
-    $: routeUsesStageScroll = ![dashboard.path, product.path].includes(currentPath);
+    $: routeUsesStageScroll = ![dashboard.path, product.path, productDetail.path].includes(currentPath);
     $: cartCount = $cartStore.items.reduce((sum, item) => sum + item.quantity, 0);
     $: pendingSales = $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
     $: navItems = items.map((item) => ({
@@ -128,6 +129,8 @@
         const targetArgs =
             targetRoute === reservationDetail.path && parsed.args?.reservationId
                 ? { id: parsed.args.reservationId }
+                : targetRoute === productDetail.path && parsed.args?.productId
+                ? { productId: parsed.args.productId }
                 : undefined;
         const currentArgs = currentEntry?.args as Record<string, string> | undefined;
 
@@ -142,7 +145,7 @@
     }
 
     function isItemActive(path: string): boolean {
-        if (path === dashboard.path) return currentPath === dashboard.path || currentPath === product.path;
+        if (path === dashboard.path) return currentPath === dashboard.path || currentPath === product.path || currentPath === productDetail.path;
         if (path === buy.path) return currentPath === buy.path || currentPath === buyConfirm.path;
         if (path === reservation.path) return currentPath === reservation.path || currentPath === reservationDetail.path;
         return currentPath === path;
@@ -225,8 +228,10 @@
     $: if (!suppressHashSync && typeof window !== "undefined") {
         const args = currentEntry?.args as Record<string, string> | undefined;
         const nextHash = buildHomeHash(
-            currentPath as typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settingsRoute.path,
-            currentPath === reservationDetail.path ? { reservationId: args?.id } : undefined
+            currentPath as typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settingsRoute.path | typeof productDetail.path,
+            currentPath === reservationDetail.path ? { reservationId: args?.id } :
+            currentPath === productDetail.path ? { productId: args?.productId } :
+            undefined
         );
         if (window.location.hash !== nextHash) {
             window.history.replaceState({}, "", nextHash);
@@ -300,6 +305,7 @@
                     routes={[
                         composable(dashboard, () => InternalProductScreen),
                         composable(product, () => InternalProductScreen),
+                        composable(productDetail, () => InternalProductScreen),
                         composable(buy, () => InternalBuyScreen),
                         composable(buyConfirm, () => InternalBuyConfirmScreen),
                         composable(profile, () => InternalProfileScreen),

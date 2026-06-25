@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -78,6 +79,7 @@ fun InternalNavigationWrapper(
     onSessionClosed: () -> Unit = {},
     userId: String,
     pendingReservationId: String? = null,
+    pendingProductId: String? = null,
     onPendingReservationConsumed: () -> Unit = {},
     connectionAvailable: Boolean = true,
     modifier: Modifier = Modifier,
@@ -95,6 +97,7 @@ fun InternalNavigationWrapper(
     var isSubmittingPurchase by rememberSaveable(userId) { mutableStateOf(false) }
     var isUpdatingDeliveryType by rememberSaveable(userId) { mutableStateOf(false) }
     var targetReservationId by rememberSaveable(userId) { mutableStateOf(pendingReservationId) }
+    var targetProductId by rememberSaveable(userId) { mutableStateOf(pendingProductId) }
     var hasAttemptedProductHydration by rememberSaveable(userId) { mutableStateOf(false) }
     var hasAttemptedProfileHydration by rememberSaveable(userId) { mutableStateOf(false) }
     var hasPerformedInitialSaleSync by rememberSaveable(userId) { mutableStateOf(false) }
@@ -195,11 +198,28 @@ fun InternalNavigationWrapper(
         }
     }
 
+    LaunchedEffect(pendingProductId) {
+        if (!pendingProductId.isNullOrBlank()) {
+            targetProductId = pendingProductId
+        }
+    }
+
     LaunchedEffect(targetReservationId, sales) {
         val reservationId = targetReservationId ?: return@LaunchedEffect
         if (sales.any { it.id == reservationId && it.userId == userId }) {
             if (backStack.lastOrNull() !is InternalRoutesKey.BuyReservation) {
                 backStack.navigateTo(InternalRoutesKey.BuyReservation)
+            }
+        }
+    }
+
+    LaunchedEffect(targetProductId, products) {
+        val productId = targetProductId ?: return@LaunchedEffect
+        if (products.any { it.id == productId }) {
+            targetProductId = null
+            val current = backStack.lastOrNull()
+            if (current !is InternalRoutesKey.ProductDetail || current.productId != productId) {
+                backStack.navigateTo(InternalRoutesKey.ProductDetail(productId))
             }
         }
     }
@@ -307,11 +327,21 @@ fun InternalNavigationWrapper(
                     }
 
                     if (resolvedProduct != null) {
+                        val context = LocalContext.current
                         ProductDetailScreen(
                             modifier = Modifier.fillMaxSize(),
                             product = resolvedProduct!!,
                             showTopBar = layoutSpec.showTopBarInDetail,
                             onBackClick = { backStack.navigateBack() },
+                            onShareClick = {
+                                val product = resolvedProduct!!
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, "https://talleralejo.com/product/${product.id}")
+                                    putExtra(Intent.EXTRA_SUBJECT, product.name)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Compartir ${product.name}"))
+                            },
                             onAddToCartClick = {
                                 shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
                             }
