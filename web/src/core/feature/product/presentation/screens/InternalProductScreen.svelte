@@ -110,16 +110,6 @@
         }
     };
 
-    const handleShareClick = () => {
-        if (!selectedProduct) return;
-        const url = `https://talleralejo.com/#/home/product-detail?productId=${selectedProduct.id}`;
-        if (navigator.share) {
-            navigator.share({ title: selectedProduct.name, url }).catch(() => {});
-        } else {
-            navigator.clipboard.writeText(url).catch(() => {});
-            toastStore.success("Enlace copiado al portapapeles");
-        }
-    };
 </script>
 
 <div class="internal-product-screen">
@@ -160,7 +150,6 @@
                         showTopBar={true}
                         onBackClick={closeProductDetail}
                         onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
-                        onShareClick={handleShareClick}
                         onAddToCartClick={handleAddToCartClick}
                 />
             </div>

@@ -1,5 +1,6 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
+import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Handshake
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -55,9 +57,18 @@ fun ProductDetailScreen(
     showTopBar: Boolean = true,
     onBackClick: () -> Unit = {},
     onFavoriteClick: () -> Unit = {},
-    onShareClick: () -> Unit = {},
     onAddToCartClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val handleShare = {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, "https://alejotaller.onrender.com/product/${product.id}")
+            putExtra(Intent.EXTRA_SUBJECT, product.name)
+        }
+        context.startActivity(Intent.createChooser(intent, "Compartir ${product.name}"))
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -77,7 +88,7 @@ fun ProductDetailScreen(
                 HeaderSection(
                     onBackClick = onBackClick,
                     onFavoriteClick = onFavoriteClick,
-                    onShareClick = onShareClick
+                    onShareClick = handleShare
                 )
             }
             ProductImageSection(
@@ -139,6 +150,23 @@ private fun HeaderSection(
                 Icon(
                     imageVector = Icons.Default.Handshake,
                     contentDescription = "like",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+            IconButton(
+                onClick = onShareClick,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(MaterialTheme.colorScheme.surface, CircleShape)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant,
+                        CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "Compartir",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }

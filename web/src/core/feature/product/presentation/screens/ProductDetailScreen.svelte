@@ -2,11 +2,12 @@
     import { Button, Icon } from "m3-svelte";
     import ArrowBackRounded from "@ktibow/iconset-material-symbols/arrow-back-rounded";
     import FavoriteBorderRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
-    import ShareRounded from "@ktibow/iconset-material-symbols/share-eta-rounded";
+    import ShareRounded from "@ktibow/iconset-material-symbols/share";
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import type { Product } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { parseProductImageUrls } from "../utils/product.images";
+    import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
     const placeholderImageUrl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f5f5f5' width='400' height='400'/%3E%3C/svg%3E`;
 
@@ -14,8 +15,17 @@
     export let showTopBar: boolean = true;
     export let onBackClick: () => void = () => {};
     export let onFavoriteClick: () => void = () => {};
-    export let onShareClick: () => void = () => {};
     export let onAddToCartClick: () => void = () => {};
+
+    function handleShare() {
+        const url = `https://alejotaller.onrender.com/#/home/product-detail?productId=${product.id}`;
+        if (navigator.share) {
+            navigator.share({ title: product.name, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).catch(() => {});
+            toastStore.success("Enlace copiado al portapapeles");
+        }
+    }
 
     $: imageUrls = parseProductImageUrls(product.photoUrl);
 
@@ -66,13 +76,14 @@
                     <Icon icon={FavoriteBorderRounded} />
                 </button>
                 <button
-                    class="icon-button action-button"
+                    class="share-button"
                     type="button"
                     aria-label="Compartir"
                     title="Compartir"
-                    on:click={onShareClick}
+                    on:click={handleShare}
                 >
                     <Icon icon={ShareRounded} />
+                    <span class="share-label">Compartir</span>
                 </button>
             </div>
         </header>
@@ -264,6 +275,36 @@
     .header-actions {
         display: flex;
         gap: 10px;
+        align-items: center;
+    }
+
+    .share-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-on-surface);
+        background: radial-gradient(circle at center, #242724 0%, var(--m3c-outline-variant) 100%);
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .share-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .share-button:active {
+        transform: scale(0.96);
+    }
+
+    .share-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        line-height: 1;
     }
 
     .product-image-section {

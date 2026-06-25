@@ -40,7 +40,7 @@
 
                 <data
                     android:scheme="https"
-                    android:host="talleralejo.com"
+                    android:host="alejotaller.onrender.com"
                     android:pathPrefix="/product/" />
             </intent-filter>
         </activity>

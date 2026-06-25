@@ -1,6 +1,5 @@
 package com.elitec.alejotaller.infraestructure.core.presentation.navigation
 
-import android.content.Intent
 import android.util.Log
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -327,21 +326,11 @@ fun InternalNavigationWrapper(
                     }
 
                     if (resolvedProduct != null) {
-                        val context = LocalContext.current
                         ProductDetailScreen(
                             modifier = Modifier.fillMaxSize(),
                             product = resolvedProduct!!,
                             showTopBar = layoutSpec.showTopBarInDetail,
                             onBackClick = { backStack.navigateBack() },
-                            onShareClick = {
-                                val product = resolvedProduct!!
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, "https://talleralejo.com/product/${product.id}")
-                                    putExtra(Intent.EXTRA_SUBJECT, product.name)
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "Compartir ${product.name}"))
-                            },
                             onAddToCartClick = {
                                 shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
                             }

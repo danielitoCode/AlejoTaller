@@ -153,7 +153,7 @@ class MainActivity : ComponentActivity() {
     private fun extractProductId(intent: Intent?): String? {
         if (intent == null) return null
         val uri = intent.data ?: return null
-        if (uri.scheme != "https" || uri.host != "talleralejo.com") return null
+        if (uri.scheme != "https" || uri.host != "alejotaller.onrender.com") return null
         val segment = uri.lastPathSegment ?: return null
         return segment.takeIf { it.isNotBlank() }
     }
