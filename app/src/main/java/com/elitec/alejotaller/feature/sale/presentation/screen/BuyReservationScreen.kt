@@ -3,6 +3,7 @@ package com.elitec.alejotaller.feature.sale.presentation.screen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,10 +13,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Money
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.outlined.Cancel
@@ -32,7 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +49,9 @@ import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.rememberAdaptiveLayoutSpec
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
@@ -54,18 +66,32 @@ fun BuyReservationScreen(
     onSaleSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val deviceMode = LocalConfiguration.current.toDeviceMode() // Screen configuration
+
     if (sales.isEmpty()) {
         EmptyReservationsState(onGoToShop = onGoToShop, modifier = modifier)
         return
     }
 
+    val countOfRowByDeviceScreenConfig = when (deviceMode) {
+        AppWindowType.MobilePortrait,
+        AppWindowType.TabletPortrait-> 1
+        AppWindowType.MobileLandscape -> 2
+        AppWindowType.TabletLandscape,
+        AppWindowType.Laptop,
+        AppWindowType.DesktopVertical -> 3
+        AppWindowType.Expanded -> 4
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(12.dp),
-        verticalArrangement = Arrangement.SpaceBetween
+            .padding(12.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 12.dp)
+        ) {
             Icon(
                 imageVector = Icons.Default.ShoppingBag,
                 contentDescription = "Shopping Bag",
@@ -80,10 +106,12 @@ fun BuyReservationScreen(
             )
         }
         Spacer(Modifier.height(5.dp))
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Fixed(countOfRowByDeviceScreenConfig),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(5.dp),
+            verticalItemSpacing = 5.dp,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             items(sales, key = { it.id }) { sale ->
                 SaleListItem(
@@ -176,14 +204,25 @@ private fun SaleListItem(
                     Text(text = sale.date.toString(), style = MaterialTheme.typography.bodySmall)
                 }
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = "Shopping icon",
+                            tint = MaterialTheme.colorScheme.onSurface.copy(0.8f)
+                        )
+                        Text(
+                            text = "Pedido",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                     Text(
-                        text = "Pedido",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
+                        modifier = Modifier.padding(start = 5.dp),
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(0.8f),
-                        text = "#${sale.id.take(8)}",
+                        text = "ID: ${sale.id.take(8)}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -192,6 +231,11 @@ private fun SaleListItem(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.AttachMoney,
+                        contentDescription = "Money Icon",
+                        tint = MaterialTheme.colorScheme.onSurface.copy(0.8f)
+                    )
                     Text(text = "Monto total:", style = MaterialTheme.typography.bodySmall)
                     Text(
                         text = "${"%.2f".format(sale.amount)} CUP",
