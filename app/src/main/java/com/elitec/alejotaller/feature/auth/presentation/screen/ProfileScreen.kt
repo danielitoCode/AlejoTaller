@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elitec.alejotaller.feature.auth.presentation.components.ProfilePhotoBox
+import com.elitec.alejotaller.feature.auth.presentation.uiStates.ProfileUiState
 import com.elitec.alejotaller.feature.auth.presentation.viewmodel.ProfileViewModel
 import org.koin.androidx.compose.koinViewModel
 
@@ -293,3 +294,127 @@ private fun ProfileFormCard(
         }
     }
 }
+
+/*@Composable
+private fun ProfileScreenContent(
+    profileName: String,
+    profilePhone: String? = null,
+    profileEmail: String,
+    profilePhotoUrl: String,
+    isGoogleUser: Boolean,
+    uiState: ProfileUiState,
+    modifier: Modifier = Modifier
+) {
+    val scrollState = rememberScrollState()
+
+    var name by rememberSaveable(profileName) { mutableStateOf(profileName) }
+    var phone by rememberSaveable(profilePhone) { mutableStateOf(profilePhone.orEmpty()) }
+    var photoUrl by rememberSaveable(profilePhotoUrl) { mutableStateOf(profilePhotoUrl?.toUri()) }
+
+    val hasChanges = name != profileName || phone != profilePhone.orEmpty() || photoUrl?.toString() != profilePhotoUrl
+
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
+    ) {
+        val isWideLayout = maxWidth >= 900.dp
+        val contentPadding = if (isWideLayout) 24.dp else 16.dp
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountCircle,
+                    contentDescription = "Account Circle",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.width(5.dp))
+                Text(
+                    color = MaterialTheme.colorScheme.onBackground,
+                    text = "Mi perfil",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+
+            if (isWideLayout) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    ProfileIdentityCard(
+                        photoUrl = photoUrl,
+                        isGoogleUser = isGoogleUser,
+                        onPhotoSelected = { photoSelected -> photoUrl = photoSelected },
+                        modifier = Modifier.weight(0.85f)
+                    )
+                    ProfileFormCard(
+                        name = name,
+                        phone = phone,
+                        profileEmail = profileEmail,
+                        uiStateSaving = uiState.isSaving,
+                        hasChanges = hasChanges,
+                        onNameChange = { name = it },
+                        onPhoneChange = { phone = it },
+                        onSave = {
+                            profileViewModel.updateProfile(
+                                userId = userId,
+                                newName = name,
+                                currentName = profileName,
+                                newPhone = phone,
+                                currentPhone = profilePhone.orEmpty(),
+                                photoUri = photoUrl,
+                                currentPhotoUrl = profilePhotoUrl,
+                                context = context,
+                                onSuccess = onEditProfile
+                            )
+                        },
+                        modifier = Modifier.weight(1.15f)
+                    )
+                }
+            } else {
+                ProfileIdentityCard(
+                    photoUrl = photoUrl,
+                    isGoogleUser = isGoogleUser,
+                    onPhotoSelected = { photoSelected -> photoUrl = photoSelected },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                ProfileFormCard(
+                    name = name,
+                    phone = phone,
+                    profileEmail = profileEmail,
+                    uiStateSaving = uiState.isSaving,
+                    hasChanges = hasChanges,
+                    onNameChange = { name = it },
+                    onPhoneChange = { phone = it },
+                    onSave = {
+                        profileViewModel.updateProfile(
+                            userId = userId,
+                            newName = name,
+                            currentName = profileName,
+                            newPhone = phone,
+                            currentPhone = profilePhone.orEmpty(),
+                            photoUri = photoUrl,
+                            currentPhotoUrl = profilePhotoUrl,
+                            context = context,
+                            onSuccess = onEditProfile
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            Surface(shape = CircleShape, tonalElevation = 0.dp) {
+                SnackbarHost(hostState = snackbarHostState)
+            }
+        }
+    }
+}*/
