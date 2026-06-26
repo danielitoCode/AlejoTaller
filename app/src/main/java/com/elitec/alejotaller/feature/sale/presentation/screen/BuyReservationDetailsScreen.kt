@@ -15,12 +15,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeliveryDining
@@ -43,12 +48,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
@@ -80,133 +88,704 @@ fun BuyReservationDetailsScreen(
         }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(15.dp)
-    ) {
-        item {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        imageVector = Icons.Default.ShoppingBag,
-                        contentDescription = ""
-                    )
-                    Spacer(Modifier.width(5.dp))
-                    Text(
-                        color = MaterialTheme.colorScheme.onBackground,
-                        style = MaterialTheme.typography.headlineMedium,
-                        text = "Estado de su pedido"
-                    )
-                }
-                Text(
-                    color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
-                    text = "Id: ${sale.id.take(8)}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
+    val deviceMode = LocalConfiguration.current.toDeviceMode()
 
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "Monto total:")
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    fontWeight = FontWeight.Bold,
-                    text = "${"%.2f".format(sale.amount)} CUP",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-
-        item {
-            SaleStatusBadge(sale.verified)
-        }
-
-        item {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxWidth()
+    when (deviceMode) {
+        AppWindowType.MobilePortrait,
+        AppWindowType.TabletPortrait-> {
+            LazyColumn(
+                modifier = modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Image(
-                            painter = rememberQrCodePainter(qrContent),
-                            contentDescription = "Código QR del pedido",
-                            modifier = Modifier.size(160.dp)
-                        )
-                        AnimatedVisibility(
-                            visible = sale.verified == BuyState.VERIFIED,
-                            enter = fadeIn(tween(400)) + expandVertically(tween(400)),
-                            modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
-                        ) {
-                            DeliverySelectionSection(
-                                currentDeliveryType = sale.deliveryType,
-                                onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                item {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                imageVector = Icons.Default.ShoppingBag,
+                                contentDescription = ""
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                style = MaterialTheme.typography.headlineMedium,
+                                text = "Estado de su pedido"
                             )
                         }
+                        Text(
+                            color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                            text = "Id: ${sale.id.take(8)}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(text = "Monto total:")
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            fontWeight = FontWeight.Bold,
+                            text = "${"%.2f".format(sale.amount)} CUP",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+
+                item {
+                    SaleStatusBadge(sale.verified)
+                }
+
+                item {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Image(
+                                    painter = rememberQrCodePainter(qrContent),
+                                    contentDescription = "Código QR del pedido",
+                                    modifier = Modifier.size(160.dp)
+                                )
+                                AnimatedVisibility(
+                                    visible = sale.verified == BuyState.VERIFIED,
+                                    enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                    modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                                ) {
+                                    DeliverySelectionSection(
+                                        currentDeliveryType = sale.deliveryType,
+                                        onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Productos en su compra:",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
+                }
+
+                items(
+                    items = sale.products,
+                    key = { "${sale.id}:${it.productId}" }
+                ) { product ->
+                    val productPrice = findProductPrice(product.productId)
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(15.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(fontWeight = FontWeight.Bold, text = "Cant.:")
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                                }
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Column(
+                                modifier = Modifier.wrapContentSize(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(text = "Prec.:")
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    fontWeight = FontWeight.Bold,
+                                    text = "$productPrice CUP"
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
-
-        item {
+        AppWindowType.MobileLandscape -> {
             Column(
-                verticalArrangement = Arrangement.spacedBy(5.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(5.dp)
             ) {
-                Text(
-                    text = "Productos en su compra:",
-                    style = MaterialTheme.typography.headlineSmall
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = ""
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.headlineMedium,
+                            text = "Estado de su pedido"
+                        )
+                    }
+                    Text(
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                        text = "Id: ${sale.id.take(8)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(
+                    modifier = Modifier.height(5.dp)
                 )
-            }
-        }
-
-        items(
-            items = sale.products,
-            key = { "${sale.id}:${it.productId}" }
-        ) { product ->
-            val productPrice = findProductPrice(product.productId)
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(15.dp)
-            ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(fontWeight = FontWeight.Bold, text = "Cant.:")
-                            Spacer(Modifier.width(4.dp))
-                            Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                            Text(text = "Monto total:")
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "${"%.2f".format(sale.amount)} CUP",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        SaleStatusBadge(sale.verified)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberQrCodePainter(qrContent),
+                                        contentDescription = "Código QR del pedido",
+                                        modifier = Modifier.size(160.dp)
+                                    )
+                                    AnimatedVisibility(
+                                        visible = sale.verified == BuyState.VERIFIED,
+                                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                                    ) {
+                                        DeliverySelectionSection(
+                                            currentDeliveryType = sale.deliveryType,
+                                            onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
-                    Spacer(Modifier.width(8.dp))
-                    Column(
-                        modifier = Modifier.wrapContentSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Text(text = "Prec.:")
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            fontWeight = FontWeight.Bold,
-                            text = "$productPrice CUP"
+                        items(
+                            items = sale.products,
+                            key = { "${sale.id}:${it.productId}" }
+                        ) { product ->
+                            val productPrice = findProductPrice(product.productId)
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceContainer,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(15.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(fontWeight = FontWeight.Bold, text = "Cant.:")
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                                        }
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Column(
+                                        modifier = Modifier.wrapContentSize(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(text = "Prec.:")
+                                        Spacer(Modifier.width(4.dp))
+                                        Text(
+                                            fontWeight = FontWeight.Bold,
+                                            text = "$productPrice CUP"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        AppWindowType.TabletLandscape -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(5.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = ""
                         )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.headlineMedium,
+                            text = "Estado de su pedido"
+                        )
+                    }
+                    Text(
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                        text = "Id: ${sale.id.take(8)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(
+                    modifier = Modifier.height(5.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Monto total:")
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "${"%.2f".format(sale.amount)} CUP",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        SaleStatusBadge(sale.verified)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberQrCodePainter(qrContent),
+                                        contentDescription = "Código QR del pedido",
+                                        modifier = Modifier.size(160.dp)
+                                    )
+                                    AnimatedVisibility(
+                                        visible = sale.verified == BuyState.VERIFIED,
+                                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                                    ) {
+                                        DeliverySelectionSection(
+                                            currentDeliveryType = sale.deliveryType,
+                                            onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = "Productos en su compra:",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(
+                            modifier = Modifier.height(5.dp)
+                        )
+                        LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(2),
+                            verticalItemSpacing = 5.dp,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(
+                                items = sale.products,
+                                key = { "${sale.id}:${it.productId}" }
+                            ) { product ->
+                                val productPrice = findProductPrice(product.productId)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(15.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp)
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(fontWeight = FontWeight.Bold, text = "Cant.:")
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                                            }
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(
+                                            modifier = Modifier.wrapContentSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(text = "Prec.:")
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                fontWeight = FontWeight.Bold,
+                                                text = "$productPrice CUP"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        AppWindowType.Laptop,
+        AppWindowType.DesktopVertical -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(5.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = ""
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.headlineMedium,
+                            text = "Estado de su pedido"
+                        )
+                    }
+                    Text(
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                        text = "Id: ${sale.id.take(8)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(
+                    modifier = Modifier.height(5.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Monto total:")
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "${"%.2f".format(sale.amount)} CUP",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        SaleStatusBadge(sale.verified)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberQrCodePainter(qrContent),
+                                        contentDescription = "Código QR del pedido",
+                                        modifier = Modifier.size(160.dp)
+                                    )
+                                    AnimatedVisibility(
+                                        visible = sale.verified == BuyState.VERIFIED,
+                                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                                    ) {
+                                        DeliverySelectionSection(
+                                            currentDeliveryType = sale.deliveryType,
+                                            onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Column(
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = "Productos en su compra:",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(
+                            modifier = Modifier.height(5.dp)
+                        )
+                        LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(3),
+                            verticalItemSpacing = 5.dp,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(
+                                items = sale.products,
+                                key = { "${sale.id}:${it.productId}" }
+                            ) { product ->
+                                val productPrice = findProductPrice(product.productId)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(15.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp)
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(fontWeight = FontWeight.Bold, text = "Cant.:")
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                                            }
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(
+                                            modifier = Modifier.wrapContentSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(text = "Prec.:")
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                fontWeight = FontWeight.Bold,
+                                                text = "$productPrice CUP"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        AppWindowType.Expanded -> {
+            Column(
+                modifier = modifier.fillMaxSize().padding(5.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            imageVector = Icons.Default.ShoppingBag,
+                            contentDescription = ""
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.headlineMedium,
+                            text = "Estado de su pedido"
+                        )
+                    }
+                    Text(
+                        color = MaterialTheme.colorScheme.onBackground.copy(0.6f),
+                        text = "Id: ${sale.id.take(8)}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(
+                    modifier = Modifier.height(5.dp)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                        modifier = Modifier.weight(1f)
+                            .fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "Monto total:")
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                text = "${"%.2f".format(sale.amount)} CUP",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        SaleStatusBadge(sale.verified)
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Image(
+                                        painter = rememberQrCodePainter(qrContent),
+                                        contentDescription = "Código QR del pedido",
+                                        modifier = Modifier.size(160.dp)
+                                    )
+                                    AnimatedVisibility(
+                                        visible = sale.verified == BuyState.VERIFIED,
+                                        enter = fadeIn(tween(400)) + expandVertically(tween(400)),
+                                        modifier = Modifier.testTag(DELIVERY_SECTION_TAG)
+                                    ) {
+                                        DeliverySelectionSection(
+                                            currentDeliveryType = sale.deliveryType,
+                                            onTypeSelected = { type -> onDeliveryTypeSelected(sale.id, type) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Column(
+                        modifier = Modifier.weight(2f)
+                            .fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = "Productos en su compra:",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(
+                            modifier = Modifier.height(5.dp)
+                        )
+                        LazyVerticalStaggeredGrid(
+                            columns = StaggeredGridCells.Fixed(4),
+                            verticalItemSpacing = 5.dp,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(
+                                items = sale.products,
+                                key = { "${sale.id}:${it.productId}" }
+                            ) { product ->
+                                val productPrice = findProductPrice(product.productId)
+                                Surface(
+                                    color = MaterialTheme.colorScheme.surfaceContainer,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(15.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp)
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(text = product.productName ?: productNamesById[product.productId] ?: product.productId)
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Text(fontWeight = FontWeight.Bold, text = "Cant.:")
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(fontWeight = FontWeight.Bold, text = "${product.quantity}")
+                                            }
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                        Column(
+                                            modifier = Modifier.wrapContentSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(text = "Prec.:")
+                                            Spacer(Modifier.width(4.dp))
+                                            Text(
+                                                fontWeight = FontWeight.Bold,
+                                                text = "$productPrice CUP"
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -246,7 +825,9 @@ private fun DeliverySelectionSection(
                 subtitle = "Paso por el taller",
                 selected = currentDeliveryType == DeliveryType.PICKUP,
                 onClick = { onTypeSelected(DeliveryType.PICKUP) },
-                modifier = Modifier.weight(1f).testTag(OPTION_PICKUP_TAG)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(OPTION_PICKUP_TAG)
             )
             DeliveryOptionCard(
                 icon = Icons.Default.DeliveryDining,
@@ -254,7 +835,9 @@ private fun DeliverySelectionSection(
                 subtitle = "Me lo traen",
                 selected = currentDeliveryType == DeliveryType.DELIVERY,
                 onClick = { onTypeSelected(DeliveryType.DELIVERY) },
-                modifier = Modifier.weight(1f).testTag(OPTION_DELIVERY_TAG)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(OPTION_DELIVERY_TAG)
             )
         }
         currentDeliveryType?.let { type ->
