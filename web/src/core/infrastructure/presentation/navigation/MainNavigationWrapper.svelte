@@ -42,8 +42,10 @@
         return parsed?.top === home.path && (parsed.nested === "product-detail" || !!parsed.args?.productId);
     }
 
-    function shouldPreserveCurrentHashForAuthRedirect(path: string): boolean {
-        return (path === welcome.path || path === login.path) && isProductDeepLinkHash(window.location.hash);
+    function maybeRememberPendingDeepLinkForAuthRedirect(path: string) {
+        if ((path === welcome.path || path === login.path) && isProductDeepLinkHash(window.location.hash)) {
+            rememberPendingDeepLink(window.location.hash);
+        }
     }
 
     function handleHashChange() {
@@ -69,13 +71,10 @@
     });
 
     $: if (!suppressHashSync && typeof window !== "undefined" && currentPath && currentPath !== home.path) {
-        if (shouldPreserveCurrentHashForAuthRedirect(currentPath)) {
-            rememberPendingDeepLink(window.location.hash);
-        } else {
-            const nextHash = buildTopLevelHash(currentPath as typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path);
-            if (window.location.hash !== nextHash) {
-                window.history.replaceState({}, "", nextHash);
-            }
+        maybeRememberPendingDeepLinkForAuthRedirect(currentPath);
+        const nextHash = buildTopLevelHash(currentPath as typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path);
+        if (window.location.hash !== nextHash) {
+            window.history.replaceState({}, "", nextHash);
         }
     }
 

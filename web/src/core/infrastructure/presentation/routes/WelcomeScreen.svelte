@@ -2,10 +2,14 @@
   import {onMount} from "svelte";
   import {Button, Card, Icon} from 'm3-svelte'
   import AutoAwesome from "@ktibow/iconset-material-symbols/auto-awesome"
-  import {ArrowRight, Download, Smartphone, UserRoundPlus, Wrench} from "lucide-svelte";
+  import {ArrowRight, Download, Smartphone, UserRoundPlus, Wrench, Eye} from "lucide-svelte";
   import Screen from "../components/Screen.svelte";
   import type {NavController} from "../../../../lib/navigation/NavController";
   import {ENV} from "../../env";
+  import { authContainer } from "../../../feature/auth/di/auth.container";
+  import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
+  import { authFlowStore } from "../../../feature/auth/presentation/viewmodel/auth-flow.store";
+  import { consumePendingDeepLink } from "../navigation/pending-deeplink.store";
 
   export let navController: NavController
 
@@ -37,6 +41,25 @@
   function openDownload(url: string | undefined) {
     if (!url) return;
     window.location.href = url;
+  }
+
+  async function continueAsGuest() {
+    try {
+      const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
+      sessionStore.setGuestSession();
+      authFlowStore.setSuccess({
+        userId,
+        email: null,
+        provider: "guest"
+      });
+      const pendingHash = consumePendingDeepLink();
+      if (pendingHash && typeof window !== "undefined") {
+        window.history.replaceState({}, "", pendingHash);
+      }
+      navController.resetTo("home");
+    } catch (e) {
+      console.error("Failed to continue as guest:", e);
+    }
   }
 
   type ShowcaseItem = {
@@ -128,6 +151,12 @@
                 <span class="btn-content">
                   <UserRoundPlus size={18} />
                   <span>Crear cuenta</span>
+                </span>
+              </Button>
+              <Button variant="tonal" size="m" onclick={continueAsGuest}>
+                <span class="btn-content">
+                  <Eye size={18} />
+                  <span>Explorar como visitante</span>
                 </span>
               </Button>
             </div>

@@ -255,6 +255,7 @@
 
         try {
             const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
+            sessionStore.setGuestSession();
             const guestContext = {
                 userId,
                 email: null,

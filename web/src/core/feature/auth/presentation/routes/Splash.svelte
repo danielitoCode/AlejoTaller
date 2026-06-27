@@ -4,9 +4,11 @@
     import {authContainer} from "../../di/auth.container";
     import alejoIcon from "/alejoicon_clean.svg";
     import { consumePendingDeepLink, rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
-    import { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
+要能sco { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
     import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
+    import { sessionStore } from "../viewmodel/session.store";
+    import { authFlowStore } from "../viewmodel/auth-flow.store";
 
     import {
         getStoredAdminChoice,
@@ -21,12 +23,36 @@
     let loading = true;
     let redirecting = false;
 
+    function isProductDeepLink(hash: string): boolean {
+        const parsed = parseDeepLinkHash(hash);
+        return parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId);
+    }
+
     function continueAsClient(user: any) {
         const pendingHash = consumePendingDeepLink();
         if (pendingHash && typeof window !== "undefined") {
             window.history.replaceState({}, "", pendingHash);
         }
         navController.resetTo("home", { id: user.id ?? user.$id });
+    }
+
+    async function autoCreateGuestSession() {
+        try {
+            const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
+            sessionStore.setGuestSession();
+            authFlowStore.setSuccess({
+                userId,
+                email: null,
+                provider: "guest"
+            });
+            const pendingHash = consumePendingDeepLink();
+            if (pendingHash && typeof window !== "undefined") {
+                window.history.replaceState({}, "", pendingHash);
+            }
+            navController.resetTo("home");
+        } catch {
+            navController.resetTo("welcome");
+        }
     }
 
     async function chooseClient() {
@@ -73,8 +99,12 @@
             }
             continueAsClient(user);
         } catch {
-            rememberProductDeepLinkIfPresent();
-            navController.resetTo("welcome");
+            if (isProductDeepLink(window.location.hash)) {
+                rememberProductDeepLinkIfPresent();
+                await autoCreateGuestSession();
+            } else {
+                navController.resetTo("welcome");
+            }
         } finally {
             loading = false;
         }

@@ -18,7 +18,9 @@
     export let onBackClick: () => void = () => {};
     export let onFavoriteClick: () => void = () => {};
     export let onAddToCartClick: () => void = () => {};
+    export let onAuthRequiredClick: () => void = () => {};
     export let canAddToCart: boolean = true;
+    export let isGuest: boolean = false;
 
     function handleShare() {
         const hash = buildHomeHash(productDetail.path, { productId: product.id });
@@ -185,6 +187,13 @@
                     <span>Agregar al carrito</span>
                 </Button>
             </div>
+        {:else if isGuest}
+            <div class="guest-cta-card">
+                <p class="Writer a message...EncryptedCon">Crea una cuenta para comprar y reservar</p>
+                <Button variant="filled" size="m" onclick={onAuthRequiredClick}>
+                    <span>Crear cuenta / Iniciar sesion</span>
+                </Button>
+            </div>
         {:else}
             <div class="guest-action">
                 Inicia sesion para comprar o reservar.
@@ -263,13 +272,37 @@
         color: var(--md-sys-color-on-surface);
     }
 
-    .guest-action {
+    .guest-action,
+    .guest-cta-card {
         padding: 12px 16px;
         border-radius: 999px;
         background: var(--md-sys-color-surface-container-high);
         color: var(--md-sys-color-on-surface-variant);
         font-weight: 700;
         text-align: center;
+    }
+
+    .guest-cta-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 28px;
+        background: color-mix(in srgb, var(--md-sys-color-primary-container) 12%, var(--md-sys-color-surface-container-high));
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+    }
+
+    .guest-cta-card p {
+        margin: 0;
+        font-size: 0.92rem;
+        color: var(--md-sys-color-on-surface-variant);
+        font-weight: 600;
+    }
+
+    .guest-cta-card :global(.m3-container) {
+        width: 100%;
+        min-height: 52px;
+        border-radius: 999px;
     }
 
     .back-button {

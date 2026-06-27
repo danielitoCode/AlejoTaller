@@ -12,6 +12,7 @@
     import type {NavController} from "../../../../../lib/navigation/NavController";
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
+    import { rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -22,6 +23,7 @@
     let pendingProductId: string | null = null;
     let resolvingPendingProductId: string | null = null;
     let isLoading = false;
+    let showAuthOverlay = false;
 
     // Subscribe to stores
     let products: any[] = [];
@@ -144,6 +146,10 @@
         toastStore.success(`${selectedProduct.name} agregado al carrito`);
     };
 
+    const handleAuthRequiredClick = () => {
+        showAuthOverlay = true;
+    };
+
     const closeProductDetail = () => {
         selectedProduct = null;
         if (navBackStackEntry?.route === productDetail.path && navController) {
@@ -192,12 +198,16 @@
                         onBackClick={closeProductDetail}
                         onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
                         canAddToCart={!$sessionStore.isGuest}
+                        isGuest={$sessionStore.isGuest}
                         onAddToCartClick={handleAddToCartClick}
+                        onAuthRequiredClick={handleAuthRequiredClick}
                 />
             </div>
         </div>
     {/if}
 </div>
+
+<GuestAuthOverlay open={showAuthOverlay} on:close={() => showAuthOverlay = false} />
 
 <style>
     .internal-product-screen {
