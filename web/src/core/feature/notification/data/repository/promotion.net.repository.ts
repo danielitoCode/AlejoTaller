@@ -2,8 +2,9 @@ import type { PromotionDTO } from "../dto/PromotionDTO";
 import { type Databases, ID, Query } from "appwrite";
 import type { PromotionWriteDTO } from "../mapper/Mappers";
 import { ENV } from "../../../../infrastructure/env";
+import { APPWRITE_COLLECTIONS } from "../../../../infrastructure/data/appwrite/public-data-contract";
 
-const COLLECTION_ID = "promotions";
+const COLLECTION_ID = APPWRITE_COLLECTIONS.promotion;
 
 export class PromotionNetRepository {
     constructor(private readonly databases: Databases) {}

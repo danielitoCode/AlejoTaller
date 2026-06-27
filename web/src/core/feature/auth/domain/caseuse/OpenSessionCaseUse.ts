@@ -13,4 +13,8 @@ export class OpenSessionCaseUse {
     async openGoogleSession(successUrl: string, failureUrl: string): Promise<void> {
         await this.sessionNetManager.createOAuthSession("google", successUrl, failureUrl);
     }
+
+    async openGuestSession(): Promise<string> {
+        return await this.sessionNetManager.createAnonymousSession();
+    }
 }

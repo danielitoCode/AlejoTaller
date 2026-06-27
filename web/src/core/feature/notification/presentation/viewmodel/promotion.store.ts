@@ -8,6 +8,7 @@ import {
 } from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 import { promotionFromDTO } from "../../data/mapper/Mappers";
+import { isAppwritePermissionError } from "../../../../infrastructure/data/appwrite/public-data-contract";
 
 interface PromotionState {
     items: Promotion[];
@@ -139,7 +140,17 @@ function createPromotionStore() {
         }
     }
 
-    async function syncAll(): Promise<void> {
+    async function syncAll(options: { suppressPermissionError?: boolean } = {}): Promise<void> {
+        if (options.suppressPermissionError) {
+            try {
+                await syncAll();
+            } catch (error) {
+                if (!isAppwritePermissionError(error)) throw error;
+                logger.warn("[PromotionStore] Promotions are not public for this visitor session; keeping sync silent.");
+                update((state) => ({ ...state, error: null, loading: false }));
+            }
+            return;
+        }
         await runLoading(async () => {
             const items = await notificationContainer.useCases.promo.getAll();
             update((state) => ({ ...state, items }));

@@ -4,8 +4,9 @@ import { ID } from "appwrite";
 import type { CategoryWriteDTO } from "../mapper/Mappers";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 import { ENV } from "../../../../infrastructure/env";
+import { APPWRITE_COLLECTIONS } from "../../../../infrastructure/data/appwrite/public-data-contract";
 
-const COLLECTION_ID = "category";
+const COLLECTION_ID = APPWRITE_COLLECTIONS.category;
 
 export class CategoryNetRepository {
     constructor(private readonly databases: Databases) {}

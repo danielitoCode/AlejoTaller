@@ -61,7 +61,7 @@
 
     const internalNavController = rememberNavController(dashboard.path);
     const userId = navBackStackEntry?.args?.id ?? "usuario";
-    const currentUser = sessionStore.getCurrentUser();
+    let currentUser: Promise<any> | null = null;
 
     const items = [
         { label: "Productos", path: dashboard.path, icon: storefrontIcon, badge: 0 },
@@ -76,16 +76,21 @@
     $: internalStack = $internalStackStore;
     $: currentEntry = internalStack.at(-1);
     $: currentPath = currentEntry?.route ?? dashboard.path;
+    $: currentRouteKey = `${currentPath}:${JSON.stringify(currentEntry?.args ?? {})}`;
     $: routeUsesStageScroll = ![dashboard.path, product.path, productDetail.path].includes(currentPath);
     $: cartCount = $cartStore.items.reduce((sum, item) => sum + item.quantity, 0);
-    $: pendingSales = $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
-    $: navItems = items.map((item) => ({
+    $: isGuestSession = $sessionStore.isGuest;
+    $: pendingSales = isGuestSession ? 0 : $saleStore.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
+    $: visibleItems = isGuestSession ? items.filter((item) => item.path === dashboard.path) : items;
+    $: navItems = visibleItems.map((item) => ({
         ...item,
         badge: item.path === buy.path ? cartCount : item.path === reservation.path ? pendingSales : 0
     }));
+    $: logoutLabel = isGuestSession ? "Salir" : "Cerrar sesion";
 
     let fabOpen = false;
     let suppressHashSync = false;
+    let hashSyncReady = false;
     let adminChoicePending = false;
     let adminRedirecting = false;
 
@@ -109,6 +114,7 @@
     }
 
     function handleSaleVerificationOpen(event: Event) {
+        if (isGuestSession) return;
         const saleId = (event as CustomEvent<{ saleId?: string }>).detail?.saleId;
         if (!saleId) return;
         suppressHashSync = true;
@@ -140,6 +146,11 @@
     }
 
     function go(path: string) {
+        if (isGuestSession && path !== dashboard.path && path !== product.path && path !== productDetail.path) {
+            internalNavController.resetTo(dashboard.path);
+            fabOpen = false;
+            return;
+        }
         if (currentPath !== path) internalNavController.navigate(path);
         fabOpen = false;
     }
@@ -178,15 +189,21 @@
         window.addEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.addEventListener("hashchange", applyInternalHash);
 
+        suppressHashSync = true;
         if (window.location.hash) {
-            suppressHashSync = true;
             applyInternalHash();
-            queueMicrotask(() => {
-                suppressHashSync = false;
-            });
         }
 
-        authContainer.useCases.accounts.getCurrentUser()
+        queueMicrotask(() => {
+            suppressHashSync = false;
+            hashSyncReady = true;
+        });
+
+        if (isGuestSession) {
+            internalNavController.resetTo(dashboard.path);
+        } else {
+            currentUser = sessionStore.getCurrentUser();
+            authContainer.useCases.accounts.getCurrentUser()
             .then(async (user) => {
                 if (!shouldOfferAdminChoice(user)) return;
                 const choice = getStoredAdminChoice();
@@ -203,6 +220,7 @@
                 clearSessionBoundState({ clearCart: true });
                 navController.resetTo("login");
             });
+        }
 
         productStore.syncAll().catch(() => {
             toastStore.error("Error al sincronizar productos");
@@ -210,12 +228,14 @@
         categoryStore.syncAll().catch(() => {
             toastStore.error("Error al sincronizar categorias");
         });
-        promotionStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar promociones");
-        });
-        saleStore.syncAll().catch(() => {
-            toastStore.error("Error al sincronizar reservas");
-        });
+        if (!isGuestSession) {
+            promotionStore.syncAll().catch(() => {
+                toastStore.error("Error al sincronizar promociones");
+            });
+            saleStore.syncAll().catch(() => {
+                toastStore.error("Error al sincronizar reservas");
+            });
+        }
     });
 
     onDestroy(() => {
@@ -225,7 +245,7 @@
         logger.info("[InternalNavigation] disposed");
     });
 
-    $: if (!suppressHashSync && typeof window !== "undefined") {
+    $: if (hashSyncReady && !suppressHashSync && typeof window !== "undefined") {
         const args = currentEntry?.args as Record<string, string> | undefined;
         const nextHash = buildHomeHash(
             currentPath as typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settingsRoute.path | typeof productDetail.path,
@@ -247,13 +267,17 @@
                     <img src="/alejoicon_clean.svg" alt="Logo" class="brand-logo" />
                     <div class="brand-meta">
                         <h2>Taller Alejo</h2>
-                        {#await currentUser}
-                            <p>Cargando cuenta...</p>
-                        {:then user}
-                            <p>{user.name}</p>
-                        {:catch error}
-                            <p>{error.message}</p>
-                        {/await}
+                        {#if isGuestSession}
+                            <p>Visitante</p>
+                        {:else}
+                            {#await currentUser ?? Promise.resolve({ name: "Usuario" })}
+                                <p>Cargando cuenta...</p>
+                            {:then user}
+                                <p>{user.name}</p>
+                            {:catch error}
+                                <p>{error.message}</p>
+                            {/await}
+                        {/if}
                     </div>
                 </div>
             </header>
@@ -279,7 +303,7 @@
             <div class="panel-footer">
                 <Button variant="tonal" size="m" iconType="left" onclick={logout}>
                     <Icon icon={logoutIcon} />
-                    Cerrar sesion
+                    {logoutLabel}
                 </Button>
             </div>
         </div>
@@ -293,7 +317,7 @@
             </div>
         </div>
 
-        {#key currentPath}
+        {#key currentRouteKey}
             <div
                 class="route-stage"
                 class:route-stage-scroll={routeUsesStageScroll}
@@ -317,7 +341,9 @@
             </div>
         {/key}
 
-        <SaleVerificationAlert navController={internalNavController} />
+        {#if !isGuestSession}
+            <SaleVerificationAlert navController={internalNavController} />
+        {/if}
 
         {#if adminChoicePending}
             <AdminRoleChoiceCard
@@ -359,10 +385,10 @@
 
                         <div class="fab-item-row">
                             <Button class="fab-label logout-label-mobile" variant="tonal" size="m" onclick={logout}>
-                                Cerrar sesion
+                                {logoutLabel}
                             </Button>
 
-                            <button class="fab-mini logout-mini" type="button" on:click={logout} aria-label="Cerrar sesion">
+                            <button class="fab-mini logout-mini" type="button" on:click={logout} aria-label={logoutLabel}>
                                 <Icon icon={logoutIcon} />
                             </button>
                         </div>
@@ -370,7 +396,7 @@
                 {/if}
 
                 <div class="fab-main-wrap">
-                    {#if cartCount > 0}
+                    {#if !isGuestSession && cartCount > 0}
                         <span class="main-badge">{cartCount}</span>
                     {/if}
                     <FAB

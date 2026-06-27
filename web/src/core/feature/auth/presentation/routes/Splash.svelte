@@ -3,7 +3,8 @@
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import {authContainer} from "../../di/auth.container";
     import alejoIcon from "/alejoicon_clean.svg";
-    import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import { consumePendingDeepLink, rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
     import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
 
@@ -45,6 +46,15 @@
         }
     }
 
+    function rememberProductDeepLinkIfPresent() {
+        if (typeof window === "undefined") return;
+
+        const parsed = parseDeepLinkHash(window.location.hash);
+        if (parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId)) {
+            rememberPendingDeepLink(window.location.hash);
+        }
+    }
+
     onMount(async () => {
         try {
             await exchangeStore.refreshForSplash();
@@ -63,6 +73,7 @@
             }
             continueAsClient(user);
         } catch {
+            rememberProductDeepLinkIfPresent();
             navController.resetTo("welcome");
         } finally {
             loading = false;

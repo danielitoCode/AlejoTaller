@@ -8,6 +8,8 @@
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { parseProductImageUrls } from "../utils/product.images";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
+    import { buildHomeHash } from "../../../../infrastructure/presentation/navigation/deeplink";
+    import { productDetail } from "../../../../infrastructure/presentation/navigation/nested.router";
 
     const placeholderImageUrl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f5f5f5' width='400' height='400'/%3E%3C/svg%3E`;
 
@@ -16,9 +18,11 @@
     export let onBackClick: () => void = () => {};
     export let onFavoriteClick: () => void = () => {};
     export let onAddToCartClick: () => void = () => {};
+    export let canAddToCart: boolean = true;
 
     function handleShare() {
-        const url = `https://alejotaller.onrender.com/#/home/product-detail?productId=${product.id}`;
+        const hash = buildHomeHash(productDetail.path, { productId: product.id });
+        const url = new URL(hash, window.location.origin).toString();
         if (navigator.share) {
             navigator.share({ title: product.name, url }).catch(() => {});
         } else {
@@ -174,12 +178,18 @@
     </div>
 
     <footer class="bottom-bar">
-        <div class="cart-action">
-            <Button variant="filled" size="m" onclick={onAddToCartClick}>
-                <Icon icon={ShoppingCartRounded} />
-                <span>Agregar al carrito</span>
-            </Button>
-        </div>
+        {#if canAddToCart}
+            <div class="cart-action">
+                <Button variant="filled" size="m" onclick={onAddToCartClick}>
+                    <Icon icon={ShoppingCartRounded} />
+                    <span>Agregar al carrito</span>
+                </Button>
+            </div>
+        {:else}
+            <div class="guest-action">
+                Inicia sesion para comprar o reservar.
+            </div>
+        {/if}
     </footer>
 </div>
 
@@ -251,6 +261,15 @@
 
     .icon-button :global(svg) {
         color: var(--md-sys-color-on-surface);
+    }
+
+    .guest-action {
+        padding: 12px 16px;
+        border-radius: 999px;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface-variant);
+        font-weight: 700;
+        text-align: center;
     }
 
     .back-button {

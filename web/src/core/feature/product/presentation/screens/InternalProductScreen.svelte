@@ -11,6 +11,7 @@
     import type {NavBackStackEntry} from "../../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../../lib/navigation/NavController";
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
+    import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -19,6 +20,7 @@
     let selectedCategoryId: string | null = null;
     let selectedProduct: any = null;
     let pendingProductId: string | null = null;
+    let resolvingPendingProductId: string | null = null;
     let isLoading = false;
 
     // Subscribe to stores
@@ -26,12 +28,38 @@
     let promotions: any[] = [];
     let categories: any[] = [];
 
-    function resolvePendingProduct() {
-        if (!pendingProductId || products.length === 0) return;
+    async function resolvePendingProduct() {
+        if (!pendingProductId || resolvingPendingProductId === pendingProductId) return;
+
         const product = products.find(p => p.id === pendingProductId);
         if (product) {
             selectedProduct = product;
             pendingProductId = null;
+            return;
+        }
+
+        const productIdToResolve = pendingProductId;
+        resolvingPendingProductId = productIdToResolve;
+        try {
+            const syncedProduct = await productStore.syncById(productIdToResolve);
+            if (pendingProductId !== productIdToResolve) return;
+
+            if (syncedProduct) {
+                selectedProduct = syncedProduct;
+            } else {
+                toastStore.error("No se pudo abrir el producto compartido");
+            }
+            pendingProductId = null;
+        } catch (error) {
+            console.error("Error resolving pending product:", error);
+            if (pendingProductId === productIdToResolve) {
+                toastStore.error("No se pudo abrir el producto compartido");
+                pendingProductId = null;
+            }
+        } finally {
+            if (resolvingPendingProductId === productIdToResolve) {
+                resolvingPendingProductId = null;
+            }
         }
     }
 
@@ -53,14 +81,7 @@
     });
 
     function initPendingProductId() {
-        if (navBackStackEntry?.args?.productId) {
-            pendingProductId = navBackStackEntry.args.productId;
-            return;
-        }
-        if (typeof window !== "undefined") {
-            const match = window.location.hash.match(/[?&]productId=([^&]+)/);
-            if (match) pendingProductId = decodeURIComponent(match[1]);
-        }
+        pendingProductId = navBackStackEntry?.args?.productId ?? null;
     }
 
     initPendingProductId();
@@ -68,7 +89,9 @@
     onMount(() => {
         try {
             productStore.syncAll();
-            promotionStore.syncAll();
+            if (!$sessionStore.isGuest) {
+                promotionStore.syncAll({ suppressPermissionError: true });
+            }
             categoryStore.syncAll();
         } catch (error) {
             console.error("Error loading data:", error);
@@ -113,6 +136,10 @@
 
     const handleAddToCartClick = () => {
         if (!selectedProduct) return;
+        if ($sessionStore.isGuest) {
+            toastStore.info("Inicia sesion para agregar productos al carrito");
+            return;
+        }
         cartStore.addProduct(selectedProduct, 1);
         toastStore.success(`${selectedProduct.name} agregado al carrito`);
     };
@@ -164,6 +191,7 @@
                         showTopBar={true}
                         onBackClick={closeProductDetail}
                         onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
+                        canAddToCart={!$sessionStore.isGuest}
                         onAddToCartClick={handleAddToCartClick}
                 />
             </div>

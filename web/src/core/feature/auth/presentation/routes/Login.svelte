@@ -23,6 +23,7 @@
         rememberAdminChoice,
         shouldOfferAdminChoice
     } from "../util/admin-redirect";
+    import { sessionStore } from "../viewmodel/session.store";
 
     export let navController: NavController;
 
@@ -45,6 +46,7 @@
     }
 
     function completeClientLogin(context: { userId: string; email: string; provider: "password" | "google" }) {
+        sessionStore.setAuthenticatedSession();
         authFlowStore.setSuccess(context);
         restorePendingHashIfNeeded();
         navController.resetTo("home", context);
@@ -245,6 +247,32 @@
         }
     }
 
+    async function continueAsGuest() {
+        if (loading) return;
+
+        loading = true;
+        error = null;
+
+        try {
+            const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
+            const guestContext = {
+                userId,
+                email: null,
+                provider: "guest"
+            } as const;
+            authFlowStore.setSuccess(guestContext);
+            restorePendingHashIfNeeded();
+            navController.resetTo("home", guestContext);
+        } catch (e) {
+            error = e instanceof Error ? e.message : "No se pudo entrar como visitante";
+            authFlowStore.setError(error, { provider: "guest" });
+            toastStore.error(error);
+        } finally {
+            loading = false;
+        }
+    }
+
+
     async function continueWithGoogle() {
         if (loading) return;
         error = null;
@@ -429,6 +457,12 @@
                                     aria-hidden="true"
                                 />
                             </span>
+                        </Button>
+                    </div>
+
+                    <div class="action-row">
+                        <Button variant="tonal" size="m" disabled={loading} onclick={continueAsGuest}>
+                            Entrar como visitante
                         </Button>
                     </div>
 

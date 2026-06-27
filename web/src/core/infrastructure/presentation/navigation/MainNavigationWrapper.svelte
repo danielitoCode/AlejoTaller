@@ -10,6 +10,8 @@
     import WelcomeScreen from "../routes/WelcomeScreen.svelte";
     import NestedNavigationWrapper from "./NestedNavigationWrapper.svelte";
     import { buildTopLevelHash, parseDeepLinkHash } from "./deeplink";
+    import { rememberPendingDeepLink } from "./pending-deeplink.store";
+
     const navController = rememberNavController(splash.path);
     const stackStore = navController._getStackStore();
 
@@ -35,6 +37,15 @@
         navController.resetTo(parsed.top, parsed.args);
     }
 
+    function isProductDeepLinkHash(hash: string): boolean {
+        const parsed = parseDeepLinkHash(hash);
+        return parsed?.top === home.path && (parsed.nested === "product-detail" || !!parsed.args?.productId);
+    }
+
+    function shouldPreserveCurrentHashForAuthRedirect(path: string): boolean {
+        return (path === welcome.path || path === login.path) && isProductDeepLinkHash(window.location.hash);
+    }
+
     function handleHashChange() {
         suppressHashSync = true;
         applyHash(window.location.hash);
@@ -58,9 +69,13 @@
     });
 
     $: if (!suppressHashSync && typeof window !== "undefined" && currentPath && currentPath !== home.path) {
-        const nextHash = buildTopLevelHash(currentPath as typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path);
-        if (window.location.hash !== nextHash) {
-            window.history.replaceState({}, "", nextHash);
+        if (shouldPreserveCurrentHashForAuthRedirect(currentPath)) {
+            rememberPendingDeepLink(window.location.hash);
+        } else {
+            const nextHash = buildTopLevelHash(currentPath as typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path);
+            if (window.location.hash !== nextHash) {
+                window.history.replaceState({}, "", nextHash);
+            }
         }
     }
 

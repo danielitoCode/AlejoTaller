@@ -1,6 +1,6 @@
 import { writable } from "svelte/store";
 
-export type LoginProvider = "password" | "google" | "unknown";
+export type LoginProvider = "password" | "google" | "guest" | "unknown";
 
 export interface AuthFlowSnapshot {
     userId: string | null;

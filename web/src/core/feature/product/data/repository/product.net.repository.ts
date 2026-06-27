@@ -4,10 +4,11 @@ import type { Models } from "appwrite";
 import {type Databases, ID,  Query} from "appwrite";
 import type { ProductWriteDTO } from "../mapper/Mappers";
 import { ENV } from "../../../../infrastructure/env";
+import { APPWRITE_COLLECTIONS } from "../../../../infrastructure/data/appwrite/public-data-contract";
 
 const PAGE_SIZE = 100;
 
-const COLLECTION_ID = "product";
+const COLLECTION_ID = APPWRITE_COLLECTIONS.product;
 
 
 class ProductNetRepository {

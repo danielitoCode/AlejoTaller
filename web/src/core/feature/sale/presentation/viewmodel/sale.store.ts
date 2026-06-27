@@ -37,6 +37,16 @@ function createSaleStore() {
 
         try {
             const state = get({ subscribe });
+            if (get(sessionStore).isGuest) {
+                if (pusherUnsubscribe) {
+                    pusherUnsubscribe();
+                    pusherUnsubscribe = null;
+                }
+                unsubscribeSaleVerification();
+                subscribedUserId = null;
+                logger.log("[SaleStore] Pusher disabled for guest session");
+                return;
+            }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
             const currentUserId = currentUser?.$id ?? null;
             logger.log(
@@ -162,6 +172,17 @@ function createSaleStore() {
     async function syncAll(): Promise<void> {
         update((state) => ({ ...state, loading: true, error: null }));
         try {
+            if (get(sessionStore).isGuest) {
+                if (pusherUnsubscribe) {
+                    pusherUnsubscribe();
+                    pusherUnsubscribe = null;
+                }
+                unsubscribeSaleVerification();
+                subscribedUserId = null;
+                update((state) => ({ ...state, items: [] }));
+                logger.log("[SaleStore] syncAll skipped for guest session");
+                return;
+            }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
             logger.log(`[SaleStore] syncAll currentUser=${currentUser?.$id ?? "null"}`);
 

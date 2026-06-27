@@ -22,6 +22,11 @@ export class SessionNetManagerImpl implements SessionNetManager{
         await this.account.createOAuth2Session(providerMap[provider], successUrl, failureUrl);
     }
 
+    async createAnonymousSession(): Promise<string> {
+        const session = await this.account.createAnonymousSession();
+        return session.userId;
+    }
+
     async closeSessions(): Promise<void> {
         await this.account.deleteSessions()
     }
