@@ -26,10 +26,19 @@
     let promotions: any[] = [];
     let categories: any[] = [];
 
+    function resolvePendingProduct() {
+        if (!pendingProductId || products.length === 0) return;
+        const product = products.find(p => p.id === pendingProductId);
+        if (product) {
+            selectedProduct = product;
+            pendingProductId = null;
+        }
+    }
+
     const unsubscribeProducts = productStore.subscribe((state) => {
         products = state.items;
         isLoading = state.loading;
-        // Reset selected product if not in list
+        resolvePendingProduct();
         if (selectedProduct && !products.find(p => p.id === selectedProduct.id)) {
             selectedProduct = null;
         }
@@ -43,8 +52,20 @@
         categories = state.items;
     });
 
+    function initPendingProductId() {
+        if (navBackStackEntry?.args?.productId) {
+            pendingProductId = navBackStackEntry.args.productId;
+            return;
+        }
+        if (typeof window !== "undefined") {
+            const match = window.location.hash.match(/[?&]productId=([^&]+)/);
+            if (match) pendingProductId = decodeURIComponent(match[1]);
+        }
+    }
+
+    initPendingProductId();
+
     onMount(() => {
-        // Load initial data
         try {
             productStore.syncAll();
             promotionStore.syncAll();
@@ -62,14 +83,7 @@
 
     $: if (navBackStackEntry?.args?.productId) {
         pendingProductId = navBackStackEntry.args.productId;
-    }
-
-    $: if (pendingProductId && products.length > 0) {
-        const product = products.find(p => p.id === pendingProductId);
-        if (product) {
-            selectedProduct = product;
-            pendingProductId = null;
-        }
+        resolvePendingProduct();
     }
 
     const handleSearchQueryChanged = (query: string) => {
