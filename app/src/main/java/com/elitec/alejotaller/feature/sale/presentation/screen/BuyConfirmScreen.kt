@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +55,8 @@ import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.PaymentChannel
@@ -68,6 +71,8 @@ fun BuyConfirmScreen(
     isSubmitting: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    val deviceMode = LocalConfiguration.current.toDeviceMode()
+
     var selectedMethodKey by rememberSaveable { mutableStateOf<String?>(null) }
     var selectedDeliveryTypeKey by rememberSaveable { mutableStateOf<String?>(null) }
     var province by rememberSaveable { mutableStateOf("") }
@@ -111,80 +116,38 @@ fun BuyConfirmScreen(
         )
     )
 
-    BoxWithConstraints(
-        modifier = modifier.fillMaxSize()
-    ) {
-        val isWideLayout = maxWidth >= 920.dp
-        val contentPadding = if (isWideLayout) 24.dp else 16.dp
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(contentPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
-                verticalAlignment = Alignment.CenterVertically
+    when(deviceMode) {
+        AppWindowType.MobilePortrait,
+        AppWindowType.TabletPortrait -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null
-                )
-                Spacer(Modifier.width(5.dp))
-                Text(
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    text = "Confirmar compra",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-            }
-
-            Text(
-                text = "Primero eliges como pagar y luego como recibiras el pedido. Asi la venta queda completa desde el inicio.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            if (isWideLayout) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OrderSummaryPane(
-                        items = items,
-                        totalAmount = totalAmount,
-                        modifier = Modifier.weight(0.9f)
+                    Icon(
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null
                     )
-                    CheckoutConfigurationPane(
-                        selectedMethod = selectedMethod,
-                        selectedDeliveryType = selectedDeliveryType,
-                        needsAddress = needsAddress,
-                        province = province,
-                        municipality = municipality,
-                        mainStreet = mainStreet,
-                        betweenStreets = betweenStreets,
-                        phone = phone,
-                        houseNumber = houseNumber,
-                        referenceName = referenceName,
-                        ultraPayBrush = ultraPayBrush,
-                        transfermovilBrush = transfermovilBrush,
-                        onPaymentMethodSelected = { selectedMethodKey = it.name },
-                        onDeliveryTypeSelected = { selectedDeliveryTypeKey = it.name },
-                        onProvinceChange = { province = it },
-                        onMunicipalityChange = { municipality = it },
-                        onMainStreetChange = { mainStreet = it },
-                        onBetweenStreetsChange = { betweenStreets = it },
-                        onPhoneChange = { phone = it },
-                        onHouseNumberChange = { houseNumber = it },
-                        onReferenceNameChange = { referenceName = it },
-                        onRegisterInUltrapay = onRegisterInUltrapay,
-                        modifier = Modifier.weight(1.1f)
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        text = "Confirmar compra",
+                        style = MaterialTheme.typography.headlineSmall
                     )
                 }
-            } else {
+
+                Text(
+                    text = "Primero eliges como pagar y luego como recibiras el pedido. Asi la venta queda completa desde el inicio.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -224,26 +187,201 @@ fun BuyConfirmScreen(
                         )
                     }
                 }
-            }
 
-            Button(
-                onClick = { showConfirmSubmitDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isSubmitting && items.isNotEmpty() && selectedDeliveryType != null && isAddressValid
-            ) {
-                if (isSubmitting) {
-                    CircularProgressIndicator()
-                } else {
-                    Text(text = if (selectedMethod == null) "Reservar sin pago online" else "Solicitar pedido y pagar")
+                Button(
+                    onClick = { showConfirmSubmitDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSubmitting && items.isNotEmpty() && selectedDeliveryType != null && isAddressValid
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator()
+                    } else {
+                        Text(text = if (selectedMethod == null) "Reservar sin pago online" else "Solicitar pedido y pagar")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSubmitting
+                ) {
+                    Text(text = "Volver")
                 }
             }
-
-            OutlinedButton(
-                onClick = onBackClick,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isSubmitting
+        }
+        AppWindowType.MobileLandscape -> {
+            Row(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(text = "Volver")
+                Column(
+                    modifier = Modifier.weight(1f)
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = null
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                text = "Confirmar compra",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        }
+
+                        Text(
+                            text = "Primero eliges como pagar y luego como recibiras el pedido. Asi la venta queda completa desde el inicio.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        LazyColumn(
+                            verticalArrangement = Arrangement.spacedBy(5.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(items, key = { it.product.id }) { item ->
+                                OrderItemCard(item = item)
+                            }
+                        }
+                    }
+
+                    TotalRow(totalAmount = totalAmount)
+                }
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f)
+                        .fillMaxWidth()
+                ) {
+                    item {
+                        CheckoutConfigurationCard(
+                            selectedMethod = selectedMethod,
+                            selectedDeliveryType = selectedDeliveryType,
+                            needsAddress = needsAddress,
+                            province = province,
+                            municipality = municipality,
+                            mainStreet = mainStreet,
+                            betweenStreets = betweenStreets,
+                            phone = phone,
+                            houseNumber = houseNumber,
+                            referenceName = referenceName,
+                            ultraPayBrush = ultraPayBrush,
+                            transfermovilBrush = transfermovilBrush,
+                            onPaymentMethodSelected = { selectedMethodKey = it.name },
+                            onDeliveryTypeSelected = { selectedDeliveryTypeKey = it.name },
+                            onProvinceChange = { province = it },
+                            onMunicipalityChange = { municipality = it },
+                            onMainStreetChange = { mainStreet = it },
+                            onBetweenStreetsChange = { betweenStreets = it },
+                            onPhoneChange = { phone = it },
+                            onHouseNumberChange = { houseNumber = it },
+                            onReferenceNameChange = { referenceName = it },
+                            onRegisterInUltrapay = onRegisterInUltrapay
+                        )
+                    }
+                }
+            }
+        }
+        AppWindowType.TabletLandscape,
+        AppWindowType.Laptop,
+        AppWindowType.DesktopVertical,
+        AppWindowType.Expanded  -> {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        imageVector = Icons.Default.ShoppingCart,
+                        contentDescription = null
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        text = "Confirmar compra",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
+
+                Text(
+                    text = "Primero eliges como pagar y luego como recibiras el pedido. Asi la venta queda completa desde el inicio.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    OrderSummaryPane(
+                        items = items,
+                        totalAmount = totalAmount,
+                        modifier = Modifier.weight(0.9f)
+                    )
+                    CheckoutConfigurationPane(
+                        selectedMethod = selectedMethod,
+                        selectedDeliveryType = selectedDeliveryType,
+                        needsAddress = needsAddress,
+                        province = province,
+                        municipality = municipality,
+                        mainStreet = mainStreet,
+                        betweenStreets = betweenStreets,
+                        phone = phone,
+                        houseNumber = houseNumber,
+                        referenceName = referenceName,
+                        ultraPayBrush = ultraPayBrush,
+                        transfermovilBrush = transfermovilBrush,
+                        onPaymentMethodSelected = { selectedMethodKey = it.name },
+                        onDeliveryTypeSelected = { selectedDeliveryTypeKey = it.name },
+                        onProvinceChange = { province = it },
+                        onMunicipalityChange = { municipality = it },
+                        onMainStreetChange = { mainStreet = it },
+                        onBetweenStreetsChange = { betweenStreets = it },
+                        onPhoneChange = { phone = it },
+                        onHouseNumberChange = { houseNumber = it },
+                        onReferenceNameChange = { referenceName = it },
+                        onRegisterInUltrapay = onRegisterInUltrapay,
+                        modifier = Modifier.weight(1.1f)
+                    )
+                }
+
+                Button(
+                    onClick = { showConfirmSubmitDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSubmitting && items.isNotEmpty() && selectedDeliveryType != null && isAddressValid
+                ) {
+                    if (isSubmitting) {
+                        CircularProgressIndicator()
+                    } else {
+                        Text(text = if (selectedMethod == null) "Reservar sin pago online" else "Solicitar pedido y pagar")
+                    }
+                }
+
+                OutlinedButton(
+                    onClick = onBackClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isSubmitting
+                ) {
+                    Text(text = "Volver")
+                }
             }
         }
     }
@@ -467,8 +605,10 @@ private fun CheckoutConfigurationCard(
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            SectionHeader(
+        Column(
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            /*SectionHeader(
                 title = "Metodos de pago",
                 icon = Icons.Default.Payment
             )
@@ -491,7 +631,7 @@ private fun CheckoutConfigurationCard(
                 brush = transfermovilBrush,
                 onClick = { onPaymentMethodSelected(PaymentChannel.TRANSFERMOVIL) },
                 onRegisterInUltrapay = onRegisterInUltrapay
-            )
+            )*/
 
             SectionHeader(
                 title = "Entrega del pedido",
