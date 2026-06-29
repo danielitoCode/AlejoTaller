@@ -3,6 +3,7 @@ package com.elitec.alejotaller.feature.auth.presentation.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -66,141 +67,6 @@ fun RegisterScreen(
     val sanitizedName = name.trim()
     val sanitizedPassword = password.trim()
     val sanitizedConfirmPassword = confirmPassword.trim()
-    /*val normalizedEmail = email.trim().lowercase()
-    val sanitizedName = name.trim()
-    val sanitizedPassword = password.trim()
-    val sanitizedConfirmPassword = confirmPassword.trim()
-
-    when(deviceMode) {
-        AppWindowType.MobilePortrait,
-        AppWindowType.TabletPortrait-> {
-
-        }
-        AppWindowType.MobileLandscape -> TODO()
-        AppWindowType.TabletLandscape -> TODO()
-        AppWindowType.Laptop -> TODO()
-        AppWindowType.DesktopVertical -> TODO()
-        AppWindowType.Expanded -> TODO()
-    }
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Crear cuenta",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Completa tus datos para comenzar.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                AuthTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = "Nombre completo",
-                    leadingIcon = { Icon(Icons.Default.Person, null) },
-                    visualTransformation = VisualTransformation.None
-                )
-                AuthTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = "Correo",
-                    leadingIcon = { Icon(Icons.Default.Email, null) },
-                    visualTransformation = VisualTransformation.None
-                )
-                AuthTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = "Contraseña",
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                AuthTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = "Confirmar contraseña",
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                Button(
-                    onClick = {
-                        if (submitting) return@Button
-                        if(sanitizedPassword != sanitizedConfirmPassword) {
-                            toasterViewModel.showMessage(
-                                message = "No coinciden las contrasenas",
-                                type = ToastType.Warning
-                            )
-                            return@Button
-                        }
-                        if (sanitizedName.isBlank() || normalizedEmail.isBlank() || sanitizedPassword.isBlank()) {
-                            toasterViewModel.showMessage(
-                                message = "Completa todos los campos requeridos",
-                                type = ToastType.Warning
-                            )
-                            return@Button
-                        }
-                        submitting = true
-                        toasterViewModel.showMessage(
-                            "Autenticando usuario",
-                            ToastType.Normal,
-                            "Custom Account Charge"
-                        )
-                        registerViewModel.customRegister(
-                            email = normalizedEmail,
-                            password = sanitizedPassword,
-                            name = sanitizedName,
-                            onUserRegister = { userId ->
-                                submitting = false
-                                toasterViewModel.dismissMessage("Custom Account Charge")
-                                toasterViewModel.showMessage(
-                                    "Bienvenido",
-                                    ToastType.Success,
-                                    "Custom Account Charge"
-                                )
-                                onRegisterReady(userId)
-                            },
-                            onFail = {
-                                submitting = false
-                                toasterViewModel.dismissMessage("Custom Account Charge")
-                                toasterViewModel.showMessage(
-                                    "Error al registrar usuario",
-                                    ToastType.Error,
-                                    "Custom Account Charge"
-                                )
-                            }
-                        )
-
-                    },
-                    enabled = !submitting,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Registrarse")
-                }
-                TextButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text(text = "¿Ya tienes cuenta? Inicia sesión")
-                }
-            }
-        }
-    }*/
 
     RegisterScreenContent(
         name = name,
@@ -282,103 +148,268 @@ fun RegisterScreenContent(
 ) {
     val deviceMode = LocalConfiguration.current.toDeviceMode() // Screen configuration
 
-    val screenAdaptedModifier = when(deviceMode) {
+    when(deviceMode) {
         AppWindowType.MobilePortrait,
         AppWindowType.TabletPortrait -> {
-            modifier
-                .fillMaxSize()
-                .padding(24.dp)
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Crear cuenta",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Completa tus datos para comenzar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AuthTextField(
+                            value = name,
+                            onValueChange = onNameChanged,
+                            label = "Nombre completo",
+                            leadingIcon = { Icon(Icons.Default.Person, null) },
+                            visualTransformation = VisualTransformation.None
+                        )
+                        AuthTextField(
+                            value = email,
+                            onValueChange = onEmailChanged,
+                            label = "Correo",
+                            leadingIcon = { Icon(Icons.Default.Email, null) },
+                            visualTransformation = VisualTransformation.None
+                        )
+                        AuthTextField(
+                            value = password,
+                            onValueChange = onPasswordChanged,
+                            label = "Contraseña",
+                            leadingIcon = { Icon(Icons.Default.Lock, null) },
+                            visualTransformation = PasswordVisualTransformation()
+                        )
+                        AuthTextField(
+                            value = confirmPassword,
+                            onValueChange = onPasswordConfirmChanged,
+                            label = "Confirmar contraseña",
+                            leadingIcon = { Icon(Icons.Default.Lock, null) },
+                            visualTransformation = PasswordVisualTransformation()
+                        )
+                        Button(
+                            onClick = onCreateAccountButtonClick,
+                            enabled = !submitting,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Registrarse")
+                        }
+                        TextButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text(text = "¿Ya tienes cuenta? Inicia sesión")
+                        }
+                    }
+                }
+            }
         }
         AppWindowType.MobileLandscape -> {
-            modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp)
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Crear cuenta",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Completa tus datos para comenzar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier.weight(1f).fillMaxWidth()
+                            ) {
+                                AuthTextField(
+                                    value = name,
+                                    onValueChange = onNameChanged,
+                                    label = "Nombre completo",
+                                    leadingIcon = { Icon(Icons.Default.Person, null) },
+                                    visualTransformation = VisualTransformation.None
+                                )
+                            }
+                            Box(
+                                modifier = Modifier.weight(1f).fillMaxWidth()
+                            ) {
+                                AuthTextField(
+                                    value = email,
+                                    onValueChange = onEmailChanged,
+                                    label = "Correo",
+                                    leadingIcon = { Icon(Icons.Default.Email, null) },
+                                    visualTransformation = VisualTransformation.None
+                                )
+                            }
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Box(
+                                modifier = Modifier.weight(1f).fillMaxWidth()
+                            ) {
+                                AuthTextField(
+                                    value = password,
+                                    onValueChange = onPasswordChanged,
+                                    label = "Contraseña",
+                                    leadingIcon = { Icon(Icons.Default.Lock, null) },
+                                    visualTransformation = PasswordVisualTransformation()
+                                )
+                            }
+                            Box(
+                                modifier = Modifier.weight(1f).fillMaxWidth()
+                            ) {
+                                AuthTextField(
+                                    value = confirmPassword,
+                                    onValueChange = onPasswordConfirmChanged,
+                                    label = "Confirmar contraseña",
+                                    leadingIcon = { Icon(Icons.Default.Lock, null) },
+                                    visualTransformation = PasswordVisualTransformation()
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = onCreateAccountButtonClick,
+                            enabled = !submitting,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Registrarse")
+                        }
+                        TextButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text(text = "¿Ya tienes cuenta? Inicia sesión")
+                        }
+                    }
+                }
+            }
         }
         AppWindowType.TabletLandscape,
         AppWindowType.Laptop,
         AppWindowType.DesktopVertical,
         AppWindowType.Expanded -> {
-            modifier
-                .width(450.dp)
-                .fillMaxHeight()
-                .padding(24.dp)
-        }
-    }
-    Column(
-        modifier = screenAdaptedModifier,
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Crear cuenta",
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Completa tus datos para comenzar.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = modifier
+                    .width(450.dp)
+                    .fillMaxHeight()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AuthTextField(
-                    value = name,
-                    onValueChange = onNameChanged,
-                    label = "Nombre completo",
-                    leadingIcon = { Icon(Icons.Default.Person, null) },
-                    visualTransformation = VisualTransformation.None
+                Text(
+                    text = "Crear cuenta",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
-                AuthTextField(
-                    value = email,
-                    onValueChange = onEmailChanged,
-                    label = "Correo",
-                    leadingIcon = { Icon(Icons.Default.Email, null) },
-                    visualTransformation = VisualTransformation.None
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Completa tus datos para comenzar.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
                 )
-                AuthTextField(
-                    value = password,
-                    onValueChange = onPasswordChanged,
-                    label = "Contraseña",
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                AuthTextField(
-                    value = confirmPassword,
-                    onValueChange = onPasswordConfirmChanged,
-                    label = "Confirmar contraseña",
-                    leadingIcon = { Icon(Icons.Default.Lock, null) },
-                    visualTransformation = PasswordVisualTransformation()
-                )
-                Button(
-                    onClick = onCreateAccountButtonClick,
-                    enabled = !submitting,
+                Spacer(modifier = Modifier.height(24.dp))
+                Card(
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(text = "Registrarse")
-                }
-                TextButton(
-                    onClick = onNavigateBack,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text(text = "¿Ya tienes cuenta? Inicia sesión")
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        AuthTextField(
+                            value = name,
+                            onValueChange = onNameChanged,
+                            label = "Nombre completo",
+                            leadingIcon = { Icon(Icons.Default.Person, null) },
+                            visualTransformation = VisualTransformation.None
+                        )
+                        AuthTextField(
+                            value = email,
+                            onValueChange = onEmailChanged,
+                            label = "Correo",
+                            leadingIcon = { Icon(Icons.Default.Email, null) },
+                            visualTransformation = VisualTransformation.None
+                        )
+                        AuthTextField(
+                            value = password,
+                            onValueChange = onPasswordChanged,
+                            label = "Contraseña",
+                            leadingIcon = { Icon(Icons.Default.Lock, null) },
+                            visualTransformation = PasswordVisualTransformation()
+                        )
+                        AuthTextField(
+                            value = confirmPassword,
+                            onValueChange = onPasswordConfirmChanged,
+                            label = "Confirmar contraseña",
+                            leadingIcon = { Icon(Icons.Default.Lock, null) },
+                            visualTransformation = PasswordVisualTransformation()
+                        )
+                        Button(
+                            onClick = onCreateAccountButtonClick,
+                            enabled = !submitting,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = "Registrarse")
+                        }
+                        TextButton(
+                            onClick = onNavigateBack,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        ) {
+                            Text(text = "¿Ya tienes cuenta? Inicia sesión")
+                        }
+                    }
                 }
             }
         }
     }
+
 }
 
 @Preview(
-    showBackground = true, device = "spec:width=411dp,height=891dp"
+    showBackground = true, device = "spec:width=411dp,height=891dp,orientation=landscape"
 )
 @Composable
 fun RegisterScreenContentPreview() {

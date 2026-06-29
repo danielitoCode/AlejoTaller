@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
@@ -15,10 +16,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 
 @Composable
 fun EmailVerificationScreen(
@@ -28,6 +32,18 @@ fun EmailVerificationScreen(
     modifier: Modifier = Modifier,
     onBackToLogin: (() -> Unit)? = null
 ) {
+    val deviceMode = LocalConfiguration.current.toDeviceMode() // Screen configuration
+
+    val dialogModifier = when(deviceMode) {
+        AppWindowType.MobilePortrait -> Modifier.fillMaxWidth()
+        AppWindowType.TabletPortrait -> Modifier.fillMaxWidth().padding(horizontal = 20.dp)
+        AppWindowType.MobileLandscape,
+        AppWindowType.TabletLandscape,
+        AppWindowType.Laptop,
+        AppWindowType.DesktopVertical,
+        AppWindowType.Expanded-> Modifier.width(480.dp)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -41,23 +57,23 @@ fun EmailVerificationScreen(
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = "Te enviamos un enlace de verificación a:",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = email,
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onBackground,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(30.dp))
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = dialogModifier
         ) {
             Column(
                 modifier = Modifier
