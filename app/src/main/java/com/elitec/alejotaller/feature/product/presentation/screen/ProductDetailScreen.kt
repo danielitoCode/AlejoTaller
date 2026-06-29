@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fitOutside
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Handshake
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -34,8 +36,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +54,8 @@ import coil3.request.crossfade
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
+import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 
 @Composable
 fun ProductDetailScreen(
@@ -60,6 +67,9 @@ fun ProductDetailScreen(
     onAddToCartClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
+
+    val deviceMode = LocalConfiguration.current.toDeviceMode()
+
     val handleShare = {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
@@ -69,38 +79,133 @@ fun ProductDetailScreen(
         context.startActivity(Intent.createChooser(intent, "Compartir ${product.name}"))
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = {
-            PriceAndAddToCartSection(
-                productPrice = product.price,
-                onAddToCartClick = onAddToCartClick
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .fillMaxSize()
-        ) {
-            if (showTopBar) {
-                HeaderSection(
-                    onBackClick = onBackClick,
-                    onFavoriteClick = onFavoriteClick,
-                    onShareClick = handleShare
-                )
+    when(deviceMode) {
+        AppWindowType.MobilePortrait,
+        AppWindowType.TabletPortrait-> {
+            Scaffold(
+                modifier = modifier.fillMaxSize(),
+                bottomBar = {
+                    PriceAndAddToCartSection(
+                        productPrice = product.price,
+                        onAddToCartClick = onAddToCartClick
+                    )
+                }
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .fillMaxSize()
+                ) {
+                    if (showTopBar) {
+                        HeaderSection(
+                            onBackClick = onBackClick,
+                            onFavoriteClick = onFavoriteClick,
+                            onShareClick = handleShare
+                        )
+                    }
+                    ProductImageSection(
+                        photoUrl = product.photoUrl,
+                        photoLocalResource = product.photoLocalResource,
+                        modifier = Modifier
+                            .height(300.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+                    ProductInfoSection(
+                        productName = product.name,
+                        productDescription = product.description
+                    )
+                }
             }
-            ProductImageSection(
-                photoUrl = product.photoUrl,
-                photoLocalResource = product.photoLocalResource
-            )
-            ProductInfoSection(
-                productName = product.name,
-                productDescription = product.description
-            )
+        }
+        AppWindowType.MobileLandscape,
+        AppWindowType.TabletLandscape -> {
+            Row(
+                modifier = modifier.fillMaxSize()
+            ) {
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxSize()
+                ) {
+                    ProductImageSection(
+                        photoUrl = product.photoUrl,
+                        photoLocalResource = product.photoLocalResource,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (showTopBar) {
+                        HeaderSection(
+                            onBackClick = onBackClick,
+                            onFavoriteClick = onFavoriteClick,
+                            onShareClick = handleShare,
+                            modifier = Modifier.align(Alignment.TopCenter)
+                        )
+                    }
+                }
+                Scaffold(
+                    modifier = modifier.weight(2f).fillMaxSize().clip(RoundedCornerShape(15.dp)),
+                    bottomBar = {
+                        PriceAndAddToCartSection(
+                            productPrice = product.price,
+                            onAddToCartClick = onAddToCartClick
+                        )
+                    }
+                ) { paddingValues ->
+                    ProductInfoSection(
+                        productName = product.name,
+                        productDescription = product.description,
+                        modifier = Modifier.padding(paddingValues)
+                    )
+                }
+            }
+        }
+        AppWindowType.Laptop,
+        AppWindowType.DesktopVertical,
+        AppWindowType.Expanded -> {
+
+            Column(
+                verticalArrangement = Arrangement.SpaceBetween,
+                modifier = modifier.fillMaxSize()
+            ) {
+                if (showTopBar) {
+                    HeaderSection(
+                        onBackClick = onBackClick,
+                        onFavoriteClick = onFavoriteClick,
+                        onShareClick = handleShare
+                    )
+                }
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxSize()
+                ) {
+                    ProductImageSection(
+                        photoUrl = product.photoUrl,
+                        photoLocalResource = product.photoLocalResource,
+                        modifier = Modifier.weight(1f).fillMaxSize().padding(15.dp)
+                    )
+
+                    Scaffold(
+                        modifier = modifier.weight(1f)
+                            .fillMaxSize()
+                            .padding(vertical = 15.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                        ,
+                        bottomBar = {
+                            PriceAndAddToCartSection(
+                                productPrice = product.price,
+                                onAddToCartClick = onAddToCartClick
+                            )
+                        }
+                    ) { paddingValues ->
+                        ProductInfoSection(
+                            productName = product.name,
+                            productDescription = product.description,
+                            modifier = Modifier.padding(paddingValues)
+                        )
+                    }
+                }
+            }
         }
     }
+
+
 }
 
 @Composable
@@ -121,6 +226,7 @@ private fun HeaderSection(
             onClick = onBackClick,
             modifier = Modifier
                 .size(40.dp)
+                .background(MaterialTheme.colorScheme.surface, CircleShape)
                 .border(
                     1.dp,
                     MaterialTheme.colorScheme.outlineVariant,
@@ -131,11 +237,11 @@ private fun HeaderSection(
                 imageVector = Icons.Default.ArrowBack, // Placeholder for back arrow
                 contentDescription = "Back",
                 modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.onSurface
+                tint = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
             IconButton(
                 onClick = onFavoriteClick,
                 modifier = Modifier
@@ -148,7 +254,7 @@ private fun HeaderSection(
                     )
             ) {
                 Icon(
-                    imageVector = Icons.Default.Handshake,
+                    imageVector = Icons.Rounded.Star,
                     contentDescription = "like",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
@@ -182,13 +288,14 @@ private fun ProductImageSection(
 ) {
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .padding(horizontal = 16.dp),
+            .fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         // Placeholder for the Xbox image
         AsyncImage(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(15.dp)),
             model = ImageRequest.Builder(LocalContext.current)
                 .data(photoUrl)
                 .crossfade(true)
@@ -281,7 +388,7 @@ private fun ProductInfoSection(
 @Composable
 private fun RatingBadge(
     value: String,
-    iconColor: androidx.compose.ui.graphics.Color,
+    iconColor: Color,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -294,7 +401,9 @@ private fun RatingBadge(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Box(modifier = Modifier.size(12.dp).background(iconColor, CircleShape))
+            Box(modifier = Modifier
+                .size(12.dp)
+                .background(iconColor, CircleShape))
             Text(
                 text = value,
                 style = MaterialTheme.typography.labelLarge,
@@ -386,6 +495,22 @@ private fun PriceAndAddToCartSection(
 @Composable
 private fun ProductDetailScreenPreview() {
     AlejoTallerTheme {
-        //ProductDetailScreen(product = productTestList[3])
+        ProductDetailScreen(
+            modifier = Modifier.fillMaxSize(),
+            showTopBar = true,
+            onBackClick = {},
+            onFavoriteClick = {},
+            onAddToCartClick = {},
+            product = Product(
+                id = "TODO()",
+                name = "Product test",
+                description = "This is de description from the product #!",
+                price = 23.4,
+                photoUrl = "knfknd",
+                categoryId = "Categori ID",
+                rating = 4.3,
+                photoLocalResource = null
+            )
+        )
     }
 }
