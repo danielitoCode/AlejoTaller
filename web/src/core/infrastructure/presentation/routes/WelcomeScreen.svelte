@@ -45,6 +45,11 @@
 
   async function continueAsGuest() {
     try {
+      try {
+        await authContainer.useCases.sessions.closeSession.execute();
+      } catch {
+        // Ignore
+      }
       const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
       sessionStore.setGuestSession();
       authFlowStore.setSuccess({

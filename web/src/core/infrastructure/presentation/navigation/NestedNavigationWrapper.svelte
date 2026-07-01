@@ -49,6 +49,7 @@
     import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
     import { rememberPendingDeepLink } from "./pending-deeplink.store";
     import AdminRoleChoiceCard from "../../../feature/auth/presentation/components/AdminRoleChoiceCard.svelte";
+    import GuestAuthOverlay from "../../../feature/auth/presentation/components/GuestAuthOverlay.svelte";
     import {
         getStoredAdminChoice,
         goToAdminDashboard,
@@ -93,6 +94,8 @@
     let hashSyncReady = false;
     let adminChoicePending = false;
     let adminRedirecting = false;
+    /** Controls the GuestAuthOverlay shown when a guest taps a protected nav item */
+    let guestAuthOverlayOpen = false;
 
     $: {
         if (typeof document !== "undefined") {
@@ -147,7 +150,8 @@
 
     function go(path: string) {
         if (isGuestSession && path !== dashboard.path && path !== product.path && path !== productDetail.path) {
-            internalNavController.resetTo(dashboard.path);
+            // Show overlay instead of silently redirecting — better UX
+            guestAuthOverlayOpen = true;
             fabOpen = false;
             return;
         }
@@ -167,8 +171,20 @@
             await authContainer.useCases.sessions.closeSession.execute();
         } finally {
             clearSessionBoundState({ clearCart: true });
-            navController.resetTo("welcome");
+            navController.resetTo("login");
         }
+    }
+
+    /**
+     * Safely transitions a guest session to LoginScreen.
+     * Does NOT call closeSession — Appwrite anonymous sessions are closed
+     * automatically when a new authenticated session starts.
+     * Clears all local state so LoginScreen starts clean.
+     */
+    function handleRequestLogin() {
+        guestAuthOverlayOpen = false;
+        clearSessionBoundState({ clearCart: true });
+        navController.resetTo("login");
     }
 
     function continueAsClient() {
@@ -188,6 +204,7 @@
     onMount(() => {
         window.addEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.addEventListener("hashchange", applyInternalHash);
+        window.addEventListener("request-guest-login", handleRequestLogin);
 
         suppressHashSync = true;
         if (window.location.hash) {
@@ -200,7 +217,15 @@
         });
 
         if (isGuestSession) {
-            internalNavController.resetTo(dashboard.path);
+            // Only reset to dashboard if applyInternalHash() didn't already navigate
+            // to a product detail (e.g. deeplink cold-start with productId)
+            const parsedHash = typeof window !== "undefined" ? parseDeepLinkHash(window.location.hash) : null;
+            const hasProductDeeplink = parsedHash?.top === "home" && (
+                parsedHash.nested === productDetail.path || !!parsedHash.args?.productId
+            );
+            if (!hasProductDeeplink) {
+                internalNavController.resetTo(dashboard.path);
+            }
         } else {
             currentUser = sessionStore.getCurrentUser();
             authContainer.useCases.accounts.getCurrentUser()
@@ -241,6 +266,7 @@
     onDestroy(() => {
         window.removeEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.removeEventListener("hashchange", applyInternalHash);
+        window.removeEventListener("request-guest-login", handleRequestLogin);
         clearSessionBoundState();
         logger.info("[InternalNavigation] disposed");
     });
@@ -352,6 +378,12 @@
                 on:goAdmin={continueToAdmin}
             />
         {/if}
+
+        <GuestAuthOverlay
+            open={guestAuthOverlayOpen}
+            on:login={handleRequestLogin}
+            on:close={() => (guestAuthOverlayOpen = false)}
+        />
 
         <div class="fab-layer compact-only">
             {#if fabOpen}

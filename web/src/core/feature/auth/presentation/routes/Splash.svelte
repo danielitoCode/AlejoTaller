@@ -1,10 +1,11 @@
 <script lang="ts">
     import {onMount} from "svelte";
+    import { get } from "svelte/store";
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import {authContainer} from "../../di/auth.container";
     import alejoIcon from "/alejoicon_clean.svg";
     import { consumePendingDeepLink, rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
-要能sco { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
+    import { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
     import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { sessionStore } from "../viewmodel/session.store";
@@ -96,6 +97,12 @@
                     loading = false;
                     return;
                 }
+            }
+            // Si la sesión activa es de visitante (anónima) y no hay deeplink de producto,
+            // redirigir a WelcomeScreen para que el usuario inicie sesión correctamente.
+            if (get(sessionStore).isGuest && !isProductDeepLink(window.location.hash)) {
+                navController.resetTo("welcome");
+                return;
             }
             continueAsClient(user);
         } catch {

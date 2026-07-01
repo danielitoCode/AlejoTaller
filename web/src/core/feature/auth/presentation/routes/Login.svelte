@@ -99,6 +99,11 @@
         error = null;
 
         try {
+            try {
+                await authContainer.useCases.sessions.closeSession.execute();
+            } catch {
+                // Ignore errors when no session exists
+            }
             const userId = await authContainer.useCases.sessions.openSession.openCustomSession(
                 normalizedEmail,
                 password
@@ -164,6 +169,11 @@
         linkError = null;
 
         try {
+            try {
+                await authContainer.useCases.sessions.closeSession.execute();
+            } catch {
+                // Ignore
+            }
             try {
                 const userId = await authContainer.useCases.sessions.openSession.openCustomSession(
                     sanitizedProfile.email,
@@ -254,6 +264,11 @@
         error = null;
 
         try {
+            try {
+                await authContainer.useCases.sessions.closeSession.execute();
+            } catch {
+                // Ignore
+            }
             const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
             sessionStore.setGuestSession();
             const guestContext = {
@@ -298,6 +313,11 @@
         error = null;
 
         try {
+            try {
+                await authContainer.useCases.sessions.closeSession.execute();
+            } catch {
+                // Ignore
+            }
             await registerStore.createAccount({
                 name: sanitizedProfile.name || sanitizedProfile.email.split("@")[0] || "Usuario",
                 email: sanitizedProfile.email,
