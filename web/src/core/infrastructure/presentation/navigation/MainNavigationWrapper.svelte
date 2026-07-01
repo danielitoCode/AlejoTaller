@@ -12,6 +12,9 @@
     import { buildTopLevelHash, parseDeepLinkHash } from "./deeplink";
     import { rememberPendingDeepLink } from "./pending-deeplink.store";
 
+    /** Raw hash captured before Svelte mounts, so the router never clears it */
+    export let initialDeepLink: string | null = null;
+
     const navController = rememberNavController(splash.path);
     const stackStore = navController._getStackStore();
 
@@ -57,8 +60,9 @@
     }
 
     onMount(() => {
-        if (window.location.hash) {
-            applyHash(window.location.hash);
+        const hashToApply = initialDeepLink ?? window.location.hash;
+        if (hashToApply) {
+            applyHash(hashToApply);
         } else {
             window.history.replaceState({}, "", buildTopLevelHash(splash.path));
         }

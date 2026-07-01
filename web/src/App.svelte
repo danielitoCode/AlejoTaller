@@ -4,18 +4,13 @@
   import MainNavigationWrapper from "./core/infrastructure/presentation/navigation/MainNavigationWrapper.svelte";
   import ToastHost from "./core/infrastructure/presentation/components/ToastHost.svelte";
   import DevTerminal from "./core/infrastructure/presentation/components/DevTerminal.svelte";
-  import FAB from "./demo/FAB.svelte";
-  import ListItems from "./demo/ListItems.svelte";
-  import ListComponents from "./demo/ListComponents.svelte";
-  import NoteAppDemo from "./demo/NoteAppDemo.svelte";
-  import Buttons from "./demo/Buttons.svelte";
-  import CardsDemo from "./demo/CardsDemo.svelte";
-  import MenuDemo from "./demo/MenuDemo.svelte";
-  import ProgressIndicatorDemos from "./demo/ProgressIndicatorDemos.svelte";
-  import SelectDemo from "./demo/SelectDemo.svelte";
   import { saleStore } from './core/feature/sale/presentation/viewmodel/sale.store';
+  import { logNavSessionStart, logNavAuthCheck, logNavRoute, logProductFlow, logNavError } from "./core/infrastructure/presentation/navigation/debug-logger";
+  import { getCapturedHash, getCapturedParsedDeeplink, isProductDeeplinkCaptured } from "./core/infrastructure/presentation/navigation/initial-deep-link";
 
   let isOnline = true
+  /** Raw hash captured before Svelte mounts, so the router never touches it */
+  export let initialDeepLink: string | null = null;
 
   if (import.meta.env.DEV) {
     initGlobalLogger();
@@ -23,6 +18,25 @@
 
   function syncConnectivity() {
     isOnline = navigator.onLine
+  }
+
+  // ── Debug navigation logging ──
+  function logSessionType(url: string) {
+    const parsed = getCapturedParsedDeeplink();
+    if (parsed && isProductDeeplinkCaptured()) {
+      logNavSessionStart(url, "deeplink", {
+        top: parsed.top,
+        nested: parsed.nested,
+        args: parsed.args,
+        productId: parsed.args?.productId,
+        isProductDeeplink: true
+      });
+    } else {
+      logNavSessionStart(url, "normal", {
+        rawHash: getCapturedHash() ?? "(none)",
+        isProductDeeplink: false
+      });
+    }
   }
 
   onMount(() => {
@@ -40,6 +54,11 @@
       saleStore.syncAll();
     }
     window.addEventListener('online', handleOnline);
+
+    // Log session type at startup
+    if (import.meta.env.DEV) {
+      logSessionType(window.location.href);
+    }
 
     return () => {
       window.removeEventListener('online', syncConnectivity)
@@ -59,7 +78,7 @@
 </svelte:head>
 
 <main>
-  <MainNavigationWrapper/>
+  <MainNavigationWrapper initialDeepLink={initialDeepLink}/>
 </main>
 
 <ToastHost/>

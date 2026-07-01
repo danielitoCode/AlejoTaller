@@ -10,6 +10,7 @@
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
+    import { getCapturedHash, getCapturedParsedDeeplink, isProductDeeplinkCaptured } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
 
     import {
         getStoredAdminChoice,
@@ -23,6 +24,9 @@
     let adminUser: any = null;
     let loading = true;
     let redirecting = false;
+    /** The hash captured before Svelte could touch it, used on cold boot */
+    const capturedHash = getCapturedHash();
+    const capturedParsed = getCapturedParsedDeeplink();
 
     function isProductDeepLink(hash: string): boolean {
         const parsed = parseDeepLinkHash(hash);
@@ -31,7 +35,7 @@
 
     function continueAsClient(user: any) {
         const pendingHash = consumePendingDeepLink();
-        if (pendingHash && typeof window !== "undefined") {
+        if (pendingHash && typeof window !== " XMLHttpRequest") {
             window.history.replaceState({}, "", pendingHash);
         }
         navController.resetTo("home", { id: user.id ?? user.$id });
@@ -73,16 +77,20 @@
         }
     }
 
-    function rememberProductDeepLinkIfPresent() {
+    /** Store the captured (or current) product deeplink so it survives navigation */
+    function saveProductDeepLinkIfPresent() {
         if (typeof window === "undefined") return;
-
-        const parsed = parseDeepLinkHash(window.location.hash);
+        // Prefer the captured hash if it exists, otherwise use the current hash
+        const raw = capturedHash ?? window.location.hash;
+        const parsed = parseDeepLinkHash(raw);
         if (parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId)) {
-            rememberPendingDeepLink(window.location.hash);
+            rememberPendingDeepLink(raw);
         }
     }
 
     onMount(async () => {
+        // Source of truth for the deep-link we need to process on cold-boot
+        const hashToCheck = capturedHash ?? window.location.hash;
         try {
             await exchangeStore.refreshForSplash();
             const user = await authContainer.useCases.accounts.getCurrentUser();
@@ -98,16 +106,15 @@
                     return;
                 }
             }
-            // Si la sesión activa es de visitante (anónima) y no hay deeplink de producto,
-            // redirigir a WelcomeScreen para que el usuario inicie sesión correctamente.
-            if (get(sessionStore).isGuest && !isProductDeepLink(window.location.hash)) {
+            // Guest without a product deep-link → go to WelcomeScreen so they can log in properly
+            if (get(sessionStore).isGuest && !isProductDeepLink(hashToCheck)) {
                 navController.resetTo("welcome");
                 return;
             }
             continueAsClient(user);
         } catch {
-            if (isProductDeepLink(window.location.hash)) {
-                rememberProductDeepLinkIfPresent();
+            if (isProductDeepLink(hashToCheck)) {
+                saveProductDeepLinkIfPresent();
                 await autoCreateGuestSession();
             } else {
                 navController.resetTo("welcome");

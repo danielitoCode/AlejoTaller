@@ -19,6 +19,18 @@
     function clear() {
         logStore.clear();
     }
+
+    function copySelected() {
+        const selection = window.getSelection()?.toString();
+        if (selection) {
+            navigator.clipboard.writeText(selection).catch(() => {});
+        }
+    }
+
+    function copyAll() {
+        const all = logs.map(l => `[${l.type.toUpperCase()}] ${l.timestamp.toLocaleTimeString()} — ${l.message}`).join("\n");
+        navigator.clipboard.writeText(all).catch(() => {});
+    }
 </script>
 
 <div class="logs-wrapper {expanded ? 'open' : 'closed'}" aria-label="Logs de desarrollo">
@@ -33,11 +45,14 @@
             <span class="chev" aria-hidden="true">{expanded ? "▼" : "▲"}</span>
         </button>
 
-        <button class="clear" type="button" on:click={clear} aria-label="Limpiar logs">Clear</button>
+        <div class="actions">
+            <button class="action-btn" title="Copiar todo" type="button" on:click={copyAll}>📋 Copy</button>
+            <button class="action-btn" title="Limpiar logs" type="button" on:click={clear}>🗑 Clear</button>
+        </div>
     </div>
 
     {#if expanded}
-        <div class="body" bind:this={container}>
+        <div class="body" bind:this={container} on:mouseup={copySelected}>
             {#each logs as log (log.id)}
                 <div class="log {log.type}">
                     <div class="meta">
@@ -45,12 +60,12 @@
                         <span class="type">{log.type.toUpperCase()}</span>
                     </div>
 
-                    <div class="message">{log.message}</div>
+                    <div class="message selectable">{log.message}</div>
 
                     {#if log.stack}
                         <details>
                             <summary>Stack trace</summary>
-                            <pre>{log.stack}</pre>
+                            <pre class="selectable">{log.stack}</pre>
                         </details>
                     {/if}
                 </div>
@@ -118,7 +133,7 @@
     }
 
     .toggle:focus-visible,
-    .clear:focus-visible {
+    .action-btn:focus-visible {
         outline: 2px solid rgba(56, 189, 248, 0.45);
         outline-offset: 2px;
     }
@@ -148,7 +163,12 @@
         font-weight: 900;
     }
 
-    .clear {
+    .actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    .action-btn {
         background: transparent;
         border: 1px solid rgba(148, 163, 184, 0.22);
         color: #cbd5e1;
@@ -156,9 +176,10 @@
         padding: 6px 10px;
         border-radius: 10px;
         cursor: pointer;
+        user-select: none;
     }
 
-    .clear:hover {
+    .action-btn:hover {
         border-color: rgba(148, 163, 184, 0.35);
         background: rgba(255, 255, 255, 0.04);
     }
@@ -204,6 +225,12 @@
         word-break: break-word;
     }
 
+    .selectable {
+        user-select: text;
+        -webkit-user-select: text;
+        cursor: text;
+    }
+
     details {
         margin-top: 8px;
     }
@@ -220,5 +247,14 @@
         background: rgba(0, 0, 0, 0.35);
         overflow: auto;
     }
-</style>
 
+    /* Mobile: full width */
+    @media (max-width: 640px) {
+        .logs-wrapper {
+            width: calc(100vw - 16px);
+            right: 8px;
+            left: 8px;
+            margin: 0;
+        }
+    }
+</style>

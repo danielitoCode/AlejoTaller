@@ -14,6 +14,13 @@ function createLogStore() {
     const { subscribe, update, set } = writable<LogEntry[]>([]);
     let counter = 0;
 
+    function getAllLogs(): LogEntry[] {
+        let result: LogEntry[] = [];
+        const unsubscribe = subscribe((logs) => { result = logs; });
+        unsubscribe();
+        return result;
+    }
+
     return {
         subscribe,
         add: (message: any, type: LogType = "log", stack?: string) => {
@@ -30,7 +37,8 @@ function createLogStore() {
                 }
             ]);
         },
-        clear: () => set([])
+        clear: () => set([]),
+        getAll: getAllLogs
     };
 }
 

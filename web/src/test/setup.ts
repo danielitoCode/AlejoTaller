@@ -4,7 +4,7 @@
  * @setup Ejecutado antes de cada suite de tests
  */
 
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi, beforeEach, afterEach } from 'vitest';
 
 // ============================================
