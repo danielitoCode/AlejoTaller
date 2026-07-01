@@ -6,6 +6,7 @@ import {GetProductByIdCaseUse} from "../domain/caseuse/GetProductByIdCaseUse";
 import {SaveProductCaseUse} from "../domain/caseuse/SaveProductCaseUse";
 import {DeleteProductCaseUse} from "../domain/caseuse/DeleteProductCaseUse";
 import {UpdateProductPriceCaseUse} from "../domain/caseuse/UpdateProductPriceCaseUse";
+import {CheckAProductExistenceCaseUse} from "../domain/caseuse/CheckAProductExistenceCaseUse";
 
 // Database instance
 const database = infrastructureContainer.appwrite.databases
@@ -20,6 +21,7 @@ const deletedProductCaseUse = new DeleteProductCaseUse(productOfflineFirstReposi
 const getProductByIdCaseUse = new GetProductByIdCaseUse(productOfflineFirstRepository)
 const modifyProductPriceCaseUse = new UpdateProductPriceCaseUse(productOfflineFirstRepository)
 const saveProductCaseUse = new SaveProductCaseUse(productOfflineFirstRepository)
+const checkAProductExistenceCaseUse = new CheckAProductExistenceCaseUse(productOfflineFirstRepository)
 
 export const productContainer = {
     repositories: {
@@ -31,6 +33,7 @@ export const productContainer = {
         getById: getProductByIdCaseUse,
         create: saveProductCaseUse,
         updatePrice: modifyProductPriceCaseUse,
-        delete: deletedProductCaseUse
+        delete: deletedProductCaseUse,
+        checkAProductExistence: checkAProductExistenceCaseUse
     }
 }

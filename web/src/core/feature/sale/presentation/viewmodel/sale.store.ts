@@ -5,6 +5,7 @@ import { saleContainer } from "../../di/sale.container";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 import { subscribeSaleVerification, unsubscribeSaleVerification } from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
+import {productContainer} from "../../../product/di/product.container";
 import { saleAlertStore } from "./sale-alert.store";
 import { BuyState } from "../../domain/entity/enums";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
@@ -229,21 +230,44 @@ function createSaleStore() {
     }
 
     async function create(sale: Sale): Promise<Sale> {
-        update((state) => ({ ...state, loading: true, error: null }));
+        update((state) => ({
+            ...state,
+            loading: true,
+            error: null
+        }));
+
         try {
+            // Verifica disponibilidad de productos
+            await productContainer.useCases.checkAProductExistence.execute(sale);
+
+            // Crea la venta
             const created = await saleContainer.useCases.create.execute(sale);
+
+            // Actualiza el estado
             update((state) => ({
                 ...state,
                 items: [created, ...state.items]
             }));
+
+            // Gestiona la suscripción
             await managePusherSubscription();
+
             return created;
+
         } catch (error: any) {
             logger.error(error?.message ?? error, error?.stack);
-            update((state) => ({ ...state, error: normalizeError(error) }));
+
+            update((state) => ({
+                ...state,
+                error: normalizeError(error)
+            }));
+
             throw error;
         } finally {
-            update((state) => ({ ...state, loading: false }));
+            update((state) => ({
+                ...state,
+                loading: false
+            }));
         }
     }
 

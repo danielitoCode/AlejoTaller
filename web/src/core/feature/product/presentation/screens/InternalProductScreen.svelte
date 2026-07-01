@@ -8,6 +8,7 @@
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import ProductScreen from "./ProductScreen.svelte";
     import ProductDetailScreen from "./ProductDetailScreen.svelte";
+    import GuestAuthOverlay from "../../../auth/presentation/components/GuestAuthOverlay.svelte";
     import type {NavBackStackEntry} from "../../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../../lib/navigation/NavController";
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
@@ -16,6 +17,8 @@
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
+    /** Called when a guest user confirms they want to log in from the auth overlay. */
+    export let onRequestLogin: (() => void) | undefined = undefined;
 
     let searchQuery = "";
     let selectedCategoryId: string | null = null;
@@ -139,7 +142,7 @@
     const handleAddToCartClick = () => {
         if (!selectedProduct) return;
         if ($sessionStore.isGuest) {
-            toastStore.info("Inicia sesion para agregar productos al carrito");
+            showAuthOverlay = true;
             return;
         }
         cartStore.addProduct(selectedProduct, 1);
@@ -149,6 +152,16 @@
     const handleAuthRequiredClick = () => {
         showAuthOverlay = true;
     };
+
+    function handleOverlayLogin() {
+        showAuthOverlay = false;
+        // Notify via prop (when passed directly) and via window event
+        // (when rendered through NavHost which can't forward custom props)
+        onRequestLogin?.();
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("request-guest-login"));
+        }
+    }
 
     const closeProductDetail = () => {
         selectedProduct = null;
@@ -207,7 +220,11 @@
     {/if}
 </div>
 
-<GuestAuthOverlay open={showAuthOverlay} on:close={() => showAuthOverlay = false} />
+<GuestAuthOverlay
+    open={showAuthOverlay}
+    on:login={handleOverlayLogin}
+    on:close={() => (showAuthOverlay = false)}
+/>
 
 <style>
     .internal-product-screen {

@@ -7,6 +7,8 @@ import { UpdateSaleDeliveryTypeCaseUse } from "../domain/caseuse/UpdateSaleDeliv
 import { RegisterNewSaleCaseUse } from "../domain/caseuse/RegisterNewSaleCaseUse";
 import { SessionSaleNotificationUserProvider } from "../data/repository/SessionSaleNotificationUserProvider";
 import { TelegramNotificatorImpl } from "../data/repository/TelegramNotificatorImpl";
+import {CheckAProductExistenceCaseUse} from "../../product/domain/caseuse/CheckAProductExistenceCaseUse";
+import {productContainer} from "../../product/di/product.container";
 
 // Infrastructure instance
 const netDatabases= infrastructureContainer.appwrite.databases
@@ -39,6 +41,6 @@ export const saleContainer = {
         getAll: getSalesCaseUse,
         create: createSaleCaseUse,
         updateVerified: updateSaleVerifiedCaseUse,
-        updateDeliveryType: updateSaleDeliveryTypeCaseUse
+        updateDeliveryType: updateSaleDeliveryTypeCaseUse,
     }
 }
