@@ -269,3 +269,7 @@ private fun InfoBlock(
         }
     }
 }
+
+/*private fun OperatorConfirmPaymentScreenContent(
+    modifier: Modifier = Modifier
+)*/
