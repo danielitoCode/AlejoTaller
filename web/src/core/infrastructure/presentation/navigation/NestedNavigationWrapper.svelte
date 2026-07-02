@@ -48,6 +48,7 @@
     } from "./nested.router";
     import { buildHomeHash, parseDeepLinkHash } from "./deeplink";
     import { rememberPendingDeepLink } from "./pending-deeplink.store";
+    import { logNavAuthCheck, logNavRoute, logProductFlow, logNavError } from "./debug-logger";
     import AdminRoleChoiceCard from "../../../feature/auth/presentation/components/AdminRoleChoiceCard.svelte";
     import GuestAuthOverlay from "../../../feature/auth/presentation/components/GuestAuthOverlay.svelte";
     import {
@@ -143,7 +144,14 @@
                 : undefined;
         const currentArgs = currentEntry?.args as Record<string, string> | undefined;
 
+        if (import.meta.env.DEV && targetRoute === productDetail.path) {
+            logProductFlow(parsed.args?.productId || "?", "resolve-start");
+        }
+
         if (currentPath !== targetRoute || JSON.stringify(currentArgs ?? {}) !== JSON.stringify(targetArgs ?? {})) {
+            if (import.meta.env.DEV) {
+                logNavRoute(targetRoute, targetArgs);
+            }
             internalNavController.resetTo(targetRoute, targetArgs);
         }
     }
@@ -182,6 +190,9 @@
      * Clears all local state so LoginScreen starts clean.
      */
     function handleRequestLogin() {
+        if (import.meta.env.DEV) {
+            logNavAuthCheck(false, false, "redirect-login");
+        }
         guestAuthOverlayOpen = false;
         clearSessionBoundState({ clearCart: true });
         navController.resetTo("login");
@@ -202,12 +213,15 @@
     }
 
     onMount(() => {
-        window.addEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
+        window.removeEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.addEventListener("hashchange", applyInternalHash);
         window.addEventListener("request-guest-login", handleRequestLogin);
 
         suppressHashSync = true;
         if (window.location.hash) {
+            if (import.meta.env.DEV) {
+                logNavRoute("nested-onMount", { hash: window.location.hash });
+            }
             applyInternalHash();
         }
 
@@ -223,6 +237,9 @@
             const hasProductDeeplink = parsedHash?.top === "home" && (
                 parsedHash.nested === productDetail.path || !!parsedHash.args?.productId
             );
+            if (import.meta.env.DEV) {
+                logNavAuthCheck(true, true, hasProductDeeplink ? "continue" : "redirect-welcome");
+            }
             if (!hasProductDeeplink) {
                 internalNavController.resetTo(dashboard.path);
             }

@@ -14,6 +14,7 @@
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
     import { rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import { logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -36,8 +37,15 @@
     async function resolvePendingProduct() {
         if (!pendingProductId || resolvingPendingProductId === pendingProductId) return;
 
+        if (import.meta.env.DEV) {
+            logProductFlow(pendingProductId, "resolve-start");
+        }
+
         const product = products.find(p => p.id === pendingProductId);
         if (product) {
+            if (import.meta.env.DEV) {
+                logProductFlow(pendingProductId, "resolve-success");
+            }
             selectedProduct = product;
             pendingProductId = null;
             return;
@@ -50,12 +58,22 @@
             if (pendingProductId !== productIdToResolve) return;
 
             if (syncedProduct) {
+                if (import.meta.env.DEV) {
+                    logProductFlow(productIdToResolve, "resolve-success");
+                }
                 selectedProduct = syncedProduct;
             } else {
+                if (import.meta.env.DEV) {
+                    logProductFlow(productIdToResolve, "resolve-fail");
+                }
                 toastStore.error("No se pudo abrir el producto compartido");
             }
             pendingProductId = null;
         } catch (error) {
+            if (import.meta.env.DEV) {
+                logProductFlow(productIdToResolve, "resolve-fail");
+                logNavError("Error resolving pending product", error);
+            }
             console.error("Error resolving pending product:", error);
             if (pendingProductId === productIdToResolve) {
                 toastStore.error("No se pudo abrir el producto compartido");

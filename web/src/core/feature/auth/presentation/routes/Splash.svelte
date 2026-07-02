@@ -11,6 +11,7 @@
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { getCapturedHash, getCapturedParsedDeeplink, isProductDeeplinkCaptured } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
+    import { logNavAuthCheck, logNavRoute, logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
 
     import {
         getStoredAdminChoice,
@@ -35,13 +36,21 @@
 
     function continueAsClient(user: any) {
         const pendingHash = consumePendingDeepLink();
-        if (pendingHash && typeof window !== " XMLHttpRequest") {
+        if (pendingHash && typeof window !== "undefined") {
             window.history.replaceState({}, "", pendingHash);
+        }
+        if (import.meta.env.DEV) {
+            logNavAuthCheck(true, false, "continue");
+            const parsed = parseDeepLinkHash(pendingHash || window.location.hash);
+            logNavRoute("home", { id: user.id ?? user.$id, productId: parsed?.args?.productId });
         }
         navController.resetTo("home", { id: user.id ?? user.$id });
     }
 
     async function autoCreateGuestSession() {
+        if (import.meta.env.DEV) {
+            logNavAuthCheck(false, false, "auto-guest");
+        }
         try {
             const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
             sessionStore.setGuestSession();
@@ -52,10 +61,14 @@
             });
             const pendingHash = consumePendingDeepLink();
             if (pendingHash && typeof window !== "undefined") {
+                if (import.meta.env.DEV) {
+                    logNavRoute("home", { productId: parseDeepLinkHash(pendingHash)?.args?.productId });
+                }
                 window.history.replaceState({}, "", pendingHash);
             }
             navController.resetTo("home");
-        } catch {
+        } catch (e) {
+            if (import.meta.env.DEV) logNavError("autoCreateGuestSession failed", e);
             navController.resetTo("welcome");
         }
     }
@@ -91,12 +104,21 @@
     onMount(async () => {
         // Source of truth for the deep-link we need to process on cold-boot
         const hashToCheck = capturedHash ?? window.location.hash;
+        if (import.meta.env.DEV) {
+            const hasDeeplink = isProductDeepLink(hashToCheck);
+            logNavAuthCheck(
+                false,
+                get(sessionStore).isGuest,
+                hasDeeplink ? "auto-guest" : "redirect-welcome"
+            );
+        }
         try {
             await exchangeStore.refreshForSplash();
             const user = await authContainer.useCases.accounts.getCurrentUser();
             if (shouldOfferAdminChoice(user)) {
                 const choice = getStoredAdminChoice();
                 if (choice === "admin") {
+                    if (import.meta.env.DEV) logNavRoute("admin");
                     await chooseAdmin();
                     return;
                 }
@@ -108,6 +130,7 @@
             }
             // Guest without a product deep-link → go to WelcomeScreen so they can log in properly
             if (get(sessionStore).isGuest && !isProductDeepLink(hashToCheck)) {
+                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "guest-no-deeplink" });
                 navController.resetTo("welcome");
                 return;
             }
@@ -117,6 +140,7 @@
                 saveProductDeepLinkIfPresent();
                 await autoCreateGuestSession();
             } else {
+                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "catch-no-deeplink" });
                 navController.resetTo("welcome");
             }
         } finally {
