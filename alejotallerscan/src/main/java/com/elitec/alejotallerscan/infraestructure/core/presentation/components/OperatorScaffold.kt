@@ -32,12 +32,13 @@ fun OperatorScreen(
     title: String,
     subtitle: String,
     heroIcon: ImageVector = Icons.Rounded.QrCodeScanner,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 132.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
+        verticalArrangement = Arrangement.Center
     ) {
         item {
             Card(
