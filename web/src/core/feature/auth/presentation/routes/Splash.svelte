@@ -134,6 +134,10 @@
                 navController.resetTo("welcome");
                 return;
             }
+            // Remember the product deeplink before navigating home
+            if (isProductDeepLink(hashToCheck)) {
+                saveProductDeepLinkIfPresent();
+            }
             continueAsClient(user);
         } catch {
             if (isProductDeepLink(hashToCheck)) {

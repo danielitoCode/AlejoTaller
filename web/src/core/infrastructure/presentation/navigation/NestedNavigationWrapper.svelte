@@ -1,5 +1,6 @@
 <script lang="ts">
     import {onDestroy, onMount} from "svelte";
+    import { get } from "svelte/store";
     import {fade} from "svelte/transition";
     import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../lib/navigation/NavController";
@@ -152,7 +153,15 @@
             if (import.meta.env.DEV) {
                 logNavRoute(targetRoute, targetArgs);
             }
-            internalNavController.resetTo(targetRoute, targetArgs);
+            // For cold-boot deeplinks the stack is just [dashboard]. Push the
+            // target on top so the user has somewhere to navigate back to.
+            const stackSize = get(internalStackStore).length;
+            const isColdBootDeepLink = stackSize <= 1 && currentPath === dashboard.path;
+            if (isColdBootDeepLink && targetRoute !== dashboard.path) {
+                internalNavController.navigate(targetRoute, targetArgs);
+            } else {
+                internalNavController.resetTo(targetRoute, targetArgs);
+            }
         }
     }
 
