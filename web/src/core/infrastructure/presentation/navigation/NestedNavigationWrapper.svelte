@@ -58,6 +58,10 @@
         rememberAdminChoice,
         shouldOfferAdminChoice
     } from "../../../feature/auth/presentation/util/admin-redirect";
+    import {
+        hasClearAuthenticatedProfile,
+        resolveUserId
+    } from "../../../feature/auth/presentation/util/profile-classification";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string; email?: string; provider?: string }>;
@@ -118,6 +122,15 @@
         }
     }
 
+    function forceVisitorMode(user?: any) {
+        sessionStore.setGuestSession();
+        authFlowStore.setSuccess({
+            userId: resolveUserId(user),
+            email: null,
+            provider: "guest"
+        });
+    }
+
     function handleSaleVerificationOpen(event: Event) {
         if (isGuestSession) return;
         const saleId = (event as CustomEvent<{ saleId?: string }>).detail?.saleId;
@@ -153,8 +166,6 @@
             if (import.meta.env.DEV) {
                 logNavRoute(targetRoute, targetArgs);
             }
-            // For cold-boot deeplinks the stack is just [dashboard]. Push the
-            // target on top so the user has somewhere to navigate back to.
             const stackSize = get(internalStackStore).length;
             const isColdBootDeepLink = stackSize <= 1 && currentPath === dashboard.path;
             if (isColdBootDeepLink && targetRoute !== dashboard.path) {
@@ -167,7 +178,6 @@
 
     function go(path: string) {
         if (isGuestSession && path !== dashboard.path && path !== product.path && path !== productDetail.path) {
-            // Show overlay instead of silently redirecting — better UX
             guestAuthOverlayOpen = true;
             fabOpen = false;
             return;
@@ -192,12 +202,6 @@
         }
     }
 
-    /**
-     * Safely transitions a guest session to LoginScreen.
-     * Does NOT call closeSession — Appwrite anonymous sessions are closed
-     * automatically when a new authenticated session starts.
-     * Clears all local state so LoginScreen starts clean.
-     */
     function handleRequestLogin() {
         if (import.meta.env.DEV) {
             logNavAuthCheck(false, false, "redirect-login");
@@ -239,39 +243,44 @@
             hashSyncReady = true;
         });
 
-        if (isGuestSession) {
-            // Only reset to dashboard if applyInternalHash() didn't already navigate
-            // to a product detail (e.g. deeplink cold-start with productId)
-            const parsedHash = typeof window !== "undefined" ? parseDeepLinkHash(window.location.hash) : null;
-            const hasProductDeeplink = parsedHash?.top === "home" && (
-                parsedHash.nested === productDetail.path || !!parsedHash.args?.productId
-            );
-            if (import.meta.env.DEV) {
-                logNavAuthCheck(true, true, hasProductDeeplink ? "continue" : "redirect-welcome");
-            }
-            if (!hasProductDeeplink) {
-                internalNavController.resetTo(dashboard.path);
-            }
-        } else {
-            currentUser = sessionStore.getCurrentUser();
-            authContainer.useCases.accounts.getCurrentUser()
-            .then(async (user) => {
-                if (!shouldOfferAdminChoice(user)) return;
-                const choice = getStoredAdminChoice();
-                if (choice === "admin") {
-                    await continueToAdmin();
-                    return;
+        // Always re-validate profile against Appwrite so local isGuest cannot lie
+        currentUser = authContainer.useCases.accounts.getCurrentUser()
+            .then((user) => {
+                if (!hasClearAuthenticatedProfile(user)) {
+                    // POLICY: unclear profile → visitor restrictions
+                    forceVisitorMode(user);
+                    if (import.meta.env.DEV) {
+                        logNavAuthCheck(false, true, "force-visitor-unclear-profile");
+                    }
+                    const parsedHash = parseDeepLinkHash(window.location.hash);
+                    const hasProductDeeplink = parsedHash?.top === "home" && (
+                        parsedHash.nested === productDetail.path || !!parsedHash.args?.productId
+                    );
+                    if (!hasProductDeeplink) {
+                        internalNavController.resetTo(dashboard.path);
+                    }
+                    return { name: "Visitante", email: "" };
                 }
-                if (choice !== "client") {
-                    adminChoicePending = true;
+
+                sessionStore.setAuthenticatedSession();
+                if (shouldOfferAdminChoice(user)) {
+                    const choice = getStoredAdminChoice();
+                    if (choice === "admin") {
+                        continueToAdmin();
+                    } else if (choice !== "client") {
+                        adminChoicePending = true;
+                    }
                 }
+                return user;
             })
             .catch(() => {
-                rememberPendingDeepLink(window.location.hash);
-                clearSessionBoundState({ clearCart: true });
-                navController.resetTo("login");
+                // No session → force visitor UI if we somehow landed here
+                forceVisitorMode();
+                if (import.meta.env.DEV) {
+                    logNavAuthCheck(false, true, "force-visitor-no-session");
+                }
+                return { name: "Visitante", email: "" };
             });
-        }
 
         productStore.syncAll().catch(() => {
             toastStore.error("Error al sincronizar productos");
@@ -279,7 +288,10 @@
         categoryStore.syncAll().catch(() => {
             toastStore.error("Error al sincronizar categorias");
         });
-        if (!isGuestSession) {
+
+        // Defer private syncs until we know the profile is clear (reactive)
+        // Initial attempt for already-known authenticated sessions:
+        if (!get(sessionStore).isGuest) {
             promotionStore.syncAll().catch(() => {
                 toastStore.error("Error al sincronizar promociones");
             });
@@ -325,7 +337,7 @@
                             {#await currentUser ?? Promise.resolve({ name: "Usuario" })}
                                 <p>Cargando cuenta...</p>
                             {:then user}
-                                <p>{user.name}</p>
+                                <p>{user.name || "Usuario"}</p>
                             {:catch error}
                                 <p>{error.message}</p>
                             {/await}
@@ -365,7 +377,7 @@
         <div class="top-mobile compact-only">
             <div class="mobile-title">
                 <strong>Taller Alejo</strong>
-                <span>{userId}</span>
+                <span>{isGuestSession ? "Visitante" : userId}</span>
             </div>
         </div>
 
@@ -716,7 +728,6 @@
             padding: 8px 8px max(96px, calc(env(safe-area-inset-bottom) + 12px));
         }
 
-        /* Ensure route-stage scroller leaves space for FAB */
         .route-stage.route-stage-scroll {
             padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
         }
@@ -735,7 +746,6 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            /* Keep the mobile FAB overlay above route content/cards. */
             z-index: 1000;
         }
 
@@ -758,7 +768,6 @@
             justify-items: end;
             gap: 14px;
             pointer-events: none;
-            /* Elevate above route-stage scroll content and the expanded scrim. */
             z-index: 1001;
         }
 
