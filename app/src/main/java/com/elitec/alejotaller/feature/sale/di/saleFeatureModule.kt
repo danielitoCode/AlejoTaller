@@ -48,8 +48,10 @@ val saleFeatureModule = module {
     factory { SubscribeRealtimeSyncCaseUse(get()) }
 
     // Presentation layer
+    // CheckAProductExistenceCaseUse se resuelve desde productFeatureModule (mismo Koin scope de app)
     viewModel {
         SaleViewModel(
+            get(),
             get(),
             get(),
             get(),

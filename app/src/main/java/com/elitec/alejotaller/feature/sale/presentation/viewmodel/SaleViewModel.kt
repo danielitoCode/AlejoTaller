@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.sale.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elitec.alejotaller.feature.product.domain.caseUse.CheckAProductExistenceCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InitiatePaymentCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.GetSalesByIdCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
@@ -21,7 +22,8 @@ class SaleViewModel(
         private val getSaleByIdCaseUse: GetSalesByIdCaseUse,
         private val registerNewSaleCauseUse: RegisterNewSaleCauseUse,
         private val initiatePaymentCaseUse: InitiatePaymentCaseUse,
-        private val updateDeliveryTypeCaseUse: UpdateDeliveryTypeCaseUse
+        private val updateDeliveryTypeCaseUse: UpdateDeliveryTypeCaseUse,
+        private val checkAProductExistenceCaseUse: CheckAProductExistenceCaseUse
 ) : ViewModel() {
 
     val salesFlow =
@@ -38,6 +40,12 @@ class SaleViewModel(
 
     fun newSale(sale: Sale, onSaleRegistered: (String) -> Unit, onFail: (String) -> Unit) {
         viewModelScope.launch {
+            checkAProductExistenceCaseUse(sale)
+                    .onFailure { error ->
+                        onFail(error.message ?: "Sin disponibilidad de stock")
+                        return@launch
+                    }
+
             registerNewSaleCauseUse(sale)
                     .onSuccess { transferId -> onSaleRegistered(transferId) }
                     .onFailure { error -> onFail(error.message ?: "") }
@@ -45,14 +53,7 @@ class SaleViewModel(
     }
 
     /**
-     * Registra la venta (Telegram + Room) y genera la URL de pago.
-     *
-     * @param onReadyToPay Recibe (saleId, checkoutUrl) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â la UI abre la URL en Chrome Tabs.
-     * ```
-     *                       Si checkoutUrl es null, la venta estÃƒÆ’Ã‚Â¡ registrada pero sin pago online.
-     * @param onFail
-     * ```
-     * Error crÃƒÆ’Ã‚Â­tico (no se pudo ni guardar la venta).
+     * Soft-check de stock, registra la venta y genera la URL de pago.
      */
     fun initiatePayment(
         sale: Sale,
@@ -61,6 +62,12 @@ class SaleViewModel(
         onFail: (String) -> Unit
     ) {
         viewModelScope.launch {
+            checkAProductExistenceCaseUse(sale)
+                    .onFailure { error ->
+                        onFail(error.message ?: "Sin disponibilidad de stock")
+                        return@launch
+                    }
+
             initiatePaymentCaseUse(sale, paymentChannel)
                     .onSuccess { result ->
                         onReadyToPay(result.saleId, result.checkoutUrl)
@@ -71,13 +78,6 @@ class SaleViewModel(
         }
     }
 
-    /**
-     * Actualiza la preferencia de entrega (recoger en tienda / domicilio) de una venta en estado
-     * VERIFIED.
-     *
-     * Persiste el cambio localmente y lo sincroniza con Appwrite. La UI muestra el mensaje de
-     * confirmaciÃƒÆ’Ã‚Â³n a travÃƒÆ’Ã‚Â©s de [onSuccess]/[onFail].
-     */
     fun updateDeliveryType(
             saleId: String,
             deliveryType: DeliveryType,
