@@ -14,11 +14,29 @@ data class Sale(
     val userId: String,
     val customerName: String? = null,
     val deliveryType: DeliveryType? = null,
-    val deliveryAddress: DeliveryAddress? = null
+    val deliveryAddress: DeliveryAddress? = null,
+    /**
+     * SALE_POLICY: tipo comercial al cerrar en operador.
+     * null mientras UNVERIFIED (provisional); obligatorio al pasar a VERIFIED.
+     */
+    val saleType: SaleType? = null
 )
 
 enum class BuyState {
     UNVERIFIED, VERIFIED, DELETED
+}
+
+/**
+ * SALE_POLICY Core 1 — tipos de venta definidos en tienda.
+ * Afectan importe; no eximen de baja de stock al confirmar.
+ */
+enum class SaleType {
+    /** Precio de lista del catálogo. */
+    NORMAL,
+    /** Descuento alineado con dueño o promoción. */
+    DISCOUNT,
+    /** Regalia / obsequio — amount 0, stock sí baja. */
+    GIFT
 }
 
 /**
@@ -42,4 +60,3 @@ data class DeliveryAddress(
     val houseNumber: String,
     val referenceName: String? = null
 )
-
