@@ -8,6 +8,17 @@ export default defineConfig({
         include: ["src/test/**/*.test.ts", "src/test/**/*.test.svelte"],
         setupFiles: ["./src/test/setup.ts"],
         clearMocks: true,
+        // Windows + Vitest 4: forks pool often times out starting workers.
+        // threads is more reliable on this platform for pure unit tests.
+        pool: "threads",
+        poolOptions: {
+            threads: {
+                singleThread: false,
+                isolate: true
+            }
+        },
+        testTimeout: 15000,
+        hookTimeout: 15000,
         coverage: {
             provider: "v8",
             reporter: ["text", "html", "lcov"],
