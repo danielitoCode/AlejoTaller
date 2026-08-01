@@ -10,10 +10,21 @@ Sirven para validar los cores (web, Android, operador) y mantener paridad.
   README.md
   auth/
     AUTH_POLICY.md          # Clasificación de perfil, visitante vs autenticado
-  product/                  # (pendiente) stock, existence, lectura cliente
-  sale/                     # (pendiente) UNVERIFIED → VERIFIED, deducción stock en operador
-  warehouse/                # (pendiente) stock_movements, alineación contable
+  sale/
+    SALE_POLICY.md          # Ciclo UNVERIFIED→VERIFIED/DELETED, tipos NORMAL|DISCOUNT|GIFT
+  warehouse/
+    WAREHOUSE_POLICY.md     # Baja de stock solo en VERIFIED (cantidad de la línea)
+  product/                  # (pendiente) catálogo, existence visible, visitor vs auth
 ```
+
+## Estado
+
+| Política | Estado Core 1 |
+|----------|---------------|
+| Auth | Definida + implementada + tests |
+| Sale | Definida (modelos a alinear / implementar tipo + confirmación) |
+| Warehouse | Definida (movimientos en confirmación pendiente de cablear) |
+| Product | Pendiente |
 
 ## Regla de oro
 
