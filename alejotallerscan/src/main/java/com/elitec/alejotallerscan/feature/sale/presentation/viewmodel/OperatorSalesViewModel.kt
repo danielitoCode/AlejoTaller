@@ -172,10 +172,13 @@ class OperatorSalesViewModel(
                             "verified=${confirmedRemoteSale.verified}"
                     )
 
+                    // Realtime (Pusher via publisher) es importante para UX del cliente,
+                    // pero NO debe revertir ni marcar como fallida una venta ya confirmada en Appwrite.
+                    var realtimeWarning: String? = null
                     val notificationResult = runCatching {
                         _uiState.value = _uiState.value.copy(
                             isLoading = true,
-                            loadingMessage = "Esperando al servicio de notificaciones en Render..."
+                            loadingMessage = "Publicando notificación en tiempo real..."
                         )
                         notifyOperatorSaleDecisionCaseUse(confirmedRemoteSale, isSuccess)
                     }
@@ -185,15 +188,13 @@ class OperatorSalesViewModel(
                             "event=operator_pusher_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
                             error
                         )
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            loadingMessage = null,
-                            selectedSale = confirmedRemoteSale,
-                            error = error.message ?: "El servicio de notificaciones no pudo responder."
-                        )
-                        return@onSuccess
+                        realtimeWarning =
+                            "La venta quedó actualizada en el servidor, pero no se pudo notificar en tiempo real. " +
+                                "El cliente puede ver el cambio al sincronizar. (${error.message ?: "sin detalle"})"
                     }
-                    Log.i(TAG, "event=operator_pusher_success saleId=${confirmedRemoteSale.id}")
+                    if (notificationResult.isSuccess) {
+                        Log.i(TAG, "event=operator_pusher_success saleId=${confirmedRemoteSale.id}")
+                    }
 
                     val recordResult = runCatching {
                         _uiState.value = _uiState.value.copy(
@@ -208,25 +209,38 @@ class OperatorSalesViewModel(
                             "event=operator_local_record_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
                             error
                         )
+                        // El estado remoto ya es definitivo; el historial local es secundario.
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             loadingMessage = null,
                             selectedSale = confirmedRemoteSale,
-                            error = error.message ?: "No se pudo registrar la venta en el dispositivo."
+                            notice = if (isSuccess) {
+                                "Venta confirmada en servidor."
+                            } else {
+                                "Venta rechazada en servidor."
+                            },
+                            error = listOfNotNull(
+                                realtimeWarning,
+                                error.message ?: "No se pudo registrar la venta en el dispositivo."
+                            ).joinToString(" ")
                         )
+                        onDone()
                         return@onSuccess
                     }
                     Log.i(TAG, "event=operator_local_record_saved saleId=${confirmedRemoteSale.id} action=$action")
+
+                    val baseNotice = if (isSuccess) {
+                        "Venta confirmada y registrada correctamente."
+                    } else {
+                        "Venta rechazada y registrada correctamente."
+                    }
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         loadingMessage = null,
                         selectedSale = confirmedRemoteSale,
-                        notice = if (isSuccess) {
-                            "Venta confirmada, notificada y registrada correctamente."
-                        } else {
-                            "Venta rechazada, notificada y registrada correctamente."
-                        }
+                        notice = if (realtimeWarning == null) baseNotice else "$baseNotice $realtimeWarning",
+                        error = null
                     )
                     onDone()
                 }

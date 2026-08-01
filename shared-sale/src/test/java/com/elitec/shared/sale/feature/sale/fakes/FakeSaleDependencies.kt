@@ -20,11 +20,18 @@ class FakeSaleNotificationUserProvider(
     override suspend fun getCurrentUser(): Result<SaleNotifierUser> = result
 }
 
-class FakeTelegramNotificator : TelegramNotificator {
+class FakeTelegramNotificator(
+    private val shouldFail: Boolean = false
+) : TelegramNotificator {
     var notifiedSale: Sale? = null
     var notifiedUser: SaleNotifierUser? = null
+    var notifyCalls: Int = 0
 
     override suspend fun notify(sale: Sale, user: SaleNotifierUser) {
+        notifyCalls++
+        if (shouldFail) {
+            throw IllegalStateException("Telegram unavailable (test)")
+        }
         notifiedSale = sale
         notifiedUser = user
     }
