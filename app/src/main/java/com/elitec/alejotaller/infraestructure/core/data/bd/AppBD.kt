@@ -24,7 +24,7 @@ import com.elitec.shared.data.feature.sale.data.dto.SaleDto
         PromotionDto::class,
         CupExchangeLocalDto::class
     ],
-    version = 10,
+    version = 11,
 )
 @TypeConverters(
     DateTimeConverter::class,

@@ -80,10 +80,29 @@ object AppBDMigrations {
             db.execSQL("ALTER TABLE `SaleDto_new` RENAME TO `SaleDto`")
         }
     }
+
+    /** v9 → v10: salto de versión previo sin cambio de ProductDto documentado en repo. */
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Sin cambios estructurales requeridos entre 9 y 10 en el historial del monorepo.
+        }
+    }
+
+    /** v10 → v11: stock disponible (existence) en productos. */
+    val MIGRATION_10_11 = object : Migration(10, 11) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE ProductDto ADD COLUMN existence INTEGER NOT NULL DEFAULT 0"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
-        MIGRATION_8_9
+        MIGRATION_8_9,
+        MIGRATION_9_10,
+        MIGRATION_10_11
     )
 }

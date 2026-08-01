@@ -23,8 +23,13 @@ export function createProduct(product: Product): Product {
         throw new Error("The price cannot be negative")
     }
 
+    if (product.existence == null || Number.isNaN(product.existence) || product.existence < 0) {
+        throw new Error("Product existence (stock) cannot be negative")
+    }
+
     return {
         rating: 0.0,
-        ...product
+        ...product,
+        existence: Math.floor(product.existence)
     }
 }

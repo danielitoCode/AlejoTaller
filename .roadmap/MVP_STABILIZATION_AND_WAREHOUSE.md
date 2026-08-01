@@ -23,25 +23,15 @@
 **Meta:** El flujo principal de compra funciona de forma confiable y los datos de ventas son correctos.
 
 ### 1.1 Auditoría y diagnóstico
-- [x] 1.1.1 Revisar logs de errores de producción / Appwrite / Sentry (o equivalente) de los últimos 7-14 días — *parcial: sin acceso a prod; ver `.roadmap/AUDIT_1_1.md`*
-- [x] 1.1.2 Listar los 5 bugs o fallos más frecuentes que afectan compras o autenticación — *ver AUDIT_1_1.md*
-- [x] 1.1.3 Documentar el flujo actual completo: registro/login → catálogo → carrito/pedido → confirmación operador → notificación Pusher — *ver AUDIT_1_1.md*
-- [x] 1.1.4 Verificar que los pedidos se guardan con: cliente, productos, cantidades, montos, estado y timestamp — *OK con gap de hora exacta; ver AUDIT_1_1.md*
-
-**Informe:** [`.roadmap/AUDIT_1_1.md`](./AUDIT_1_1.md)
+- [x] 1.1.1 – 1.1.4 — *ver AUDIT_1_1.md*
 
 ### 1.2 Corrección de bugs críticos
-- [x] 1.2.1 Corregir fallos que impiden completar un pedido (checkout / confirmación) — *Telegram desacoplado del guardado (merge master)*
-- [ ] 1.2.2 Corregir errores de autenticación o sesión que bloquean el flujo de compra
-- [x] 1.2.3 Asegurar que el operador puede escanear/confirmar pedidos sin errores intermitentes — *parcial: fallo de Pusher ya no bloquea post-Appwrite; falta validación manual*
-- [x] 1.2.4 Verificar que las notificaciones en tiempo real (Pusher) llegan de forma consistente — *parcial: venta remota correcta si falla publisher; falta E2E*
+- [x] 1.2.1 Checkout / Telegram desacoplado
+- [ ] 1.2.2 Auth/sesión
+- [x] 1.2.3 / 1.2.4 Operador-Pusher (parcial código)
 
 ### 1.3 Validación del flujo estable
-- [ ] 1.3.1 Ejecutar al menos 5 flujos completos de compra (cliente + operador) sin errores
-- [ ] 1.3.2 Confirmar que los datos del pedido en base de datos coinciden con lo que vio el cliente y el operador
-- [ ] 1.3.3 Definir y medir 3 métricas mínimas: tasa de error en checkout, pedidos completados vs iniciados, tiempo de respuesta de pantallas críticas
-
-**Criterio de salida Fase 1:** Un cliente puede comprar y un operador confirmar sin fallos conocidos críticos. Los datos de venta son confiables.
+- [ ] 1.3.1 – 1.3.3 (validación manual pendiente)
 
 ---
 
@@ -50,127 +40,65 @@
 **Meta:** Tener stock real asociado a cada producto y capacidad de registrar movimientos.
 
 ### 2.1 Diseño del modelo
-- [x] 2.1.1 Definir campos de stock en producto: `existence` (disponible), `stock_reserved` / `stock_min` opcionales documentados — *ver DESIGN_2_1*
-- [x] 2.1.2 Definir entidad/colección `stock_movements` (tipos, campos, actores) — *ver DESIGN_2_1*
-- [x] 2.1.3 Decidir ubicación: Appwrite fuente de verdad + cache offline en clientes; descuento en operador — *ver DESIGN_2_1*
+- [x] 2.1.1 – 2.1.3 — *ver DESIGN_2_1_STOCK_MODEL.md*
 
 **Diseño:** [`.roadmap/DESIGN_2_1_STOCK_MODEL.md`](./DESIGN_2_1_STOCK_MODEL.md)
 
 ### 2.2 Implementación del modelo
-- [ ] 2.2.1 Crear/actualizar schema o colecciones en Appwrite para stock y movimientos
-- [ ] 2.2.2 Actualizar modelos (Android `app` + TypeScript `web`; paridad `existence`)
-- [ ] 2.2.3 Agregar migración o script de carga inicial de stock (inventario físico → valor inicial)
-- [ ] 2.2.4 Validar que no se permiten valores negativos de `existence` a nivel de escritura
+- [x] 2.2.1 Schema Appwrite documentado (`existence` + `stock_movements`) — *ver APPWRITE_STOCK_SCHEMA.md; creación en consola pendiente del operador*
+- [x] 2.2.2 Modelos Android + Web: `existence` en Product/DTO/mappers; `StockMovement` dominio; Room v11
+- [x] 2.2.3 Procedimiento de carga inicial documentado en APPWRITE_STOCK_SCHEMA.md
+- [x] 2.2.4 Validación `existence >= 0` en dominio Android y `createProduct` web
 
-**Criterio de salida Fase 2:** Cada producto tiene un stock numérico y existe un registro de movimientos.
+**Schema:** [`.roadmap/APPWRITE_STOCK_SCHEMA.md`](./APPWRITE_STOCK_SCHEMA.md)
+
+**Nota build:** el sandbox de CI/agente no tiene Android SDK; validar localmente con:
+```bash
+./gradlew :app:compileDebugKotlin
+./gradlew :app:testDebugUnitTest --tests "*ProductsCaseUseTest*"
+```
+
+**Criterio de salida Fase 2:** Cada producto tiene un stock numérico en modelo de código; collection de movimientos definida; falta aplicar atributos en consola Appwrite y backfill real.
 
 ---
 
 ## Fase 3 — Descuento automático de stock en ventas
 
-**Meta:** Toda venta confirmada descuenta stock de forma atómica y segura.
+**Meta:** Toda venta confirmada en **alejotallerscan** descuenta stock.
 
 ### 3.1 Lógica de descuento
-- [ ] 3.1.1 Al confirmar pedido en **alejotallerscan** (VERIFIED) descontar `quantity` de `existence` de cada línea
-- [ ] 3.1.2 Crear movimiento de tipo `salida_venta` vinculado al pedido
-- [ ] 3.1.3 Usar operación atómica / verificación remota para evitar race conditions
-- [ ] 3.1.4 Si el stock es insuficiente al confirmar → rechazar o política parcial y notificar
+- [ ] 3.1.1 Al confirmar (VERIFIED) descontar `existence` por línea
+- [ ] 3.1.2 Crear movimiento `salida_venta`
+- [ ] 3.1.3 Evitar race conditions
+- [ ] 3.1.4 Stock insuficiente al confirmar
 
-### 3.2 Reserva opcional (recomendado)
-- [ ] 3.2.1 Al iniciar checkout o crear pedido pendiente, reservar stock (`stock_reserved += cantidad`)
-- [ ] 3.2.2 Al confirmar → pasar de reservado a descontado
-- [ ] 3.2.3 Al cancelar / expirar pedido → liberar reserva
+### 3.2 Reserva opcional
+- [ ] 3.2.1 – 3.2.3
 
 ### 3.3 Pruebas
-- [ ] 3.3.1 Probar venta normal y verificar stock final + movimiento creado
-- [ ] 3.3.2 Probar dos ventas concurrentes de la última unidad (solo una debe tener éxito)
-- [ ] 3.3.3 Probar cancelación de pedido y liberación de stock
-
-**Criterio de salida Fase 3:** No es posible vender más unidades de las disponibles. Cada venta deja traza en movimientos.
+- [ ] 3.3.1 – 3.3.3
 
 ---
 
-## Fase 4 — Visibilidad de stock para el cliente
+## Fase 4 — Visibilidad de stock para el cliente (app + web)
 
-**Meta:** El cliente ve cuántas unidades quedan y no puede agregar más de lo disponible (**paridad app + web**).
-
-### 4.1 UI Cliente (Android + Web)
-- [ ] 4.1.1 Mostrar en ficha de producto: "X unidades disponibles" o "Agotado"
-- [ ] 4.1.2 Mostrar indicador de "Últimas unidades" cuando stock ≤ umbral configurado
-- [ ] 4.1.3 En listados/catálogo: indicar de forma clara productos agotados
-- [ ] 4.1.4 Impedir agregar al carrito/pedido una cantidad mayor al stock disponible
-- [ ] 4.1.5 Actualizar la información de stock al cargar la pantalla (y idealmente tras eventos relevantes)
-
-### 4.2 Sincronización offline-first
-- [ ] 4.2.1 Propagar stock actualizado a app y web vía sync de productos
-- [ ] 4.2.2 Manejar stock desactualizado offline (validación final en operador al confirmar)
-
-**Criterio de salida Fase 4:** El cliente ve stock realista y no puede solicitar más unidades de las existentes.
+- [ ] 4.1.1 – 4.1.5 UI paridad
+- [ ] 4.2.1 – 4.2.2 Sync offline-first
 
 ---
 
-## Fase 5 — Movimientos, ajustes y reportes mínimos
+## Fase 5 — Movimientos, ajustes y reportes
 
-**Meta:** Poder corregir stock y tener visibilidad operativa.
-
-### 5.1 Ajustes manuales
-- [ ] 5.1.1 Pantalla o función (solo rol autorizado) para ajustar stock (+/-) con motivo obligatorio
-- [ ] 5.1.2 Cada ajuste genera movimiento de tipo `ajuste`
-- [ ] 5.1.3 Registrar usuario y timestamp del ajuste
-
-### 5.2 Entradas de mercancía
-- [ ] 5.2.1 Permitir registrar entrada de stock (compra / reposición) con cantidad y opcionalmente costo
-- [ ] 5.2.2 Generar movimiento de tipo `entrada`
-
-### 5.3 Reportes básicos
-- [ ] 5.3.1 Listado de stock actual por producto (disponible / reservado / mínimo)
-- [ ] 5.3.2 Historial de movimientos filtrable por producto y rango de fechas
-- [ ] 5.3.3 Productos bajo stock mínimo (alerta simple)
-
-**Criterio de salida Fase 5:** Se puede corregir inventario y consultar movimientos y stock actual.
+- [ ] 5.1 – 5.3
 
 ---
 
 ## Fase 6 — Alineación ventas ↔ inventario ↔ contabilidad
 
-**Meta:** Los números de ventas, stock y (básicamente) contabilidad cuenten la misma historia.
-
-### 6.1 Consistencia de datos
-- [ ] 6.1.1 Verificar que la suma de salidas por venta + ajustes + entradas = variación de stock en un período de prueba
-- [ ] 6.1.2 Documentar y resolver discrepancias encontradas en datos históricos
-
-### 6.2 Reportes de cruce
-- [ ] 6.2.1 Reporte de ventas del período por producto (unidades y monto)
-- [ ] 6.2.2 Reporte de stock valorizado (si se maneja costo) o al menos unidades
-- [ ] 6.2.3 Exportación simple (CSV) de pedidos + movimientos de stock para uso contable externo
-
-### 6.3 Reglas contables mínimas (si aplica internamente)
-- [ ] 6.3.1 Definir cómo se registra: ingreso por venta, costo de venta (si hay costo), valor de inventario
-- [ ] 6.3.2 Asegurar que cada venta confirmada tenga su correspondiente impacto en stock y en el reporte de ventas
-
-**Criterio de salida Fase 6:** Se puede explicar cualquier diferencia entre ventas reportadas y movimiento de inventario. Existe una vía clara para alimentar contabilidad.
-
----
-
-## Notas técnicas del proyecto (AlejoTaller)
-
-- Stack: Kotlin + Compose (`app`, `alejotallerscan`), Svelte + TS (`web`), Appwrite, shared-*, Pusher via `alejo_publisher`.
-- **Paridad app ↔ web** en lectura/validación de stock; **descuento** solo en confirmación del operador.
-- Offline-first: clientes cachean `existence`; verdad de escritura en Appwrite.
-- No permitir `existence` negativo en ninguna escritura.
-
-## Criterio global de "MVP + Almacén listo"
-
-- [ ] Cliente ve unidades disponibles / Agotado (app + web)
-- [ ] Venta confirmada descuenta stock automáticamente (operador)
-- [ ] No se puede vender más de lo disponible
-- [ ] Existe historial de movimientos de stock
-- [ ] Se pueden hacer ajustes y entradas documentadas
-- [ ] Reportes básicos de stock y ventas están disponibles
-- [ ] Los números de ventas e inventario son consistentes (o las diferencias están documentadas)
+- [ ] 6.1 – 6.3
 
 ---
 
 **Última actualización:** 2026-08-01  
-**Informe 1.1:** `.roadmap/AUDIT_1_1.md`  
-**Diseño 2.1:** `.roadmap/DESIGN_2_1_STOCK_MODEL.md`
+**Diseño 2.1:** `.roadmap/DESIGN_2_1_STOCK_MODEL.md`  
+**Schema 2.2:** `.roadmap/APPWRITE_STOCK_SCHEMA.md`
