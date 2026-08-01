@@ -23,10 +23,12 @@
 **Meta:** El flujo principal de compra funciona de forma confiable y los datos de ventas son correctos.
 
 ### 1.1 Auditoría y diagnóstico
-- [ ] 1.1.1 Revisar logs de errores de producción / Appwrite / Sentry (o equivalente) de los últimos 7-14 días
-- [ ] 1.1.2 Listar los 5 bugs o fallos más frecuentes que afectan compras o autenticación
-- [ ] 1.1.3 Documentar el flujo actual completo: registro/login → catálogo → carrito/pedido → confirmación operador → notificación Pusher
-- [ ] 1.1.4 Verificar que los pedidos se guardan con: cliente, productos, cantidades, montos, estado y timestamp
+- [x] 1.1.1 Revisar logs de errores de producción / Appwrite / Sentry (o equivalente) de los últimos 7-14 días — *parcial: sin acceso a prod; ver `.roadmap/AUDIT_1_1.md`*
+- [x] 1.1.2 Listar los 5 bugs o fallos más frecuentes que afectan compras o autenticación — *ver AUDIT_1_1.md*
+- [x] 1.1.3 Documentar el flujo actual completo: registro/login → catálogo → carrito/pedido → confirmación operador → notificación Pusher — *ver AUDIT_1_1.md*
+- [x] 1.1.4 Verificar que los pedidos se guardan con: cliente, productos, cantidades, montos, estado y timestamp — *OK con gap de hora exacta; ver AUDIT_1_1.md*
+
+**Informe:** [`.roadmap/AUDIT_1_1.md`](./AUDIT_1_1.md)
 
 ### 1.2 Corrección de bugs críticos
 - [ ] 1.2.1 Corregir fallos que impiden completar un pedido (checkout / confirmación)
@@ -168,4 +170,4 @@
 ---
 
 **Última actualización:** 2026-08-01  
-**Rama de trabajo:** `roadmap/mvp-stabilization-warehouse`
+**Informe 1.1:** `.roadmap/AUDIT_1_1.md`
