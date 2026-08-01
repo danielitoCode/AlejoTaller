@@ -77,6 +77,8 @@ fun InternalNavigationWrapper(
     onNavigateBack: () -> Unit,
     onSessionClosed: () -> Unit = {},
     userId: String,
+    /** AUTH_POLICY: true when session is visitor / anonymous Appwrite */
+    isGuest: Boolean = false,
     pendingReservationId: String? = null,
     pendingProductId: String? = null,
     onPendingReservationConsumed: () -> Unit = {},
@@ -119,8 +121,9 @@ fun InternalNavigationWrapper(
     val sales by saleViewModel.salesFlow.collectAsStateWithLifecycle()
     val promotions by promotionViewModel.promotionsFlow.collectAsStateWithLifecycle()
 
-    val pendingSaleIds = remember(userId, sales) {
-        sales
+    val pendingSaleIds = remember(userId, sales, isGuest) {
+        if (isGuest) emptySet()
+        else sales
             .asSequence()
             .filter { sale ->
                 sale.userId == userId && sale.verified == BuyState.UNVERIFIED
@@ -130,7 +133,8 @@ fun InternalNavigationWrapper(
     }
     val hasPendingSales = pendingSaleIds.isNotEmpty()
     val productsHydrated = hasAttemptedProductHydration || products.isNotEmpty()
-    val profileHydrated = hasAttemptedProfileHydration || profileInfo != null
+    // AUTH_POLICY: visitors do not require a clear profile to enter the shell
+    val profileHydrated = isGuest || hasAttemptedProfileHydration || profileInfo != null
 
     LaunchedEffect(userId, productsHydrated) {
         if (productsHydrated) {
@@ -153,7 +157,12 @@ fun InternalNavigationWrapper(
         )
     }
 
-    LaunchedEffect(userId, profileInfo) {
+    LaunchedEffect(userId, profileInfo, isGuest) {
+        if (isGuest) {
+            // Visitors: mark hydrated without requiring clear profile; do not bounce to Landing
+            hasAttemptedProfileHydration = true
+            return@LaunchedEffect
+        }
         if (profileInfo != null) {
             hasAttemptedProfileHydration = true
             return@LaunchedEffect
@@ -171,16 +180,17 @@ fun InternalNavigationWrapper(
         )
     }
 
-    LaunchedEffect(userId) {
-        if (userId.isNotBlank() && !hasPerformedInitialSaleSync) {
+    // AUTH_POLICY: no private sale sync for visitors
+    LaunchedEffect(userId, isGuest) {
+        if (!isGuest && userId.isNotBlank() && !hasPerformedInitialSaleSync) {
             hasPerformedInitialSaleSync = true
             saleViewModel.sync(userId)
         }
     }
 
-    LaunchedEffect(connectionAvailable, userId) {
+    LaunchedEffect(connectionAvailable, userId, isGuest) {
         val connectionRecovered = !lastKnownConnectionAvailable && connectionAvailable
-        if (connectionRecovered && userId.isNotBlank()) {
+        if (connectionRecovered && userId.isNotBlank() && !isGuest) {
             saleViewModel.sync(userId)
             profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
         }
@@ -188,11 +198,13 @@ fun InternalNavigationWrapper(
     }
 
     LaunchedEffect(userId, pendingSaleIds) {
-        realtimeSyncViewModel.updateSubscriptionScope(userId = userId, pendingSaleIds = pendingSaleIds)
+        if (!isGuest) {
+            realtimeSyncViewModel.updateSubscriptionScope(userId = userId, pendingSaleIds = pendingSaleIds)
+        }
     }
 
     LaunchedEffect(pendingReservationId) {
-        if (!pendingReservationId.isNullOrBlank()) {
+        if (!pendingReservationId.isNullOrBlank() && !isGuest) {
             targetReservationId = pendingReservationId
         }
     }
@@ -203,7 +215,8 @@ fun InternalNavigationWrapper(
         }
     }
 
-    LaunchedEffect(targetReservationId, sales) {
+    LaunchedEffect(targetReservationId, sales, isGuest) {
+        if (isGuest) return@LaunchedEffect
         val reservationId = targetReservationId ?: return@LaunchedEffect
         if (sales.any { it.id == reservationId && it.userId == userId }) {
             if (backStack.lastOrNull() !is InternalRoutesKey.BuyReservation) {
@@ -223,7 +236,11 @@ fun InternalNavigationWrapper(
         }
     }
 
-    LaunchedEffect(hasPendingSales) {
+    LaunchedEffect(hasPendingSales, isGuest) {
+        if (isGuest) {
+            realtimeSyncViewModel.stopRealtimeSync()
+            return@LaunchedEffect
+        }
         if (hasPendingSales) {
             realtimeSyncViewModel.startRealtimeSync()
         } else {
@@ -240,7 +257,7 @@ fun InternalNavigationWrapper(
         }
     }
 
-    val fabItems = listOf(
+    val allFabItems = listOf(
         FabMenuItem("Productos", Icons.Default.GifBox, InternalRoutesKey.Home),
         FabMenuItem("Su Compra", Icons.Default.ShoppingCart, InternalRoutesKey.Buy),
         FabMenuItem("Reservas", Icons.Default.QrCode, InternalRoutesKey.BuyReservation),
@@ -248,15 +265,29 @@ fun InternalNavigationWrapper(
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
         FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
     )
+    // AUTH_POLICY: visitors only see catalog (productos). Protected destinations stay hidden.
+    val fabItems = if (isGuest) {
+        allFabItems.filter { it.route == InternalRoutesKey.Home }
+    } else {
+        allFabItems
+    }
 
-    val showShellLoading = !productsHydrated || !profileHydrated || profileInfo == null
+    // AUTH_POLICY: guests only wait for products; authenticated still need profile
+    val showShellLoading = if (isGuest) {
+        !productsHydrated
+    } else {
+        !productsHydrated || !profileHydrated || profileInfo == null
+    }
 
     if (showShellLoading) {
         InternalShellShimmer(modifier = modifier)
         return
     }
 
-    profileInfo?.let { info ->
+    // For guests profileInfo may be null — still render catalog shell
+    val canRenderShell = isGuest || profileInfo != null
+
+    if (canRenderShell) {
         NavDisplay(
             modifier = modifier.fillMaxSize(),
             backStack = backStack,
@@ -332,7 +363,14 @@ fun InternalNavigationWrapper(
                             showTopBar = layoutSpec.showTopBarInDetail,
                             onBackClick = { backStack.navigateBack() },
                             onAddToCartClick = {
-                                shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
+                                if (isGuest) {
+                                    toasterViewModel.showMessage(
+                                        "Inicia sesión para agregar al carrito",
+                                        ToastType.Warning
+                                    )
+                                } else {
+                                    shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
+                                }
                             }
                         )
                     } else {
@@ -341,14 +379,16 @@ fun InternalNavigationWrapper(
                 }
                 entry<InternalRoutesKey.Profile> {
                     ProfileScreen(
-                        profileName = profileInfo?.name ?: "Usuario",
-                        profileEmail = profileInfo?.email ?: "Sin correo",
+                        profileName = profileInfo?.name ?: if (isGuest) "Visitante" else "Usuario",
+                        profileEmail = profileInfo?.email ?: if (isGuest) "Sin cuenta" else "Sin correo",
                         userId = userId,
                         profilePhone = profileInfo?.userProfile?.phone,
                         profilePhotoUrl = profileInfo?.userProfile?.photoUrl,
                         navigateBack = { backStack.navigateBack() },
                         onEditProfile = {
-                            profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
+                            if (!isGuest) {
+                                profileViewModel.getAccountInfo(onGetInfo = {}, onFail = {})
+                            }
                         },
                         isGoogleUser = profileInfo?.userProfile?.sub?.isNotBlank() == true,
                         modifier = Modifier.fillMaxSize()
@@ -526,7 +566,7 @@ fun InternalNavigationWrapper(
 
     FloatingActionButtonMenu(
         items = fabItems,
-        shopCartItemsCount = cartItems.size,
+        shopCartItemsCount = if (isGuest) 0 else cartItems.size,
         onNavigate = { route -> backStack.navigateTo(route) },
         onLogout = {
             realtimeSyncViewModel.stopRealtimeSync()
