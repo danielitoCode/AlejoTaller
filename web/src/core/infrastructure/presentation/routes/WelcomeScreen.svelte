@@ -10,6 +10,7 @@
   import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
   import { authFlowStore } from "../../../feature/auth/presentation/viewmodel/auth-flow.store";
   import { consumePendingDeepLink } from "../navigation/pending-deeplink.store";
+  import { markWelcomeCompleted } from "../navigation/first-visit";
 
   export let navController: NavController
 
@@ -43,6 +44,17 @@
     window.location.href = url;
   }
 
+  function goToLogin() {
+    // Marking here so that even if they abandon login, next cold start goes to products
+    markWelcomeCompleted();
+    navController.navigate("login");
+  }
+
+  function goToRegister() {
+    markWelcomeCompleted();
+    navController.navigate("register");
+  }
+
   async function continueAsGuest() {
     try {
       try {
@@ -57,6 +69,7 @@
         email: null,
         provider: "guest"
       });
+      markWelcomeCompleted();
       const pendingHash = consumePendingDeepLink();
       if (pendingHash && typeof window !== "undefined") {
         window.history.replaceState({}, "", pendingHash);
@@ -146,13 +159,13 @@
               <p class="actions-support">Gestiona productos, mensajes y ventas desde una interfaz clara y directa.</p>
             </div>
             <div class="actions-stack">
-              <Button variant="filled" size="m" onclick={() => navController.navigate("login") }>
+              <Button variant="filled" size="m" onclick={goToLogin}>
                 <span class="btn-content">
                   <span>Iniciar sesion</span>
                   <ArrowRight size={18} />
                 </span>
               </Button>
-              <Button variant="text" size="m" onclick={() => navController.navigate("register") }>
+              <Button variant="text" size="m" onclick={goToRegister}>
                 <span class="btn-content">
                   <UserRoundPlus size={18} />
                   <span>Crear cuenta</span>

@@ -12,6 +12,7 @@
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { getCapturedHash, getCapturedParsedDeeplink, isProductDeeplinkCaptured } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
     import { logNavAuthCheck, logNavRoute, logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
+    import { hasCompletedWelcome, markWelcomeCompleted } from "../../../../infrastructure/presentation/navigation/first-visit";
 
     import {
         getStoredAdminChoice,
@@ -34,7 +35,14 @@
         return parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId);
     }
 
+    /** Any actionable deeplink into the authenticated shell (home/*). */
+    function isHomeDeepLink(hash: string): boolean {
+        const parsed = parseDeepLinkHash(hash);
+        return parsed?.top === "home";
+    }
+
     function continueAsClient(user: any) {
+        markWelcomeCompleted();
         const pendingHash = consumePendingDeepLink();
         if (pendingHash && typeof window !== "undefined") {
             window.history.replaceState({}, "", pendingHash);
@@ -59,6 +67,7 @@
                 email: null,
                 provider: "guest"
             });
+            markWelcomeCompleted();
             const pendingHash = consumePendingDeepLink();
             if (pendingHash && typeof window !== "undefined") {
                 if (import.meta.env.DEV) {
@@ -101,15 +110,25 @@
         }
     }
 
+    function saveHomeDeepLinkIfPresent() {
+        if (typeof window === "undefined") return;
+        const raw = capturedHash ?? window.location.hash;
+        if (isHomeDeepLink(raw)) {
+            rememberPendingDeepLink(raw);
+        }
+    }
+
     onMount(async () => {
         // Source of truth for the deep-link we need to process on cold-boot
         const hashToCheck = capturedHash ?? window.location.hash;
+        const hasDeeplink = isHomeDeepLink(hashToCheck);
+        const returningVisitor = hasCompletedWelcome();
+
         if (import.meta.env.DEV) {
-            const hasDeeplink = isProductDeepLink(hashToCheck);
             logNavAuthCheck(
                 false,
                 get(sessionStore).isGuest,
-                hasDeeplink ? "auto-guest" : "redirect-welcome"
+                hasDeeplink ? "deeplink" : returningVisitor ? "returning-direct-home" : "first-visit-welcome"
             );
         }
         try {
@@ -128,23 +147,27 @@
                     return;
                 }
             }
-            // Guest without a product deep-link → go to WelcomeScreen so they can log in properly
-            if (get(sessionStore).isGuest && !isProductDeepLink(hashToCheck)) {
-                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "guest-no-deeplink" });
-                navController.resetTo("welcome");
-                return;
-            }
-            // Remember the product deeplink before navigating home
-            if (isProductDeepLink(hashToCheck)) {
-                saveProductDeepLinkIfPresent();
+
+            // Authenticated (or known guest session from Appwrite):
+            // - Deeplink → preserve and go home
+            // - Otherwise → home (products). Never force Welcome for returning auth users.
+            if (hasDeeplink) {
+                saveHomeDeepLinkIfPresent();
             }
             continueAsClient(user);
         } catch {
-            if (isProductDeepLink(hashToCheck)) {
-                saveProductDeepLinkIfPresent();
+            // No session
+            if (hasDeeplink) {
+                // Deeplink always skips Welcome and goes straight to content
+                saveHomeDeepLinkIfPresent();
+                await autoCreateGuestSession();
+            } else if (returningVisitor) {
+                // Returning visitor without session → auto guest → products
+                if (import.meta.env.DEV) logNavRoute("home", { reason: "returning-visitor-auto-guest" });
                 await autoCreateGuestSession();
             } else {
-                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "catch-no-deeplink" });
+                // First visit, no deeplink → short Welcome / onboarding
+                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "first-visit-no-deeplink" });
                 navController.resetTo("welcome");
             }
         } finally {
