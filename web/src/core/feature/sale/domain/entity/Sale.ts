@@ -1,4 +1,4 @@
-import {type BuyState, Currency, DeliveryType} from "./enums";
+import {type BuyState, Currency, DeliveryType, type SaleType} from "./enums";
 
 export interface Sale {
     id: string
@@ -10,13 +10,20 @@ export interface Sale {
     userId: string
     deliveryType?: DeliveryType | null
     deliveryAddress?: DeliveryAddress | null
+    /** SALE_POLICY: null mientras UNVERIFIED; obligatorio en VERIFIED */
+    saleType?: SaleType | null
 }
 
 export interface SaleItem {
     productId: string
     productName?: string | null
     quantity: number
-    price: number
+    /** Precio unitario efectivo (lista, descuento o 0 si GIFT) */
+    unitPrice?: number | null
+    /** Precio de lista al momento (auditoría) */
+    listUnitPrice?: number | null
+    /** @deprecated prefer unitPrice; mantenido por compat con payloads antiguos */
+    price?: number
 }
 
 export interface DeliveryAddress {
@@ -28,5 +35,3 @@ export interface DeliveryAddress {
     houseNumber: string
     referenceName?: string | null
 }
-
-
