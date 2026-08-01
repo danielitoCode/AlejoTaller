@@ -7,10 +7,12 @@ import com.elitec.alejotaller.data.fakesRepositories.FakeSessionManager
 import com.elitec.alejotaller.data.fakesRepositories.defaultUser
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.GetCurrentUserInfoCaseUse
+import com.elitec.alejotaller.feature.auth.domain.caseuse.ResolveStartupSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserNameUseCase
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPassCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhoneCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
+import com.elitec.alejotaller.feature.auth.domain.ports.FirstVisitStore
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -19,6 +21,13 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+
+private class TestFirstVisitStore : FirstVisitStore {
+    var visited = false
+    override fun hasCompletedWelcome() = visited
+    override fun markWelcomeCompleted() { visited = true }
+    override fun clear() { visited = false }
+}
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ProfileViewModelTest {
@@ -97,5 +106,10 @@ class ProfileViewModelTest {
         updateNameCaseUse = UpdateUserNameUseCase(accountRepository),
         updateUserPassCaseUse = UpdateUserPassCaseUse(accountRepository),
         updatePhoneCaseUse = UpdateUserPhoneCaseUse(accountRepository),
+        resolveStartupSession = ResolveStartupSessionCaseUse(
+            getCurrentUserInfo = GetCurrentUserInfoCaseUse(accountRepository),
+            sessionManager = sessionManager,
+            firstVisitStore = TestFirstVisitStore()
+        )
     )
 }
