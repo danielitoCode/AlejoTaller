@@ -10,9 +10,14 @@
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
-    import { getCapturedHash, getCapturedParsedDeeplink, isProductDeeplinkCaptured } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
-    import { logNavAuthCheck, logNavRoute, logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
+    import { getCapturedHash, getCapturedParsedDeeplink } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
+    import { logNavAuthCheck, logNavRoute, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
     import { hasCompletedWelcome, markWelcomeCompleted } from "../../../../infrastructure/presentation/navigation/first-visit";
+    import {
+        classifySessionMode,
+        hasClearAuthenticatedProfile,
+        resolveUserId
+    } from "../util/profile-classification";
 
     import {
         getStoredAdminChoice,
@@ -28,31 +33,63 @@
     let redirecting = false;
     /** The hash captured before Svelte could touch it, used on cold boot */
     const capturedHash = getCapturedHash();
-    const capturedParsed = getCapturedParsedDeeplink();
 
-    function isProductDeepLink(hash: string): boolean {
-        const parsed = parseDeepLinkHash(hash);
-        return parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId);
-    }
-
-    /** Any actionable deeplink into the authenticated shell (home/*). */
+    /** Any actionable deeplink into the shell (home/*). */
     function isHomeDeepLink(hash: string): boolean {
         const parsed = parseDeepLinkHash(hash);
         return parsed?.top === "home";
     }
 
-    function continueAsClient(user: any) {
-        markWelcomeCompleted();
+    function applyPendingDeepLink() {
         const pendingHash = consumePendingDeepLink();
         if (pendingHash && typeof window !== "undefined") {
             window.history.replaceState({}, "", pendingHash);
         }
+        return pendingHash;
+    }
+
+    /** Clear authenticated client → home with full privileges */
+    function continueAsAuthenticatedClient(user: any) {
+        sessionStore.setAuthenticatedSession();
+        const userId = resolveUserId(user);
+        authFlowStore.setSuccess({
+            userId,
+            email: typeof user?.email === "string" ? user.email : null,
+            provider: "password"
+        });
+        markWelcomeCompleted();
+        const pendingHash = applyPendingDeepLink();
         if (import.meta.env.DEV) {
             logNavAuthCheck(true, false, "continue");
             const parsed = parseDeepLinkHash(pendingHash || window.location.hash);
-            logNavRoute("home", { id: user.id ?? user.$id, productId: parsed?.args?.productId });
+            logNavRoute("home", { id: userId, productId: parsed?.args?.productId, mode: "authenticated" });
         }
-        navController.resetTo("home", { id: user.id ?? user.$id });
+        navController.resetTo("home", { id: userId ?? undefined });
+    }
+
+    /**
+     * Visitor path: mark local guest flag + guest provider.
+     * Reuses existing anonymous Appwrite session when possible (caller already has user).
+     */
+    function continueAsVisitor(user?: any) {
+        sessionStore.setGuestSession();
+        const userId = resolveUserId(user);
+        authFlowStore.setSuccess({
+            userId,
+            email: null,
+            provider: "guest"
+        });
+        markWelcomeCompleted();
+        const pendingHash = applyPendingDeepLink();
+        if (import.meta.env.DEV) {
+            logNavAuthCheck(false, true, "continue");
+            logNavRoute("home", {
+                id: userId,
+                productId: parseDeepLinkHash(pendingHash || window.location.hash)?.args?.productId,
+                mode: "visitor"
+            });
+        }
+        navController.resetTo("home", userId ? { id: userId } : undefined);
     }
 
     async function autoCreateGuestSession() {
@@ -68,12 +105,9 @@
                 provider: "guest"
             });
             markWelcomeCompleted();
-            const pendingHash = consumePendingDeepLink();
-            if (pendingHash && typeof window !== "undefined") {
-                if (import.meta.env.DEV) {
-                    logNavRoute("home", { productId: parseDeepLinkHash(pendingHash)?.args?.productId });
-                }
-                window.history.replaceState({}, "", pendingHash);
+            const pendingHash = applyPendingDeepLink();
+            if (pendingHash && import.meta.env.DEV) {
+                logNavRoute("home", { productId: parseDeepLinkHash(pendingHash)?.args?.productId, mode: "visitor" });
             }
             navController.resetTo("home");
         } catch (e) {
@@ -85,7 +119,7 @@
     async function chooseClient() {
         if (!adminUser) return;
         rememberAdminChoice("client");
-        continueAsClient(adminUser);
+        continueAsAuthenticatedClient(adminUser);
     }
 
     async function chooseAdmin() {
@@ -99,17 +133,6 @@
         }
     }
 
-    /** Store the captured (or current) product deeplink so it survives navigation */
-    function saveProductDeepLinkIfPresent() {
-        if (typeof window === "undefined") return;
-        // Prefer the captured hash if it exists, otherwise use the current hash
-        const raw = capturedHash ?? window.location.hash;
-        const parsed = parseDeepLinkHash(raw);
-        if (parsed?.top === "home" && (parsed.nested === "product-detail" || !!parsed.args?.productId)) {
-            rememberPendingDeepLink(raw);
-        }
-    }
-
     function saveHomeDeepLinkIfPresent() {
         if (typeof window === "undefined") return;
         const raw = capturedHash ?? window.location.hash;
@@ -119,7 +142,6 @@
     }
 
     onMount(async () => {
-        // Source of truth for the deep-link we need to process on cold-boot
         const hashToCheck = capturedHash ?? window.location.hash;
         const hasDeeplink = isHomeDeepLink(hashToCheck);
         const returningVisitor = hasCompletedWelcome();
@@ -134,7 +156,10 @@
         try {
             await exchangeStore.refreshForSplash();
             const user = await authContainer.useCases.accounts.getCurrentUser();
-            if (shouldOfferAdminChoice(user)) {
+            const mode = classifySessionMode(user);
+
+            // Only offer admin choice for CLEAR authenticated admin profiles
+            if (mode === "authenticated" && shouldOfferAdminChoice(user)) {
                 const choice = getStoredAdminChoice();
                 if (choice === "admin") {
                     if (import.meta.env.DEV) logNavRoute("admin");
@@ -148,25 +173,29 @@
                 }
             }
 
-            // Authenticated (or known guest session from Appwrite):
-            // - Deeplink → preserve and go home
-            // - Otherwise → home (products). Never force Welcome for returning auth users.
             if (hasDeeplink) {
                 saveHomeDeepLinkIfPresent();
             }
-            continueAsClient(user);
+
+            // POLICY: unclear / anonymous / empty-email profile → visitor
+            if (mode === "visitor" || !hasClearAuthenticatedProfile(user)) {
+                if (import.meta.env.DEV) {
+                    logNavRoute("home", { reason: "unclear-profile-as-visitor", email: user?.email ?? null });
+                }
+                continueAsVisitor(user);
+                return;
+            }
+
+            continueAsAuthenticatedClient(user);
         } catch {
-            // No session
+            // No Appwrite session at all
             if (hasDeeplink) {
-                // Deeplink always skips Welcome and goes straight to content
                 saveHomeDeepLinkIfPresent();
                 await autoCreateGuestSession();
             } else if (returningVisitor) {
-                // Returning visitor without session → auto guest → products
                 if (import.meta.env.DEV) logNavRoute("home", { reason: "returning-visitor-auto-guest" });
                 await autoCreateGuestSession();
             } else {
-                // First visit, no deeplink → short Welcome / onboarding
                 if (import.meta.env.DEV) logNavRoute("welcome", { reason: "first-visit-no-deeplink" });
                 navController.resetTo("welcome");
             }
