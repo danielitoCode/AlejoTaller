@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,14 +18,15 @@ import androidx.compose.ui.unit.dp
 // TestTag
 const val NAVIGATE_TO_LOGIN_BUTTON = "NAVIGATE_TO_LOGIN_BUTTON"
 const val NAVIGATE_TO_REGISTER_BUTTON = "NAVIGATE_TO_REGISTER_BUTTON"
+const val NAVIGATE_AS_GUEST_BUTTON = "NAVIGATE_AS_GUEST_BUTTON"
+
 @Composable
 fun LandingButtons(
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit,
-    onSignUpClick: () -> Unit
+    onSignUpClick: () -> Unit,
+    onExploreAsGuestClick: (() -> Unit)? = null
 ) {
-    val colors = MaterialTheme.colorScheme
-
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -48,6 +50,18 @@ fun LandingButtons(
             shape = RoundedCornerShape(16.dp)
         ) {
             Text(text = "Crear cuenta")
+        }
+        if (onExploreAsGuestClick != null) {
+            OutlinedButton(
+                onClick = onExploreAsGuestClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp)
+                    .testTag(NAVIGATE_AS_GUEST_BUTTON),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Text(text = "Explorar como visitante")
+            }
         }
     }
 }

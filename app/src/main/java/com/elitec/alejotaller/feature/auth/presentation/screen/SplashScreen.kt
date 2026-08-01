@@ -25,8 +25,10 @@ import org.koin.androidx.compose.koinViewModel
 @Suppress("LambdaParameterInEffect")
 @Composable
 fun SplashScreen(
-    onUserAuth: (String) -> Unit,
-    onUserNotAuth: () -> Unit,
+    onAuthenticated: (String) -> Unit,
+    onVisitor: (String) -> Unit,
+    onWelcome: () -> Unit,
+    hasProductDeeplink: Boolean = false,
     profileViewModel: ProfileViewModel = koinViewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -37,11 +39,11 @@ fun SplashScreen(
             return@LaunchedEffect
         }
         hasRequestedSessionCheck = true
-        profileViewModel.getAccountInfo(
-            onGetInfo = { userId ->
-                onUserAuth(userId)
-            },
-            onFail = { onUserNotAuth() }
+        profileViewModel.resolveStartup(
+            hasProductDeeplink = hasProductDeeplink,
+            onAuthenticated = onAuthenticated,
+            onVisitor = onVisitor,
+            onWelcome = onWelcome
         )
     }
     SplashScreenContent(

@@ -58,7 +58,7 @@ class ResolveStartupSessionCaseUseTest {
 
     @Test
     fun noSession_firstVisit_showsWelcome() = runTest {
-        val account = FakeAccountRepository(getError = IllegalStateException("no session"))
+        val account = FakeAccountRepository(getCurrentUserError = IllegalStateException("no session"))
         val firstVisit = InMemoryFirstVisitStore(visited = false)
         val result = useCase(account = account, firstVisit = firstVisit)()
         assertEquals(ResolveStartupSessionCaseUse.Outcome.ShowWelcome, result)
@@ -66,7 +66,7 @@ class ResolveStartupSessionCaseUseTest {
 
     @Test
     fun noSession_returning_opensAnonymousVisitor() = runTest {
-        val account = FakeAccountRepository(getError = IllegalStateException("no session"))
+        val account = FakeAccountRepository(getCurrentUserError = IllegalStateException("no session"))
         val session = FakeSessionManager(openedSessionId = "guest-99")
         val firstVisit = InMemoryFirstVisitStore(visited = true)
         val result = useCase(account = account, session = session, firstVisit = firstVisit)()
@@ -77,7 +77,7 @@ class ResolveStartupSessionCaseUseTest {
 
     @Test
     fun noSession_deeplink_opensAnonymousVisitor() = runTest {
-        val account = FakeAccountRepository(getError = IllegalStateException("no session"))
+        val account = FakeAccountRepository(getCurrentUserError = IllegalStateException("no session"))
         val session = FakeSessionManager(openedSessionId = "guest-deeplink")
         val firstVisit = InMemoryFirstVisitStore(visited = false)
         val result = useCase(account = account, session = session, firstVisit = firstVisit)(

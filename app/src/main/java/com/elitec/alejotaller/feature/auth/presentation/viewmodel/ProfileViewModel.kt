@@ -9,11 +9,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.elitec.alejotaller.feature.auth.domain.caseuse.CloseSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.GetCurrentUserInfoCaseUse
+import com.elitec.alejotaller.feature.auth.domain.caseuse.ResolveStartupSessionCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserNameUseCase
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPassCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhoneCaseUse
 import com.elitec.alejotaller.feature.auth.domain.caseuse.UpdateUserPhotoUrlCaseUse
 import com.elitec.alejotaller.feature.auth.domain.entity.User
+import com.elitec.alejotaller.feature.auth.domain.ports.FirstVisitStore
 import com.elitec.alejotaller.feature.auth.presentation.uiStates.ProfileUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +31,7 @@ class ProfileViewModel(
     private val updateNameCaseUse: UpdateUserNameUseCase,
     private val updateUserPassCaseUse: UpdateUserPassCaseUse,
     private val updatePhoneCaseUse: UpdateUserPhoneCaseUse,
+    private val resolveStartupSession: ResolveStartupSessionCaseUse
 ) : ViewModel() {
     private var _userProfile = MutableStateFlow<User?>(null)
     val userProfile get() = _userProfile.asStateFlow()
@@ -38,6 +41,27 @@ class ProfileViewModel(
 
     fun clearMessages() {
         _uiState.update { it.copy(saveMessage = null, errorMessage = null) }
+    }
+
+    /**
+     * AUTH_POLICY startup: authenticated | visitor | welcome.
+     */
+    fun resolveStartup(
+        hasProductDeeplink: Boolean = false,
+        onAuthenticated: (userId: String) -> Unit,
+        onVisitor: (userId: String) -> Unit,
+        onWelcome: () -> Unit
+    ) {
+        viewModelScope.launch {
+            when (val outcome = resolveStartupSession(hasProductDeeplink)) {
+                is ResolveStartupSessionCaseUse.Outcome.Authenticated ->
+                    onAuthenticated(outcome.userId)
+                is ResolveStartupSessionCaseUse.Outcome.Visitor ->
+                    onVisitor(outcome.userId)
+                ResolveStartupSessionCaseUse.Outcome.ShowWelcome ->
+                    onWelcome()
+            }
+        }
     }
 
     fun updateProfile(

@@ -18,7 +18,9 @@ sealed class MainRoutesKey: NavKey {
     data class MainHome(
         val userId: String,
         val pendingReservationId: String? = null,
-        val pendingProductId: String? = null
+        val pendingProductId: String? = null,
+        /** AUTH_POLICY: true when session is visitor / anonymous */
+        val isGuest: Boolean = false
     ): MainRoutesKey()
 
     @Serializable

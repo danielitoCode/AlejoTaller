@@ -36,10 +36,10 @@ import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMod
 fun LandScreen(
     modifier: Modifier = Modifier,
     onSignInClick: () -> Unit = {},
-    onSignUpClick: () -> Unit = {}
+    onSignUpClick: () -> Unit = {},
+    onExploreAsGuestClick: (() -> Unit)? = null
 ) {
     val deviceMode = LocalConfiguration.current.toDeviceMode()
-
 
     val transition = rememberInfiniteTransition(label = "landing")
     val glowAlpha by transition.animateFloat(
@@ -78,6 +78,7 @@ fun LandScreen(
                 LandingButtons(
                     onSignInClick = onSignInClick,
                     onSignUpClick = onSignUpClick,
+                    onExploreAsGuestClick = onExploreAsGuestClick,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -93,6 +94,7 @@ fun LandScreen(
                 LandingButtons(
                     onSignInClick = onSignInClick,
                     onSignUpClick = onSignUpClick,
+                    onExploreAsGuestClick = onExploreAsGuestClick,
                     modifier = Modifier.width(300.dp)
                 )
             }

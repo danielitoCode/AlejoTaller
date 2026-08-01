@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,6 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.elitec.alejotaller.feature.auth.domain.caseuse.ResolveStartupSessionCaseUse
+import com.elitec.alejotaller.feature.auth.domain.ports.FirstVisitStore
 import com.elitec.alejotaller.feature.auth.presentation.screen.LoginScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.RegisterScreen
 import com.elitec.alejotaller.feature.auth.presentation.screen.SplashScreen
@@ -41,6 +44,9 @@ import com.elitec.alejotaller.infraestructure.core.presentation.extents.navigate
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.DetailScreen
 import com.elitec.alejotaller.infraestructure.core.presentation.screens.LandScreen
 import dev.tmapps.konnection.Konnection
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import org.koin.compose.koinInject
 
 @Composable
 fun MainNavigationWrapper(
@@ -53,12 +59,26 @@ fun MainNavigationWrapper(
     val connectionStatus by Konnection.instance.observeHasConnection().collectAsStateWithLifecycle(true)
     var lastHandledPendingReservationId by rememberSaveable { mutableStateOf<String?>(null) }
     var lastHandledPendingProductId by rememberSaveable { mutableStateOf<String?>(null) }
+    val resolveStartupSession: ResolveStartupSessionCaseUse = koinInject()
+    val firstVisitStore: FirstVisitStore = koinInject()
+    val scope = rememberCoroutineScope()
 
     fun resetRoot(destination: MainRoutesKey) {
         while (backStack.isNotEmpty()) {
             backStack.removeLastOrNull()
         }
         backStack.navigateTo(destination)
+    }
+
+    fun goHome(userId: String, isGuest: Boolean) {
+        resetRoot(
+            MainRoutesKey.MainHome(
+                userId = userId,
+                pendingReservationId = pendingReservationId,
+                pendingProductId = pendingProductId,
+                isGuest = isGuest
+            )
+        )
     }
 
     LaunchedEffect(pendingReservationId) {
@@ -74,7 +94,8 @@ fun MainNavigationWrapper(
                 MainRoutesKey.MainHome(
                     userId = current.userId,
                     pendingReservationId = pendingReservationId,
-                    pendingProductId = current.pendingProductId
+                    pendingProductId = current.pendingProductId,
+                    isGuest = current.isGuest
                 )
             )
         }
@@ -93,7 +114,8 @@ fun MainNavigationWrapper(
                 MainRoutesKey.MainHome(
                     userId = current.userId,
                     pendingReservationId = current.pendingReservationId,
-                    pendingProductId = pendingProductId
+                    pendingProductId = pendingProductId,
+                    isGuest = current.isGuest
                 )
             )
         }
@@ -136,12 +158,10 @@ fun MainNavigationWrapper(
             entryProvider = entryProvider {
                 entry<MainRoutesKey.Splash> {
                     SplashScreen(
-                        onUserAuth = { userId ->
-                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId, pendingProductId))
-                        },
-                        onUserNotAuth = {
-                            resetRoot(MainRoutesKey.Landing)
-                        },
+                        hasProductDeeplink = !pendingProductId.isNullOrBlank(),
+                        onAuthenticated = { userId -> goHome(userId, isGuest = false) },
+                        onVisitor = { userId -> goHome(userId, isGuest = true) },
+                        onWelcome = { resetRoot(MainRoutesKey.Landing) },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -155,6 +175,7 @@ fun MainNavigationWrapper(
                             resetRoot(MainRoutesKey.Landing)
                         },
                         userId = key.userId,
+                        isGuest = key.isGuest,
                         pendingReservationId = key.pendingReservationId,
                         pendingProductId = key.pendingProductId,
                         onPendingReservationConsumed = onPendingReservationConsumed,
@@ -165,8 +186,29 @@ fun MainNavigationWrapper(
                 entry<MainRoutesKey.Landing> {
                     LandScreen(
                         modifier = Modifier.fillMaxSize(),
-                        onSignInClick = { backStack.navigateTo(MainRoutesKey.Login) },
-                        onSignUpClick = { backStack.navigateTo(MainRoutesKey.Register) }
+                        onSignInClick = {
+                            firstVisitStore.markWelcomeCompleted()
+                            backStack.navigateTo(MainRoutesKey.Login)
+                        },
+                        onSignUpClick = {
+                            firstVisitStore.markWelcomeCompleted()
+                            backStack.navigateTo(MainRoutesKey.Register)
+                        },
+                        onExploreAsGuestClick = {
+                            scope.launch {
+                                when (val outcome = resolveStartupSession(hasProductDeeplink = false).let {
+                                    // Force visitor path even on first visit from explicit CTA
+                                    firstVisitStore.markWelcomeCompleted()
+                                    resolveStartupSession(hasProductDeeplink = true)
+                                }) {
+                                    is ResolveStartupSessionCaseUse.Outcome.Visitor ->
+                                        goHome(outcome.userId, isGuest = true)
+                                    is ResolveStartupSessionCaseUse.Outcome.Authenticated ->
+                                        goHome(outcome.userId, isGuest = false)
+                                    ResolveStartupSessionCaseUse.Outcome.ShowWelcome -> Unit
+                                }
+                            }
+                        }
                     )
                 }
                 entry<MainRoutesKey.Login> {
@@ -176,11 +218,13 @@ fun MainNavigationWrapper(
                                 is MainRoutesKey.MainHome -> {
                                     lastHandledPendingReservationId = pendingReservationId
                                     lastHandledPendingProductId = pendingProductId
+                                    firstVisitStore.markWelcomeCompleted()
                                     resetRoot(
                                         MainRoutesKey.MainHome(
                                             userId = route.userId,
                                             pendingReservationId = pendingReservationId,
-                                            pendingProductId = pendingProductId
+                                            pendingProductId = pendingProductId,
+                                            isGuest = false
                                         )
                                     )
                                 }
@@ -204,7 +248,15 @@ fun MainNavigationWrapper(
                         onRegisterReady = { userId ->
                             lastHandledPendingReservationId = pendingReservationId
                             lastHandledPendingProductId = pendingProductId
-                            resetRoot(MainRoutesKey.MainHome(userId, pendingReservationId, pendingProductId))
+                            firstVisitStore.markWelcomeCompleted()
+                            resetRoot(
+                                MainRoutesKey.MainHome(
+                                    userId = userId,
+                                    pendingReservationId = pendingReservationId,
+                                    pendingProductId = pendingProductId,
+                                    isGuest = false
+                                )
+                            )
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -233,7 +285,7 @@ fun MainNavigationWrapper(
                         tint = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.size(15.dp)
                     )
-                    Spacer(Modifier.width(4.dp))
+                    Spacer(modifier.width(4.dp))
                     Text(
                         style = MaterialTheme.typography.bodySmall,
                         text = "Desconectado"
