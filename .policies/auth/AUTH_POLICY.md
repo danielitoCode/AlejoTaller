@@ -1,6 +1,8 @@
 # Política de autenticación (Auth)
 
-Documento de validación del core `auth` (web + alineación Android).
+Documento de validación del core `auth` (web + Android).  
+**alejotallerscan (operador): no admite visitantes** — solo usuarios autenticados de operación.
+
 Última actualización: 2026-08-01
 
 ## 1. Principio general
@@ -20,48 +22,73 @@ Cualquier otro caso → **visitante**.
 | Modo | Condición | Capacidades |
 |------|-----------|-------------|
 | **authenticated** | Perfil claro (email + id) | Catálogo, carrito, reservas, perfil, ajustes, sync de ventas/promos |
-| **visitor** | Sin sesión, sesión anónima, email vacío, provider guest | Solo catálogo / detalle de producto. Overlay al tocar rutas protegidas |
+| **visitor** | Sin sesión, sesión anónima, email vacío, provider guest | Solo catálogo / detalle de producto. Overlay / bloqueo en rutas protegidas |
 
 ## 3. Flujo de arranque (Splash)
 
-1. Capturar deeplink si existe (nunca se pierde).
+1. Capturar deeplink de producto si existe.
 2. `getCurrentUser()`:
-   - **Éxito + perfil claro** → `setAuthenticatedSession()` → home.
-   - **Éxito + perfil no claro / anónimo** → `setGuestSession()` → home como visitante.
+   - **Éxito + perfil claro** → authenticated → home.
+   - **Éxito + perfil no claro / anónimo** → visitor → home.
    - **Fallo (sin sesión)**:
-     - Deeplink → crear sesión anónima → home (contenido del deeplink).
+     - Deeplink producto → crear sesión anónima → visitor → contenido.
      - Visitante recurrente (`alejo_has_visited`) → auto guest → home (productos).
-     - Primera visita → Welcome.
-3. Admin solo se ofrece si el perfil es **authenticated** y el rol es admin-like.
+     - Primera visita → Welcome / Landing.
+3. Admin solo se ofrece si el perfil es **authenticated** y el rol es admin-like (web).
 
 ## 4. Flags locales
 
-| Clave | Uso |
-|-------|-----|
-| `alejo_has_visited` | Completó Welcome / ya entró a la app |
-| `talleralejo.session.isGuest` | Flag local de visitante (sessionStore) |
+| Plataforma | Clave | Uso |
+|------------|-------|-----|
+| Web | `alejo_has_visited` | Completó Welcome |
+| Web | `talleralejo.session.isGuest` | Flag local visitante |
+| Android | SharedPreferences `alejo_has_visited` | Completó Landing |
+| Android | `MainRoutesKey.MainHome.isGuest` | Modo sesión en nav |
 
-El flag `isGuest` **debe** sincronizarse con la clasificación de perfil en cada arranque. No confiar solo en localStorage si Appwrite devuelve un usuario anónimo.
+## 5. Restricciones de visitante
 
-## 5. Restricciones de visitante (web)
+**Web**
+- Navegación visible: solo Productos.
+- Rutas protegidas: `GuestAuthOverlay`.
+- No sync de ventas privadas.
 
-- Navegación visible: solo **Productos**.
-- Rutas protegidas (`buy`, `reservations`, `profile`, `settings`): mostrar `GuestAuthOverlay`.
-- No sincronizar ventas ni promociones privadas.
-- Deeplink a producto: permitido.
+**Android (cliente `app`)**
+- Misma política de clasificación (`ProfileClassification` / `ResolveStartupSessionCaseUse`).
+- `isGuest = true` en `MainHome`.
+- FAB / destinos protegidos limitados a catálogo (productos + detalle).
+- No sync de reservas si es visitante.
+
+**Operador (`alejotallerscan`)**
+- Sin modo visitante. Login obligatorio.
 
 ## 6. Implementación de referencia
 
-- Clasificación: `web/src/core/feature/auth/presentation/util/profile-classification.ts`
-- Detección anónimo: `web/src/core/feature/auth/presentation/util/gest-session.ts`
-- Splash: `web/src/core/feature/auth/presentation/routes/Splash.svelte`
-- Shell: `web/src/core/infrastructure/presentation/navigation/NestedNavigationWrapper.svelte`
+### Web
+- `web/src/core/feature/auth/presentation/util/profile-classification.ts`
+- `web/src/core/feature/auth/presentation/util/gest-session.ts`
+- `web/src/core/feature/auth/presentation/routes/Splash.svelte`
+- `web/src/core/infrastructure/presentation/navigation/first-visit.ts`
 
-## 7. Checklist de validación
+### Android
+- `app/.../auth/domain/util/ProfileClassification.kt`
+- `app/.../auth/domain/caseuse/ResolveStartupSessionCaseUse.kt`
+- `app/.../auth/data/FirstVisitPreferences.kt`
+- `SessionManager.openAnonymousSession()`
 
-- [ ] Primera visita sin sesión → Welcome
-- [ ] Tras “Explorar como visitante” → home con badge Visitante y solo Productos
-- [ ] Recarga con sesión anónima Appwrite → sigue siendo Visitante (no “Usuario” sin email)
+## 7. Tests
+
+| Suite | Qué valida |
+|-------|------------|
+| `web/.../profile-classification.test.ts` | Clasificación AUTH_POLICY |
+| `web/.../first-visit.test.ts` | Flag onboarding |
+| `app/.../ProfileClassificationTest.kt` | Paridad Android |
+| `app/.../ResolveStartupSessionCaseUseTest.kt` | Arranque Splash |
+
+## 8. Checklist de validación
+
+- [ ] Primera visita sin sesión → Welcome/Landing
+- [ ] Tras explorar como visitante → home Visitante, solo productos
+- [ ] Recarga con sesión anónima → sigue visitante
 - [ ] Login con email → authenticated, navegación completa
-- [ ] Deeplink producto sin sesión → guest + detalle producto, sin Welcome
-- [ ] Logout / salir visitante limpia flags de sesión
+- [ ] Deeplink producto sin sesión → visitor + detalle, sin Welcome
+- [ ] Operador no tiene camino guest

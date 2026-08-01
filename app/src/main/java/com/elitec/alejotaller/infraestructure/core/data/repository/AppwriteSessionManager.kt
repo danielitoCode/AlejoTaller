@@ -25,6 +25,16 @@ class AppwriteSessionManager(
         }
     }
 
+    override suspend fun openAnonymousSession(): String {
+        return try {
+            account.createAnonymousSession().userId
+        } catch (e: Exception) {
+            if (e !is AppwriteException) throw e
+            // Already has a session (possibly anonymous) — reuse current user
+            runCatching { account.get().id }.getOrElse { throw e }
+        }
+    }
+
     override suspend fun isAnySessionAlive(): Boolean {
         return runCatching {
             val sessions = account.listSessions()
