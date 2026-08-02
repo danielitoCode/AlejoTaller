@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Cancel
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.elitec.alejotallerscan.feature.confirmation.presentation.entity.OperatorPaymentMethod
@@ -68,17 +70,38 @@ fun OperatorConfirmPaymentScreen(
     var paymentMethod by rememberSaveable { mutableStateOf(OperatorPaymentMethod.CASH) }
     var operatorNote by rememberSaveable { mutableStateOf("") }
     var saleType by rememberSaveable { mutableStateOf(SaleType.NORMAL) }
+    var discountAmountText by rememberSaveable { mutableStateOf("") }
+
+    val listAmount = uiState.selectedSale?.amount ?: 0.0
+
+    // Al cambiar a DISCOUNT, precargar un valor sugerido (90% del lista) si el campo está vacío
+    LaunchedEffect(saleType, listAmount) {
+        if (saleType == SaleType.DISCOUNT && discountAmountText.isBlank() && listAmount > 0) {
+            val suggested = (listAmount * 0.9).let { kotlin.math.round(it * 100) / 100 }
+            discountAmountText = suggested.toString()
+        }
+    }
 
     OperatorConfirmPaymentScreenContent(
         uiState = uiState,
         paymentMethod = paymentMethod,
         operatorNote = operatorNote,
         saleType = saleType,
+        discountAmountText = discountAmountText,
         onOperatorNoteChange = { operatorNote = it },
         onPaymentMethodChange = { paymentMethod = it },
         onSaleTypeChange = { saleType = it },
+        onDiscountAmountTextChange = { discountAmountText = it },
         onBuyConfirmClick = {
-            salesViewModel.confirmSelectedSale(saleType = saleType) {
+            val discountAmount = if (saleType == SaleType.DISCOUNT) {
+                discountAmountText.replace(',', '.').toDoubleOrNull()
+            } else {
+                null
+            }
+            salesViewModel.confirmSelectedSale(
+                saleType = saleType,
+                discountAmount = discountAmount
+            ) {
                 salesViewModel.resetState()
                 scanViewModel.resetState()
                 onOpenScan()
@@ -151,8 +174,29 @@ private fun SaleType.labelEs(): String = when (this) {
 
 private fun SaleType.hintEs(): String = when (this) {
     SaleType.NORMAL -> "Precio de lista del pedido"
-    SaleType.DISCOUNT -> "Venta con descuento (importe del pedido se mantiene)"
+    SaleType.DISCOUNT -> "Ingresa el importe efectivo (menor al de lista)"
     SaleType.GIFT -> "Obsequio: importe final 0; el stock sí baja"
+}
+
+/**
+ * Valida importe efectivo según SALE_POLICY.
+ * DISCOUNT: >= 0 y estrictamente menor al de lista (si lista > 0).
+ */
+private fun isDiscountAmountValid(listAmount: Double, text: String): Boolean {
+    val value = text.replace(',', '.').toDoubleOrNull() ?: return false
+    if (value < 0.0) return false
+    if (listAmount > 0.0 && value >= listAmount) return false
+    return true
+}
+
+private fun resolveDisplayAmount(
+    listAmount: Double,
+    saleType: SaleType,
+    discountAmountText: String
+): Double = when (saleType) {
+    SaleType.GIFT -> 0.0
+    SaleType.DISCOUNT -> discountAmountText.replace(',', '.').toDoubleOrNull() ?: listAmount
+    SaleType.NORMAL -> listAmount
 }
 
 @Composable
@@ -161,9 +205,11 @@ private fun OperatorConfirmPaymentScreenContent(
     paymentMethod: OperatorPaymentMethod,
     operatorNote: String,
     saleType: SaleType,
+    discountAmountText: String,
     onOperatorNoteChange: (String) -> Unit,
     onPaymentMethodChange: (OperatorPaymentMethod) -> Unit,
     onSaleTypeChange: (SaleType) -> Unit,
+    onDiscountAmountTextChange: (String) -> Unit,
     onBuyConfirmClick: () -> Unit,
     onRejectBuyButtonClick: () -> Unit,
     onBack: () -> Unit,
@@ -172,11 +218,14 @@ private fun OperatorConfirmPaymentScreenContent(
 ) {
     LocalConfiguration.current.toDeviceMode()
     val sale = uiState.selectedSale
-    val displayAmount = if (saleType == SaleType.GIFT) 0.0 else sale?.amount
+    val listAmount = sale?.amount ?: 0.0
+    val displayAmount = resolveDisplayAmount(listAmount, saleType, discountAmountText)
+    val discountValid = saleType != SaleType.DISCOUNT || isDiscountAmountValid(listAmount, discountAmountText)
+    val canConfirm = sale != null && !uiState.isLoading && discountValid
 
     OperatorScreen(
         title = "Confirmar reservacion",
-        subtitle = "Revisa la reserva, elige el tipo de venta y confirma solo cuando el estado remoto quede consistente.",
+        subtitle = "Revisa la reserva, elige el tipo de venta e importe efectivo según SALE_POLICY.",
         heroIcon = Icons.Rounded.CheckCircle,
         modifier = modifier.fillMaxSize()
     ) {
@@ -205,7 +254,12 @@ private fun OperatorConfirmPaymentScreenContent(
                             MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         StateBadge(
-                            "Importe \$${\"%.2f\".format(displayAmount ?: sale.amount)}",
+                            "Lista \$${\"%.2f\".format(listAmount)}",
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        StateBadge(
+                            "Efectivo \$${\"%.2f\".format(displayAmount)}",
                             MaterialTheme.colorScheme.primaryContainer,
                             MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -244,7 +298,7 @@ private fun OperatorConfirmPaymentScreenContent(
                 OperatorPanelCard {
                     OperatorSectionLabel("Tipo de venta")
                     Text(
-                        "Define el tipo comercial al confirmar (SALE_POLICY). El stock baja igual en los tres casos.",
+                        "Define el tipo comercial al confirmar. El stock baja igual en los tres casos.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -276,6 +330,35 @@ private fun OperatorConfirmPaymentScreenContent(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (saleType == SaleType.DISCOUNT) {
+                        OutlinedTextField(
+                            value = discountAmountText,
+                            onValueChange = onDiscountAmountTextChange,
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Importe efectivo (descuento)") },
+                            supportingText = {
+                                Text(
+                                    if (discountValid) {
+                                        "Debe ser >= 0 y menor a \$${\"%.2f\".format(listAmount)} (precio de lista)"
+                                    } else {
+                                        "Importe inválido: usa un valor >= 0 y menor al de lista"
+                                    }
+                                )
+                            },
+                            isError = !discountValid,
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                        )
+                    }
+
+                    if (saleType == SaleType.GIFT) {
+                        Text(
+                            "Importe final al confirmar: \$0.00",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 OperatorPanelCard {
@@ -365,11 +448,11 @@ private fun OperatorConfirmPaymentScreenContent(
                 Button(
                     onClick = onBuyConfirmClick,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = sale != null && !uiState.isLoading
+                    enabled = canConfirm
                 ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null)
                     Text(
-                        "Confirmar (${saleType.labelEs()})",
+                        "Confirmar (${saleType.labelEs()} · \$${\"%.2f\".format(displayAmount)})",
                         modifier = Modifier.padding(start = 10.dp)
                     )
                 }
@@ -395,11 +478,12 @@ private fun OperatorConfirmPaymentScreenContent(
 fun OperatorConfirmPaymentScreenContentPreview() {
     var paymentMethod by rememberSaveable { mutableStateOf(OperatorPaymentMethod.CASH) }
     var operatorNote by rememberSaveable { mutableStateOf("") }
-    var saleType by rememberSaveable { mutableStateOf(SaleType.NORMAL) }
+    var saleType by rememberSaveable { mutableStateOf(SaleType.DISCOUNT) }
+    var discountAmountText by rememberSaveable { mutableStateOf("20.00") }
     var uiState by remember {
         mutableStateOf(
             OperatorSalesUiState().copy(
-                isLoading = true,
+                isLoading = false,
                 selectedSale = Sale(
                     id = "id",
                     date = LocalDate(year = 2026, month = 12, day = 23),
@@ -429,38 +513,37 @@ fun OperatorConfirmPaymentScreenContentPreview() {
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        delay(2000)
-        uiState = uiState.copy(isLoading = false)
-    }
-
     GlobalPreview {
         OperatorConfirmPaymentScreenContent(
             uiState = uiState,
             paymentMethod = paymentMethod,
             operatorNote = operatorNote,
             saleType = saleType,
+            discountAmountText = discountAmountText,
             onOperatorNoteChange = { operatorNote = it },
             onPaymentMethodChange = { paymentMethod = it },
             onSaleTypeChange = { saleType = it },
+            onDiscountAmountTextChange = { discountAmountText = it },
             onBuyConfirmClick = {
                 scope.launch {
-                    delay(2000)
+                    delay(500)
                     uiState = uiState.copy(
-                        isLoading = false,
                         selectedSale = uiState.selectedSale?.copy(
                             verified = BuyState.VERIFIED,
                             saleType = saleType,
-                            amount = if (saleType == SaleType.GIFT) 0.0 else uiState.selectedSale!!.amount
+                            amount = resolveDisplayAmount(
+                                uiState.selectedSale!!.amount,
+                                saleType,
+                                discountAmountText
+                            )
                         )
                     )
                 }
             },
             onRejectBuyButtonClick = {
                 scope.launch {
-                    delay(2000)
+                    delay(500)
                     uiState = uiState.copy(
-                        isLoading = false,
                         selectedSale = uiState.selectedSale?.copy(verified = BuyState.DELETED)
                     )
                 }

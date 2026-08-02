@@ -6,7 +6,11 @@ import com.elitec.shared.sale.feature.sale.domain.repository.SaleRepository
 
 /**
  * Cierra la venta desde el operador: VERIFIED o DELETED.
- * Al confirmar, persiste [saleType] (SALE_POLICY) y ajusta amount si es GIFT.
+ *
+ * SALE_POLICY al confirmar:
+ * - NORMAL → amount del pedido
+ * - DISCOUNT → [amountOverride] efectivo (debe ser >= 0 y < amount de lista)
+ * - GIFT → amount = 0
  */
 class UpdateSaleVerificationFromRealtimeCaseUse(
     private val repository: SaleRepository
@@ -14,7 +18,8 @@ class UpdateSaleVerificationFromRealtimeCaseUse(
     suspend operator fun invoke(
         saleId: String,
         isSuccess: Boolean,
-        saleType: SaleType? = null
+        saleType: SaleType? = null,
+        amountOverride: Double? = null
     ): Result<Unit> = runCatching {
         val currentSale = repository.getById(saleId)
         val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
@@ -29,7 +34,16 @@ class UpdateSaleVerificationFromRealtimeCaseUse(
         val resolvedAmount = when {
             !isSuccess -> currentSale.amount
             resolvedType == SaleType.GIFT -> 0.0
-            else -> currentSale.amount
+            resolvedType == SaleType.DISCOUNT -> {
+                val effective = amountOverride
+                    ?: error("DISCOUNT requiere importe efectivo (amountOverride)")
+                require(effective >= 0.0) { "El importe con descuento no puede ser negativo" }
+                require(effective < currentSale.amount || currentSale.amount <= 0.0) {
+                    "El importe con descuento debe ser menor al precio de lista (${currentSale.amount})"
+                }
+                effective
+            }
+            else -> currentSale.amount // NORMAL
         }
 
         repository.save(

@@ -48,6 +48,27 @@ class OperatorSalesViewModel(
 
             return trimmed.substringAfterLast('/').substringAfterLast('=').trim()
         }
+
+        /**
+         * Resuelve el amount final según SALE_POLICY.
+         */
+        fun resolveConfirmedAmount(
+            listAmount: Double,
+            saleType: SaleType,
+            discountAmount: Double?
+        ): Double = when (saleType) {
+            SaleType.GIFT -> 0.0
+            SaleType.DISCOUNT -> {
+                val effective = discountAmount
+                    ?: error("DISCOUNT requiere importe efectivo")
+                require(effective >= 0.0) { "El importe con descuento no puede ser negativo" }
+                require(listAmount <= 0.0 || effective < listAmount) {
+                    "El importe con descuento debe ser menor al precio de lista ($listAmount)"
+                }
+                effective
+            }
+            SaleType.NORMAL -> listAmount
+        }
     }
 
     val recentSales = observeAllSalesCaseUse()
@@ -97,23 +118,34 @@ class OperatorSalesViewModel(
     }
 
     /**
-     * Confirma la venta con el [saleType] elegido por el operador (SALE_POLICY).
-     * GIFT fuerza amount = 0; stock baja igual (WAREHOUSE_POLICY).
+     * Confirma la venta con [saleType] y, si es DISCOUNT, [discountAmount] efectivo.
      */
     fun confirmSelectedSale(
         saleType: SaleType = SaleType.NORMAL,
+        discountAmount: Double? = null,
         onDone: () -> Unit = {}
     ) {
-        changeSelectedSale(isSuccess = true, saleType = saleType, onDone = onDone)
+        changeSelectedSale(
+            isSuccess = true,
+            saleType = saleType,
+            discountAmount = discountAmount,
+            onDone = onDone
+        )
     }
 
     fun rejectSelectedSale(onDone: () -> Unit = {}) {
-        changeSelectedSale(isSuccess = false, saleType = null, onDone = onDone)
+        changeSelectedSale(
+            isSuccess = false,
+            saleType = null,
+            discountAmount = null,
+            onDone = onDone
+        )
     }
 
     private fun changeSelectedSale(
         isSuccess: Boolean,
         saleType: SaleType?,
+        discountAmount: Double?,
         onDone: () -> Unit
     ) {
         val selectedSale = _uiState.value.selectedSale ?: run {
@@ -130,32 +162,43 @@ class OperatorSalesViewModel(
         }
 
         viewModelScope.launch {
+            val effectiveType = if (isSuccess) saleType ?: SaleType.NORMAL else null
+            val resolvedAmount = if (isSuccess && effectiveType != null) {
+                runCatching {
+                    resolveConfirmedAmount(selectedSale.amount, effectiveType, discountAmount)
+                }.getOrElse { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        loadingMessage = null,
+                        error = error.message ?: "Importe inválido para el tipo de venta"
+                    )
+                    return@launch
+                }
+            } else {
+                selectedSale.amount
+            }
+
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
                 loadingMessage = "Actualizando la venta en Appwrite...",
                 error = null,
                 notice = null
             )
-            val effectiveType = if (isSuccess) saleType ?: SaleType.NORMAL else null
             Log.i(
                 TAG,
                 "event=operator_sale_update_start saleId=${selectedSale.id} " +
                     "userId=${selectedSale.userId} decision=${if (isSuccess) "confirmed" else "rejected"} " +
-                    "saleType=${effectiveType?.name ?: "n/a"}"
+                    "saleType=${effectiveType?.name ?: "n/a"} amount=$resolvedAmount"
             )
             updateSaleVerificationFromRealtimeCaseUse(
                 saleId = selectedSale.id,
                 isSuccess = isSuccess,
-                saleType = effectiveType
+                saleType = effectiveType,
+                amountOverride = if (effectiveType == SaleType.DISCOUNT) discountAmount else null
             )
                 .onSuccess {
                     val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
                     val resolvedType = if (isSuccess) effectiveType else selectedSale.saleType
-                    val resolvedAmount = when {
-                        !isSuccess -> selectedSale.amount
-                        resolvedType == SaleType.GIFT -> 0.0
-                        else -> selectedSale.amount
-                    }
                     val updatedSale = selectedSale.copy(
                         verified = nextState,
                         saleType = resolvedType,
@@ -170,7 +213,7 @@ class OperatorSalesViewModel(
                     Log.i(
                         TAG,
                         "event=operator_sale_update_success saleId=${updatedSale.id} " +
-                            "nextState=$nextState saleType=${resolvedType?.name}"
+                            "nextState=$nextState saleType=${resolvedType?.name} amount=$resolvedAmount"
                     )
 
                     val remoteVerification = runCatching {
@@ -196,16 +239,16 @@ class OperatorSalesViewModel(
                         return@onSuccess
                     }
 
-                    // Preferimos el saleType local resuelto si el remoto aún no lo refleja
                     val saleForSideEffects = confirmedRemoteSale.copy(
                         saleType = confirmedRemoteSale.saleType ?: resolvedType,
-                        amount = if (resolvedType == SaleType.GIFT) 0.0 else confirmedRemoteSale.amount
+                        amount = if (isSuccess) resolvedAmount else confirmedRemoteSale.amount
                     )
 
                     Log.i(
                         TAG,
                         "event=operator_remote_verification_success saleId=${saleForSideEffects.id} " +
-                            "verified=${saleForSideEffects.verified} saleType=${saleForSideEffects.saleType}"
+                            "verified=${saleForSideEffects.verified} saleType=${saleForSideEffects.saleType} " +
+                            "amount=${saleForSideEffects.amount}"
                     )
 
                     var stockWarning: String? = null
@@ -275,7 +318,7 @@ class OperatorSalesViewModel(
                             loadingMessage = null,
                             selectedSale = saleForSideEffects,
                             notice = if (isSuccess) {
-                                "Venta confirmada (${resolvedType?.name ?: "NORMAL"}) en servidor."
+                                "Venta confirmada (${resolvedType?.name ?: "NORMAL"}) por \$${"%.2f".format(resolvedAmount)}."
                             } else {
                                 "Venta rechazada en servidor."
                             },
@@ -291,7 +334,8 @@ class OperatorSalesViewModel(
                     Log.i(TAG, "event=operator_local_record_saved saleId=${saleForSideEffects.id} action=$action")
 
                     val baseNotice = if (isSuccess) {
-                        "Venta confirmada como ${resolvedType?.name ?: "NORMAL"}, stock actualizado."
+                        "Venta confirmada como ${resolvedType?.name ?: "NORMAL"} " +
+                            "(\$${"%.2f".format(resolvedAmount)}), stock actualizado."
                     } else {
                         "Venta rechazada, hold liberado y registrada correctamente."
                     }
