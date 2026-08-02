@@ -3,7 +3,7 @@
 Documento de validación del dominio `sale` (cliente web/Android + operador `alejotallerscan`).
 
 Última actualización: 2026-08-02  
-Ámbito: **Core 1 (MVP)**
+Ámbito: **Core 1 (MVP) + soft-hold**
 
 ---
 
@@ -11,7 +11,7 @@ Documento de validación del dominio `sale` (cliente web/Android + operador `ale
 
 > **La venta solo se cierra (confirmada o rechazada) en la aplicación de escaneo del operador.**
 
-El cliente **solicita** (reserva / pedido).  
+El cliente **solicita** (pedido + soft-hold de inventario).  
 El operador **decide**: tomar (VERIFIED) o rechazar (DELETED).
 
 No hay auto-confirmación en cliente en Core 1.
@@ -20,11 +20,11 @@ No hay auto-confirmación en cliente en Core 1.
 
 ## 2. Ciclo de vida (`BuyState`)
 
-| Estado | Quién lo pone | Significado |
-|--------|---------------|-------------|
-| **UNVERIFIED** | Cliente (web/Android) al registrar el pedido | Solicitud pendiente de atención en tienda |
-| **VERIFIED** | Operador (`alejotallerscan`) al confirmar | Venta tomada / hecha |
-| **DELETED** | Operador al rechazar | Solicitud descartada (no es venta) |
+| Estado | Quién lo pone | Significado | Stock |
+|--------|---------------|-------------|-------|
+| **UNVERIFIED** | Cliente (web/Android) al registrar el pedido | Solicitud pendiente | soft-hold: `reserved += qty` |
+| **VERIFIED** | Operador (`alejotallerscan`) al confirmar | Venta tomada / hecha | `existence -= qty`, `reserved -= qty` |
+| **DELETED** | Operador al rechazar | Solicitud descartada | libera hold: `reserved -= qty` |
 
 ### Canales de atención del operador (Core 1)
 
@@ -80,70 +80,85 @@ Cada línea debe poder reconstruir contabilidad y stock:
 
 ---
 
-## 6. Efectos al confirmar / rechazar
+## 6. Soft-hold e idempotencia
+
+| Campo | Uso |
+|-------|-----|
+| `Product.reserved` | Unidades comprometidas en UNVERIFIED |
+| `available` | `existence - reserved` (calculado, no persistido) |
+| `Sale.stockHoldApplied` / `stock_hold_applied` | Evita doble incremento de `reserved` |
+
+Al crear UNVERIFIED el cliente:
+
+1. Soft-check `quantity <= available`
+2. Persiste sale
+3. Aplica hold (`reserved += qty`) y marca `stock_hold_applied`
+
+---
+
+## 7. Efectos al confirmar / rechazar
 
 ### Al **VERIFIED**
 
 1. Persistir `verified = VERIFIED` y `saleType`.
-2. Aplicar **salida de stock** por cada ítem (`quantity`) — ver WAREHOUSE_POLICY.
-3. Publicar realtime `sale:confirmed` (cliente actualiza UI).
-4. Registrar historial local del operador.
+2. Por cada ítem: `existence -= qty`, `reserved -= qty`.
+3. Registrar `StockMovement` SALIDA_VENTA.
+4. Publicar realtime `sale:confirmed`.
 
 ### Al **DELETED** (rechazo)
 
 1. Persistir `verified = DELETED`.
-2. **No** mover stock.
-3. Publicar realtime `sale:rejected`.
-4. Registrar historial local del operador.
+2. Por cada ítem: `reserved -= qty` (liberar hold).
+3. **No** tocar `existence`.
+4. Publicar realtime `sale:rejected`.
 
 ### Mientras **UNVERIFIED**
 
-- **No** se reduce stock.
-- El producto sigue vendible por otros clientes (Core 1: sin soft-hold de inventario).
+- Soft-hold activo: reduce `available` para otros clientes.
+- No se reduce `existence`.
 
 ---
 
-## 7. Entrega y pago (contexto, no cambian el tipo)
+## 8. Entrega y pago (contexto, no cambian el tipo)
 
 - `DeliveryType`: PICKUP / DELIVERY — preferencia del cliente tras o durante el flujo.
 - `PaymentChannel`: canales de cobro existentes (Transfermóvil, UltraPay, etc.).
-- Independientes de `SaleType`: una venta DISCOUNT puede ser PICKUP + efectivo en tienda.
+- Independientes de `SaleType`.
 
 ---
 
-## 8. Implementación de referencia
+## 9. Implementación de referencia
 
-### Dominio compartido
-- `shared-sale/.../entity/Sale.kt` — `BuyState`, `SaleType`, `Sale`, `SaleItem`
-- `web/.../sale/domain/entity/enums.ts` + `Sale.ts`
+### Dominio
+- `web/.../sale/domain/entity/enums.ts` + `Sale.ts` (`saleType`, `stockHoldApplied`)
+- `web/.../product/domain/entity/Product.ts` (`reserved`, `availableStock`)
+- `RegisterNewSaleCaseUse` — create + soft-hold
 
 ### Operador
-- Escaneo: `alejotallerscan/.../scan/`
-- Confirmación: `.../confirmation/`
-- Decisión + realtime: `OperatorSalesViewModel`, `NotifyOperatorSaleDecisionCaseUse`
+- Escaneo / confirmación: ajustar stock físico + liberar reserved
 
 ### Cliente
-- Alta UNVERIFIED: `RegisterNewSaleCauseUse` / web equivalente
-- Reacción realtime: `InterpretSaleRealtimeEventCaseUse`
+- Alta UNVERIFIED + hold
+- Reacción realtime: UI; stock se sincroniza vía catálogo
 
 ---
 
-## 9. Checklist Core 1
+## 10. Checklist Core 1
 
-- [ ] Cliente crea reserva → `UNVERIFIED`, sin baja de stock
+- [x] Cliente crea reserva → `UNVERIFIED` + soft-hold
+- [x] Check usa `available`
 - [ ] Operador carga por QR o código manual
-- [ ] Confirmar → `VERIFIED` + `SaleType` (NORMAL | DISCOUNT | GIFT)
-- [ ] Confirmar → baja de stock = suma de quantities por producto
-- [ ] Rechazar → `DELETED`, stock intacto
-- [ ] GIFT con amount 0 sigue bajando stock
+- [ ] Confirmar → `VERIFIED` + `SaleType` + baja existence/reserved
+- [ ] Rechazar → `DELETED` + libera reserved
+- [ ] GIFT con amount 0 sigue bajando stock al confirmar
 - [ ] Realtime llega a cliente web y Android
-- [ ] Visitante no puede crear venta
+- [x] Visitante no puede crear venta
 
 ---
 
-## 10. Fuera de alcance Core 1
+## 11. Fuera de alcance Core 1
 
-- Soft-reservation de stock al crear UNVERIFIED
 - Multi-operador con locks optimistas avanzados
 - Devoluciones parciales de línea
 - Facturación fiscal formal
+- Function atómica Appwrite (Core 2 recomendado)

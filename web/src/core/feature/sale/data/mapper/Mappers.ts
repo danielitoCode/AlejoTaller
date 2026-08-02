@@ -1,11 +1,11 @@
 import type {SaleDTO} from "../dto/SaleDTO";
 import {type DeliveryAddress, type Sale, type SaleItem} from "../../domain/entity/Sale";
-import { type BuyState, Currency, DeliveryType} from "../../domain/entity/enums";
+import { type BuyState, Currency, DeliveryType, SaleType} from "../../domain/entity/enums";
 import type {SaleItemDTO} from "../dto/SaleItemDTO";
 
 export type SaleWriteDTO = Pick<
     SaleDTO,
-    "$id" | "date" | "amount" | "currency" | "buy_state" | "products" | "user_id" | "delivery_type" | "delivery_address"
+    "$id" | "date" | "amount" | "currency" | "buy_state" | "products" | "user_id" | "delivery_type" | "delivery_address" | "sale_type" | "stock_hold_applied"
 >;
 
 function saleItemFromDTO(item: SaleItemDTO): SaleItem {
@@ -14,18 +14,27 @@ function saleItemFromDTO(item: SaleItemDTO): SaleItem {
         productName: item.productName ?? null,
         quantity: item.quantity,
         price: item.price,
+        unitPrice: item.price,
     };
 }
 
 function saleItemToDTO(item: SaleItem): SaleItemDTO {
+    const unit = item.unitPrice ?? item.price ?? 0;
     return {
         productId: item.productId,
         productName: item.productName ?? null,
         quantity: item.quantity,
-        price: item.price
+        price: unit
     };
 }
 
+function parseSaleType(value: string | null | undefined): SaleType | null {
+    if (!value) return null;
+    if (value === SaleType.NORMAL || value === SaleType.DISCOUNT || value === SaleType.GIFT) {
+        return value as SaleType;
+    }
+    return null;
+}
 
 export function saleFromDTO(dto: SaleDTO): Sale {
     let productsArray: SaleItem[] = [];
@@ -55,6 +64,8 @@ export function saleFromDTO(dto: SaleDTO): Sale {
         userId: dto.user_id,
         deliveryType: dto.delivery_type ? (dto.delivery_type as DeliveryType) : null,
         deliveryAddress,
+        saleType: parseSaleType(dto.sale_type),
+        stockHoldApplied: dto.stock_hold_applied === true,
     };
 }
 
@@ -85,5 +96,7 @@ export function saleToDTO(sale: Sale): SaleWriteDTO {
         user_id: sale.userId,
         delivery_type: sale.deliveryType ?? null,
         delivery_address: sale.deliveryAddress ? JSON.stringify(sale.deliveryAddress) : null,
+        sale_type: sale.saleType ?? null,
+        stock_hold_applied: sale.stockHoldApplied === true,
     };
 }

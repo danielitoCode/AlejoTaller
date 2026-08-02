@@ -1,6 +1,11 @@
 import type {ProductRepository} from "../repository/product.repository";
 import type {Sale, SaleItem} from "../../../sale/domain/entity/Sale";
+import {availableStock} from "../entity/Product";
 
+/**
+ * Soft-check de disponibilidad usando stock disponible (existence - reserved).
+ * No descuenta stock; solo valida que hay cupo para el soft-hold.
+ */
 export class CheckAProductExistenceCaseUse {
     constructor(private readonly repository: ProductRepository) {}
 
@@ -37,6 +42,6 @@ export class CheckAProductExistenceCaseUse {
             throw new Error("El producto no se encuentra disponible");
         }
 
-        return quantityOfSale <= product.existence;
+        return quantityOfSale <= availableStock(product);
     }
 }

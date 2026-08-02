@@ -3,16 +3,17 @@
 Documento de validación de inventario / stock para AlejoTaller.
 
 Última actualización: 2026-08-02  
-Ámbito: **Core 1 (MVP)**  
+Ámbito: **Core 1 (MVP) + soft-hold**  
 Relacionado: [SALE_POLICY](../sale/SALE_POLICY.md)
 
 ---
 
 ## 1. Principio general
 
-> **El stock solo baja cuando el operador confirma la venta (`BuyState.VERIFIED`).**
+> **El stock físico (`existence`) solo baja cuando el operador confirma la venta (`BuyState.VERIFIED`).**  
+> **Al crear el pedido (`UNVERIFIED`) se aplica soft-hold: se incrementa `reserved`.**
 
-La cantidad descontada es la **cantidad comprada de cada línea** (`SaleItem.quantity`),  
+La cantidad descontada / reservada es la **cantidad comprada de cada línea** (`SaleItem.quantity`),  
 independientemente del tipo de venta (`NORMAL`, `DISCOUNT`, `GIFT`).
 
 ---
@@ -21,36 +22,55 @@ independientemente del tipo de venta (`NORMAL`, `DISCOUNT`, `GIFT`).
 
 | Concepto | Dónde vive |
 |----------|------------|
-| Saldo actual del producto | `Product.existence` (Appwrite + cache local) |
+| Saldo físico | `Product.existence` (Appwrite + cache local) |
+| Comprometido (soft-hold) | `Product.reserved` |
+| Disponible para vender | `available = existence - reserved` |
 | Auditoría de movimientos | Colección / entidad `stock_movements` (`StockMovement`) |
-
-Todo cambio de existencia por venta debe dejar un movimiento trazable.
+| Idempotencia hold | `Sale.stock_hold_applied` |
 
 ---
 
-## 3. Cuándo se mueve el stock
+## 3. Soft-hold (Core 1)
 
-| Evento | ¿Mueve stock? | Tipo de movimiento |
-|--------|---------------|--------------------|
-| Cliente crea pedido (`UNVERIFIED`) | **No** | — |
+| Evento | `existence` | `reserved` |
+|--------|-------------|------------|
+| Cliente crea pedido (`UNVERIFIED`) | sin cambio | `+= quantity` por línea |
+| Operador **confirma** (`VERIFIED`) | `-= quantity` | `-= quantity` (libera hold + consume físico) |
+| Operador **rechaza** (`DELETED`) | sin cambio | `-= quantity` (libera hold) |
+
+### Reglas soft-hold
+
+1. Cliente valida `quantity <= available` antes de crear.
+2. Tras persistir sale UNVERIFIED, cliente (o función backend) incrementa `reserved`.
+3. `stock_hold_applied = true` evita doble hold en reintentos.
+4. `reserved >= 0` y `existence >= 0` siempre.
+5. `available` nunca se persiste: se calcula.
+
+---
+
+## 4. Cuándo se mueve el stock físico
+
+| Evento | ¿Mueve `existence`? | Tipo de movimiento |
+|--------|---------------------|--------------------|
+| Cliente crea pedido (`UNVERIFIED`) | **No** (solo `reserved`) | — |
 | Operador **confirma** (`VERIFIED`) | **Sí** | `SALIDA_VENTA` por cada ítem |
-| Operador **rechaza** (`DELETED`) | **No** | — |
+| Operador **rechaza** (`DELETED`) | **No** (solo libera `reserved`) | — |
 | Entrada de mercancía (futuro / admin) | Sí | `ENTRADA` |
 | Ajuste manual | Sí | `AJUSTE` |
 | Devolución | Sí | `DEVOLUCION` |
 
-### Regla de cantidad
+### Regla de cantidad (VERIFIED)
 
 Para una venta confirmada con ítems `[(P1, 2), (P2, 1)]`:
 
-- `P1.existence -= 2`
-- `P2.existence -= 1`
+- `P1.existence -= 2` y `P1.reserved -= 2`
+- `P2.existence -= 1` y `P2.reserved -= 1`
 
 Si `SaleType = GIFT` o `DISCOUNT`: **misma resta**. El tipo solo afecta dinero, no unidades físicas.
 
 ---
 
-## 4. Modelo `StockMovement`
+## 5. Modelo `StockMovement`
 
 ```text
 id, productId, type, quantity (>0), balanceAfter (>=0),
@@ -74,75 +94,80 @@ Para `SALIDA_VENTA`:
 
 ---
 
-## 5. Invariantes
+## 6. Invariantes
 
-1. `existence >= 0` siempre.
-2. No confirmar venta si alguna línea dejaría `existence < 0` (Core 1: rechazar confirmación o avisar al operador).
-3. Un mismo `saleId` no debe generar **doble** `SALIDA_VENTA` (idempotencia en confirmación).
-4. Rechazo / `DELETED` no crea movimientos ni revierte nada (porque nunca salió stock).
-5. Cliente y visitante **nunca** escriben `stock_movements`.
+1. `existence >= 0` y `reserved >= 0` siempre.
+2. `available = existence - reserved >= 0`.
+3. No confirmar venta si alguna línea dejaría `existence < 0`.
+4. Un mismo `saleId` no debe generar **doble** `SALIDA_VENTA` ni **doble** soft-hold (`stock_hold_applied`).
+5. Rechazo / `DELETED` libera `reserved` y no toca `existence`.
+6. Cliente y visitante **nunca** escriben `stock_movements`.
 
 ---
 
-## 6. Flujo operativo (Core 1)
+## 7. Flujo operativo (Core 1)
 
 ```text
-Cliente → Sale UNVERIFIED (sin stock)
+Cliente → Sale UNVERIFIED
+          + reserved += qty (soft-hold)
+          + stock_hold_applied = true
                 ↓
 Operador QR o código manual
                 ↓
         ┌───────┴───────┐
         ↓               ↓
    VERIFIED          DELETED
-   + SaleType         (fin)
-   + por cada ítem:
-       existence -= qty
-       StockMovement SALIDA_VENTA
-   + realtime sale:confirmed
+   + SaleType         + reserved -= qty
+   + existence -= qty
+   + reserved -= qty
+   + StockMovement SALIDA_VENTA
+   + realtime sale:confirmed / rejected
 ```
 
 ---
 
-## 7. Alineación de modelos (resumen)
+## 8. Alineación de modelos (resumen)
 
 | Modelo | Campos clave para almacén |
 |--------|---------------------------|
-| `Product` | `existence: Int` |
-| `Sale` | `verified`, `saleType`, `products[]` |
+| `Product` | `existence`, `reserved` |
+| `Sale` | `verified`, `saleType`, `stockHoldApplied`, `products[]` |
 | `SaleItem` | `productId`, `quantity`, `unitPrice` |
 | `StockMovement` | `type=SALIDA_VENTA`, `saleId`, `quantity`, `balanceAfter` |
 
----
+Appwrite (atributos esperados):
 
-## 8. Implementación de referencia
-
-- `app/.../product/domain/entity/Product.kt` — `existence`
-- `app/.../product/domain/entity/StockMovement.kt`
-- Confirmación operador: al marcar VERIFIED, en el mismo caso de uso / transacción lógica:
-  1. actualizar sale
-  2. restar existence
-  3. persistir movimientos
-  4. notificar realtime
-
-Idealmente pasos 1–3 atómicos a nivel de backend; en Core 1 se acepta secuencia ordenada con reintento idempotente por `saleId`.
+- products: `existence`, `reserved`
+- sale: `sale_type`, `stock_hold_applied`
 
 ---
 
-## 9. Checklist Core 1
+## 9. Implementación de referencia
 
-- [ ] UNVERIFIED no modifica `existence`
-- [ ] VERIFIED resta `quantity` por línea
-- [ ] GIFT / DISCOUNT / NORMAL restan igual
-- [ ] DELETED no toca stock
+- Web: `Product.ts` (`availableStock`), `RegisterNewSaleCaseUse` (soft-hold)
+- Android: paridad pendiente
+- Operador: al VERIFIED/DELETED ajustar `existence`/`reserved` + movimientos
+
+Idealmente pasos atómicos a nivel de backend; en Core 1 se acepta secuencia ordenada con reintento idempotente por `saleId` / `stock_hold_applied`.
+
+---
+
+## 10. Checklist Core 1
+
+- [x] UNVERIFIED incrementa `reserved` (soft-hold)
+- [ ] VERIFIED resta `existence` y `reserved`
+- [ ] DELETED resta solo `reserved`
+- [x] Check cliente usa `available = existence - reserved`
+- [ ] GIFT / DISCOUNT / NORMAL restan igual en confirmación
 - [ ] Cada salida genera `StockMovement` con `saleId`
-- [ ] No hay doble descuento al re-confirmar el mismo id
-- [ ] `existence` no queda negativo
+- [x] `stock_hold_applied` para idempotencia de hold
+- [ ] `existence` / `reserved` no quedan negativos
 
 ---
 
-## 10. Fuera de alcance Core 1
+## 11. Fuera de alcance Core 1
 
-- Reservas de stock (hold) al crear el pedido
 - Multi-almacén / ubicaciones
 - Conteos cíclicos y cierre de inventario formal
 - Devoluciones parciales automatizadas
+- Appwrite Function atómica (recomendado Core 2)

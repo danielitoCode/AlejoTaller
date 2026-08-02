@@ -17,7 +17,9 @@ export const productFixtures: ProductCardUi[] = [
             price: 149.9,
             photoUrl: "",
             categoryId: "cat-audio",
-            rating: 4.8
+            rating: 4.8,
+            existence: 12,
+            reserved: 0
         },
         accent: "aurora",
         oldPrice: 180,
@@ -32,7 +34,9 @@ export const productFixtures: ProductCardUi[] = [
             price: 89.5,
             photoUrl: "",
             categoryId: "cat-power",
-            rating: 4.7
+            rating: 4.7,
+            existence: 8,
+            reserved: 1
         },
         accent: "forest",
         oldPrice: 110,
@@ -47,7 +51,9 @@ export const productFixtures: ProductCardUi[] = [
             price: 24.99,
             photoUrl: "",
             categoryId: "cat-accessories",
-            rating: 4.6
+            rating: 4.6,
+            existence: 30,
+            reserved: 0
         },
         accent: "mist",
         oldPrice: 32,

@@ -30,17 +30,18 @@ describe("CheckAProductExistenceCaseUse", () => {
         } as Sale;
     }
 
-    function createProduct(existence = 10): Product {
+    function createProduct(existence = 10, reserved = 0): Product {
         return {
             id: "p1",
-            existence
+            existence,
+            reserved
         } as Product;
     }
 
 
-    it("passes when all products have enough stock", async () => {
+    it("passes when all products have enough available stock", async () => {
         vi.mocked(repository.getById).mockResolvedValue(
-            createProduct(10)
+            createProduct(10, 0)
         );
 
         await expect(useCase.execute(createSale(5)))
@@ -51,9 +52,33 @@ describe("CheckAProductExistenceCaseUse", () => {
         await expect(repository.getById).toHaveBeenCalledWith("p1");
     });
 
+    it("passes when available = existence - reserved covers quantity", async () => {
+        // existence 10, reserved 4 → available 6
+        vi.mocked(repository.getById).mockResolvedValue(
+            createProduct(10, 4)
+        );
+
+        await expect(useCase.execute(createSale(6)))
+            .resolves
+            .toBeUndefined();
+    });
+
+    it("throws when reserved reduces available below quantity", async () => {
+        // existence 10, reserved 6 → available 4
+        vi.mocked(repository.getById).mockResolvedValue(
+            createProduct(10, 6)
+        );
+
+        await expect(useCase.execute(createSale(5)))
+            .rejects
+            .toThrow(
+                "No hay disponibilidad en la tienda para el producto: Coca Cola"
+            );
+    });
+
     it("throws when stock is insufficient", async () => {
         vi.mocked(repository.getById).mockResolvedValue(
-            createProduct(3)
+            createProduct(3, 0)
         );
 
         await expect(useCase.execute(createSale(5)))
@@ -96,11 +121,13 @@ describe("CheckAProductExistenceCaseUse", () => {
         vi.mocked(repository.getById)
             .mockResolvedValueOnce({
                 id: "p1",
-                existence: 10
+                existence: 10,
+                reserved: 0
             } as Product)
             .mockResolvedValueOnce({
                 id: "p2",
-                existence: 2
+                existence: 2,
+                reserved: 0
             } as Product);
 
         expect(useCase.execute(sale))
@@ -137,7 +164,8 @@ describe("CheckAProductExistenceCaseUse", () => {
 
         vi.mocked(repository.getById).mockImplementation(async (id) => ({
             id,
-            existence: 100
+            existence: 100,
+            reserved: 0
         } as Product));
 
         expect(useCase.execute(sale))

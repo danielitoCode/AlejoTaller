@@ -12,6 +12,11 @@ export interface Sale {
     deliveryAddress?: DeliveryAddress | null
     /** SALE_POLICY: null mientras UNVERIFIED; obligatorio en VERIFIED */
     saleType?: SaleType | null
+    /**
+     * Soft-hold aplicado: reserved++ por cada línea al crear UNVERIFIED.
+     * Evita doble hold en reintentos (idempotencia).
+     */
+    stockHoldApplied?: boolean
 }
 
 export interface SaleItem {
