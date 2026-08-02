@@ -23,7 +23,9 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             price = 45.50,
             photoUrl = "https://example.com/photos/aceite.jpg",
             categoryId = "baterias",
-            photoLocalResource = R.drawable.li3_2a
+            photoLocalResource = R.drawable.li3_2a,
+            existence = 10,
+            reserved = 0
         ),
         ProductDto(
             id = "2",
@@ -32,7 +34,9 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             price = 18.25,
             photoUrl = "https://example.com/photos/filtro_aire.jpg",
             categoryId = "bms",
-            photoLocalResource = R.drawable.bms5v
+            photoLocalResource = R.drawable.bms5v,
+            existence = 5,
+            reserved = 0
         ),
         ProductDto(
             id = "3",
@@ -41,7 +45,9 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             price = 65.00,
             photoUrl = "https://example.com/photos/pastillas_freno.jpg",
             categoryId = "equipos",
-            photoLocalResource = R.drawable.echoflow_deltamax
+            photoLocalResource = R.drawable.echoflow_deltamax,
+            existence = 3,
+            reserved = 0
         ),
         ProductDto(
             id = "4",
@@ -50,7 +56,9 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             price = 110.99,
             photoUrl = "https://example.com/photos/bateria.jpg",
             categoryId = "baterias",
-            photoLocalResource = R.drawable.li1a
+            photoLocalResource = R.drawable.li1a,
+            existence = 20,
+            reserved = 0
         ),
         ProductDto(
             id = "5",
@@ -59,7 +67,9 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             price = 12.50,
             photoUrl = "https://example.com/photos/bujia.jpg",
             categoryId = "componentes",
-            photoLocalResource = R.drawable.t2n3904
+            photoLocalResource = R.drawable.t2n3904,
+            existence = 100,
+            reserved = 0
         ),
     ).map { productDto -> productDto.toDomain() }
 
@@ -79,5 +89,17 @@ class FakeProductOfflineFirstRepository: ProductRepository {
             }
             delay(400L * index)
         }
+    }
+
+    override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
+        var updated: Product? = null
+        fakeProductFlow.update { list ->
+            list.map { p ->
+                if (p.id == productId) {
+                    p.copy(reserved = (p.reserved + quantity).coerceAtLeast(0)).also { updated = it }
+                } else p
+            }
+        }
+        return updated ?: getById(productId)
     }
 }

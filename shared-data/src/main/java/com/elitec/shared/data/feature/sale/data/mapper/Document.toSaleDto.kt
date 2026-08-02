@@ -25,7 +25,14 @@ fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
         userId = data["user_id"] as? String ?: "",
         customerName = data["customer_name"] as? String,
         deliveryType = data["delivery_type"] as? String,
-        deliveryAddress = data["delivery_address"] as? String
+        deliveryAddress = data["delivery_address"] as? String,
+        saleType = data["sale_type"] as? String,
+        stockHoldApplied = when (val v = data["stock_hold_applied"]) {
+            is Boolean -> v
+            is Number -> v.toInt() != 0
+            is String -> v.equals("true", ignoreCase = true)
+            else -> false
+        }
     )
 
 private fun Any?.toLocalDate(): LocalDate = when (this) {

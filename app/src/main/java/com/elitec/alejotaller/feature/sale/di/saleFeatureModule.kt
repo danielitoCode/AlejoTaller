@@ -10,6 +10,7 @@ import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
 import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepositoryImpl
 import com.elitec.shared.data.feature.sale.data.repository.SaleOfflineFirstRepository
+import com.elitec.shared.data.infraestructure.core.data.config.SaleRemoteConfig
 import com.elitec.shared.sale.feature.sale.domain.caseUse.GetSalesByIdCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.RegisterNewSaleCauseUse
@@ -26,31 +27,36 @@ import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val saleFeatureModule = module {
-    // Infrastructure instances
     single { get<AppBD>().saleDao() }
 
-    // Data layer
-    single<SaleNetRepository> { SaleNetRepositoryImpl(get(), get()) }
-    single<PaymentGateway> { SolucionesCubaPaymentGateway(get()) }
-    single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
-    single<SaleIdProvider> { AppwriteSaleIdProvider() }
-    single<TelegramNotificator> { TelegramNotificatorImpl(get()) }
-    single<SaleNotificationUserProvider> { AppwriteSaleNotificationUserProvider(get()) }
+    single<SaleRemoteConfig> {
+        SaleRemoteConfig(
+            databaseId = com.elitec.alejotaller.BuildConfig.APPWRITE_DATABASE_ID,
+            saleCollectionId = com.elitec.alejotaller.BuildConfig.SALE_TABLE_ID
+        )
+    }
 
-    // Domain layer
+    single<SaleNetRepository> { SaleNetRepositoryImpl(get(), get()) }
+    single<SaleRepository> { SaleOfflineFirstRepository(get(), get()) }
+
+    single<SaleIdProvider> { AppwriteSaleIdProvider() }
+    single<SaleNotificationUserProvider> { AppwriteSaleNotificationUserProvider(get()) }
+    single<TelegramNotificator> { TelegramNotificatorImpl() }
+    single<PaymentGateway> { SolucionesCubaPaymentGateway(get()) }
+
     factory { ObserveAllSalesCaseUse(get()) }
+    factory { GetSalesByIdCaseUse(get()) }
     factory { UpdateDeliveryTypeCaseUse(get()) }
-    factory { InitiatePaymentCaseUse(get(), get(), get(), get()) }
     factory { UpdateSaleVerificationFromRealtimeCaseUse(get()) }
     factory { RegisterNewSaleCauseUse(get(), get(), get(), get()) }
     factory { SyncSalesCaseUse(get()) }
-    factory { GetSalesByIdCaseUse(get()) }
     factory { SubscribeRealtimeSyncCaseUse(get()) }
+    factory { InitiatePaymentCaseUse(get(), get(), get()) }
 
-    // Presentation layer
-    // CheckAProductExistenceCaseUse se resuelve desde productFeatureModule (mismo Koin scope de app)
+    // CheckAProductExistenceCaseUse + ApplySoftHoldCaseUse desde productFeatureModule
     viewModel {
         SaleViewModel(
+            get(),
             get(),
             get(),
             get(),

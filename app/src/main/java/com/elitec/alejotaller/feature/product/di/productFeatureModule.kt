@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.product.di
 
 import com.elitec.alejotaller.feature.product.data.repository.ProductNetRepositoryImpl
 import com.elitec.alejotaller.feature.product.data.repository.ProductOfflineFirstRepository
+import com.elitec.alejotaller.feature.product.domain.caseUse.ApplySoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.CheckAProductExistenceCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
@@ -27,6 +28,7 @@ val productFeatureModule = module {
     factory { ObserveProductsCaseUse(get()) }
     factory { SyncProductCaseUse(get()) }
     factory { CheckAProductExistenceCaseUse(get()) }
+    factory { ApplySoftHoldCaseUse(get()) }
 
     // Presentation Layer
     viewModel { ShopCartViewModel() }

@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.sale.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elitec.alejotaller.feature.product.domain.caseUse.ApplySoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.CheckAProductExistenceCaseUse
 import com.elitec.alejotaller.feature.sale.domain.caseUse.InitiatePaymentCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.GetSalesByIdCaseUse
@@ -23,7 +24,8 @@ class SaleViewModel(
         private val registerNewSaleCauseUse: RegisterNewSaleCauseUse,
         private val initiatePaymentCaseUse: InitiatePaymentCaseUse,
         private val updateDeliveryTypeCaseUse: UpdateDeliveryTypeCaseUse,
-        private val checkAProductExistenceCaseUse: CheckAProductExistenceCaseUse
+        private val checkAProductExistenceCaseUse: CheckAProductExistenceCaseUse,
+        private val applySoftHoldCaseUse: ApplySoftHoldCaseUse
 ) : ViewModel() {
 
     val salesFlow =
@@ -47,7 +49,12 @@ class SaleViewModel(
                     }
 
             registerNewSaleCauseUse(sale)
-                    .onSuccess { transferId -> onSaleRegistered(transferId) }
+                    .onSuccess { transferId ->
+                        val saleWithId = sale.copy(id = transferId)
+                        applySoftHoldCaseUse(saleWithId)
+                                .onFailure { /* best-effort: pedido ya persistido */ }
+                        onSaleRegistered(transferId)
+                    }
                     .onFailure { error -> onFail(error.message ?: "") }
         }
     }
@@ -70,6 +77,9 @@ class SaleViewModel(
 
             initiatePaymentCaseUse(sale, paymentChannel)
                     .onSuccess { result ->
+                        val saleWithId = sale.copy(id = result.saleId)
+                        applySoftHoldCaseUse(saleWithId)
+                                .onFailure { /* best-effort */ }
                         onReadyToPay(result.saleId, result.checkoutUrl)
                     }
                     .onFailure { error ->
