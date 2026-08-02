@@ -17,26 +17,26 @@ Sirven para validar los cores (web, Android, operador) y mantener paridad.
   product/                  # (pendiente) catálogo UI available
 ```
 
-## Estado (balance Core 1 + soft-hold)
+## Estado (balance Core 1 + soft-hold + SaleType)
 
 | Política | Estado |
 |----------|--------|
 | Auth | Definida + implementada + tests |
-| Sale | Definida + soft-hold clientes + decisión operador cableada |
+| Sale | Definida + soft-hold + **SaleType en UI operador** |
 | Warehouse | Definida + soft-hold + ajuste existence/reserved en operador |
 | Product | Pendiente UI "disponible" en catálogo |
 
-### Soft-hold — cobertura por app
+### Cobertura por app
 
-| App | UNVERIFIED hold | Check available | VERIFIED stock | DELETED release |
-|-----|-----------------|-----------------|----------------|-----------------|
-| Web | sí | sí | n/a (operador) | n/a |
-| Android cliente | sí | sí | n/a | n/a |
-| alejotallerscan | n/a | n/a | sí | sí |
+| App | UNVERIFIED hold | Check available | VERIFIED stock | DELETED release | SaleType |
+|-----|-----------------|-----------------|----------------|-----------------|----------|
+| Web | sí | sí | n/a | n/a | n/a |
+| Android cliente | sí | sí | n/a | n/a | n/a |
+| alejotallerscan | n/a | n/a | sí | sí | **UI chips** |
 
 ### Pendiente próximo
 
-1. UI operador para `SaleType` (DISCOUNT / GIFT) — hoy default NORMAL
+1. Editor de importe para DISCOUNT en operador (hoy conserva amount del pedido)
 2. Colección `stock_movements` + escritura en confirmación
 3. UI catálogo: mostrar `available` (web + Android)
 4. (Core 2) Appwrite Function atómica confirm+stock

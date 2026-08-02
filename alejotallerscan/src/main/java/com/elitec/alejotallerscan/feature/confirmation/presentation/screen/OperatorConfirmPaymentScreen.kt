@@ -1,15 +1,11 @@
 package com.elitec.alejotallerscan.feature.confirmation.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Cancel
@@ -48,7 +44,6 @@ import com.elitec.alejotallerscan.infraestructure.core.presentation.components.O
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorSectionLabel
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorScreen
 import com.elitec.alejotallerscan.infraestructure.core.presentation.components.OperatorTone
-import com.elitec.alejotallerscan.infraestructure.presentation.util.AppWindowType
 import com.elitec.alejotallerscan.infraestructure.presentation.util.GlobalPreview
 import com.elitec.alejotallerscan.infraestructure.presentation.util.toDeviceMode
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
@@ -56,12 +51,11 @@ import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toLocalDateTime
 import org.koin.androidx.compose.koinViewModel
-import kotlin.time.Clock
 
 @Composable
 fun OperatorConfirmPaymentScreen(
@@ -73,15 +67,18 @@ fun OperatorConfirmPaymentScreen(
     val uiState by salesViewModel.uiState.collectAsState()
     var paymentMethod by rememberSaveable { mutableStateOf(OperatorPaymentMethod.CASH) }
     var operatorNote by rememberSaveable { mutableStateOf("") }
+    var saleType by rememberSaveable { mutableStateOf(SaleType.NORMAL) }
 
     OperatorConfirmPaymentScreenContent(
         uiState = uiState,
         paymentMethod = paymentMethod,
         operatorNote = operatorNote,
+        saleType = saleType,
         onOperatorNoteChange = { operatorNote = it },
         onPaymentMethodChange = { paymentMethod = it },
+        onSaleTypeChange = { saleType = it },
         onBuyConfirmClick = {
-            salesViewModel.confirmSelectedSale {
+            salesViewModel.confirmSelectedSale(saleType = saleType) {
                 salesViewModel.resetState()
                 scanViewModel.resetState()
                 onOpenScan()
@@ -98,179 +95,6 @@ fun OperatorConfirmPaymentScreen(
         onOpenScan = onOpenScan,
         modifier = Modifier.fillMaxSize(),
     )
-    /*OperatorScreen(
-        title = "Confirmar reservacion",
-        subtitle = "Revisa la reserva cargada, valida los items y confirma solo cuando el estado remoto haya quedado consistente.",
-        heroIcon = Icons.Rounded.CheckCircle,
-        modifier = Modifier.fillMaxSize()
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            OperatorPanelCard {
-                if (sale == null) {
-                    OperatorSectionLabel("Sin pedido cargado", tone = OperatorTone.Warning)
-                    Text("Aun no hay una venta cargada.")
-                    Button(onClick = onOpenScan, modifier = Modifier.fillMaxWidth()) {
-                        Icon(Icons.Rounded.QrCodeScanner, contentDescription = null)
-                        Text("Abrir registro de venta", modifier = Modifier.padding(start = 10.dp))
-                    }
-                } else {
-                    OperatorSectionLabel("Resumen operativo")
-                    Text("Venta: ${sale.id}", style = MaterialTheme.typography.titleLarge)
-                    Text("Nombre: ${sale.customerName ?: "No disponible"}", style = MaterialTheme.typography.bodyLarge)
-
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        StateBadge("Estado ${sale.verified}", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
-                        StateBadge("Importe \$${"%.2f".format(sale.amount)}", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-                    }
-
-                    InfoBlock(
-                        lines = listOf(
-                            "Fecha: ${sale.date}",
-                            "Cliente: ${sale.userId}",
-                            "Entrega: ${sale.deliveryType ?: "Sin definir"}",
-                            "Lineas del pedido: ${sale.products.size} - Unidades: ${sale.products.sumOf { it.quantity }}"
-                        )
-                    )
-
-                    sale.deliveryAddress?.let { address ->
-                        InfoBlock(
-                            title = "Direccion operativa",
-                            lines = buildList {
-                                add("${address.mainStreet} #${address.houseNumber}, ${address.municipality}, ${address.province}")
-                                add("Telefono: ${address.phone}")
-                                if (!address.referenceName.isNullOrBlank()) {
-                                    add("Preguntar por: ${address.referenceName}")
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-
-            if (sale != null) {
-                OperatorPanelCard {
-                    OperatorSectionLabel("Control operativo")
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        for (method in OperatorPaymentMethod.entries) {
-                            val selected = paymentMethod == method
-                            AssistChip(
-                                onClick = { paymentMethod = method },
-                                label = {
-                                    Text(
-                                        if (method == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo"
-                                    )
-                                },
-                                leadingIcon = if (selected) {
-                                    { Icon(Icons.Rounded.CheckCircle, contentDescription = null) }
-                                } else null,
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = if (selected) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                    }
-                                )
-                            )
-                        }
-                    }
-                    OutlinedTextField(
-                        value = operatorNote,
-                        onValueChange = { operatorNote = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Observacion del operador") },
-                        supportingText = {
-                            Text("Aun se conserva solo como apoyo visual local.")
-                        }
-                    )
-                    Text(
-                        "Metodo seleccionado: ${if (paymentMethod == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo entre cliente y vendedor"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                OperatorPanelCard {
-                    OperatorSectionLabel("Items del pedido")
-                    sale.products.forEach { item ->
-                        InfoBlock(
-                            lines = listOf(
-                                item.productName ?: item.productId,
-                                "Cantidad: ${item.quantity}"
-                            )
-                        )
-                    }
-                }
-            }
-
-            OperatorPanelCard {
-                uiState.notice?.let {
-                    Surface(
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        shape = CardDefaults.shape
-                    ) {
-                        Text(
-                            text = it,
-                            modifier = Modifier.padding(12.dp),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
-                uiState.error?.let {
-                    Surface(
-                        color = MaterialTheme.colorScheme.errorContainer,
-                        shape = CardDefaults.shape
-                    ) {
-                        Text(
-                            text = it,
-                            modifier = Modifier.padding(12.dp),
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        salesViewModel.confirmSelectedSale {
-                            salesViewModel.resetState()
-                            scanViewModel.resetState()
-                            onOpenScan()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = sale != null && !uiState.isLoading
-                ) {
-                    Icon(Icons.Rounded.CheckCircle, contentDescription = null)
-                    Text("Confirmar venta", modifier = Modifier.padding(start = 10.dp))
-                }
-                OutlinedButton(
-                    onClick = {
-                        salesViewModel.rejectSelectedSale {
-                            salesViewModel.resetState()
-                            scanViewModel.resetState()
-                            onOpenScan()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = sale != null && !uiState.isLoading
-                ) {
-                    Icon(Icons.Rounded.Cancel, contentDescription = null)
-                    Text("Marcar como rechazada", modifier = Modifier.padding(start = 10.dp))
-                }
-                OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Rounded.ArrowBack, contentDescription = null)
-                    Text("Volver", modifier = Modifier.padding(start = 10.dp))
-                }
-            }
-        }
-    }*/
 }
 
 @Composable
@@ -319,25 +143,40 @@ private fun InfoBlock(
     }
 }
 
+private fun SaleType.labelEs(): String = when (this) {
+    SaleType.NORMAL -> "Normal"
+    SaleType.DISCOUNT -> "Descuento"
+    SaleType.GIFT -> "Regalia"
+}
+
+private fun SaleType.hintEs(): String = when (this) {
+    SaleType.NORMAL -> "Precio de lista del pedido"
+    SaleType.DISCOUNT -> "Venta con descuento (importe del pedido se mantiene)"
+    SaleType.GIFT -> "Obsequio: importe final 0; el stock sí baja"
+}
+
 @Composable
 private fun OperatorConfirmPaymentScreenContent(
     uiState: OperatorSalesUiState,
     paymentMethod: OperatorPaymentMethod,
     operatorNote: String,
+    saleType: SaleType,
     onOperatorNoteChange: (String) -> Unit,
     onPaymentMethodChange: (OperatorPaymentMethod) -> Unit,
+    onSaleTypeChange: (SaleType) -> Unit,
     onBuyConfirmClick: () -> Unit,
     onRejectBuyButtonClick: () -> Unit,
     onBack: () -> Unit,
     onOpenScan: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val deviceMode = LocalConfiguration.current.toDeviceMode()
+    LocalConfiguration.current.toDeviceMode()
     val sale = uiState.selectedSale
+    val displayAmount = if (saleType == SaleType.GIFT) 0.0 else sale?.amount
 
     OperatorScreen(
         title = "Confirmar reservacion",
-        subtitle = "Revisa la reserva cargada, valida los items y confirma solo cuando el estado remoto haya quedado consistente.",
+        subtitle = "Revisa la reserva, elige el tipo de venta y confirma solo cuando el estado remoto quede consistente.",
         heroIcon = Icons.Rounded.CheckCircle,
         modifier = modifier.fillMaxSize()
     ) {
@@ -360,8 +199,21 @@ private fun OperatorConfirmPaymentScreenContent(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        StateBadge("Estado ${sale.verified}", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer)
-                        StateBadge("Importe \$${"%.2f".format(sale.amount)}", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+                        StateBadge(
+                            "Estado ${sale.verified}",
+                            MaterialTheme.colorScheme.secondaryContainer,
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        StateBadge(
+                            "Importe \$${\"%.2f\".format(displayAmount ?: sale.amount)}",
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        StateBadge(
+                            "Tipo ${saleType.labelEs()}",
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            MaterialTheme.colorScheme.onTertiaryContainer
+                        )
                     }
 
                     InfoBlock(
@@ -389,6 +241,43 @@ private fun OperatorConfirmPaymentScreenContent(
             }
 
             if (sale != null) {
+                OperatorPanelCard {
+                    OperatorSectionLabel("Tipo de venta")
+                    Text(
+                        "Define el tipo comercial al confirmar (SALE_POLICY). El stock baja igual en los tres casos.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        for (type in SaleType.entries) {
+                            val selected = saleType == type
+                            AssistChip(
+                                onClick = { onSaleTypeChange(type) },
+                                label = { Text(type.labelEs()) },
+                                leadingIcon = if (selected) {
+                                    { Icon(Icons.Rounded.CheckCircle, contentDescription = null) }
+                                } else null,
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = if (selected) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    }
+                                )
+                            )
+                        }
+                    }
+                    Text(
+                        saleType.hintEs(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
                 OperatorPanelCard {
                     OperatorSectionLabel("Control operativo")
                     FlowRow(
@@ -424,11 +313,11 @@ private fun OperatorConfirmPaymentScreenContent(
                         modifier = Modifier.fillMaxWidth(),
                         label = { Text("Observacion del operador") },
                         supportingText = {
-                            Text("Aun se conserva solo como apoyo visual local.")
+                            Text("Apoyo visual local (no se sincroniza).")
                         }
                     )
                     Text(
-                        "Metodo seleccionado: ${if (paymentMethod == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo entre cliente y vendedor"}",
+                        "Metodo: ${if (paymentMethod == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -479,7 +368,10 @@ private fun OperatorConfirmPaymentScreenContent(
                     enabled = sale != null && !uiState.isLoading
                 ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null)
-                    Text("Confirmar venta", modifier = Modifier.padding(start = 10.dp))
+                    Text(
+                        "Confirmar (${saleType.labelEs()})",
+                        modifier = Modifier.padding(start = 10.dp)
+                    )
                 }
                 OutlinedButton(
                     onClick = onRejectBuyButtonClick,
@@ -496,8 +388,6 @@ private fun OperatorConfirmPaymentScreenContent(
             }
         }
     }
-
-
 }
 
 @Preview(showBackground = true, device = "spec:parent=pixel_5,orientation=landscape")
@@ -505,9 +395,10 @@ private fun OperatorConfirmPaymentScreenContent(
 fun OperatorConfirmPaymentScreenContentPreview() {
     var paymentMethod by rememberSaveable { mutableStateOf(OperatorPaymentMethod.CASH) }
     var operatorNote by rememberSaveable { mutableStateOf("") }
-    var uiState by remember { mutableStateOf(
-        OperatorSalesUiState()
-            .copy(
+    var saleType by rememberSaveable { mutableStateOf(SaleType.NORMAL) }
+    var uiState by remember {
+        mutableStateOf(
+            OperatorSalesUiState().copy(
                 isLoading = true,
                 selectedSale = Sale(
                     id = "id",
@@ -538,7 +429,7 @@ fun OperatorConfirmPaymentScreenContentPreview() {
 
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(null) {
+    LaunchedEffect(Unit) {
         delay(2000)
         uiState = uiState.copy(isLoading = false)
     }
@@ -548,14 +439,20 @@ fun OperatorConfirmPaymentScreenContentPreview() {
             uiState = uiState,
             paymentMethod = paymentMethod,
             operatorNote = operatorNote,
+            saleType = saleType,
             onOperatorNoteChange = { operatorNote = it },
             onPaymentMethodChange = { paymentMethod = it },
+            onSaleTypeChange = { saleType = it },
             onBuyConfirmClick = {
                 scope.launch {
                     delay(2000)
                     uiState = uiState.copy(
                         isLoading = false,
-                        selectedSale = uiState.selectedSale?.copy(verified = BuyState.VERIFIED)
+                        selectedSale = uiState.selectedSale?.copy(
+                            verified = BuyState.VERIFIED,
+                            saleType = saleType,
+                            amount = if (saleType == SaleType.GIFT) 0.0 else uiState.selectedSale!!.amount
+                        )
                     )
                 }
             },
@@ -564,12 +461,12 @@ fun OperatorConfirmPaymentScreenContentPreview() {
                     delay(2000)
                     uiState = uiState.copy(
                         isLoading = false,
-                        selectedSale = uiState.selectedSale?.copy(verified = BuyState.UNVERIFIED)
+                        selectedSale = uiState.selectedSale?.copy(verified = BuyState.DELETED)
                     )
                 }
             },
             onBack = {},
-            onOpenScan = {  },
+            onOpenScan = {},
             modifier = Modifier.fillMaxSize()
         )
     }

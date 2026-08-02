@@ -3,7 +3,7 @@
 Documento de validación del dominio `sale` (cliente web/Android + operador `alejotallerscan`).
 
 Última actualización: 2026-08-02  
-Ámbito: **Core 1 (MVP) + soft-hold**
+Ámbito: **Core 1 (MVP) + soft-hold + SaleType en operador**
 
 ---
 
@@ -12,7 +12,7 @@ Documento de validación del dominio `sale` (cliente web/Android + operador `ale
 > **La venta solo se cierra (confirmada o rechazada) en la aplicación de escaneo del operador.**
 
 El cliente **solicita** (pedido + soft-hold de inventario).  
-El operador **decide**: tomar (VERIFIED) o rechazar (DELETED).
+El operador **decide**: tomar (VERIFIED) o rechazar (DELETED), y al confirmar elige el **tipo de venta**.
 
 No hay auto-confirmación en cliente en Core 1.
 
@@ -33,18 +33,25 @@ No hay auto-confirmación en cliente en Core 1.
 
 ---
 
-## 3. Tipos de venta (`SaleType`)
+## 3. Tipos de venta (`SaleType`) — operador
 
 Afectan **precio**, no el movimiento de stock.
 
-| Tipo | Código | Importe |
-|------|--------|---------|
-| Normal | `NORMAL` | lista |
-| Descuento | `DISCOUNT` | efectivo menor |
-| Regalia | `GIFT` | 0 |
+| Tipo | Código | Importe al confirmar | Stock |
+|------|--------|----------------------|-------|
+| Normal | `NORMAL` | se mantiene el del pedido | baja |
+| Descuento | `DISCOUNT` | se mantiene el del pedido (ajuste manual futuro) | baja |
+| Regalia | `GIFT` | **0** | baja |
 
-- Tipo se fija al confirmar (Core 1: default `NORMAL` si no hay UI de tipo aún).
-- GIFT/DISCOUNT **sí** bajan stock al confirmar.
+### UI operador (Core 1)
+
+En pantalla de confirmación el operador elige con chips:
+
+- **Normal** (default)
+- **Descuento**
+- **Regalia**
+
+Al confirmar se persiste `sale_type` en Appwrite junto con `buy_state = VERIFIED`.
 
 ---
 
@@ -61,9 +68,10 @@ Afectan **precio**, no el movimiento de stock.
 ## 5. Efectos al confirmar / rechazar
 
 ### VERIFIED
-1. `verified = VERIFIED` (+ `saleType` default NORMAL).
-2. Por ítem: `existence -= qty`, `reserved -= qty`.
-3. Realtime `sale:confirmed`.
+1. `verified = VERIFIED` + `saleType` elegido.
+2. Si `GIFT` → `amount = 0`.
+3. Por ítem: `existence -= qty`, `reserved -= qty`.
+4. Realtime `sale:confirmed`.
 
 ### DELETED
 1. `verified = DELETED`.
@@ -78,7 +86,7 @@ Afectan **precio**, no el movimiento de stock.
 |-------|--------|
 | Web | `RegisterNewSaleCaseUse` + soft-hold |
 | Android | `ApplySoftHoldCaseUse` + `SaleViewModel` |
-| Operador | `OperatorSalesViewModel` → `ApplyOperatorStockDecisionCaseUse` |
+| Operador | `OperatorConfirmPaymentScreen` (chips SaleType) → `confirmSelectedSale(saleType)` → `UpdateSaleVerificationFromRealtimeCaseUse` + stock |
 
 ---
 
@@ -87,18 +95,19 @@ Afectan **precio**, no el movimiento de stock.
 - [x] Cliente crea UNVERIFIED + soft-hold (web + Android)
 - [x] Check usa `available`
 - [x] Operador carga por QR o código manual
-- [x] Confirmar → VERIFIED + baja existence/reserved
+- [x] Confirmar → VERIFIED + `SaleType` (UI chips) + baja existence/reserved
 - [x] Rechazar → DELETED + libera reserved
-- [x] GIFT/DISCOUNT/NORMAL restan igual al confirmar
+- [x] GIFT fuerza amount 0 y sigue bajando stock
 - [x] Realtime best-effort (no revierte estado remoto)
 - [x] Visitante no puede crear venta
-- [ ] UI operador para elegir SaleType (DISCOUNT/GIFT) — default NORMAL
+- [ ] Ajuste de importe en DISCOUNT desde UI (Core 1: amount del pedido)
 - [ ] Persistencia `StockMovement` — Core 2
 
 ---
 
 ## 8. Fuera de alcance Core 1
 
+- Editor de monto para DISCOUNT en operador
 - Multi-operador locks avanzados
 - Devoluciones parciales
 - Function atómica Appwrite

@@ -96,15 +96,26 @@ class OperatorSalesViewModel(
         onLoaded()
     }
 
-    fun confirmSelectedSale(onDone: () -> Unit = {}) {
-        changeSelectedSale(true, onDone)
+    /**
+     * Confirma la venta con el [saleType] elegido por el operador (SALE_POLICY).
+     * GIFT fuerza amount = 0; stock baja igual (WAREHOUSE_POLICY).
+     */
+    fun confirmSelectedSale(
+        saleType: SaleType = SaleType.NORMAL,
+        onDone: () -> Unit = {}
+    ) {
+        changeSelectedSale(isSuccess = true, saleType = saleType, onDone = onDone)
     }
 
     fun rejectSelectedSale(onDone: () -> Unit = {}) {
-        changeSelectedSale(false, onDone)
+        changeSelectedSale(isSuccess = false, saleType = null, onDone = onDone)
     }
 
-    private fun changeSelectedSale(isSuccess: Boolean, onDone: () -> Unit) {
+    private fun changeSelectedSale(
+        isSuccess: Boolean,
+        saleType: SaleType?,
+        onDone: () -> Unit
+    ) {
         val selectedSale = _uiState.value.selectedSale ?: run {
             _uiState.value = _uiState.value.copy(error = "No hay una venta seleccionada.")
             return
@@ -125,21 +136,30 @@ class OperatorSalesViewModel(
                 error = null,
                 notice = null
             )
+            val effectiveType = if (isSuccess) saleType ?: SaleType.NORMAL else null
             Log.i(
                 TAG,
                 "event=operator_sale_update_start saleId=${selectedSale.id} " +
-                    "userId=${selectedSale.userId} decision=${if (isSuccess) "confirmed" else "rejected"}"
+                    "userId=${selectedSale.userId} decision=${if (isSuccess) "confirmed" else "rejected"} " +
+                    "saleType=${effectiveType?.name ?: "n/a"}"
             )
-            updateSaleVerificationFromRealtimeCaseUse(selectedSale.id, isSuccess)
+            updateSaleVerificationFromRealtimeCaseUse(
+                saleId = selectedSale.id,
+                isSuccess = isSuccess,
+                saleType = effectiveType
+            )
                 .onSuccess {
                     val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
+                    val resolvedType = if (isSuccess) effectiveType else selectedSale.saleType
+                    val resolvedAmount = when {
+                        !isSuccess -> selectedSale.amount
+                        resolvedType == SaleType.GIFT -> 0.0
+                        else -> selectedSale.amount
+                    }
                     val updatedSale = selectedSale.copy(
                         verified = nextState,
-                        saleType = if (isSuccess) {
-                            selectedSale.saleType ?: SaleType.NORMAL
-                        } else {
-                            selectedSale.saleType
-                        }
+                        saleType = resolvedType,
+                        amount = resolvedAmount
                     )
                     val action = if (isSuccess) {
                         OperatorSaleRecordAction.CONFIRMED
@@ -150,7 +170,7 @@ class OperatorSalesViewModel(
                     Log.i(
                         TAG,
                         "event=operator_sale_update_success saleId=${updatedSale.id} " +
-                            "nextState=$nextState"
+                            "nextState=$nextState saleType=${resolvedType?.name}"
                     )
 
                     val remoteVerification = runCatching {
@@ -176,13 +196,18 @@ class OperatorSalesViewModel(
                         return@onSuccess
                     }
 
-                    Log.i(
-                        TAG,
-                        "event=operator_remote_verification_success saleId=${confirmedRemoteSale.id} " +
-                            "verified=${confirmedRemoteSale.verified}"
+                    // Preferimos el saleType local resuelto si el remoto aún no lo refleja
+                    val saleForSideEffects = confirmedRemoteSale.copy(
+                        saleType = confirmedRemoteSale.saleType ?: resolvedType,
+                        amount = if (resolvedType == SaleType.GIFT) 0.0 else confirmedRemoteSale.amount
                     )
 
-                    // Soft-hold: ajustar existence/reserved según decisión (WAREHOUSE_POLICY)
+                    Log.i(
+                        TAG,
+                        "event=operator_remote_verification_success saleId=${saleForSideEffects.id} " +
+                            "verified=${saleForSideEffects.verified} saleType=${saleForSideEffects.saleType}"
+                    )
+
                     var stockWarning: String? = null
                     _uiState.value = _uiState.value.copy(
                         isLoading = true,
@@ -192,11 +217,11 @@ class OperatorSalesViewModel(
                             "Liberando reserva de inventario..."
                         }
                     )
-                    applyOperatorStockDecisionCaseUse(confirmedRemoteSale, isSuccess)
+                    applyOperatorStockDecisionCaseUse(saleForSideEffects, isSuccess)
                         .onFailure { error ->
                             Log.e(
                                 TAG,
-                                "event=operator_stock_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                                "event=operator_stock_failure saleId=${saleForSideEffects.id} cause=${error.message}",
                                 error
                             )
                             stockWarning =
@@ -206,24 +231,22 @@ class OperatorSalesViewModel(
                         .onSuccess {
                             Log.i(
                                 TAG,
-                                "event=operator_stock_success saleId=${confirmedRemoteSale.id} confirmed=$isSuccess"
+                                "event=operator_stock_success saleId=${saleForSideEffects.id} confirmed=$isSuccess"
                             )
                         }
 
-                    // Realtime (Pusher via publisher) es importante para UX del cliente,
-                    // pero NO debe revertir ni marcar como fallida una venta ya confirmada en Appwrite.
                     var realtimeWarning: String? = null
                     val notificationResult = runCatching {
                         _uiState.value = _uiState.value.copy(
                             isLoading = true,
                             loadingMessage = "Publicando notificación en tiempo real..."
                         )
-                        notifyOperatorSaleDecisionCaseUse(confirmedRemoteSale, isSuccess)
+                        notifyOperatorSaleDecisionCaseUse(saleForSideEffects, isSuccess)
                     }
                     notificationResult.onFailure { error ->
                         Log.e(
                             TAG,
-                            "event=operator_pusher_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                            "event=operator_pusher_failure saleId=${saleForSideEffects.id} cause=${error.message}",
                             error
                         )
                         realtimeWarning =
@@ -231,7 +254,7 @@ class OperatorSalesViewModel(
                                 "El cliente puede ver el cambio al sincronizar. (${error.message ?: "sin detalle"})"
                     }
                     if (notificationResult.isSuccess) {
-                        Log.i(TAG, "event=operator_pusher_success saleId=${confirmedRemoteSale.id}")
+                        Log.i(TAG, "event=operator_pusher_success saleId=${saleForSideEffects.id}")
                     }
 
                     val recordResult = runCatching {
@@ -239,20 +262,20 @@ class OperatorSalesViewModel(
                             isLoading = true,
                             loadingMessage = "Guardando el registro local de la operacion..."
                         )
-                        registerOperatorSaleRecordCaseUse(confirmedRemoteSale, action)
+                        registerOperatorSaleRecordCaseUse(saleForSideEffects, action)
                     }
                     recordResult.onFailure { error ->
                         Log.e(
                             TAG,
-                            "event=operator_local_record_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                            "event=operator_local_record_failure saleId=${saleForSideEffects.id} cause=${error.message}",
                             error
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             loadingMessage = null,
-                            selectedSale = confirmedRemoteSale,
+                            selectedSale = saleForSideEffects,
                             notice = if (isSuccess) {
-                                "Venta confirmada en servidor."
+                                "Venta confirmada (${resolvedType?.name ?: "NORMAL"}) en servidor."
                             } else {
                                 "Venta rechazada en servidor."
                             },
@@ -265,10 +288,10 @@ class OperatorSalesViewModel(
                         onDone()
                         return@onSuccess
                     }
-                    Log.i(TAG, "event=operator_local_record_saved saleId=${confirmedRemoteSale.id} action=$action")
+                    Log.i(TAG, "event=operator_local_record_saved saleId=${saleForSideEffects.id} action=$action")
 
                     val baseNotice = if (isSuccess) {
-                        "Venta confirmada, stock actualizado y registrada correctamente."
+                        "Venta confirmada como ${resolvedType?.name ?: "NORMAL"}, stock actualizado."
                     } else {
                         "Venta rechazada, hold liberado y registrada correctamente."
                     }
@@ -278,7 +301,7 @@ class OperatorSalesViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         loadingMessage = null,
-                        selectedSale = confirmedRemoteSale,
+                        selectedSale = saleForSideEffects,
                         notice = if (extraWarnings == null) baseNotice else "$baseNotice $extraWarnings",
                         error = null
                     )
