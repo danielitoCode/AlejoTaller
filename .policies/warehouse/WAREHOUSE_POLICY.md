@@ -3,7 +3,7 @@
 Documento de validación de inventario / stock para AlejoTaller.
 
 Última actualización: 2026-08-02  
-Ámbito: **Core 1 (MVP) + soft-hold**  
+Ámbito: **Core 1 (MVP) + soft-hold + tests parciales**  
 Relacionado: [SALE_POLICY](../sale/SALE_POLICY.md)
 
 ---
@@ -107,20 +107,32 @@ Operador QR o código manual
 
 ---
 
-## 8. Checklist Core 1
+## 8. Tests parciales (Core 1)
+
+| Suite | Qué valida |
+|-------|------------|
+| Web `check-a-product-existence.case.use.test.ts` | available = existence − reserved |
+| Web `RegisterNewSaleCaseUse.soft-hold.test.ts` | reserved += qty, insuficiencia |
+| Android `SoftHoldCaseUseTest` | availableStock, check, hold, idempotencia |
+
+---
+
+## 9. Checklist Core 1
 
 - [x] UNVERIFIED incrementa `reserved` (web + Android)
 - [x] VERIFIED resta `existence` y `reserved` (operador)
 - [x] DELETED resta solo `reserved` (operador)
 - [x] Check cliente usa `available = existence - reserved`
 - [x] GIFT / DISCOUNT / NORMAL restan igual en confirmación
-- [ ] Cada salida genera `StockMovement` con `saleId` (Core 2 / colección)
 - [x] `stock_hold_applied` para idempotencia de hold
 - [x] `existence` / `reserved` no quedan negativos (clamp)
+- [x] Tests parciales soft-hold / available (web + Android cliente)
+- [ ] Cada salida genera `StockMovement` con `saleId` (Core 2 / colección)
+- [ ] Tests automatizados operador confirm/reject — QA / Core 2
 
 ---
 
-## 9. Fuera de alcance Core 1
+## 10. Fuera de alcance Core 1
 
 - Colección `stock_movements` persistida
 - Multi-almacén / ubicaciones

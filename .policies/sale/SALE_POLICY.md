@@ -3,7 +3,7 @@
 Documento de validación del dominio `sale` (cliente web/Android + operador `alejotallerscan`).
 
 Última actualización: 2026-08-02  
-Ámbito: **Core 1 (MVP) + soft-hold + SaleType + importe efectivo**
+Ámbito: **Core 1 (MVP) + soft-hold + SaleType + importe efectivo + tests parciales**
 
 ---
 
@@ -89,7 +89,17 @@ En pantalla de confirmación:
 
 ---
 
-## 7. Checklist Core 1
+## 7. Tests parciales (Core 1)
+
+| Suite | Qué valida |
+|-------|------------|
+| Web `check-a-product-existence.case.use.test.ts` | available antes de crear |
+| Web `RegisterNewSaleCaseUse.soft-hold.test.ts` | reserved += qty, insuficiencia, telegram best-effort |
+| Android `SoftHoldCaseUseTest` | availableStock, check, ApplySoftHold, idempotencia |
+
+---
+
+## 8. Checklist Core 1
 
 - [x] Cliente crea UNVERIFIED + soft-hold (web + Android)
 - [x] Check usa `available`
@@ -100,11 +110,13 @@ En pantalla de confirmación:
 - [x] DISCOUNT: importe efectivo editable y validado (`0 ≤ amount < lista`)
 - [x] Realtime best-effort (no revierte estado remoto)
 - [x] Visitante no puede crear venta
+- [x] Tests parciales soft-hold / available (web + Android cliente)
 - [ ] Persistencia `StockMovement` — Core 2
+- [ ] Tests automatizados operador confirm/reject stock — Core 2 / QA
 
 ---
 
-## 8. Fuera de alcance Core 1
+## 9. Fuera de alcance Core 1
 
 - Descuento por línea de ítem (solo amount total de la venta)
 - Multi-operador locks avanzados
