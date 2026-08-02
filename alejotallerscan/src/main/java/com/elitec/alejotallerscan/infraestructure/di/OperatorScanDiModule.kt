@@ -11,8 +11,11 @@ import com.elitec.alejotallerscan.feature.history.domain.caseuse.RegisterOperato
 import com.elitec.alejotallerscan.feature.history.domain.repository.OperatorSaleRecordRepository
 import com.elitec.alejotallerscan.feature.history.presentation.viewmodel.OperatorSaleRecordsViewModel
 import com.elitec.alejotallerscan.feature.product.data.repository.AppwriteOperatorProductNameRepository
+import com.elitec.alejotallerscan.feature.product.data.repository.AppwriteOperatorStockRepository
 import com.elitec.alejotallerscan.feature.product.data.repository.OperatorProductNameRepository
+import com.elitec.alejotallerscan.feature.product.domain.caseuse.ApplyOperatorStockDecisionCaseUse
 import com.elitec.alejotallerscan.feature.product.domain.caseuse.EnrichSaleProductsCaseUse
+import com.elitec.alejotallerscan.feature.product.domain.repository.OperatorStockRepository
 import com.elitec.alejotallerscan.feature.reservation.domain.caseuse.SearchReservationsCaseUse
 import com.elitec.alejotallerscan.feature.reservation.presentation.viewmodel.OperatorReservationSearchViewModel
 import com.elitec.alejotallerscan.feature.scan.domain.caseuse.ParseSaleScanPayloadCaseUse
@@ -97,6 +100,7 @@ val operatorScanDiModule = module {
     single<OperatorSaleRealtimeNotifier> { PublisherSaleRealtimeNotifier(get(), get()) }
     single<OperatorSaleRecordRepository> { RoomOperatorSaleRecordRepository(get()) }
     single<OperatorProductNameRepository> { AppwriteOperatorProductNameRepository(get()) }
+    single<OperatorStockRepository> { AppwriteOperatorStockRepository(get()) }
     single<OperatorSyncNotificationService> { OperatorSaleSyncNotificationService(get()) }
 
     factory { AuthUserCaseUse(get()) }
@@ -111,11 +115,12 @@ val operatorScanDiModule = module {
     factory { RegisterOperatorSaleRecordCaseUse(get()) }
     factory { ObserveOperatorSaleRecordsCaseUse(get()) }
     factory { EnrichSaleProductsCaseUse(get()) }
+    factory { ApplyOperatorStockDecisionCaseUse(get()) }
     factory { SyncPendingOperatorSalesCaseUse(get(), get(), get()) }
 
     viewModel { OperatorAuthViewModel(get(), get(), get(), get()) }
     viewModel { OperatorReservationSearchViewModel(get()) }
     viewModel { OperatorScanViewModel(get(), get(), get(), get()) }
-    viewModel { OperatorSalesViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { OperatorSalesViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { OperatorSaleRecordsViewModel(get(), get(), get()) }
 }

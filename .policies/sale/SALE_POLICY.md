@@ -22,143 +22,83 @@ No hay auto-confirmación en cliente en Core 1.
 
 | Estado | Quién lo pone | Significado | Stock |
 |--------|---------------|-------------|-------|
-| **UNVERIFIED** | Cliente (web/Android) al registrar el pedido | Solicitud pendiente | soft-hold: `reserved += qty` |
-| **VERIFIED** | Operador (`alejotallerscan`) al confirmar | Venta tomada / hecha | `existence -= qty`, `reserved -= qty` |
-| **DELETED** | Operador al rechazar | Solicitud descartada | libera hold: `reserved -= qty` |
+| **UNVERIFIED** | Cliente (web/Android) | Solicitud pendiente | soft-hold: `reserved += qty` |
+| **VERIFIED** | Operador | Venta tomada | `existence -= qty`, `reserved -= qty` |
+| **DELETED** | Operador | Descartada | libera hold: `reserved -= qty` |
 
-### Canales de atención del operador (Core 1)
+### Canales de atención del operador
 
-1. **Escaneo QR** — canal en vivo (código de la reserva en pantalla del cliente).
-2. **Entrada manual** — código / id de reserva tecleado o buscado.
-
-Ambos caminos llegan a la misma decisión: **confirmar** o **rechazar**.
+1. **Escaneo QR**
+2. **Entrada manual** (código / id)
 
 ---
 
 ## 3. Tipos de venta (`SaleType`)
 
-Definidos en dominio compartido. Afectan **precio / importe**, no el movimiento de stock.
+Afectan **precio**, no el movimiento de stock.
 
-| Tipo | Código | Descripción | Importe (`amount`) |
-|------|--------|-------------|--------------------|
-| **Venta normal** | `NORMAL` | Precio de lista del catálogo | Suma de `unitPrice × quantity` |
-| **Venta con descuento** | `DISCOUNT` | Alineado con dueño o promoción de tienda | Menor que lista; se registra el precio efectivo |
-| **Regalia / obsequio** | `GIFT` | Entrega sin cobro comercial | `0` (o nominal 0 por línea) |
+| Tipo | Código | Importe |
+|------|--------|---------|
+| Normal | `NORMAL` | lista |
+| Descuento | `DISCOUNT` | efectivo menor |
+| Regalia | `GIFT` | 0 |
 
-### Reglas de tipo
-
-- El **tipo se fija en la confirmación del operador** (Core 1), no por el cliente.
-- Una solicitud UNVERIFIED no tiene aún `SaleType` definitivo (o se asume `NORMAL` provisional hasta confirmar).
-- Al pasar a **VERIFIED**, el operador elige el tipo y, si aplica, el monto/descuento final.
-- **GIFT** y **DISCOUNT** no eximen de baja de inventario (ver WAREHOUSE_POLICY).
+- Tipo se fija al confirmar (Core 1: default `NORMAL` si no hay UI de tipo aún).
+- GIFT/DISCOUNT **sí** bajan stock al confirmar.
 
 ---
 
-## 4. Roles
-
-| Actor | Puede crear UNVERIFIED | Puede VERIFIED / DELETED | Puede elegir SaleType |
-|-------|------------------------|--------------------------|------------------------|
-| Cliente (auth o visitor→login para comprar) | Sí | No | No |
-| Operador (`alejotallerscan`) | No (salvo flujos futuros) | **Sí** | **Sí** |
-| Visitante sin cuenta | No (solo catálogo) | No | No |
-
----
-
-## 5. Ítems de venta (`SaleItem`)
-
-Cada línea debe poder reconstruir contabilidad y stock:
+## 4. Soft-hold e idempotencia
 
 | Campo | Uso |
 |-------|-----|
-| `productId` | Identidad del producto |
-| `quantity` | Unidades (≥ 1) |
-| `productName` | Snapshot legible |
-| `unitPrice` | Precio unitario **efectivo** al cerrar (lista, descontado o 0 si GIFT) |
-| `listUnitPrice` (opcional) | Precio de lista al momento (auditoría de descuento) |
-
-`Sale.amount` = suma de `unitPrice × quantity` (0 en GIFT completo).
+| `Product.reserved` | Comprometido en UNVERIFIED |
+| `available` | `existence - reserved` |
+| `Sale.stockHoldApplied` | Evita doble hold |
 
 ---
 
-## 6. Soft-hold e idempotencia
+## 5. Efectos al confirmar / rechazar
 
-| Campo | Uso |
-|-------|-----|
-| `Product.reserved` | Unidades comprometidas en UNVERIFIED |
-| `available` | `existence - reserved` (calculado, no persistido) |
-| `Sale.stockHoldApplied` / `stock_hold_applied` | Evita doble incremento de `reserved` |
+### VERIFIED
+1. `verified = VERIFIED` (+ `saleType` default NORMAL).
+2. Por ítem: `existence -= qty`, `reserved -= qty`.
+3. Realtime `sale:confirmed`.
 
-Al crear UNVERIFIED el cliente:
-
-1. Soft-check `quantity <= available`
-2. Persiste sale
-3. Aplica hold (`reserved += qty`) y marca `stock_hold_applied`
+### DELETED
+1. `verified = DELETED`.
+2. Por ítem: `reserved -= qty`.
+3. Realtime `sale:rejected`.
 
 ---
 
-## 7. Efectos al confirmar / rechazar
+## 6. Implementación de referencia
 
-### Al **VERIFIED**
-
-1. Persistir `verified = VERIFIED` y `saleType`.
-2. Por cada ítem: `existence -= qty`, `reserved -= qty`.
-3. Registrar `StockMovement` SALIDA_VENTA.
-4. Publicar realtime `sale:confirmed`.
-
-### Al **DELETED** (rechazo)
-
-1. Persistir `verified = DELETED`.
-2. Por cada ítem: `reserved -= qty` (liberar hold).
-3. **No** tocar `existence`.
-4. Publicar realtime `sale:rejected`.
-
-### Mientras **UNVERIFIED**
-
-- Soft-hold activo: reduce `available` para otros clientes.
-- No se reduce `existence`.
+| Actor | Pieza |
+|-------|--------|
+| Web | `RegisterNewSaleCaseUse` + soft-hold |
+| Android | `ApplySoftHoldCaseUse` + `SaleViewModel` |
+| Operador | `OperatorSalesViewModel` → `ApplyOperatorStockDecisionCaseUse` |
 
 ---
 
-## 8. Entrega y pago (contexto, no cambian el tipo)
+## 7. Checklist Core 1
 
-- `DeliveryType`: PICKUP / DELIVERY — preferencia del cliente tras o durante el flujo.
-- `PaymentChannel`: canales de cobro existentes (Transfermóvil, UltraPay, etc.).
-- Independientes de `SaleType`.
-
----
-
-## 9. Implementación de referencia
-
-### Dominio
-- `web/.../sale/domain/entity/enums.ts` + `Sale.ts` (`saleType`, `stockHoldApplied`)
-- `web/.../product/domain/entity/Product.ts` (`reserved`, `availableStock`)
-- `RegisterNewSaleCaseUse` — create + soft-hold
-
-### Operador
-- Escaneo / confirmación: ajustar stock físico + liberar reserved
-
-### Cliente
-- Alta UNVERIFIED + hold
-- Reacción realtime: UI; stock se sincroniza vía catálogo
-
----
-
-## 10. Checklist Core 1
-
-- [x] Cliente crea reserva → `UNVERIFIED` + soft-hold
+- [x] Cliente crea UNVERIFIED + soft-hold (web + Android)
 - [x] Check usa `available`
-- [ ] Operador carga por QR o código manual
-- [ ] Confirmar → `VERIFIED` + `SaleType` + baja existence/reserved
-- [ ] Rechazar → `DELETED` + libera reserved
-- [ ] GIFT con amount 0 sigue bajando stock al confirmar
-- [ ] Realtime llega a cliente web y Android
+- [x] Operador carga por QR o código manual
+- [x] Confirmar → VERIFIED + baja existence/reserved
+- [x] Rechazar → DELETED + libera reserved
+- [x] GIFT/DISCOUNT/NORMAL restan igual al confirmar
+- [x] Realtime best-effort (no revierte estado remoto)
 - [x] Visitante no puede crear venta
+- [ ] UI operador para elegir SaleType (DISCOUNT/GIFT) — default NORMAL
+- [ ] Persistencia `StockMovement` — Core 2
 
 ---
 
-## 11. Fuera de alcance Core 1
+## 8. Fuera de alcance Core 1
 
-- Multi-operador con locks optimistas avanzados
-- Devoluciones parciales de línea
-- Facturación fiscal formal
-- Function atómica Appwrite (Core 2 recomendado)
+- Multi-operador locks avanzados
+- Devoluciones parciales
+- Function atómica Appwrite

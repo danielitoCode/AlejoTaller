@@ -1,11 +1,12 @@
 package com.elitec.alejotallerscan.feature.sale.presentation.viewmodel
 
 import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.elitec.alejotallerscan.feature.confirmation.domain.caseuse.NotifyOperatorSaleDecisionCaseUse
 import com.elitec.alejotallerscan.feature.history.domain.caseuse.RegisterOperatorSaleRecordCaseUse
 import com.elitec.alejotallerscan.feature.history.domain.entity.OperatorSaleRecordAction
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import com.elitec.alejotallerscan.feature.product.domain.caseuse.ApplyOperatorStockDecisionCaseUse
 import com.elitec.shared.data.feature.sale.data.dao.SaleDao
 import com.elitec.shared.data.feature.sale.data.mapper.toDomain
 import com.elitec.shared.data.feature.sale.data.mapper.toDto
@@ -14,6 +15,7 @@ import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +30,8 @@ class OperatorSalesViewModel(
     private val saleDao: SaleDao,
     private val updateSaleVerificationFromRealtimeCaseUse: UpdateSaleVerificationFromRealtimeCaseUse,
     private val notifyOperatorSaleDecisionCaseUse: NotifyOperatorSaleDecisionCaseUse,
-    private val registerOperatorSaleRecordCaseUse: RegisterOperatorSaleRecordCaseUse
+    private val registerOperatorSaleRecordCaseUse: RegisterOperatorSaleRecordCaseUse,
+    private val applyOperatorStockDecisionCaseUse: ApplyOperatorStockDecisionCaseUse
 ) : ViewModel() {
     companion object {
         const val TAG = "OperatorSalesVM"
@@ -130,7 +133,14 @@ class OperatorSalesViewModel(
             updateSaleVerificationFromRealtimeCaseUse(selectedSale.id, isSuccess)
                 .onSuccess {
                     val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
-                    val updatedSale = selectedSale.copy(verified = nextState)
+                    val updatedSale = selectedSale.copy(
+                        verified = nextState,
+                        saleType = if (isSuccess) {
+                            selectedSale.saleType ?: SaleType.NORMAL
+                        } else {
+                            selectedSale.saleType
+                        }
+                    )
                     val action = if (isSuccess) {
                         OperatorSaleRecordAction.CONFIRMED
                     } else {
@@ -172,6 +182,34 @@ class OperatorSalesViewModel(
                             "verified=${confirmedRemoteSale.verified}"
                     )
 
+                    // Soft-hold: ajustar existence/reserved según decisión (WAREHOUSE_POLICY)
+                    var stockWarning: String? = null
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = true,
+                        loadingMessage = if (isSuccess) {
+                            "Actualizando inventario (salida de stock)..."
+                        } else {
+                            "Liberando reserva de inventario..."
+                        }
+                    )
+                    applyOperatorStockDecisionCaseUse(confirmedRemoteSale, isSuccess)
+                        .onFailure { error ->
+                            Log.e(
+                                TAG,
+                                "event=operator_stock_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
+                                error
+                            )
+                            stockWarning =
+                                "La venta quedó actualizada, pero falló el ajuste de stock. " +
+                                    "Revisar inventario manualmente. (${error.message ?: "sin detalle"})"
+                        }
+                        .onSuccess {
+                            Log.i(
+                                TAG,
+                                "event=operator_stock_success saleId=${confirmedRemoteSale.id} confirmed=$isSuccess"
+                            )
+                        }
+
                     // Realtime (Pusher via publisher) es importante para UX del cliente,
                     // pero NO debe revertir ni marcar como fallida una venta ya confirmada en Appwrite.
                     var realtimeWarning: String? = null
@@ -209,7 +247,6 @@ class OperatorSalesViewModel(
                             "event=operator_local_record_failure saleId=${confirmedRemoteSale.id} cause=${error.message}",
                             error
                         )
-                        // El estado remoto ya es definitivo; el historial local es secundario.
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             loadingMessage = null,
@@ -220,6 +257,7 @@ class OperatorSalesViewModel(
                                 "Venta rechazada en servidor."
                             },
                             error = listOfNotNull(
+                                stockWarning,
                                 realtimeWarning,
                                 error.message ?: "No se pudo registrar la venta en el dispositivo."
                             ).joinToString(" ")
@@ -230,16 +268,18 @@ class OperatorSalesViewModel(
                     Log.i(TAG, "event=operator_local_record_saved saleId=${confirmedRemoteSale.id} action=$action")
 
                     val baseNotice = if (isSuccess) {
-                        "Venta confirmada y registrada correctamente."
+                        "Venta confirmada, stock actualizado y registrada correctamente."
                     } else {
-                        "Venta rechazada y registrada correctamente."
+                        "Venta rechazada, hold liberado y registrada correctamente."
                     }
+
+                    val extraWarnings = listOfNotNull(stockWarning, realtimeWarning).joinToString(" ").ifBlank { null }
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         loadingMessage = null,
                         selectedSale = confirmedRemoteSale,
-                        notice = if (realtimeWarning == null) baseNotice else "$baseNotice $realtimeWarning",
+                        notice = if (extraWarnings == null) baseNotice else "$baseNotice $extraWarnings",
                         error = null
                     )
                     onDone()

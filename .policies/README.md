@@ -9,22 +9,37 @@ Sirven para validar los cores (web, Android, operador) y mantener paridad.
 .policies/
   README.md
   auth/
-    AUTH_POLICY.md          # Clasificación de perfil, visitante vs autenticado
+    AUTH_POLICY.md
   sale/
-    SALE_POLICY.md          # Ciclo UNVERIFIED→VERIFIED/DELETED, tipos NORMAL|DISCOUNT|GIFT
+    SALE_POLICY.md
   warehouse/
-    WAREHOUSE_POLICY.md     # Baja de stock solo en VERIFIED (cantidad de la línea)
-  product/                  # (pendiente) catálogo, existence visible, visitor vs auth
+    WAREHOUSE_POLICY.md
+  product/                  # (pendiente) catálogo UI available
 ```
 
-## Estado
+## Estado (balance Core 1 + soft-hold)
 
-| Política | Estado Core 1 |
-|----------|---------------|
+| Política | Estado |
+|----------|--------|
 | Auth | Definida + implementada + tests |
-| Sale | Definida (modelos a alinear / implementar tipo + confirmación) |
-| Warehouse | Definida (movimientos en confirmación pendiente de cablear) |
-| Product | Pendiente |
+| Sale | Definida + soft-hold clientes + decisión operador cableada |
+| Warehouse | Definida + soft-hold + ajuste existence/reserved en operador |
+| Product | Pendiente UI "disponible" en catálogo |
+
+### Soft-hold — cobertura por app
+
+| App | UNVERIFIED hold | Check available | VERIFIED stock | DELETED release |
+|-----|-----------------|-----------------|----------------|-----------------|
+| Web | sí | sí | n/a (operador) | n/a |
+| Android cliente | sí | sí | n/a | n/a |
+| alejotallerscan | n/a | n/a | sí | sí |
+
+### Pendiente próximo
+
+1. UI operador para `SaleType` (DISCOUNT / GIFT) — hoy default NORMAL
+2. Colección `stock_movements` + escritura en confirmación
+3. UI catálogo: mostrar `available` (web + Android)
+4. (Core 2) Appwrite Function atómica confirm+stock
 
 ## Regla de oro
 
