@@ -7,7 +7,6 @@ import com.elitec.shared.data.infraestructure.core.data.config.SaleRemoteConfig
 import io.appwrite.ID
 import io.appwrite.Query
 import io.appwrite.services.Databases
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 class SaleNetRepositoryImpl(
@@ -104,7 +103,9 @@ internal fun SaleDto.toAppwriteData(): Map<String, Any?> = mapOf(
     "user_id" to userId,
     "customer_name" to customerName,
     "delivery_type" to deliveryType,
-    "delivery_address" to deliveryAddress
+    "delivery_address" to deliveryAddress,
+    "sale_type" to saleType,
+    "stock_hold_applied" to stockHoldApplied
 ).filterValues { value -> value != null }
 
 

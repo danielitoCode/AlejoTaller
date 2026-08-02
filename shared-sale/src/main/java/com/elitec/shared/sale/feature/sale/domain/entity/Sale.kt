@@ -19,7 +19,11 @@ data class Sale(
      * SALE_POLICY: tipo comercial al cerrar en operador.
      * null mientras UNVERIFIED (provisional); obligatorio al pasar a VERIFIED.
      */
-    val saleType: SaleType? = null
+    val saleType: SaleType? = null,
+    /**
+     * Soft-hold aplicado (reserved++). Idempotencia ante reintentos.
+     */
+    val stockHoldApplied: Boolean = false
 )
 
 enum class BuyState {

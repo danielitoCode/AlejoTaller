@@ -13,5 +13,6 @@ fun Document<Map<String, Any>>.toProductDto(): ProductDto =
         categoryId = (data["category_id"] as? String) ?: "",
         rating = (data["rating"] as? Number)?.toDouble() ?: 0.0,
         photoLocalResource = 1,
-        existence = ((data["existence"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
+        existence = ((data["existence"] as? Number)?.toInt() ?: 0).coerceAtLeast(0),
+        reserved = ((data["reserved"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
     )

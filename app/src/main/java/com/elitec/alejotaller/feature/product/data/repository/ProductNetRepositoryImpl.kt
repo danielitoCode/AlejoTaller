@@ -27,4 +27,14 @@ class ProductNetRepositoryImpl(
         )
         return  response.toProductDto()
     }
+
+    override suspend fun updateReserved(productId: String, reserved: Int): ProductDto {
+        val response = netDB.updateDocument(
+            databaseId = BuildConfig.APPWRITE_DATABASE_ID,
+            collectionId = BuildConfig.PRODUCT_TABLE_ID,
+            documentId = productId,
+            data = mapOf("reserved" to reserved.coerceAtLeast(0))
+        )
+        return response.toProductDto()
+    }
 }

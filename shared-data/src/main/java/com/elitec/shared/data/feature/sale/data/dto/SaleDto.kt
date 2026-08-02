@@ -6,6 +6,7 @@ import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleType
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -26,7 +27,11 @@ data class SaleDto(
     @SerialName("delivery_type")
     val deliveryType: String? = null,
     @SerialName("delivery_address")
-    val deliveryAddress: String? = null
+    val deliveryAddress: String? = null,
+    @SerialName("sale_type")
+    val saleType: String? = null,
+    @SerialName("stock_hold_applied")
+    val stockHoldApplied: Boolean = false
 )
 
 fun String.toBuyState(): BuyState = when(this) {
@@ -47,4 +52,11 @@ fun String.toDeliveryType(): DeliveryType = when(this) {
     "PICKUP" -> DeliveryType.PICKUP
     "DELIVERY" -> DeliveryType.DELIVERY
     else -> throw Exception("Estado de venta imposible de resolver")
+}
+
+fun String?.toSaleTypeOrNull(): SaleType? = when (this) {
+    "NORMAL" -> SaleType.NORMAL
+    "DISCOUNT" -> SaleType.DISCOUNT
+    "GIFT" -> SaleType.GIFT
+    else -> null
 }

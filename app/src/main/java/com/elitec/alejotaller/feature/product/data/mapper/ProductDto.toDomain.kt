@@ -13,5 +13,6 @@ fun ProductDto.toDomain(): Product =
         categoryId = categoryId,
         rating = rating,
         photoLocalResource = 1,
-        existence = existence.coerceAtLeast(0)
+        existence = existence.coerceAtLeast(0),
+        reserved = reserved.coerceAtLeast(0)
     )

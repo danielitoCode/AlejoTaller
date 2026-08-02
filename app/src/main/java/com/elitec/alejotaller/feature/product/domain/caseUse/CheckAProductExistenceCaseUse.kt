@@ -5,8 +5,8 @@ import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 
 /**
- * Soft-check de disponibilidad al crear un pedido (paridad con web).
- * No descuenta stock; el descuento definitivo ocurre en el operador al confirmar.
+ * Soft-check de disponibilidad usando available = existence - reserved.
+ * No descuenta stock físico; aplica soft-hold por separado al registrar.
  */
 class CheckAProductExistenceCaseUse(
     private val repository: ProductRepository
@@ -31,6 +31,6 @@ class CheckAProductExistenceCaseUse(
     private suspend fun checkExistence(quantityOfSale: Int, productId: String): Boolean {
         val product = repository.getById(productId)
             ?: error("El producto no se encuentra disponible")
-        return quantityOfSale <= product.existence
+        return quantityOfSale <= product.availableStock()
     }
 }

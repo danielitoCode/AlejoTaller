@@ -4,6 +4,7 @@ import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.data.feature.sale.data.dto.toBuyState
 import com.elitec.shared.data.feature.sale.data.dto.toCurrency
 import com.elitec.shared.data.feature.sale.data.dto.toDeliveryType
+import com.elitec.shared.data.feature.sale.data.dto.toSaleTypeOrNull
 import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryAddress
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import kotlinx.serialization.json.Json
@@ -21,7 +22,9 @@ fun SaleDto.toDomain(): Sale =
         deliveryType = deliveryType?.toDeliveryType(),
         deliveryAddress = deliveryAddress?.let {
             runCatching { Json.decodeFromString<DeliveryAddress>(it) }.getOrNull()
-        }
+        },
+        saleType = saleType.toSaleTypeOrNull(),
+        stockHoldApplied = stockHoldApplied
     )
 
 

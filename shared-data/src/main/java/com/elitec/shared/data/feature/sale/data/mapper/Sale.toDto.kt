@@ -15,5 +15,7 @@ fun Sale.toDto(): SaleDto =
         userId = userId,
         customerName = customerName,
         deliveryType = deliveryType?.toString(),
-        deliveryAddress = deliveryAddress?.let { Json.encodeToString(it) }
+        deliveryAddress = deliveryAddress?.let { Json.encodeToString(it) },
+        saleType = saleType?.name,
+        stockHoldApplied = stockHoldApplied
     )

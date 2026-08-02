@@ -22,12 +22,15 @@ data class ProductDto(
     val categoryId: String,
     val rating: Double = 0.0,
     val photoLocalResource: Int? = null,
-    /** Stock disponible. Atributo Appwrite: existence */
-    val existence: Int = 0
+    /** Stock físico. Atributo Appwrite: existence */
+    val existence: Int = 0,
+    /** Soft-hold. Atributo Appwrite: reserved */
+    val reserved: Int = 0
 ) {
     init {
         require(id != "") { "The value of product identifier cant not by empty" }
         require(price >= 0.0) { "The price of product identifier cant not by a negative" }
         require(existence >= 0) { "Product existence (stock) cannot be negative" }
+        require(reserved >= 0) { "Product reserved stock cannot be negative" }
     }
 }

@@ -25,4 +25,14 @@ class ProductOfflineFirstRepository(
         val remote = net.getAll()
         bd.replaceAll(remote)
     }
+
+    override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
+        if (quantity <= 0) return getById(productId)
+        val current = bd.getById(productId) ?: runCatching { net.getById(productId) }.getOrNull()
+            ?: return null
+        val nextReserved = (current.reserved + quantity).coerceAtLeast(0)
+        val updated = net.updateReserved(productId, nextReserved)
+        bd.insert(updated)
+        return updated.toDomain()
+    }
 }
