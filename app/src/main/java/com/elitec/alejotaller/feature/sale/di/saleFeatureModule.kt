@@ -41,7 +41,7 @@ val saleFeatureModule = module {
 
     single<SaleIdProvider> { AppwriteSaleIdProvider() }
     single<SaleNotificationUserProvider> { AppwriteSaleNotificationUserProvider(get()) }
-    single<TelegramNotificator> { TelegramNotificatorImpl() }
+    single<TelegramNotificator> { TelegramNotificatorImpl(get()) }
     single<PaymentGateway> { SolucionesCubaPaymentGateway(get()) }
 
     factory { ObserveAllSalesCaseUse(get()) }
@@ -51,7 +51,7 @@ val saleFeatureModule = module {
     factory { RegisterNewSaleCauseUse(get(), get(), get(), get()) }
     factory { SyncSalesCaseUse(get()) }
     factory { SubscribeRealtimeSyncCaseUse(get()) }
-    factory { InitiatePaymentCaseUse(get(), get(), get()) }
+    factory { InitiatePaymentCaseUse(get(), get(), get(),get()) }
 
     // CheckAProductExistenceCaseUse + ApplySoftHoldCaseUse desde productFeatureModule
     viewModel {
