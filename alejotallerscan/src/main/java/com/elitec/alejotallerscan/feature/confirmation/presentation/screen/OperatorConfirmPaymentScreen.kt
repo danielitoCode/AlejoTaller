@@ -2,6 +2,7 @@ package com.elitec.alejotallerscan.feature.confirmation.presentation.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,6 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.koin.androidx.compose.koinViewModel
+import java.util.Locale
 
 @Composable
 fun OperatorConfirmPaymentScreen(
@@ -175,8 +177,12 @@ private fun SaleType.labelEs(): String = when (this) {
 private fun SaleType.hintEs(): String = when (this) {
     SaleType.NORMAL -> "Precio de lista del pedido"
     SaleType.DISCOUNT -> "Ingresa el importe efectivo (menor al de lista)"
-    SaleType.GIFT -> "Obsequio: importe final 0; el stock sí baja"
+    SaleType.GIFT -> "Obsequio: importe final 0; el stock si baja"
 }
+
+/** Formato dinero sin comillas anidadas en templates (evita romper el parser). */
+private fun money(amount: Double): String =
+    String.format(Locale.US, "%.2f", amount)
 
 /**
  * Valida importe efectivo según SALE_POLICY.
@@ -199,6 +205,7 @@ private fun resolveDisplayAmount(
     SaleType.NORMAL -> listAmount
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OperatorConfirmPaymentScreenContent(
     uiState: OperatorSalesUiState,
@@ -222,10 +229,12 @@ private fun OperatorConfirmPaymentScreenContent(
     val displayAmount = resolveDisplayAmount(listAmount, saleType, discountAmountText)
     val discountValid = saleType != SaleType.DISCOUNT || isDiscountAmountValid(listAmount, discountAmountText)
     val canConfirm = sale != null && !uiState.isLoading && discountValid
+    val listAmountLabel = money(listAmount)
+    val displayAmountLabel = money(displayAmount)
 
     OperatorScreen(
         title = "Confirmar reservacion",
-        subtitle = "Revisa la reserva, elige el tipo de venta e importe efectivo según SALE_POLICY.",
+        subtitle = "Revisa la reserva, elige el tipo de venta e importe efectivo segun SALE_POLICY.",
         heroIcon = Icons.Rounded.CheckCircle,
         modifier = modifier.fillMaxSize()
     ) {
@@ -241,7 +250,10 @@ private fun OperatorConfirmPaymentScreenContent(
                 } else {
                     OperatorSectionLabel("Resumen operativo")
                     Text("Venta: ${sale.id}", style = MaterialTheme.typography.titleLarge)
-                    Text("Nombre: ${sale.customerName ?: "No disponible"}", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "Nombre: ${sale.customerName ?: "No disponible"}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -249,24 +261,24 @@ private fun OperatorConfirmPaymentScreenContent(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         StateBadge(
-                            "Estado ${sale.verified}",
-                            MaterialTheme.colorScheme.secondaryContainer,
-                            MaterialTheme.colorScheme.onSecondaryContainer
+                            text = "Estado ${sale.verified}",
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         StateBadge(
-                            "Lista \$${\"%.2f\".format(listAmount)}",
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            text = "Lista $$listAmountLabel",
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         StateBadge(
-                            "Efectivo \$${\"%.2f\".format(displayAmount)}",
-                            MaterialTheme.colorScheme.primaryContainer,
-                            MaterialTheme.colorScheme.onPrimaryContainer
+                            text = "Efectivo $$displayAmountLabel",
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                         StateBadge(
-                            "Tipo ${saleType.labelEs()}",
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                            MaterialTheme.colorScheme.onTertiaryContainer
+                            text = "Tipo ${saleType.labelEs()}",
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
                         )
                     }
 
@@ -283,10 +295,13 @@ private fun OperatorConfirmPaymentScreenContent(
                         InfoBlock(
                             title = "Direccion operativa",
                             lines = buildList {
-                                add("${address.mainStreet} #${address.houseNumber}, ${address.municipality}, ${address.province}")
-                                add("Telefono: ${address.phone}")
+                                add(
+                                    address.mainStreet + " #" + address.houseNumber +
+                                        ", " + address.municipality + ", " + address.province
+                                )
+                                add("Telefono: " + address.phone)
                                 if (!address.referenceName.isNullOrBlank()) {
-                                    add("Preguntar por: ${address.referenceName}")
+                                    add("Preguntar por: " + address.referenceName)
                                 }
                             }
                         )
@@ -313,8 +328,15 @@ private fun OperatorConfirmPaymentScreenContent(
                                 onClick = { onSaleTypeChange(type) },
                                 label = { Text(type.labelEs()) },
                                 leadingIcon = if (selected) {
-                                    { Icon(Icons.Rounded.CheckCircle, contentDescription = null) }
-                                } else null,
+                                    {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                                 colors = AssistChipDefaults.assistChipColors(
                                     containerColor = if (selected) {
                                         MaterialTheme.colorScheme.primaryContainer
@@ -338,13 +360,12 @@ private fun OperatorConfirmPaymentScreenContent(
                             modifier = Modifier.fillMaxWidth(),
                             label = { Text("Importe efectivo (descuento)") },
                             supportingText = {
-                                Text(
-                                    if (discountValid) {
-                                        "Debe ser >= 0 y menor a \$${\"%.2f\".format(listAmount)} (precio de lista)"
-                                    } else {
-                                        "Importe inválido: usa un valor >= 0 y menor al de lista"
-                                    }
-                                )
+                                val support = if (discountValid) {
+                                    "Debe ser >= 0 y menor a $$listAmountLabel (precio de lista)"
+                                } else {
+                                    "Importe invalido: usa un valor >= 0 y menor al de lista"
+                                }
+                                Text(support)
                             },
                             isError = !discountValid,
                             singleLine = true,
@@ -354,7 +375,7 @@ private fun OperatorConfirmPaymentScreenContent(
 
                     if (saleType == SaleType.GIFT) {
                         Text(
-                            "Importe final al confirmar: \$0.00",
+                            "Importe final al confirmar: $0.00",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -374,12 +395,23 @@ private fun OperatorConfirmPaymentScreenContent(
                                 onClick = { onPaymentMethodChange(method) },
                                 label = {
                                     Text(
-                                        if (method == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo"
+                                        if (method == OperatorPaymentMethod.CASH) {
+                                            "Efectivo"
+                                        } else {
+                                            "Pago directo"
+                                        }
                                     )
                                 },
                                 leadingIcon = if (selected) {
-                                    { Icon(Icons.Rounded.CheckCircle, contentDescription = null) }
-                                } else null,
+                                    {
+                                        Icon(
+                                            Icons.Rounded.CheckCircle,
+                                            contentDescription = null
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                                 colors = AssistChipDefaults.assistChipColors(
                                     containerColor = if (selected) {
                                         MaterialTheme.colorScheme.primaryContainer
@@ -400,7 +432,12 @@ private fun OperatorConfirmPaymentScreenContent(
                         }
                     )
                     Text(
-                        "Metodo: ${if (paymentMethod == OperatorPaymentMethod.CASH) "Efectivo" else "Pago directo"}",
+                        "Metodo: " +
+                            if (paymentMethod == OperatorPaymentMethod.CASH) {
+                                "Efectivo"
+                            } else {
+                                "Pago directo"
+                            },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -420,25 +457,25 @@ private fun OperatorConfirmPaymentScreenContent(
             }
 
             OperatorPanelCard {
-                uiState.notice?.let {
+                uiState.notice?.let { notice ->
                     Surface(
                         color = MaterialTheme.colorScheme.primaryContainer,
                         shape = CardDefaults.shape
                     ) {
                         Text(
-                            text = it,
+                            text = notice,
                             modifier = Modifier.padding(12.dp),
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
                 }
-                uiState.error?.let {
+                uiState.error?.let { errorMsg ->
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = CardDefaults.shape
                     ) {
                         Text(
-                            text = it,
+                            text = errorMsg,
                             modifier = Modifier.padding(12.dp),
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
@@ -452,7 +489,7 @@ private fun OperatorConfirmPaymentScreenContent(
                 ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null)
                     Text(
-                        "Confirmar (${saleType.labelEs()} · \$${\"%.2f\".format(displayAmount)})",
+                        "Confirmar (${saleType.labelEs()} · $$displayAmountLabel)",
                         modifier = Modifier.padding(start = 10.dp)
                     )
                 }
@@ -527,12 +564,13 @@ fun OperatorConfirmPaymentScreenContentPreview() {
             onBuyConfirmClick = {
                 scope.launch {
                     delay(500)
+                    val current = uiState.selectedSale ?: return@launch
                     uiState = uiState.copy(
-                        selectedSale = uiState.selectedSale?.copy(
+                        selectedSale = current.copy(
                             verified = BuyState.VERIFIED,
                             saleType = saleType,
                             amount = resolveDisplayAmount(
-                                uiState.selectedSale!!.amount,
+                                current.amount,
                                 saleType,
                                 discountAmountText
                             )
@@ -543,8 +581,9 @@ fun OperatorConfirmPaymentScreenContentPreview() {
             onRejectBuyButtonClick = {
                 scope.launch {
                     delay(500)
+                    val current = uiState.selectedSale ?: return@launch
                     uiState = uiState.copy(
-                        selectedSale = uiState.selectedSale?.copy(verified = BuyState.DELETED)
+                        selectedSale = current.copy(verified = BuyState.DELETED)
                     )
                 }
             },
