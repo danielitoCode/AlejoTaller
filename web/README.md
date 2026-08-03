@@ -71,10 +71,23 @@ Variables frecuentes:
 
 - Appwrite endpoint
 - Appwrite project id
+- Appwrite database id
 - Pusher key y cluster
 - URL de dashboard admin
 - URLs de APK y releases
 - Telegram bot settings si aplica el flujo comercial actual
+
+### Contrato publico de Appwrite para visitantes
+
+La web usa los IDs de coleccion definidos en `src/core/infrastructure/data/appwrite/public-data-contract.ts`:
+
+| Coleccion Appwrite | Publica para visitante | Motivo |
+| --- | --- | --- |
+| `product` | Si | Catalogo visible con sesion invitada/anonima. |
+| `category` | Si | Filtros y agrupacion del catalogo visible con sesion invitada/anonima. |
+| `promotions` | No por defecto | Las promociones pueden seguir privadas; la UI silencia errores 401/403 en sesiones invitadas. |
+
+En Appwrite, la coleccion `product` y la coleccion `category` deben permitir `read` al rol usado por visitantes. Si se usa una sesion anonima de Appwrite, configura lectura para `Role.users()` o el rol/equipo equivalente asignado a esos usuarios anonimos; si se permite acceso sin sesion, usa `Role.guests()`/`Role.any()` segun la politica del proyecto. Las operaciones `create`, `update` y `delete` deben permanecer restringidas a usuarios administrativos/operadores.
 
 ## Estado Actual
 

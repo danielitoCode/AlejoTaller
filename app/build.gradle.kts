@@ -58,7 +58,6 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-
             injectLocalProperties()
 
             proguardFiles(

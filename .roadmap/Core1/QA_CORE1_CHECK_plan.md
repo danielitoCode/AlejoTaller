@@ -21,9 +21,9 @@
 
 ## 0. Preparación común
 
-- [ ] 0.1 Productos A/B/C cargados en Appwrite con existence/reserved correctos
-- [ ] 0.2 Cuenta cliente autenticada de prueba (email real)
-- [ ] 0.3 Segunda sesión (otro navegador o dispositivo) para race de soft-hold
+- [X] 0.1 Productos A/B/C cargados en Appwrite con existence/reserved correctos
+- [X] 0.2 Cuenta cliente autenticada de prueba (email real)
+- [X] 0.3 Segunda sesión (otro navegador o dispositivo) para race de soft-hold
 - [ ] 0.4 Acceso a operador (`alejotallerscan`) con rol válido
 - [ ] 0.5 Anotar saleId / QR de cada pedido de prueba
 
