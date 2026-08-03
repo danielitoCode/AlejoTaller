@@ -1,15 +1,15 @@
 package com.elitec.alejotaller.infraestructure.core.di
 
 import com.elitec.alejotaller.feature.notifications.domain.caseuse.SavePromotionCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
-import com.elitec.alejotaller.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
-import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.alejotaller.infraestructure.core.data.realtime.FakeRealTimeManager
 import com.elitec.alejotaller.infraestructure.core.data.realtime.RealTimeManagerImpl
 import com.elitec.alejotaller.infraestructure.core.presentation.services.OrderNotificationService
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.RealtimeSyncViewModel
 import com.elitec.alejotaller.infraestructure.core.presentation.viewmodel.ToasterViewModel
+import com.elitec.shared.sale.feature.sale.domain.caseUse.InterpretSaleRealtimeEventCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.SubscribeRealtimeSyncCaseUse
+import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
+import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module

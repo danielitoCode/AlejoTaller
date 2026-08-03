@@ -1,6 +1,6 @@
 package com.elitec.alejotaller.feature.sale.data.fakeRepository
 
-import com.elitec.alejotaller.feature.sale.domain.repository.PaymentGateway
+import com.elitec.shared.sale.feature.sale.domain.repository.PaymentGateway
 
 class FakeSolucionesCubaPaymentGateway: PaymentGateway {
     override suspend fun createCheckoutUrl(

@@ -1,8 +1,8 @@
 package com.elitec.alejotaller.infraestructure.core.data.realtime
 
-import com.elitec.alejotaller.feature.notifications.domain.entity.Promotion
-import com.elitec.alejotaller.feature.sale.domain.realtime.RealtimeSyncGateway
-import com.elitec.alejotaller.feature.sale.domain.realtime.SaleRealtimeEvent
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
+import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
+import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

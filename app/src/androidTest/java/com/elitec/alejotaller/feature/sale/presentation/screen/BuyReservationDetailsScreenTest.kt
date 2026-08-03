@@ -6,11 +6,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
 import kotlinx.datetime.LocalDate
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +32,8 @@ class BuyReservationDetailsScreenTest {
         products = listOf(
             SaleItem(productId = "p1", quantity = 2, productName = "Aceite Motor")
         ),
-        userId = "user1"
+        userId = "user1",
+        currency = Currency.USD
     )
 
     @Test

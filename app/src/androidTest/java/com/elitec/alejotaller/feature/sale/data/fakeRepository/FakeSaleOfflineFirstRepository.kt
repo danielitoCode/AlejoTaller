@@ -1,10 +1,11 @@
 package com.elitec.alejotaller.feature.sale.data.fakeRepository
 
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.DeliveryType
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.entity.SaleItem
-import com.elitec.alejotaller.feature.sale.domain.repository.SaleRepository
+import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
+import com.elitec.shared.sale.feature.sale.domain.entity.Currency
+import com.elitec.shared.sale.feature.sale.domain.entity.DeliveryType
+import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
+import com.elitec.shared.sale.feature.sale.domain.repository.SaleRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,11 +24,12 @@ class FakeSaleOfflineFirstRepository: SaleRepository {
             amount = 45.8,
             verified = BuyState.VERIFIED,
             products = listOf(
-                SaleItem("1",3),
+                SaleItem("1", 3),
                 SaleItem("3",1)
             ),
             userId = "userId test",
-            deliveryType = DeliveryType.DELIVERY
+            deliveryType = DeliveryType.DELIVERY,
+            currency = Currency.USD
         ),
         Sale(
             id = "sale id 2",
@@ -39,7 +41,8 @@ class FakeSaleOfflineFirstRepository: SaleRepository {
                 SaleItem("2",1)
             ),
             userId = "userId test",
-            deliveryType = DeliveryType.DELIVERY
+            deliveryType = DeliveryType.DELIVERY,
+            currency = Currency.USD
         ),
         Sale(
             id = "sale id 3",
@@ -51,7 +54,8 @@ class FakeSaleOfflineFirstRepository: SaleRepository {
                 SaleItem("3",1)
             ),
             userId = "userId test",
-            deliveryType = DeliveryType.DELIVERY
+            deliveryType = DeliveryType.DELIVERY,
+            currency = Currency.USD
         )
     )
 

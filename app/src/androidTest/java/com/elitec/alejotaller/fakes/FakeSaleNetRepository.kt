@@ -1,9 +1,7 @@
 package com.elitec.alejotaller.fakes
 
-import com.elitec.alejotaller.feature.sale.data.dto.SaleDto
-import com.elitec.alejotaller.feature.sale.domain.entity.BuyState
-import com.elitec.alejotaller.feature.sale.domain.entity.Sale
-import com.elitec.alejotaller.feature.sale.domain.repository.SaleNetRepository
+import com.elitec.shared.data.feature.sale.data.dto.SaleDto
+import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.DateTimeFormat
@@ -25,6 +23,14 @@ class FakeSaleNetRepository(
 
     override suspend fun getById(itemId: String): SaleDto =
         salesById[itemId] ?: throw NoSuchElementException("Sale with id '$itemId' was not found")
+
+    override suspend fun search(
+        field: String,
+        query: String,
+        limit: Int
+    ): List<SaleDto> {
+        TODO("Not yet implemented")
+    }
 
     override suspend fun save(item: SaleDto) {
         require(!salesById.containsKey(item.id)) { "Sale with id '${item.id}' already exists" }
