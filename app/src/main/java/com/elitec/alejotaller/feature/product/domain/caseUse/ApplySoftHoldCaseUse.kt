@@ -25,10 +25,10 @@ class ApplySoftHoldCaseUse(
 
         try {
             for (item in sale.products) {
-                // Re-read from Appwrite to validate availability against source of truth.
+                // Una reserva es una mutación crítica: si Appwrite no responde,
+                // no se autoriza la decisión usando la copia local de Room.
                 val product = repository.refreshFromRemote(item.productId)
-                    ?: repository.getById(item.productId)
-                    ?: error("Producto no disponible para soft-hold: ${item.productId}")
+                    ?: error("Producto no disponible desde Appwrite para soft-hold: ${item.productId}")
 
                 if (item.quantity > product.availableStock()) {
                     val label = item.productName?.takeIf { it.isNotBlank() } ?: item.productId
