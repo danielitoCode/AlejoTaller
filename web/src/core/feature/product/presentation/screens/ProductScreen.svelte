@@ -18,6 +18,8 @@
     export let searchQuery: string = "";
     export let selectedCategoryId: string | null = null;
     export let loading: boolean = false;
+    /** true mientras se refresca stock desde Appwrite — badges en estado neutro */
+    export let stockSyncing: boolean = false;
     export let onSearchQueryChanged: (query: string) => void = () => {};
     export let onCategorySelected: (categoryId: string | null) => void = () => {};
     export let onProductClick: (productId: string) => void = () => {};
@@ -116,7 +118,7 @@
         {/if}
 
         <div class="products-region">
-            {#if loading}
+            {#if loading && filteredProducts.length === 0}
                 <div class="loading-container">
                     <LoadingIndicator size={80} aria-label="Cargando" />
                     <p>Cargando productos...</p>
@@ -135,6 +137,9 @@
                 {#if filteredProducts.length > 0}
                     <div class="featured-strip">
                         <span>🔥 Más vendidos</span>
+                        {#if stockSyncing}
+                            <span class="sync-hint">Actualizando stock…</span>
+                        {/if}
                     </div>
                 {/if}
                 <div class="products-grid">
@@ -148,6 +153,7 @@
                         >
                             <ProductCard
                                     {product}
+                                    stockPending={stockSyncing}
                                     onClick={() => onProductClick(product.id)}
                                     onFavoriteClick={() => onFavoriteClick(product.id)}
                             />
@@ -238,6 +244,7 @@
     .featured-strip {
         display: flex;
         align-items: center;
+        gap: 12px;
 
         margin-bottom: 18px;
 
@@ -247,6 +254,13 @@
 
         color:
                 var(--md-sys-color-primary);
+    }
+
+    .sync-hint {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant);
+        opacity: 0.85;
     }
 
     .products-region {
@@ -353,7 +367,6 @@
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
-        /* Reserve space for FAB / bottom-nav + safe-area */
         padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px));
     }
 

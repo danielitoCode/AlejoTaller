@@ -13,7 +13,6 @@
     import type {NavController} from "../../../../../lib/navigation/NavController";
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
-    import { rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
     import { logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
@@ -27,6 +26,7 @@
     let pendingProductId: string | null = null;
     let resolvingPendingProductId: string | null = null;
     let isLoading = false;
+    let stockSyncing = false;
     let showAuthOverlay = false;
 
     // Subscribe to stores
@@ -89,9 +89,15 @@
     const unsubscribeProducts = productStore.subscribe((state) => {
         products = state.items;
         isLoading = state.loading;
+        stockSyncing = state.stockSyncing;
         resolvePendingProduct();
-        if (selectedProduct && !products.find(p => p.id === selectedProduct.id)) {
-            selectedProduct = null;
+        if (selectedProduct) {
+            const updated = products.find(p => p.id === selectedProduct.id);
+            if (updated) {
+                selectedProduct = updated;
+            } else if (!products.find(p => p.id === selectedProduct.id)) {
+                selectedProduct = null;
+            }
         }
     });
 
@@ -148,12 +154,10 @@
     };
 
     const handlePromotionClick = (promotionId: string) => {
-        // Handle promotion click
         console.log("Promotion clicked:", promotionId);
     };
 
     const handleFavoriteClick = (productId: string) => {
-        // Handle favorite click
         console.log("Favorite clicked:", productId);
     };
 
@@ -173,8 +177,6 @@
 
     function handleOverlayLogin() {
         showAuthOverlay = false;
-        // Notify via prop (when passed directly) and via window event
-        // (when rendered through NavHost which can't forward custom props)
         onRequestLogin?.();
         if (typeof window !== "undefined") {
             window.dispatchEvent(new CustomEvent("request-guest-login"));
@@ -199,6 +201,7 @@
             {searchQuery}
             {selectedCategoryId}
             loading={isLoading}
+            {stockSyncing}
             onSearchQueryChanged={handleSearchQueryChanged}
             onCategorySelected={handleCategorySelected}
             onProductClick={handleProductClick}
@@ -297,7 +300,7 @@
         align-self: center;
         display: grid;
         min-height: 0;
-        background-color: #1a1c19; /* Solid dark background fallback */
+        background-color: #1a1c19;
         background: var(--md-sys-color-surface-container, #1a1c19);
         border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
         border-radius: 32px;
@@ -306,7 +309,6 @@
         box-shadow: 0 28px 72px color-mix(in srgb, black 42%, transparent);
     }
 
-    /* Responsive: Stack on smaller screens */
     @media (max-width: 768px) {
         .product-detail-modal {
             padding: 0;
