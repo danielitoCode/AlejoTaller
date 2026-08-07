@@ -1,6 +1,10 @@
 <script lang="ts">
     import { Icon } from "m3-svelte";
     import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
+    import Inventory2Rounded from "@ktibow/iconset-material-symbols/inventory-2-rounded";
+    import WarningRounded from "@ktibow/iconset-material-symbols/warning-rounded";
+    import BlockRounded from "@ktibow/iconset-material-symbols/block";
+    import SyncRounded from "@ktibow/iconset-material-symbols/sync-rounded";
     import type { Product } from "../../domain/entity/Product";
     import { availableStock } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
@@ -27,6 +31,14 @@
           : available <= 5
             ? `Ultimas ${available}`
             : `Disponibles: ${available}`;
+    $: stockIcon =
+        stockTone === "pending"
+            ? SyncRounded
+            : stockTone === "out"
+              ? BlockRounded
+              : stockTone === "low"
+                ? WarningRounded
+                : Inventory2Rounded;
 </script>
 
 <div
@@ -48,7 +60,10 @@
         />
 
         <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel} aria-busy={stockPending}>
-            {stockLabel}
+            <span class="stock-badge-icon" class:spin={stockTone === "pending"} aria-hidden="true">
+                <Icon icon={stockIcon} />
+            </span>
+            <span class="stock-badge-text">{stockLabel}</span>
         </span>
 
         <div class="card-overlay">
@@ -162,7 +177,11 @@
 
         max-width: calc(100% - 20px);
 
-        padding: 6px 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+
+        padding: 5px 10px 5px 7px;
 
         border-radius: 999px;
 
@@ -176,6 +195,30 @@
         text-overflow: ellipsis;
 
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .stock-badge-icon {
+        display: inline-flex;
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stock-badge-icon :global(svg) {
+        width: 14px;
+        height: 14px;
+    }
+
+    .stock-badge-icon.spin :global(svg) {
+        animation: stock-spin 0.9s linear infinite;
+    }
+
+    .stock-badge-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .stock-badge--ok {
@@ -202,6 +245,10 @@
     @keyframes stock-pulse {
         0%, 100% { opacity: 0.75; }
         50% { opacity: 1; }
+    }
+
+    @keyframes stock-spin {
+        to { transform: rotate(360deg); }
     }
 
     .card-overlay {
@@ -319,7 +366,7 @@
 
         .stock-badge {
             font-size: 0.68rem;
-            padding: 5px 9px;
+            padding: 4px 9px 4px 6px;
         }
     }
 
