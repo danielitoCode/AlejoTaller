@@ -8,9 +8,15 @@ interface ProductRepository {
     suspend fun getById(itemId: String): Product?
     suspend fun sync(): Result<Unit>
 
-    /**
-     * Soft-hold: incrementa `reserved` en remoto + cache local.
-     * @return producto actualizado o null si no existe.
-     */
+    /** Soft-hold: incrementa reserved en remoto + cache local. */
     suspend fun incrementReserved(productId: String, quantity: Int): Product?
+
+    /** Rollback soft-hold: decrementa reserved (clamp >= 0). */
+    suspend fun decrementReserved(productId: String, quantity: Int): Product?
+
+    /**
+     * Fuente de verdad: lee Appwrite por id y actualiza cache offline-first.
+     * Usado por soft-hold concurrente y por stock:changed.
+     */
+    suspend fun refreshFromRemote(productId: String): Product?
 }

@@ -6,31 +6,26 @@ import com.elitec.alejotaller.feature.product.domain.caseUse.ApplySoftHoldCaseUs
 import com.elitec.alejotaller.feature.product.domain.caseUse.CheckAProductExistenceCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
-import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
+import com.elitec.alejotaller.feature.product.domain.caseUse.RefreshProductsByIdsCaseUse
+import com.elitec.alejotaller.feature.product.domain.caseUse.ReleaseSoftHoldCaseUse
+import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductsCaseUse
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
-import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
-import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
-import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
-import org.koin.core.module.dsl.viewModel
+import com.elitec.alejotaller.feature.product.presentation.viewModel.ProductViewModel
+import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val productFeatureModule = module {
-    // Infrastructure instances
-    single { get<AppBD>().productsDao() }
+    single<ProductNetRepository> { ProductNetRepositoryImpl(get()) }
+    single<ProductRepository> { ProductOfflineFirstRepository(get(), get()) }
 
-    // Data layer
-    single< ProductNetRepository> { ProductNetRepositoryImpl(get()) }
-    single<ProductRepository>{ ProductOfflineFirstRepository(get(), get()) }
-
-    // Domain Layer
-    factory { GetProductByIdCaseUse(get()) }
     factory { ObserveProductsCaseUse(get()) }
-    factory { SyncProductCaseUse(get()) }
+    factory { SyncProductsCaseUse(get()) }
+    factory { GetProductByIdCaseUse(get()) }
     factory { CheckAProductExistenceCaseUse(get()) }
     factory { ApplySoftHoldCaseUse(get()) }
+    factory { ReleaseSoftHoldCaseUse(get()) }
+    factory { RefreshProductsByIdsCaseUse(get()) }
 
-    // Presentation Layer
-    viewModel { ShopCartViewModel() }
-    viewModel { ProductViewModel(get(), get(), get()) }
+    viewModel { ProductViewModel(get(), get(), get(), get()) }
 }

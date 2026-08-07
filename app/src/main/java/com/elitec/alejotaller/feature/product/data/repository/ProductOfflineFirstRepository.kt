@@ -26,11 +26,32 @@ class ProductOfflineFirstRepository(
         bd.replaceAll(remote)
     }
 
+    override suspend fun refreshFromRemote(productId: String): Product? {
+        return runCatching {
+            val remote = net.getById(productId)
+            bd.insert(remote)
+            remote.toDomain()
+        }.getOrNull()
+    }
+
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
         if (quantity <= 0) return getById(productId)
-        val current = bd.getById(productId) ?: runCatching { net.getById(productId) }.getOrNull()
+        // Concurrencia: leer siempre de red antes de escribir
+        val current = runCatching { net.getById(productId) }.getOrNull()
+            ?: bd.getById(productId)
             ?: return null
         val nextReserved = (current.reserved + quantity).coerceAtLeast(0)
+        val updated = net.updateReserved(productId, nextReserved)
+        bd.insert(updated)
+        return updated.toDomain()
+    }
+
+    override suspend fun decrementReserved(productId: String, quantity: Int): Product? {
+        if (quantity <= 0) return getById(productId)
+        val current = runCatching { net.getById(productId) }.getOrNull()
+            ?: bd.getById(productId)
+            ?: return null
+        val nextReserved = (current.reserved - quantity).coerceAtLeast(0)
         val updated = net.updateReserved(productId, nextReserved)
         bd.insert(updated)
         return updated.toDomain()
