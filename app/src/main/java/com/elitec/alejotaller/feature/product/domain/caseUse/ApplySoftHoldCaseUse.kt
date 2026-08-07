@@ -3,6 +3,7 @@ package com.elitec.alejotaller.feature.product.domain.caseUse
 import android.util.Log
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.shared.sale.feature.sale.domain.entity.Sale
+import kotlinx.coroutines.CancellationException
 
 /**
  * Soft-hold (reserved += qty) con relectura remota antes de escribir.
@@ -48,6 +49,7 @@ class ApplySoftHoldCaseUse(
                 )
             }
         } catch (error: Throwable) {
+            if (error is CancellationException) throw error
             compensate(touched, sale.id)
             throw error
         }
