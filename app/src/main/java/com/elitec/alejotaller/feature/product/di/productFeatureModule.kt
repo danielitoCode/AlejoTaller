@@ -9,11 +9,13 @@ import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCase
 import com.elitec.alejotaller.feature.product.domain.caseUse.RefreshProductsByIdsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ReleaseSoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
+import com.elitec.alejotaller.feature.product.domain.realtime.StockUpdatesListener
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
+import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherStockUpdatesListener
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -22,6 +24,8 @@ val productFeatureModule = module {
 
     single<ProductNetRepository> { ProductNetRepositoryImpl(get()) }
     single<ProductRepository> { ProductOfflineFirstRepository(get(), get()) }
+
+    single<StockUpdatesListener> { PusherStockUpdatesListener(get()) }
 
     factory { GetProductByIdCaseUse(get()) }
     factory { ObserveProductsCaseUse(get()) }
@@ -32,5 +36,5 @@ val productFeatureModule = module {
     factory { RefreshProductsByIdsCaseUse(get()) }
 
     viewModel { ShopCartViewModel() }
-    viewModel { ProductViewModel(get(), get(), get()) }
+    viewModel { ProductViewModel(get(), get(), get(), get(), get()) }
 }
