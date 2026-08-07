@@ -16,6 +16,9 @@ class FakeProductRepository(
     /** Contador de llamadas a incrementReserved (para aserciones de soft-hold). */
     val incrementReservedCalls = mutableListOf<Pair<String, Int>>()
 
+    /** Contador de llamadas a decrementReserved (para aserciones de rollback). */
+    val decrementReservedCalls = mutableListOf<Pair<String, Int>>()
+
     override fun observeAll(): Flow<List<Product>> = flow
 
     override suspend fun getById(itemId: String): Product? = byId[itemId]
@@ -26,6 +29,15 @@ class FakeProductRepository(
         incrementReservedCalls += productId to quantity
         val current = byId[productId] ?: return null
         val updated = current.copy(reserved = (current.reserved + quantity).coerceAtLeast(0))
+        byId[productId] = updated
+        flow.value = byId.values.toList()
+        return updated
+    }
+
+    override suspend fun decrementReserved(productId: String, quantity: Int): Product? {
+        decrementReservedCalls += productId to quantity
+        val current = byId[productId] ?: return null
+        val updated = current.copy(reserved = (current.reserved - quantity).coerceAtLeast(0))
         byId[productId] = updated
         flow.value = byId.values.toList()
         return updated
