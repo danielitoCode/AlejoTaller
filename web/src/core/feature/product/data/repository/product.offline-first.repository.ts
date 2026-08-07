@@ -10,12 +10,12 @@ function sortNewestFirst(products: ProductDTO[]): ProductDTO[] {
     return [...products].sort((a, b) => (b.$createdAt ?? "").localeCompare(a.$createdAt ?? ""))
 }
 
-/** Serializa el error sin romper el logger (evita "Cannot convert object to primitive value"). */
+/** Serializa el error sin romper el logger. */
 function formatCaughtError(error: unknown): string {
     if (error == null) return "unknown"
     if (typeof error === "string") return error
     if (error instanceof Error) {
-        const anyErr = error as Error & { code?: unknown; type?: unknown; response?: unknown }
+        const anyErr = error as Error & { code?: unknown; type?: unknown }
         const parts = [
             error.message || error.name || "Error",
             anyErr.code != null ? `code=${String(anyErr.code)}` : null,
@@ -30,82 +30,96 @@ function formatCaughtError(error: unknown): string {
     }
 }
 
+function prim(value: unknown): string {
+    if (value == null) return "null"
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        return String(value)
+    }
+    try {
+        return JSON.stringify(value)
+    } catch {
+        return "?"
+    }
+}
+
 /** Documento plano apto para Dexie (sin prototipos de Appwrite SDK). */
 function toPlainProductDoc(doc: ProductDTO): ProductDTO {
     const raw = doc as Record<string, unknown>
-    return {
-        ...(raw as object),
+    const plain: Record<string, unknown> = {
         $id: String(raw.$id ?? ""),
-        $createdAt: raw.$createdAt,
-        $updatedAt: raw.$updatedAt,
-        name: raw.name,
-        description: raw.description,
-        price: raw.price,
-        photo_url: raw.photo_url,
-        category_id: raw.category_id,
-        rating: raw.rating,
-        existence: raw.existence,
-        reserved: raw.reserved,
-        // alias por si Appwrite usa otros keys
-        Estado: raw.Estado,
-        reservado: raw.reservado,
-        stock: raw.stock,
-        cantidad: raw.cantidad
-    } as ProductDTO
+        $createdAt: raw.$createdAt ?? null,
+        $updatedAt: raw.$updatedAt ?? null,
+        name: raw.name ?? "",
+        description: raw.description ?? "",
+        price: raw.price ?? 0,
+        photo_url: raw.photo_url ?? "",
+        category_id: raw.category_id ?? "",
+        rating: raw.rating ?? 0,
+        existence: raw.existence ?? raw.Estado ?? raw.stock ?? raw.cantidad ?? 0,
+        reserved: raw.reserved ?? raw.reservado ?? 0
+    }
+    return plain as unknown as ProductDTO
 }
 
-/** Solo en DEV: inspecciona payload Appwrite antes de escribir Dexie. */
+/**
+ * Solo DEV. Solo strings primitivos (el console.interceptor hace String(arg)
+ * y los documentos Appwrite lanzan TypeError).
+ */
 function logRemoteStockSnapshot(source: string, remote: ProductDTO[]): void {
     if (!import.meta.env.DEV) return
 
     try {
-        const rows = remote.map((doc) => {
+        const lines: string[] = [
+            `[product][DEV] ${source} — Appwrite → antes de Dexie (${remote.length} docs)`
+        ]
+
+        for (const doc of remote) {
             const raw = doc as Record<string, unknown>
             const mapped = productFromDTO(doc)
-            return {
-                $id: String(raw.$id ?? ""),
-                name: String(raw.name ?? ""),
-                existence_raw: raw.existence,
-                reserved_raw: raw.reserved,
-                Estado: raw.Estado,
-                reservado: raw.reservado,
-                stock: raw.stock,
-                cantidad: raw.cantidad,
-                existence_mapped: mapped.existence,
-                reserved_mapped: mapped.reserved,
-                available_mapped: mapped.existence - mapped.reserved,
-                keys: Object.keys(raw)
-                    .filter((k) => !k.startsWith("$") || k === "$id")
-                    .join(",")
-            }
-        })
+            const keys = Object.keys(raw)
+                .filter((k) => !k.startsWith("$") || k === "$id")
+                .join(",")
 
-        console.group(`[product][DEV] ${source} — Appwrite → antes de Dexie (${remote.length} docs)`)
-        console.table(rows)
-        if (remote[0]) {
-            try {
-                console.log("[product][DEV] documento crudo (primer item) keys:", Object.keys(remote[0] as object))
-                console.log("[product][DEV] documento crudo (primer item):", JSON.parse(JSON.stringify(remote[0])))
-            } catch {
-                console.log("[product][DEV] documento crudo (primer item, no serializable):", remote[0])
-            }
-        }
-        const withoutExistence = rows.filter(
-            (r) =>
-                r.existence_raw == null &&
-                r.Estado == null &&
-                r.stock == null &&
-                r.cantidad == null
-        )
-        if (withoutExistence.length > 0) {
-            console.warn(
-                `[product][DEV] ${withoutExistence.length}/${rows.length} docs SIN existence/Estado/stock/cantidad. keys:`,
-                withoutExistence[0]?.keys
+            lines.push(
+                [
+                    `id=${prim(raw.$id)}`,
+                    `name=${prim(raw.name)}`,
+                    `existence_raw=${prim(raw.existence)}`,
+                    `reserved_raw=${prim(raw.reserved)}`,
+                    `Estado=${prim(raw.Estado)}`,
+                    `reservado=${prim(raw.reservado)}`,
+                    `mapped_ex=${mapped.existence}`,
+                    `mapped_rs=${mapped.reserved}`,
+                    `available=${mapped.existence - mapped.reserved}`,
+                    `keys=[${keys}]`
+                ].join(" | ")
             )
         }
-        console.groupEnd()
+
+        // Una sola línea de log por doc (todo primitivo → interceptor seguro)
+        for (const line of lines) {
+            console.info(line)
+        }
+
+        const missing = remote.filter((doc) => {
+            const raw = doc as Record<string, unknown>
+            return (
+                raw.existence == null &&
+                raw.Estado == null &&
+                raw.stock == null &&
+                raw.cantidad == null
+            )
+        })
+        if (missing.length > 0) {
+            const sampleKeys = Object.keys(missing[0] as object)
+                .filter((k) => !k.startsWith("$") || k === "$id")
+                .join(",")
+            console.warn(
+                `[product][DEV] ${missing.length}/${remote.length} docs SIN existence/Estado/stock/cantidad. sample keys=[${sampleKeys}]`
+            )
+        }
     } catch (logErr) {
-        console.warn("[product][DEV] falló logRemoteStockSnapshot:", formatCaughtError(logErr))
+        console.warn(`[product][DEV] falló logRemoteStockSnapshot: ${formatCaughtError(logErr)}`)
     }
 }
 
@@ -114,17 +128,11 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         private readonly net: ProductNetRepository
     ) {}
 
-    /** Solo cache local (sin red). Para pintar catálogo al instante. */
     async getLocalAll(): Promise<Product[]> {
         const local = await db.products.toArray()
         return sortNewestFirst(local).map(productFromDTO)
     }
 
-    /**
-     * Fuente de verdad = red.
-     * Al éxito: sobrescribe Dexie con documentos remotos (incluye existence/reserved).
-     * Al fallo de red: sirve cache local.
-     */
     async getAll(): Promise<Product[]> {
         let remote: ProductDTO[]
 
@@ -134,11 +142,11 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             const msg = formatCaughtError(error)
             logger.error(`[product] getAll RED falló: ${msg}`)
             if (import.meta.env.DEV) {
-                console.error("[product][DEV] getAll RED error completo:", error)
+                console.error(`[product][DEV] getAll RED error: ${msg}`)
             }
             const local = await db.products.toArray()
             if (import.meta.env.DEV) {
-                console.warn("[product][DEV] fallback Dexie", local.length, "docs (stock puede estar stale)")
+                console.warn(`[product][DEV] fallback Dexie ${local.length} docs (stock puede estar stale)`)
             }
             return sortNewestFirst(local).map(productFromDTO)
         }
@@ -154,9 +162,8 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             const msg = formatCaughtError(error)
             logger.error(`[product] getAll Dexie write falló: ${msg}`)
             if (import.meta.env.DEV) {
-                console.error("[product][DEV] Dexie bulkPut error:", error)
+                console.error(`[product][DEV] Dexie bulkPut error: ${msg}`)
             }
-            // Igual devolvemos dominio mapeado desde red (UI correcta aunque cache falle)
         }
 
         return remote.map(productFromDTO)
@@ -170,13 +177,13 @@ export class ProductOfflineFirstRepository implements ProductRepository {
                 await db.products.put(toPlainProductDoc(remote))
             } catch (dexieErr) {
                 if (import.meta.env.DEV) {
-                    console.warn("[product][DEV] put Dexie falló:", formatCaughtError(dexieErr))
+                    console.warn(`[product][DEV] put Dexie falló: ${formatCaughtError(dexieErr)}`)
                 }
             }
             return productFromDTO(remote)
         } catch (error: unknown) {
             if (import.meta.env.DEV) {
-                console.warn("[product][DEV] getById red falló:", formatCaughtError(error))
+                console.warn(`[product][DEV] getById red falló: ${formatCaughtError(error)}`)
             }
             const local = await db.products.get(id)
             return local ? productFromDTO(local) : null
