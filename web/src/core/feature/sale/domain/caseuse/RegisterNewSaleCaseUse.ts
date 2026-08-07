@@ -4,17 +4,25 @@ import type { SaleRepository } from "../repository/SaleRepository";
 import type { TelegramNotificator } from "../repository/TelegramNotificator";
 import type { ProductRepository } from "../../../product/domain/repository/product.repository";
 import { availableStock } from "../../../product/domain/entity/Product";
+import { publishStockChanged } from "../../../../infrastructure/data/alset-pulse/stock-pulse";
+
+/** Cola por productId para serializar soft-holds concurrentes en el mismo tab/proceso. */
+const productHoldQueues = new Map<string, Promise<void>>();
+
+function enqueueProductHold(productId: string, task: () => Promise<void>): Promise<void> {
+    const prev = productHoldQueues.get(productId) ?? Promise.resolve();
+    const next = prev.then(task, task);
+    productHoldQueues.set(
+        productId,
+        next.catch(() => {
+            /* keep queue alive */
+        })
+    );
+    return next;
+}
 
 /**
- * Registra una nueva venta (UNVERIFIED) y aplica soft-hold de inventario.
- *
- * Flujo:
- * 1. Persist sale (camino crítico)
- * 2. Por cada línea: reserved += quantity (si aún no stock_hold_applied)
- * 3. Marca stock_hold_applied en dominio (+ best-effort remoto si el repo lo permite)
- * 4. Telegram best-effort
- *
- * El stock físico (existence) solo baja en VERIFIED (operador).
+ * Registra venta UNVERIFIED + soft-hold con revalidación concurrente.
  */
 export class RegisterNewSaleCaseUse {
     constructor(
@@ -32,9 +40,12 @@ export class RegisterNewSaleCaseUse {
 
         let holdApplied = false;
         let holdError: string | null = null;
+        const touchedIds: string[] = [];
 
         try {
-            holdApplied = await this.applySoftHold(created);
+            const result = await this.applySoftHold(created);
+            holdApplied = result.applied;
+            touchedIds.push(...result.productIds);
             if (import.meta.env.DEV) {
                 console.info(
                     `[RegisterNewSaleCaseUse] soft-hold OK saleId=${created.id} applied=${holdApplied}`
@@ -53,7 +64,6 @@ export class RegisterNewSaleCaseUse {
             stockHoldApplied: holdApplied
         };
 
-        // Best-effort: persistir flag si el repositorio tiene update parcial de stock_hold_applied
         if (holdApplied) {
             try {
                 const repoAny = this.repository as SaleRepository & {
@@ -64,10 +74,17 @@ export class RegisterNewSaleCaseUse {
                 }
             } catch (flagErr) {
                 console.warn(
-                    `[RegisterNewSaleCaseUse] no se pudo persistir stock_hold_applied saleId=${created.id}: ` +
+                    `[RegisterNewSaleCaseUse] stock_hold_applied flag: ` +
                     `${flagErr instanceof Error ? flagErr.message : String(flagErr)}`
                 );
             }
+
+            void publishStockChanged({
+                productIds: touchedIds,
+                reason: "hold",
+                saleId: created.id,
+                timestamp: new Date().toISOString()
+            });
         }
 
         try {
@@ -75,13 +92,11 @@ export class RegisterNewSaleCaseUse {
             await this.telegramNotificator.notify(result, user);
         } catch (error) {
             console.warn(
-                `[RegisterNewSaleCaseUse] event=telegram_notify_best_effort_failure ` +
-                `saleId=${result.id} cause=${error instanceof Error ? error.message : String(error)}`
+                `[RegisterNewSaleCaseUse] telegram best-effort saleId=${result.id}: ` +
+                `${error instanceof Error ? error.message : String(error)}`
             );
         }
 
-        // Si el hold falló, la venta existe pero el inventario no se reservó:
-        // se anexa señal para que la UI avise (no tumba el pedido).
         if (!holdApplied && holdError) {
             (result as Sale & { softHoldError?: string }).softHoldError = holdError;
         }
@@ -89,53 +104,53 @@ export class RegisterNewSaleCaseUse {
         return result;
     }
 
-    /**
-     * Incrementa `reserved` por cada línea del pedido.
-     * Re-valida available justo antes de escribir (reduce race).
-     */
-    private async applySoftHold(sale: Sale): Promise<boolean> {
+    private async applySoftHold(
+        sale: Sale
+    ): Promise<{ applied: boolean; productIds: string[] }> {
         if (sale.stockHoldApplied) {
-            return true;
+            return { applied: true, productIds: [] };
         }
 
         if (!sale.products?.length) {
             throw new Error("Sale sin líneas: no hay soft-hold que aplicar");
         }
 
-        let anyApplied = false;
+        const productIds: string[] = [];
 
         for (const item of sale.products) {
-            const product = await this.productRepository.getById(item.productId);
-            if (!product) {
-                throw new Error(
-                    `Soft-hold: producto no encontrado productId=${item.productId}`
-                );
-            }
+            await enqueueProductHold(item.productId, async () => {
+                // Re-lectura fresca justo antes de escribir (reduce race entre clientes)
+                const product = await this.productRepository.getById(item.productId);
+                if (!product) {
+                    throw new Error(
+                        `Soft-hold: producto no encontrado productId=${item.productId}`
+                    );
+                }
 
-            const available = availableStock(product);
-            if (item.quantity > available) {
-                throw new Error(
-                    `Stock insuficiente para soft-hold: ${item.productName ?? item.productId} ` +
-                    `(pedido=${item.quantity}, disponible=${available})`
-                );
-            }
+                const available = availableStock(product);
+                if (item.quantity > available) {
+                    throw new Error(
+                        `Stock insuficiente (concurrencia): ${item.productName ?? item.productId} ` +
+                        `(pedido=${item.quantity}, disponible=${available})`
+                    );
+                }
 
-            const nextReserved = (product.reserved ?? 0) + item.quantity;
+                const nextReserved = (product.reserved ?? 0) + item.quantity;
 
-            if (import.meta.env.DEV) {
-                console.info(
-                    `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
-                    `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
-                );
-            }
+                if (import.meta.env.DEV) {
+                    console.info(
+                        `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
+                        `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
+                    );
+                }
 
-            // Payload mínimo: solo reserved (evita $id y campos ajenos)
-            await this.productRepository.update(item.productId, {
-                reserved: nextReserved
+                await this.productRepository.update(item.productId, {
+                    reserved: nextReserved
+                });
+                productIds.push(item.productId);
             });
-            anyApplied = true;
         }
 
-        return anyApplied;
+        return { applied: productIds.length > 0, productIds: [...new Set(productIds)] };
     }
 }
