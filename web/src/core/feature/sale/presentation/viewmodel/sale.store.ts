@@ -75,11 +75,19 @@ function createSaleStore() {
             }
 
             if (hasUnverified && !pusherUnsubscribe) {
+                console.info(
+                    `[SaleStore] suscribiendo sale-verification userId=${currentUserId}`
+                );
                 pusherUnsubscribe = subscribeSaleVerification(currentUserId, (eventName, payload) => {
+                    console.info(
+                        `[SaleStore] evento sale-verification recibido event=${eventName}`,
+                        payload
+                    );
                     handleSaleVerificationEvent(eventName, payload);
                 });
                 subscribedUserId = currentUserId;
             } else if (!hasUnverified && pusherUnsubscribe) {
+                console.info("[SaleStore] sin pedidos UNVERIFIED → unsuscribe sale-verification");
                 pusherUnsubscribe();
                 pusherUnsubscribe = null;
                 unsubscribeSaleVerification();
@@ -98,8 +106,13 @@ function createSaleStore() {
 
         if (!saleId || !decision) {
             logger.error(`[Pusher Event] Invalid payload: ${JSON.stringify(payload)}`);
+            console.error("[SaleStore] payload inválido sale-verification", payload);
             return;
         }
+
+        console.info(
+            `[SaleStore] aplicando decisión saleId=${saleId} decision=${decision} event=${eventName}`
+        );
 
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
         update((state) => ({
@@ -127,13 +140,18 @@ function createSaleStore() {
             toastStore.error(toastMessage, 4200);
         }
 
-        // Operador mutó stock → refresh catálogo (selectivo vía pulse si llega; fallback full)
-        void productStore.syncAll().catch(() => {});
+        console.info("[SaleStore] toast mostrado + refresh catálogo tras decisión operador");
+        void productStore.syncAll().catch((e) => {
+            console.warn("[SaleStore] syncAll tras verificación falló", e);
+        });
 
         void managePusherSubscription();
     }
 
     async function syncAll(): Promise<void> {
+        // Asegura listeners de stock aunque no estemos en la grilla de productos
+        productStore.startStockRealtime();
+
         update((state) => ({ ...state, loading: true, error: null }));
         try {
             if (get(sessionStore).isGuest) {
@@ -190,6 +208,9 @@ function createSaleStore() {
     }
 
     async function create(sale: Sale): Promise<Sale> {
+        // Crítico: listeners activos antes del soft-hold / publish local
+        productStore.startStockRealtime();
+
         update((state) => ({
             ...state,
             loading: true,
@@ -207,11 +228,9 @@ function createSaleStore() {
             }));
 
             const ids = created.products.map((p) => p.productId).filter(Boolean);
-            if (ids.length) {
-                void productStore.refreshByIds(ids).catch(() => productStore.syncAll());
-            } else {
-                void productStore.syncAll().catch(() => {});
-            }
+            console.info(
+                `[SaleStore] create OK saleId=${created.id} hold=${created.stockHoldApplied} ids=${ids.join(",")}`
+            );
 
             const softHoldError = (created as Sale & { softHoldError?: string }).softHoldError;
             if (softHoldError) {
@@ -219,9 +238,24 @@ function createSaleStore() {
                     `Pedido creado, pero no se pudo reservar stock: ${softHoldError}`
                 );
             } else if (created.stockHoldApplied) {
-                if (import.meta.env.DEV) {
-                    console.info(`[SaleStore] soft-hold aplicado saleId=${created.id}`);
+                toastStore.info(
+                    "Pedido registrado. Actualizando disponibilidad de productos…",
+                    3000
+                );
+                console.info(`[SaleStore] soft-hold aplicado saleId=${created.id} → refresh visible`);
+            } else {
+                toastStore.success("Pedido registrado");
+            }
+
+            // Refresh con feedback (banner/toast stock-rt) aunque no haya Pulse
+            if (ids.length) {
+                try {
+                    await productStore.refreshByIdsVisible(ids, "hold");
+                } catch {
+                    void productStore.syncAll().catch(() => {});
                 }
+            } else {
+                void productStore.syncAll().catch(() => {});
             }
 
             await managePusherSubscription();
@@ -246,6 +280,7 @@ function createSaleStore() {
     }
 
     async function cancelUnverified(sale: Sale): Promise<Sale> {
+        productStore.startStockRealtime();
         update((state) => ({ ...state, loading: true, error: null }));
         try {
             const updated = await saleContainer.useCases.cancelUnverified.execute(sale);
@@ -255,7 +290,11 @@ function createSaleStore() {
             }));
             const ids = sale.products.map((p) => p.productId).filter(Boolean);
             if (ids.length) {
-                void productStore.refreshByIds(ids).catch(() => {});
+                try {
+                    await productStore.refreshByIdsVisible(ids, "release");
+                } catch {
+                    void productStore.refreshByIds(ids).catch(() => {});
+                }
             }
             toastStore.info("Pedido cancelado. Stock liberado.");
             await managePusherSubscription();
