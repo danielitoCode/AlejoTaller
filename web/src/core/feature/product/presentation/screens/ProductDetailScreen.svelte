@@ -5,6 +5,7 @@
     import ShareRounded from "@ktibow/iconset-material-symbols/share";
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
     import type { Product } from "../../domain/entity/Product";
+    import { availableStock } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { parseProductImageUrls } from "../utils/product.images";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
@@ -21,6 +22,17 @@
     export let onAuthRequiredClick: () => void = () => {};
     export let canAddToCart: boolean = true;
     export let isGuest: boolean = false;
+
+    $: available = availableStock(product);
+    $: stockTone = available === 0 ? "out" : available <= 5 ? "low" : "ok";
+    $: stockLabel =
+        available === 0
+            ? "Agotado"
+            : available <= 5
+              ? `Ultimas ${available} unidades`
+              : `Disponibles: ${available}`;
+    $: inStock = available > 0;
+    $: showCartButton = canAddToCart && inStock;
 
     function handleShare() {
         const hash = buildHomeHash(productDetail.path, { productId: product.id });
@@ -162,6 +174,10 @@
         <section class="product-info-section">
             <h1 class="product-name">{product.name}</h1>
 
+            <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel}>
+                {stockLabel}
+            </span>
+
             {#if product.price}
                 <div class="price-section">
                     <span class="price-value">{formatMoney(product.price, $exchangeStore)}</span>
@@ -180,16 +196,20 @@
     </div>
 
     <footer class="bottom-bar">
-        {#if canAddToCart}
+        {#if showCartButton}
             <div class="cart-action">
                 <Button variant="filled" size="m" onclick={onAddToCartClick}>
                     <Icon icon={ShoppingCartRounded} />
                     <span>Agregar al carrito</span>
                 </Button>
             </div>
+        {:else if canAddToCart && !inStock}
+            <div class="out-of-stock-action" role="status">
+                Producto agotado — no hay unidades disponibles para comprar.
+            </div>
         {:else if isGuest}
             <div class="guest-cta-card">
-                <p class="Writer a message...EncryptedCon">Crea una cuenta para comprar y reservar</p>
+                <p>Crea una cuenta para comprar y reservar</p>
                 <Button variant="filled" size="m" onclick={onAuthRequiredClick}>
                     <span>Crear cuenta / Iniciar sesion</span>
                 </Button>
@@ -273,13 +293,20 @@
     }
 
     .guest-action,
-    .guest-cta-card {
+    .guest-cta-card,
+    .out-of-stock-action {
         padding: 12px 16px;
         border-radius: 999px;
         background: var(--md-sys-color-surface-container-high);
         color: var(--md-sys-color-on-surface-variant);
         font-weight: 700;
         text-align: center;
+    }
+
+    .out-of-stock-action {
+        border-radius: 20px;
+        background: var(--md-sys-color-error-container, #ffdad6);
+        color: var(--md-sys-color-on-error-container, #410002);
     }
 
     .guest-cta-card {
@@ -581,6 +608,30 @@
                 var(--md-sys-color-on-surface);
     }
 
+    .stock-badge {
+        align-self: flex-start;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stock-badge--ok {
+        color: var(--md-sys-color-on-secondary-container, #1a1c19);
+        background: var(--md-sys-color-secondary-container, #c8efc8);
+    }
+
+    .stock-badge--low {
+        color: var(--md-sys-color-on-tertiary-container, #3b2f00);
+        background: var(--md-sys-color-tertiary-container, #ffe08a);
+    }
+
+    .stock-badge--out {
+        color: var(--md-sys-color-on-error-container, #410002);
+        background: var(--md-sys-color-error-container, #ffdad6);
+    }
+
     .price-section {
         display: flex;
         align-items: center;
@@ -753,8 +804,6 @@
             height: 44px;
         }
     }
-
-    /* MOBILE */
 
     @media (max-width: 480px) {
         .product-detail-screen {

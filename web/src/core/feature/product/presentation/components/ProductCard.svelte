@@ -2,16 +2,27 @@
     import { Icon } from "m3-svelte";
     import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
     import type { Product } from "../../domain/entity/Product";
+    import { availableStock } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { getPrimaryProductImageUrl } from "../utils/product.images";
 
     export let product: Product;
     export let onClick: () => void = () => {};
     export let onFavoriteClick: (event: Event) => void = () => {};
+
+    $: available = availableStock(product);
+    $: stockTone = available === 0 ? "out" : available <= 5 ? "low" : "ok";
+    $: stockLabel =
+        available === 0
+            ? "Agotado"
+            : available <= 5
+              ? `Ultimas ${available}`
+              : `Disponibles: ${available}`;
 </script>
 
 <div
         class="product-item"
+        class:is-out={available === 0}
         on:click={onClick}
         role="button"
         tabindex="0"
@@ -26,6 +37,10 @@
                 alt={product.name}
                 loading="lazy"
         />
+
+        <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel}>
+            {stockLabel}
+        </span>
 
         <div class="card-overlay">
             <button
@@ -73,6 +88,10 @@
                 opacity 0.22s ease;
     }
 
+    .product-item.is-out {
+        opacity: 0.78;
+    }
+
     .product-item:active {
         transform: scale(0.985);
     }
@@ -110,6 +129,10 @@
                 filter 0.3s ease;
     }
 
+    .product-item.is-out .card-image img {
+        filter: grayscale(0.35);
+    }
+
     .product-item:hover .card-image {
         transform: translateY(-3px);
 
@@ -120,6 +143,45 @@
 
     .product-item:hover .card-image img {
         transform: scale(1.05);
+    }
+
+    .stock-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 2;
+
+        max-width: calc(100% - 20px);
+
+        padding: 6px 10px;
+
+        border-radius: 999px;
+
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.01em;
+
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    }
+
+    .stock-badge--ok {
+        color: var(--md-sys-color-on-secondary-container, #1a1c19);
+        background: var(--md-sys-color-secondary-container, #c8efc8);
+    }
+
+    .stock-badge--low {
+        color: var(--md-sys-color-on-tertiary-container, #3b2f00);
+        background: var(--md-sys-color-tertiary-container, #ffe08a);
+    }
+
+    .stock-badge--out {
+        color: var(--md-sys-color-on-error-container, #410002);
+        background: var(--md-sys-color-error-container, #ffdad6);
     }
 
     .card-overlay {
@@ -233,6 +295,11 @@
 
         .product-price {
             font-size: 1.02rem;
+        }
+
+        .stock-badge {
+            font-size: 0.68rem;
+            padding: 5px 9px;
         }
     }
 
