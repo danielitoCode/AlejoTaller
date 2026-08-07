@@ -1,6 +1,6 @@
 # Core 1 — Estado MVP (Auth + Sale + Soft-hold)
 
-**Última actualización:** 2026-08-03  
+**Última actualización:** 2026-08-07  
 **Veredicto desarrollo:** listo para QA (`QA_CORE1_CHECK_plan.md`).
 
 ## Resumen de alcance cerrado en código
@@ -15,7 +15,8 @@
 | Operador DELETED libera reserved | Hecho | Idem |
 | SaleType NORMAL/DISCOUNT/GIFT | Hecho | UI chips + monto DISCOUNT |
 | Tests parciales soft-hold | Hecho | Web + Android unit/instrumentation |
-| stock_movements / UI stock / reportes | **Core 2** | No bloquea QA Core 1 |
+| UI badge available (listado + detalle) | Hecho | ProductCard / ProductDetail web; ProductItem / ProductDetail Android |
+| stock_movements / reportes | **Core 2** | No bloquea QA Core 1 |
 
 ## Mapa respecto al roadmap original
 
@@ -25,7 +26,7 @@
 | Fase 2 modelo existence (+ reserved) | Core 1 | reserved añadido por soft-hold |
 | Fase 3 descuento en confirmación | Core 1 (soft-hold path) | Sin movimientos formales aún |
 | Fase 3.2 reserva | Core 1 | Implementado como soft-hold |
-| Fase 4 UI stock cliente | Core 2 | |
+| Fase 4 UI stock cliente | **Core 1** | Badges available cerrados 2026-08-07 |
 | Fase 5 movimientos/reportes | Core 2 | |
 | Fase 6 contabilidad | Core 2 | |
 
@@ -47,6 +48,7 @@
 - [x] existence -= y release reserved en VERIFIED
 - [x] release reserved en DELETED
 - [x] Tests parciales web/Android
+- [x] UI badge available en catálogo/detalle (web + Android)
 
 ### QA
 - [ ] Checklist manual Web

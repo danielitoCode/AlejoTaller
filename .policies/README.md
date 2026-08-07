@@ -14,25 +14,24 @@ Sirven para validar los cores (web, Android, operador) y mantener paridad.
     SALE_POLICY.md
   warehouse/
     WAREHOUSE_POLICY.md
-  product/                  # (pendiente) catálogo UI available
 ```
 
-## Estado (balance Core 1)
+## Estado (balance Core 1) — 2026-08-07
 
 | Política | Estado |
 |----------|--------|
 | Auth | Definida + implementada + tests |
-| Sale | Definida + soft-hold + SaleType + importe DISCOUNT + **tests parciales** |
-| Warehouse | Definida + soft-hold + existence/reserved + **tests parciales** |
-| Product | Pendiente UI "disponible" en catálogo |
+| Sale | Definida + soft-hold + SaleType + importe DISCOUNT + tests parciales |
+| Warehouse | Definida + soft-hold + existence/reserved + tests parciales |
+| Product UI available | **Cerrada** — badges en catálogo/detalle (web + Android) |
 
 ### Cobertura por app
 
-| App | Hold UNVERIFIED | Check available | Stock VERIFIED/DELETED | SaleType + amount |
-|-----|-----------------|-----------------|------------------------|-------------------|
-| Web | sí + test | sí + test | n/a | n/a |
-| Android cliente | sí + test | sí + test | n/a | n/a |
-| alejotallerscan | n/a | n/a | sí | **UI completa** |
+| App | Hold UNVERIFIED | Check available | Stock VERIFIED/DELETED | SaleType + amount | Badge available UI |
+|-----|-----------------|-----------------|------------------------|-------------------|--------------------|
+| Web | sí + test | sí + test | n/a | n/a | sí (ProductCard + Detail) |
+| Android cliente | sí + test | sí + test | n/a | n/a | sí (ProductItem + Detail) |
+| alejotallerscan | n/a | n/a | sí | **UI completa** | n/a (operador) |
 
 ### Tests parciales Core 1 (sale / warehouse)
 
@@ -42,12 +41,12 @@ Sirven para validar los cores (web, Android, operador) y mantener paridad.
 | Web | `RegisterNewSaleCaseUse.soft-hold.test.ts` | reserved += qty, insuficiencia, telegram best-effort |
 | Android | `SoftHoldCaseUseTest` | availableStock, CheckAProductExistence, ApplySoftHold + idempotencia |
 
-### Pendiente (fuera Core 1 estricto / siguiente)
+### Pendiente (fuera Core 1 / Core 2)
 
-1. Colección `stock_movements` + escritura en confirmación (Core 2)
-2. UI catálogo: mostrar `available` (web + Android)
-3. (Core 2) Appwrite Function atómica confirm+stock
-4. Tests automatizados del lado operador (confirm/reject stock)
+1. Colección `stock_movements` + escritura en confirmación
+2. Appwrite Function atómica confirm+stock
+3. Tests automatizados del lado operador (confirm/reject stock)
+4. Reportes / multi-almacén / devoluciones formales
 
 ## Regla de oro
 
