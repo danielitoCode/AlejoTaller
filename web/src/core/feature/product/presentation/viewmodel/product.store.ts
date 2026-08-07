@@ -229,7 +229,6 @@ function createProductStore() {
         }
     }
 
-    /** Arranca listener Pusher + local (idempotente). */
     function startStockRealtime(): void {
         startLocalStockListeners()
 
@@ -350,6 +349,23 @@ function createProductStore() {
         )
     }
 
+    async function refreshByIdsVisible(
+        productIds: string[],
+        reason: StockChangedPayload["reason"] = "hold"
+    ): Promise<void> {
+        console.info(
+            `[stock-rt] refreshByIdsVisible reason=${reason} ids=${productIds.join(",")}`
+        )
+        await handleStockChanged(
+            {
+                productIds,
+                reason,
+                timestamp: new Date().toISOString()
+            },
+            { silent: false, fromRealtime: true, source: "refreshByIdsVisible" }
+        )
+    }
+
     async function create(data: Product): Promise<void> {
         await runSaving(async () => {
             await productContainer.useCases.create.execute(data)
@@ -394,6 +410,7 @@ function createProductStore() {
         syncAll,
         syncById,
         refreshByIds,
+        refreshByIdsVisible,
         startStockRealtime,
         stopStockRealtime,
         create,
