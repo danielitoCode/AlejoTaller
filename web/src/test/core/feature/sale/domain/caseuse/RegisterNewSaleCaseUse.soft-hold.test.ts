@@ -1,7 +1,7 @@
 /**
  * Tests Core 1 — SALE_POLICY + WAREHOUSE_POLICY (cliente web).
  * Cubre validación de disponibilidad, delegación del soft-hold a la operación
- * atómica del repositorio, idempotencia y comportamiento best-effort.
+ * atómica del repositorio, compensación multi-producto, idempotencia y best-effort.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -53,7 +53,10 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
     }
 
     beforeEach(() => {
-        const products = new Map<string, Product>([["p1", { ...baseProduct }]]);
+        const products = new Map<string, Product>([
+            ["p1", { ...baseProduct }],
+            ["p2", { ...baseProduct, id: "p2", name: "Agua" }]
+        ]);
 
         saleRepo = {
             create: vi.fn().mockImplementation(async (sale: Sale) => ({
@@ -67,6 +70,7 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
 
         productRepo = {
             getById: vi.fn().mockImplementation(async (id: string) => products.get(id) ?? null),
+            refreshFromRemote: vi.fn().mockImplementation(async (id: string) => products.get(id) ?? null),
             incrementReserved: vi.fn().mockImplementation(async (id: string, quantity: number) => {
                 const current = products.get(id);
                 if (!current) return null;
@@ -74,7 +78,13 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
                 products.set(id, updated);
                 return updated;
             }),
-            decrementReserved: vi.fn(),
+            decrementReserved: vi.fn().mockImplementation(async (id: string, quantity: number) => {
+                const current = products.get(id);
+                if (!current) return null;
+                const updated = { ...current, reserved: Math.max(0, current.reserved - quantity) };
+                products.set(id, updated);
+                return updated;
+            }),
             update: vi.fn(),
             getAll: vi.fn(),
             getByCategory: vi.fn(),
@@ -102,19 +112,19 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
         const result = await useCase.execute(createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 3 }] }));
 
         expect(saleRepo.create).toHaveBeenCalled();
+        expect(productRepo.refreshFromRemote).toHaveBeenCalledWith("p1");
         expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
         expect(productRepo.update).not.toHaveBeenCalled();
         expect(result.stockHoldApplied).toBe(true);
     });
 
     it("uses available = existence - reserved when validating soft-hold", async () => {
-        vi.mocked(productRepo.getById).mockResolvedValue({
+        vi.mocked(productRepo.refreshFromRemote!).mockResolvedValue({
             ...baseProduct,
             existence: 10,
             reserved: 7
         });
 
-        // available = 3; quantity 3 → ok
         await expect(
             useCase.execute(createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 3 }] }))
         ).resolves.toBeDefined();
@@ -124,13 +134,12 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
     });
 
     it("does not mutate reserved when quantity exceeds available", async () => {
-        vi.mocked(productRepo.getById).mockResolvedValue({
+        vi.mocked(productRepo.refreshFromRemote!).mockResolvedValue({
             ...baseProduct,
             existence: 10,
             reserved: 8
         });
 
-        // available = 2; quantity 5 → soft-hold falla (best-effort: sale ya creada)
         const result = await useCase.execute(
             createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 5 }] })
         );
@@ -149,6 +158,28 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
         expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
         expect(result.stockHoldApplied).toBe(false);
         expect((result as Sale & { softHoldError?: string }).softHoldError).toContain("Soft-hold atómico rechazado");
+    });
+
+    it("compensates confirmed previous lines when a later product hold fails", async () => {
+        vi.mocked(productRepo.incrementReserved).mockImplementation(async (id: string, quantity: number) => {
+            if (id === "p2") return null;
+            return { ...baseProduct, id, reserved: quantity };
+        });
+
+        const result = await useCase.execute(
+            createSale({
+                products: [
+                    { productId: "p1", productName: "Coca", quantity: 2 },
+                    { productId: "p2", productName: "Agua", quantity: 4 }
+                ]
+            })
+        );
+
+        expect(result.stockHoldApplied).toBe(false);
+        expect(productRepo.incrementReserved).toHaveBeenNthCalledWith(1, "p1", 2);
+        expect(productRepo.incrementReserved).toHaveBeenNthCalledWith(2, "p2", 4);
+        expect(productRepo.decrementReserved).toHaveBeenCalledWith("p1", 2);
+        expect(productRepo.decrementReserved).toHaveBeenCalledTimes(1);
     });
 
     it("skips soft-hold when stockHoldApplied is already true on persisted sale", async () => {
