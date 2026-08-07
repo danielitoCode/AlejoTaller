@@ -46,16 +46,14 @@ export class RegisterNewSaleCaseUse {
             const result = await this.applySoftHold(created);
             holdApplied = result.applied;
             touchedIds.push(...result.productIds);
-            if (import.meta.env.DEV) {
-                console.info(
-                    `[RegisterNewSaleCaseUse] soft-hold OK saleId=${created.id} applied=${holdApplied}`
-                );
-            }
+            console.info(
+                `[RegisterNewSaleCaseUse] soft-hold OK saleId=${created.id} applied=${holdApplied} ids=${touchedIds.join(",")}`
+            );
         } catch (error) {
             holdError = error instanceof Error ? error.message : String(error);
             console.error(
                 `[RegisterNewSaleCaseUse] event=soft_hold_failure ` +
-                `saleId=${created.id} cause=${holdError}`
+                    `saleId=${created.id} cause=${holdError}`
             );
         }
 
@@ -75,16 +73,30 @@ export class RegisterNewSaleCaseUse {
             } catch (flagErr) {
                 console.warn(
                     `[RegisterNewSaleCaseUse] stock_hold_applied flag: ` +
-                    `${flagErr instanceof Error ? flagErr.message : String(flagErr)}`
+                        `${flagErr instanceof Error ? flagErr.message : String(flagErr)}`
                 );
             }
 
-            void publishStockChanged({
-                productIds: touchedIds,
-                reason: "hold",
-                saleId: created.id,
-                timestamp: new Date().toISOString()
-            });
+            console.info(
+                `[RegisterNewSaleCaseUse] emitiendo stock:changed ids=${touchedIds.join(",")} saleId=${created.id}`
+            );
+            try {
+                await publishStockChanged({
+                    productIds: touchedIds,
+                    reason: "hold",
+                    saleId: created.id,
+                    timestamp: new Date().toISOString()
+                });
+            } catch (pubErr) {
+                console.warn(
+                    `[RegisterNewSaleCaseUse] publishStockChanged: ` +
+                        `${pubErr instanceof Error ? pubErr.message : String(pubErr)}`
+                );
+            }
+        } else {
+            console.warn(
+                `[RegisterNewSaleCaseUse] NO se emite stock:changed (holdApplied=false) saleId=${created.id}`
+            );
         }
 
         try {
@@ -93,7 +105,7 @@ export class RegisterNewSaleCaseUse {
         } catch (error) {
             console.warn(
                 `[RegisterNewSaleCaseUse] telegram best-effort saleId=${result.id}: ` +
-                `${error instanceof Error ? error.message : String(error)}`
+                    `${error instanceof Error ? error.message : String(error)}`
             );
         }
 
@@ -119,7 +131,6 @@ export class RegisterNewSaleCaseUse {
 
         for (const item of sale.products) {
             await enqueueProductHold(item.productId, async () => {
-                // Re-lectura fresca justo antes de escribir (reduce race entre clientes)
                 const product = await this.productRepository.getById(item.productId);
                 if (!product) {
                     throw new Error(
@@ -131,18 +142,16 @@ export class RegisterNewSaleCaseUse {
                 if (item.quantity > available) {
                     throw new Error(
                         `Stock insuficiente (concurrencia): ${item.productName ?? item.productId} ` +
-                        `(pedido=${item.quantity}, disponible=${available})`
+                            `(pedido=${item.quantity}, disponible=${available})`
                     );
                 }
 
                 const nextReserved = (product.reserved ?? 0) + item.quantity;
 
-                if (import.meta.env.DEV) {
-                    console.info(
-                        `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
+                console.info(
+                    `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
                         `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
-                    );
-                }
+                );
 
                 await this.productRepository.update(item.productId, {
                     reserved: nextReserved
