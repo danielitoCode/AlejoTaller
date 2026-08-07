@@ -127,7 +127,7 @@ function createSaleStore() {
             toastStore.error(toastMessage, 4200);
         }
 
-        // Stock cambió en operador → refrescar catálogo
+        // Operador mutó stock → refresh catálogo (selectivo vía pulse si llega; fallback full)
         void productStore.syncAll().catch(() => {});
 
         void managePusherSubscription();
@@ -206,8 +206,12 @@ function createSaleStore() {
                 items: [created, ...state.items]
             }));
 
-            // Soft-hold mutó reserved → refrescar catálogo/badges
-            void productStore.syncAll().catch(() => {});
+            const ids = created.products.map((p) => p.productId).filter(Boolean);
+            if (ids.length) {
+                void productStore.refreshByIds(ids).catch(() => productStore.syncAll());
+            } else {
+                void productStore.syncAll().catch(() => {});
+            }
 
             const softHoldError = (created as Sale & { softHoldError?: string }).softHoldError;
             if (softHoldError) {
@@ -238,6 +242,30 @@ function createSaleStore() {
                 ...state,
                 loading: false
             }));
+        }
+    }
+
+    async function cancelUnverified(sale: Sale): Promise<Sale> {
+        update((state) => ({ ...state, loading: true, error: null }));
+        try {
+            const updated = await saleContainer.useCases.cancelUnverified.execute(sale);
+            update((state) => ({
+                ...state,
+                items: state.items.map((s) => (s.id === updated.id ? updated : s))
+            }));
+            const ids = sale.products.map((p) => p.productId).filter(Boolean);
+            if (ids.length) {
+                void productStore.refreshByIds(ids).catch(() => {});
+            }
+            toastStore.info("Pedido cancelado. Stock liberado.");
+            await managePusherSubscription();
+            return updated;
+        } catch (error: any) {
+            logger.error(error?.message ?? error, error?.stack);
+            update((state) => ({ ...state, error: normalizeError(error) }));
+            throw error;
+        } finally {
+            update((state) => ({ ...state, loading: false }));
         }
     }
 
@@ -284,6 +312,7 @@ function createSaleStore() {
         unverifiedCount,
         syncAll,
         create,
+        cancelUnverified,
         setVerified,
         updateDeliveryType,
         clearError,
