@@ -4,6 +4,9 @@
     import FavoriteBorderRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
     import ShareRounded from "@ktibow/iconset-material-symbols/share";
     import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
+    import Inventory2Rounded from "@ktibow/iconset-material-symbols/inventory-2-rounded";
+    import WarningRounded from "@ktibow/iconset-material-symbols/warning-rounded";
+    import BlockRounded from "@ktibow/iconset-material-symbols/block";
     import type { Product } from "../../domain/entity/Product";
     import { availableStock } from "../../domain/entity/Product";
     import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
@@ -31,6 +34,12 @@
             : available <= 5
               ? `Ultimas ${available} unidades`
               : `Disponibles: ${available}`;
+    $: stockIcon =
+        stockTone === "out"
+            ? BlockRounded
+            : stockTone === "low"
+              ? WarningRounded
+              : Inventory2Rounded;
     $: inStock = available > 0;
     $: showCartButton = canAddToCart && inStock;
 
@@ -175,7 +184,10 @@
             <h1 class="product-name">{product.name}</h1>
 
             <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel}>
-                {stockLabel}
+                <span class="stock-badge-icon" aria-hidden="true">
+                    <Icon icon={stockIcon} />
+                </span>
+                <span class="stock-badge-text">{stockLabel}</span>
             </span>
 
             {#if product.price}
@@ -610,11 +622,28 @@
 
     .stock-badge {
         align-self: flex-start;
-        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px 6px 9px;
         border-radius: 999px;
         font-size: 0.82rem;
         font-weight: 700;
         line-height: 1.2;
+    }
+
+    .stock-badge-icon {
+        display: inline-flex;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stock-badge-icon :global(svg) {
+        width: 16px;
+        height: 16px;
     }
 
     .stock-badge--ok {
