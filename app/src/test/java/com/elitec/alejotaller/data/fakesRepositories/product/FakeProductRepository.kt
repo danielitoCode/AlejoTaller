@@ -19,14 +19,21 @@ class FakeProductRepository(
     /** Contador de llamadas a decrementReserved (para aserciones de rollback). */
     val decrementReservedCalls = mutableListOf<Pair<String, Int>>()
 
+    /** Permite simular un rechazo de la mutación atómica para pruebas de compensación. */
+    val incrementFailureIds = mutableSetOf<String>()
+
     override fun observeAll(): Flow<List<Product>> = flow
 
     override suspend fun getById(itemId: String): Product? = byId[itemId]
+
+    override suspend fun refreshFromRemote(productId: String): Product? = byId[productId]
 
     override suspend fun sync(): Result<Unit> = syncResult
 
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
         incrementReservedCalls += productId to quantity
+        if (productId in incrementFailureIds) return null
+
         val current = byId[productId] ?: return null
         val updated = current.copy(reserved = (current.reserved + quantity).coerceAtLeast(0))
         byId[productId] = updated
