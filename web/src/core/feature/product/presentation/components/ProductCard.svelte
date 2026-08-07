@@ -7,22 +7,31 @@
     import { getPrimaryProductImageUrl } from "../utils/product.images";
 
     export let product: Product;
+    /** true mientras se sincroniza stock desde la nube — no mostrar Agotado falso */
+    export let stockPending: boolean = false;
     export let onClick: () => void = () => {};
     export let onFavoriteClick: (event: Event) => void = () => {};
 
     $: available = availableStock(product);
-    $: stockTone = available === 0 ? "out" : available <= 5 ? "low" : "ok";
-    $: stockLabel =
-        available === 0
-            ? "Agotado"
-            : available <= 5
-              ? `Ultimas ${available}`
-              : `Disponibles: ${available}`;
+    $: stockTone = stockPending
+        ? "pending"
+        : available === 0
+          ? "out"
+          : available <= 5
+            ? "low"
+            : "ok";
+    $: stockLabel = stockPending
+        ? "Sincronizando…"
+        : available === 0
+          ? "Agotado"
+          : available <= 5
+            ? `Ultimas ${available}`
+            : `Disponibles: ${available}`;
 </script>
 
 <div
         class="product-item"
-        class:is-out={available === 0}
+        class:is-out={!stockPending && available === 0}
         on:click={onClick}
         role="button"
         tabindex="0"
@@ -38,7 +47,7 @@
                 loading="lazy"
         />
 
-        <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel}>
+        <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel} aria-busy={stockPending}>
             {stockLabel}
         </span>
 
@@ -182,6 +191,17 @@
     .stock-badge--out {
         color: var(--md-sys-color-on-error-container, #410002);
         background: var(--md-sys-color-error-container, #ffdad6);
+    }
+
+    .stock-badge--pending {
+        color: var(--md-sys-color-on-surface-variant, #444);
+        background: var(--md-sys-color-surface-container-highest, #e8e8e8);
+        animation: stock-pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes stock-pulse {
+        0%, 100% { opacity: 0.75; }
+        50% { opacity: 1; }
     }
 
     .card-overlay {

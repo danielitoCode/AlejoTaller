@@ -3,7 +3,6 @@ import type {ProductRepository} from "../../domain/repository/product.repository
 import type {Product} from "../../domain/entity/Product";
 import {db} from "../../../../infrastructure/di/dexie.db";
 import {productFromDTO, productToDTO} from "../mapper/Mappers";
-import type Dexie from "dexie";
 import {logger} from "../../../../infrastructure/presentation/util/logger.service";
 import type {ProductDTO} from "../dto/ProductDTO";
 
@@ -16,13 +15,25 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         private readonly net: ProductNetRepository
     ) {}
 
+    /** Solo cache local (sin red). Para pintar catálogo al instante. */
+    async getLocalAll(): Promise<Product[]> {
+        const local = await db.products.toArray()
+        return sortNewestFirst(local).map(productFromDTO)
+    }
+
+    /**
+     * Fuente de verdad = red.
+     * Al éxito: sobrescribe Dexie con documentos remotos (incluye existence/reserved).
+     * Al fallo: sirve cache local.
+     */
     async getAll(): Promise<Product[]> {
         try {
             const remote = await this.net.getAll()
+            await db.products.clear()
             await db.products.bulkPut(remote)
             return remote.map(productFromDTO)
-        } catch(error: any) {
-            logger.error(error.message, error.stack);
+        } catch (error: any) {
+            logger.error(error?.message ?? "product.getAll network fail", error?.stack)
             const local = await db.products.toArray()
             return sortNewestFirst(local).map(productFromDTO)
         }

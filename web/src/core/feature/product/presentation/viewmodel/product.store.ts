@@ -5,7 +5,10 @@ import {productContainer} from "../../di/product.container";
 interface ProductState {
     items: Product[]
     selected: Product | null
+    /** true solo cuando no hay items locales y se espera red */
     loading: boolean
+    /** true mientras se refresca desde Appwrite (catálogo visible) */
+    stockSyncing: boolean
     saving: boolean
     error: string | null
 }
@@ -14,6 +17,7 @@ const initialState: ProductState = {
     items: [],
     selected: null,
     loading: false,
+    stockSyncing: false,
     saving: false,
     error: null
 }
@@ -26,21 +30,8 @@ function sortNewestFirst(products: Product[]): Product[] {
     return [...products].sort((a, b) => (b.createdAtIso ?? "").localeCompare(a.createdAtIso ?? ""))
 }
 
-
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
-
-    async function runLoading<T>(task: () => Promise<T>): Promise<T> {
-        update((state) => ({...state, loading: true, error: null}))
-        try {
-            return await task()
-        } catch (error) {
-            update((state) => ({...state, error: normalizeError(error)}))
-            throw error
-        } finally {
-            update((state) => ({...state, loading: false}))
-        }
-    }
 
     async function runSaving<T>(task: () => Promise<T>): Promise<T> {
         update((state) => ({...state, saving: true, error: null}))
@@ -54,19 +45,83 @@ function createProductStore() {
         }
     }
 
+    /**
+     * Offline-first + fuente de verdad remota:
+     * 1) Pinta cache local al instante (sin bloquear catálogo).
+     * 2) stockSyncing = true → badges no muestran "Agotado" falso.
+     * 3) Refresca desde Appwrite y actualiza Dexie + UI.
+     */
     async function syncAll(): Promise<void> {
-        await runLoading(async () => {
+        update((state) => ({
+            ...state,
+            error: null,
+            stockSyncing: true,
+            loading: state.items.length === 0
+        }))
+
+        try {
+            const repo = productContainer.repository as {
+                getLocalAll?: () => Promise<Product[]>
+                getAll: () => Promise<Product[]>
+            }
+
+            if (typeof repo.getLocalAll === "function") {
+                try {
+                    const local = await repo.getLocalAll()
+                    if (local.length > 0) {
+                        update((state) => ({
+                            ...state,
+                            items: sortNewestFirst(local),
+                            loading: false
+                        }))
+                    }
+                } catch {
+                    /* ignore local read errors */
+                }
+            }
+
             const products = await productContainer.useCases.getAll.execute()
-            update((state) => ({...state, items: sortNewestFirst(products)}))
-        })
+            update((state) => ({
+                ...state,
+                items: sortNewestFirst(products),
+                loading: false,
+                stockSyncing: false
+            }))
+        } catch (error) {
+            update((state) => ({
+                ...state,
+                error: normalizeError(error),
+                loading: false,
+                stockSyncing: false
+            }))
+        }
     }
 
     async function syncById(id: string): Promise<Product | null> {
-        return await runLoading(async () => {
+        update((state) => ({...state, stockSyncing: true, error: null}))
+        try {
             const product = await productContainer.useCases.getById.execute(id)
-            update((state) => ({...state, selected: product}))
+            update((state) => ({
+                ...state,
+                selected: product,
+                stockSyncing: false,
+                items: product
+                    ? sortNewestFirst(
+                          state.items.some((p) => p.id === product.id)
+                              ? state.items.map((p) => (p.id === product.id ? product : p))
+                              : [...state.items, product]
+                      )
+                    : state.items
+            }))
             return product
-        })
+        } catch (error) {
+            update((state) => ({
+                ...state,
+                error: normalizeError(error),
+                stockSyncing: false
+            }))
+            throw error
+        }
     }
 
     async function create(data: Product): Promise<void> {
