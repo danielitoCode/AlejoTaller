@@ -2,9 +2,11 @@ import type {ProductDTO} from "../dto/ProductDTO";
 import type {Product} from "../../domain/entity/Product";
 
 /**
- * Payload de escritura alineado al schema real de Appwrite:
- * stock físico = `status`, soft-hold = `reserved`.
- * No enviar `existence` (atributo no existe en la colección).
+ * Schema objetivo Core 1 / Appwrite:
+ * - existence: stock físico (fuente de verdad)
+ * - reserved: soft-hold UNVERIFIED
+ *
+ * `status` se mantiene solo como fallback de lectura mientras migras datos.
  */
 export type ProductWriteDTO = {
     $id: string
@@ -14,9 +16,7 @@ export type ProductWriteDTO = {
     photo_url: string
     category_id: string
     rating?: number
-    /** Stock físico (label consola: Estado) */
-    status: number
-    /** Soft-hold UNVERIFIED */
+    existence: number
     reserved: number
 };
 
@@ -34,7 +34,7 @@ function readNonNegInt(source: Record<string, unknown>, keys: string[]): number 
 
 /**
  * DTO → Domain
- * existence (dominio) ← status | existence | aliases
+ * Preferir `existence`; si aún está vacío, caer a `status` (legacy).
  */
 export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Product {
     const src = dto as Record<string, unknown>;
@@ -55,14 +55,15 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
 }
 
 /**
- * Domain → DTO Appwrite (solo atributos que existen en la colección).
+ * Domain → DTO Appwrite
+ * Solo escribe atributos canónicos: existence + reserved.
  */
 export function productToDTO(product: Product): ProductWriteDTO {
     return {
         $id: product.id,
         name: product.name,
         description: product.description,
-        status: product.existence,
+        existence: product.existence,
         reserved: product.reserved ?? 0,
         price: product.price,
         photo_url: product.photoUrl,
