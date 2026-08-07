@@ -1,21 +1,25 @@
 import type {ProductDTO} from "../dto/ProductDTO";
 import type {Product} from "../../domain/entity/Product";
 
-export type ProductWriteDTO = Pick<
-    ProductDTO,
-    "$id" | "name" | "description" | "price" | "photo_url" | "category_id" | "rating" | "existence" | "reserved"
-> & {
-    /** Schema real Appwrite: stock físico vive en `status` (no `existence`). */
-    status?: number
+/**
+ * Payload de escritura alineado al schema real de Appwrite:
+ * stock físico = `status`, soft-hold = `reserved`.
+ * No enviar `existence` (atributo no existe en la colección).
+ */
+export type ProductWriteDTO = {
+    $id: string
+    name: string
+    description: string
+    price: number
+    photo_url: string
+    category_id: string
+    rating?: number
+    /** Stock físico (label consola: Estado) */
+    status: number
+    /** Soft-hold UNVERIFIED */
+    reserved: number
 };
 
-/**
- * Lee un entero de stock desde el documento Appwrite.
- * Schema observado en prod:
- * keys = name, description, price, category_id, photo_url, rating, status, reserved
- * → stock físico = `status` (legacy / consola "Estado")
- * → soft-hold = `reserved`
- */
 function readNonNegInt(source: Record<string, unknown>, keys: string[]): number {
     for (const key of keys) {
         const raw = source[key];
@@ -30,7 +34,7 @@ function readNonNegInt(source: Record<string, unknown>, keys: string[]): number 
 
 /**
  * DTO → Domain
- * existence se lee de status (schema actual) o existence (si se migra el atributo).
+ * existence (dominio) ← status | existence | aliases
  */
 export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Product {
     const src = dto as Record<string, unknown>;
@@ -40,7 +44,6 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
         id,
         name: String(src.name ?? ""),
         description: String(src.description ?? ""),
-        // Orden: canónico policy → schema real Appwrite → aliases
         existence: readNonNegInt(src, ["existence", "status", "Estado", "stock", "cantidad"]),
         reserved: readNonNegInt(src, ["reserved", "reservado"]),
         price: Number(src.price ?? 0) || 0,
@@ -52,15 +55,13 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
 }
 
 /**
- * Domain → DTO para escritura Appwrite.
- * Escribe `status` (atributo real) y también `existence` si el schema lo permite.
+ * Domain → DTO Appwrite (solo atributos que existen en la colección).
  */
 export function productToDTO(product: Product): ProductWriteDTO {
     return {
         $id: product.id,
         name: product.name,
         description: product.description,
-        existence: product.existence,
         status: product.existence,
         reserved: product.reserved ?? 0,
         price: product.price,
