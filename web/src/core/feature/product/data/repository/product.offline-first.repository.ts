@@ -154,6 +154,17 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         }
     }
 
+    async refreshFromRemote(id: string): Promise<Product | null> {
+        try {
+            const remote = await this.net.getById(id)
+            await db.products.put(toPlainProductDoc(remote))
+            return productFromDTO(remote)
+        } catch (error: unknown) {
+            logger.error(`[product] refreshFromRemote failed id=${id}: ${formatCaughtError(error)}`)
+            return null
+        }
+    }
+
     async getByCategory(categoryId: string): Promise<Product[]> {
         try {
             const remote = await this.net.getByCategory(categoryId)
