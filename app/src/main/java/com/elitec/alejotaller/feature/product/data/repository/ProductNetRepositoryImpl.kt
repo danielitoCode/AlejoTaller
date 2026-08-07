@@ -16,7 +16,7 @@ class ProductNetRepositoryImpl(
             collectionId = BuildConfig.PRODUCT_TABLE_ID
         )
         val decode = response.documents.map { document -> document.toProductDto() }
-        return  decode
+        return decode
     }
 
     override suspend fun getById(itemId: String): ProductDto {
@@ -25,15 +25,38 @@ class ProductNetRepositoryImpl(
             collectionId = BuildConfig.PRODUCT_TABLE_ID,
             documentId = itemId
         )
-        return  response.toProductDto()
+        return response.toProductDto()
     }
 
-    override suspend fun updateReserved(productId: String, reserved: Int): ProductDto {
-        val response = netDB.updateDocument(
+    override suspend fun incrementReserved(
+        productId: String,
+        quantity: Int,
+        maxReserved: Int
+    ): ProductDto {
+        require(quantity > 0) { "quantity debe ser > 0" }
+        require(maxReserved >= 0) { "maxReserved debe ser >= 0" }
+
+        val response = netDB.incrementDocumentAttribute(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.PRODUCT_TABLE_ID,
             documentId = productId,
-            data = mapOf("reserved" to reserved.coerceAtLeast(0))
+            attribute = "reserved",
+            value = quantity,
+            max = maxReserved
+        )
+        return response.toProductDto()
+    }
+
+    override suspend fun decrementReserved(productId: String, quantity: Int): ProductDto {
+        require(quantity > 0) { "quantity debe ser > 0" }
+
+        val response = netDB.decrementDocumentAttribute(
+            databaseId = BuildConfig.APPWRITE_DATABASE_ID,
+            collectionId = BuildConfig.PRODUCT_TABLE_ID,
+            documentId = productId,
+            attribute = "reserved",
+            value = quantity,
+            min = 0
         )
         return response.toProductDto()
     }
