@@ -4,11 +4,17 @@ import type {Product} from "../../domain/entity/Product";
 export type ProductWriteDTO = Pick<
     ProductDTO,
     "$id" | "name" | "description" | "price" | "photo_url" | "category_id" | "rating" | "existence" | "reserved"
->;
+> & {
+    /** Schema real Appwrite: stock físico vive en `status` (no `existence`). */
+    status?: number
+};
 
 /**
  * Lee un entero de stock desde el documento Appwrite.
- * Acepta claves canónicas y alias (consola ES / legacy).
+ * Schema observado en prod:
+ * keys = name, description, price, category_id, photo_url, rating, status, reserved
+ * → stock físico = `status` (legacy / consola "Estado")
+ * → soft-hold = `reserved`
  */
 function readNonNegInt(source: Record<string, unknown>, keys: string[]): number {
     for (const key of keys) {
@@ -23,11 +29,8 @@ function readNonNegInt(source: Record<string, unknown>, keys: string[]): number 
 }
 
 /**
- * DTO → Domain (create/update entity)
- * Se recupera el $id del proporcionado por AppWrite.
- *
- * existence / reserved: claves oficiales + alias por si el atributo
- * en consola se etiquetó distinto (Estado, reservado, etc.).
+ * DTO → Domain
+ * existence se lee de status (schema actual) o existence (si se migra el atributo).
  */
 export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Product {
     const src = dto as Record<string, unknown>;
@@ -37,7 +40,8 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
         id,
         name: String(src.name ?? ""),
         description: String(src.description ?? ""),
-        existence: readNonNegInt(src, ["existence", "Estado", "stock", "cantidad"]),
+        // Orden: canónico policy → schema real Appwrite → aliases
+        existence: readNonNegInt(src, ["existence", "status", "Estado", "stock", "cantidad"]),
         reserved: readNonNegInt(src, ["reserved", "reservado"]),
         price: Number(src.price ?? 0) || 0,
         photoUrl: String(src.photo_url ?? ""),
@@ -48,9 +52,8 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
 }
 
 /**
- * Domain → DTO (create/update payload)
- * El id de dominio se serializa en $id de Appwrite.
- * Siempre escribe las claves canónicas del schema Core 1.
+ * Domain → DTO para escritura Appwrite.
+ * Escribe `status` (atributo real) y también `existence` si el schema lo permite.
  */
 export function productToDTO(product: Product): ProductWriteDTO {
     return {
@@ -58,6 +61,7 @@ export function productToDTO(product: Product): ProductWriteDTO {
         name: product.name,
         description: product.description,
         existence: product.existence,
+        status: product.existence,
         reserved: product.reserved ?? 0,
         price: product.price,
         photo_url: product.photoUrl,

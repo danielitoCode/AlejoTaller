@@ -10,7 +10,6 @@ function sortNewestFirst(products: ProductDTO[]): ProductDTO[] {
     return [...products].sort((a, b) => (b.$createdAt ?? "").localeCompare(a.$createdAt ?? ""))
 }
 
-/** Serializa el error sin romper el logger. */
 function formatCaughtError(error: unknown): string {
     if (error == null) return "unknown"
     if (typeof error === "string") return error
@@ -42,9 +41,13 @@ function prim(value: unknown): string {
     }
 }
 
-/** Documento plano apto para Dexie (sin prototipos de Appwrite SDK). */
+/** Documento plano para Dexie. Persiste status + existence para no perder stock. */
 function toPlainProductDoc(doc: ProductDTO): ProductDTO {
     const raw = doc as Record<string, unknown>
+    const existence = Number(
+        raw.existence ?? raw.status ?? raw.Estado ?? raw.stock ?? raw.cantidad ?? 0
+    )
+    const reserved = Number(raw.reserved ?? raw.reservado ?? 0)
     const plain: Record<string, unknown> = {
         $id: String(raw.$id ?? ""),
         $createdAt: raw.$createdAt ?? null,
@@ -55,16 +58,14 @@ function toPlainProductDoc(doc: ProductDTO): ProductDTO {
         photo_url: raw.photo_url ?? "",
         category_id: raw.category_id ?? "",
         rating: raw.rating ?? 0,
-        existence: raw.existence ?? raw.Estado ?? raw.stock ?? raw.cantidad ?? 0,
-        reserved: raw.reserved ?? raw.reservado ?? 0
+        // schema real + canónico
+        status: Number.isFinite(existence) ? Math.max(0, Math.floor(existence)) : 0,
+        existence: Number.isFinite(existence) ? Math.max(0, Math.floor(existence)) : 0,
+        reserved: Number.isFinite(reserved) ? Math.max(0, Math.floor(reserved)) : 0
     }
     return plain as unknown as ProductDTO
 }
 
-/**
- * Solo DEV. Solo strings primitivos (el console.interceptor hace String(arg)
- * y los documentos Appwrite lanzan TypeError).
- */
 function logRemoteStockSnapshot(source: string, remote: ProductDTO[]): void {
     if (!import.meta.env.DEV) return
 
@@ -84,10 +85,9 @@ function logRemoteStockSnapshot(source: string, remote: ProductDTO[]): void {
                 [
                     `id=${prim(raw.$id)}`,
                     `name=${prim(raw.name)}`,
+                    `status_raw=${prim(raw.status)}`,
                     `existence_raw=${prim(raw.existence)}`,
                     `reserved_raw=${prim(raw.reserved)}`,
-                    `Estado=${prim(raw.Estado)}`,
-                    `reservado=${prim(raw.reservado)}`,
                     `mapped_ex=${mapped.existence}`,
                     `mapped_rs=${mapped.reserved}`,
                     `available=${mapped.existence - mapped.reserved}`,
@@ -96,26 +96,20 @@ function logRemoteStockSnapshot(source: string, remote: ProductDTO[]): void {
             )
         }
 
-        // Una sola línea de log por doc (todo primitivo → interceptor seguro)
         for (const line of lines) {
             console.info(line)
         }
 
         const missing = remote.filter((doc) => {
             const raw = doc as Record<string, unknown>
-            return (
-                raw.existence == null &&
-                raw.Estado == null &&
-                raw.stock == null &&
-                raw.cantidad == null
-            )
+            return raw.existence == null && raw.status == null
         })
         if (missing.length > 0) {
             const sampleKeys = Object.keys(missing[0] as object)
                 .filter((k) => !k.startsWith("$") || k === "$id")
                 .join(",")
             console.warn(
-                `[product][DEV] ${missing.length}/${remote.length} docs SIN existence/Estado/stock/cantidad. sample keys=[${sampleKeys}]`
+                `[product][DEV] ${missing.length}/${remote.length} docs SIN status/existence. sample keys=[${sampleKeys}]`
             )
         }
     } catch (logErr) {

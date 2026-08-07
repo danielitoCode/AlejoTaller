@@ -26,7 +26,8 @@ fun Document<Map<String, Any>>.toProductDto(): ProductDto =
         categoryId = (data["category_id"] as? String) ?: "",
         rating = (data["rating"] as? Number)?.toDouble() ?: 0.0,
         photoLocalResource = 1,
-        // Claves canónicas + alias (consola ES / legacy)
-        existence = data.readNonNegInt("existence", "Estado", "stock", "cantidad"),
+        // Schema real Appwrite: stock físico = `status` (label consola "Estado")
+        // Policy domain: existence. También acepta existence si se migra el atributo.
+        existence = data.readNonNegInt("existence", "status", "Estado", "stock", "cantidad"),
         reserved = data.readNonNegInt("reserved", "reservado")
     )
