@@ -85,31 +85,39 @@ function createProductStore() {
         const fromRealtime = options.fromRealtime === true
         const silent = options.silent === true
         const count = payload.productIds.length
+        const t0 = performance.now()
 
-        if (import.meta.env.DEV) {
-            console.info(
-                `[productStore] stock:changed reason=${payload.reason} ids=${payload.productIds.join(",")} realtime=${fromRealtime}`
-            )
-        }
+        console.info(
+            `[stock-rt] UI handle start realtime=${fromRealtime} silent=${silent} ` +
+                `reason=${payload.reason} saleId=${payload.saleId ?? "-"} count=${count} ` +
+                `ids=${payload.productIds.join(",")}`
+        )
 
         if (fromRealtime && !silent) {
+            console.info("[stock-rt] UI toast:info «Hemos recibido actualizaciones…»")
             toastStore.info(
                 `Hemos recibido actualizaciones de productos (${reasonLabel(payload.reason)}). Actualizando…`,
                 3200
             )
         }
 
+        const syncMessage = fromRealtime
+            ? `Actualizando ${count} producto${count === 1 ? "" : "s"}…`
+            : "Sincronizando stock…"
+
+        console.info(`[stock-rt] UI banner ON message="${syncMessage}"`)
+
         update((state) => ({
             ...state,
             stockSyncing: true,
             realtimeUpdating: fromRealtime,
-            syncMessage: fromRealtime
-                ? `Actualizando ${count} producto${count === 1 ? "" : "s"}…`
-                : "Sincronizando stock…"
+            syncMessage
         }))
 
         try {
             const refreshed = await productContainer.useCases.refreshByIds.execute(payload.productIds)
+            const ms = Math.round(performance.now() - t0)
+
             update((state) => ({
                 ...state,
                 items: mergeProducts(state.items, refreshed),
@@ -122,23 +130,30 @@ function createProductStore() {
                 syncMessage: null
             }))
 
+            console.info(
+                `[stock-rt] UI merge done refreshed=${refreshed.length}/${count} in ${ms}ms — banner OFF`
+            )
+
             if (fromRealtime && !silent) {
-                toastStore.success(
+                const okMsg =
                     refreshed.length > 0
                         ? `Catálogo actualizado (${refreshed.length} producto${refreshed.length === 1 ? "" : "s"})`
-                        : "Sincronización de stock completada",
-                    2800
-                )
+                        : "Sincronización de stock completada"
+                console.info(`[stock-rt] UI toast:success «${okMsg}»`)
+                toastStore.success(okMsg, 2800)
             }
         } catch (error) {
+            const msg = normalizeError(error)
+            console.error(`[stock-rt] UI handle FAIL: ${msg}`, error)
             update((state) => ({
                 ...state,
                 stockSyncing: false,
                 realtimeUpdating: false,
                 syncMessage: null,
-                error: normalizeError(error)
+                error: msg
             }))
             if (fromRealtime && !silent) {
+                console.warn("[stock-rt] UI toast:warning fallo de sincronización")
                 toastStore.warning("No se pudieron aplicar todas las actualizaciones de stock")
             }
         }
@@ -146,17 +161,21 @@ function createProductStore() {
 
     /** Arranca listener Pusher stock:changed (idempotente). */
     function startStockRealtime(): void {
-        if (stockUnsub) return
+        if (stockUnsub) {
+            console.info("[stock-rt] startStockRealtime: ya activo, skip")
+            return
+        }
+        console.info("[stock-rt] startStockRealtime: suscribiendo…")
         stockUnsub = subscribeStockUpdates((payload) => {
+            console.info("[stock-rt] callback desde Pusher → handleStockChanged")
             void handleStockChanged(payload, { fromRealtime: true })
         })
-        if (import.meta.env.DEV) {
-            console.info("[productStore] listener stock:changed activo")
-        }
+        console.info("[stock-rt] listener stock:changed activo en productStore")
     }
 
     function stopStockRealtime(): void {
         if (stockUnsub) {
+            console.info("[stock-rt] stopStockRealtime")
             stockUnsub()
             stockUnsub = null
         }
@@ -245,6 +264,7 @@ function createProductStore() {
 
     /** Refresh parcial (local, sin toast de “recibimos actualización”). */
     async function refreshByIds(productIds: string[]): Promise<void> {
+        console.info(`[stock-rt] refreshByIds local (silent) ids=${productIds.join(",")}`)
         await handleStockChanged(
             {
                 productIds,

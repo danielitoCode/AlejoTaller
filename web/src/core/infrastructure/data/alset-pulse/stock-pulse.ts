@@ -21,6 +21,20 @@ export function getStockChannelName(): string {
     );
 }
 
+function logStock(level: "info" | "warn" | "error", message: string, extra?: unknown): void {
+    const prefix = "[stock-rt]";
+    if (level === "info") {
+        if (extra !== undefined) console.info(prefix, message, extra);
+        else console.info(prefix, message);
+    } else if (level === "warn") {
+        if (extra !== undefined) console.warn(prefix, message, extra);
+        else console.warn(prefix, message);
+    } else {
+        if (extra !== undefined) console.error(prefix, message, extra);
+        else console.error(prefix, message);
+    }
+}
+
 /**
  * Publica stock:changed.
  * Preferencia: Alset Pulse HTTP (API key) → evita secretos Pusher en el cliente.
@@ -28,7 +42,10 @@ export function getStockChannelName(): string {
  */
 export async function publishStockChanged(payload: StockChangedPayload): Promise<void> {
     const productIds = [...new Set(payload.productIds.filter(Boolean))];
-    if (productIds.length === 0) return;
+    if (productIds.length === 0) {
+        logStock("warn", "publish omitido: productIds vacío");
+        return;
+    }
 
     const body: StockChangedPayload = {
         productIds,
@@ -37,12 +54,17 @@ export async function publishStockChanged(payload: StockChangedPayload): Promise
         timestamp: payload.timestamp || new Date().toISOString()
     };
 
+    const channel = getStockChannelName();
     const base = ENV.pulseBaseUrl?.trim().replace(/\/$/, "");
     const apiKey = ENV.pulseApiKey?.trim();
 
+    logStock("info", `publish start reason=${body.reason} channel=${channel} saleId=${body.saleId ?? "-"} ids=${productIds.join(",")}`);
+
     if (base && apiKey) {
+        const url = `${base}/pulse/stock`;
         try {
-            const res = await fetch(`${base}/pulse/stock`, {
+            logStock("info", `publish HTTP → ${url}`);
+            const res = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -50,32 +72,35 @@ export async function publishStockChanged(payload: StockChangedPayload): Promise
                     "X-Api-Key": apiKey
                 },
                 body: JSON.stringify({
-                    channel: getStockChannelName(),
+                    channel,
                     event: "stock:changed",
                     data: body
                 })
             });
             if (!res.ok) {
-                console.warn(
-                    `[stock-pulse] publish HTTP ${res.status} saleId=${body.saleId ?? "-"}`
+                const text = await res.text().catch(() => "");
+                logStock(
+                    "warn",
+                    `publish HTTP ${res.status} saleId=${body.saleId ?? "-"} body=${text.slice(0, 200)}`
                 );
-            } else if (import.meta.env.DEV) {
-                console.info(
-                    `[stock-pulse] published reason=${body.reason} ids=${productIds.join(",")}`
+            } else {
+                logStock(
+                    "info",
+                    `publish OK reason=${body.reason} ids=${productIds.join(",")} saleId=${body.saleId ?? "-"}`
                 );
             }
             return;
         } catch (e) {
-            console.warn(
-                `[stock-pulse] publish failed: ${e instanceof Error ? e.message : String(e)}`
+            logStock(
+                "error",
+                `publish failed: ${e instanceof Error ? e.message : String(e)}`
             );
+            return;
         }
     }
 
-    // Sin backend de trigger: los clientes solo se actualizan por sync propio.
-    if (import.meta.env.DEV) {
-        console.info(
-            `[stock-pulse] (no pulse endpoint) local-only reason=${body.reason} ids=${productIds.join(",")}`
-        );
-    }
+    logStock(
+        "warn",
+        `publish skipped: sin VITE_ALSET_PULSE_BASE_URL / API_KEY — solo sync local. reason=${body.reason} ids=${productIds.join(",")}`
+    );
 }

@@ -12,22 +12,30 @@ export class RefreshProductsByIdsCaseUse {
         const ids = [...new Set(productIds.filter(Boolean))];
         const updated: Product[] = [];
 
+        console.info(`[stock-rt] refreshByIds start count=${ids.length} ids=${ids.join(",")}`);
+
         for (const id of ids) {
             try {
                 const product = await this.repository.getById(id);
-                if (product) updated.push(product);
+                if (product) {
+                    updated.push(product);
+                    console.info(
+                        `[stock-rt] refreshByIds OK id=${id} existence=${product.existence} ` +
+                            `reserved=${product.reserved ?? 0} available=${product.existence - (product.reserved ?? 0)}`
+                    );
+                } else {
+                    console.warn(`[stock-rt] refreshByIds null id=${id}`);
+                }
             } catch (e) {
                 console.warn(
-                    `[RefreshProductsByIds] falló id=${id}: ${e instanceof Error ? e.message : String(e)}`
+                    `[stock-rt] refreshByIds FAIL id=${id}: ${e instanceof Error ? e.message : String(e)}`
                 );
             }
         }
 
-        if (import.meta.env.DEV) {
-            console.info(
-                `[RefreshProductsByIds] refreshed ${updated.length}/${ids.length} products`
-            );
-        }
+        console.info(
+            `[stock-rt] refreshByIds done refreshed=${updated.length}/${ids.length}`
+        );
 
         return updated;
     }

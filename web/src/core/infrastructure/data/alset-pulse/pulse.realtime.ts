@@ -24,33 +24,33 @@ let stockSubscription: { channel: Channel; unsubscribe: PulseUnsubscribe } | nul
 
 function getPusher(): Pusher | null {
     if (!ENV.pusherKey || !ENV.pusherCluster) {
-        console.warn('[Pusher] Missing configuration: pusherKey or pusherCluster');
+        console.warn("[Pusher] Missing configuration: pusherKey or pusherCluster");
         return null;
     }
-    
+
     if (pusherSingleton) return pusherSingleton;
-    
+
     try {
         pusherSingleton = new Pusher(ENV.pusherKey, {
             cluster: ENV.pusherCluster,
             forceTLS: true
         });
-        console.log('[Pusher] Initialized successfully');
-        
-        pusherSingleton.connection.bind('state_change', (states: any) => {
+        console.log("[Pusher] Initialized successfully");
+
+        pusherSingleton.connection.bind("state_change", (states: any) => {
             const previous = states.previous;
             const current = states.current;
-            
-            if (current === 'failed' || current === 'disconnected') {
+
+            if (current === "failed" || current === "disconnected") {
                 console.error(`[Pusher] Connection failed: ${previous} -> ${current}`);
-            } else if (current === 'connected') {
-                console.log('[Pusher] Reconnected successfully');
+            } else if (current === "connected") {
+                console.log("[Pusher] Reconnected successfully");
             }
         });
-        
+
         return pusherSingleton;
     } catch (error) {
-        console.error('[Pusher] Initialization failed:', error);
+        console.error("[Pusher] Initialization failed:", error);
         pusherSingleton = null;
         return null;
     }
@@ -170,9 +170,13 @@ export function subscribeStockUpdates(
     handler: (payload: StockChangedPayload) => void
 ): PulseUnsubscribe {
     const pusher = getPusher();
-    if (!pusher) return () => {};
+    if (!pusher) {
+        console.warn("[stock-rt] subscribe omitido: Pusher no disponible (key/cluster)");
+        return () => {};
+    }
 
     if (stockSubscription) {
+        console.info("[stock-rt] re-subscribe: cerrando suscripción anterior");
         stockSubscription.unsubscribe();
     }
 
@@ -180,30 +184,60 @@ export function subscribeStockUpdates(
     const channel = pusher.subscribe(channelName);
     const eventName = "stock:changed";
 
-    console.log(`[Pusher] Stock updates subscribe -> channel=${channelName}`);
+    console.info(
+        `[stock-rt] subscribe channel=${channelName} event=${eventName} connection=${pusher.connection.state}`
+    );
+
+    channel.bind("pusher:subscription_succeeded", () => {
+        console.info(`[stock-rt] subscription_succeeded channel=${channelName}`);
+    });
+
+    channel.bind("pusher:subscription_error", (status: unknown) => {
+        console.error(`[stock-rt] subscription_error channel=${channelName}`, status);
+    });
 
     channel.bind(eventName, (payload: unknown) => {
+        console.info("[stock-rt] event received stock:changed raw=", payload);
+
         const data = payload as Partial<StockChangedPayload>;
         const productIds = Array.isArray(data?.productIds)
             ? data.productIds.filter((id): id is string => typeof id === "string" && id.length > 0)
             : [];
+
         if (productIds.length === 0) {
-            console.warn("[Pusher] stock:changed sin productIds", payload);
+            console.warn("[stock-rt] stock:changed IGNORADO: sin productIds válidos", payload);
             return;
         }
-        handler({
+
+        const normalized: StockChangedPayload = {
             productIds,
             reason: (data.reason as StockChangedPayload["reason"]) || "hold",
             saleId: data.saleId ?? null,
             timestamp: typeof data.timestamp === "string" ? data.timestamp : new Date().toISOString()
-        });
+        };
+
+        console.info(
+            `[stock-rt] dispatch → UI reason=${normalized.reason} saleId=${normalized.saleId ?? "-"} ` +
+                `ids=${normalized.productIds.join(",")} ts=${normalized.timestamp}`
+        );
+
+        try {
+            handler(normalized);
+        } catch (err) {
+            console.error(
+                `[stock-rt] handler error: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+        }
     });
 
     stockSubscription = {
         channel,
         unsubscribe: () => {
-            console.log(`[Pusher] Stock updates unsubscribe -> channel=${channelName}`);
+            console.info(`[stock-rt] unsubscribe channel=${channelName}`);
             channel.unbind(eventName);
+            channel.unbind("pusher:subscription_succeeded");
+            channel.unbind("pusher:subscription_error");
             pusher.unsubscribe(channelName);
             stockSubscription = null;
         }
