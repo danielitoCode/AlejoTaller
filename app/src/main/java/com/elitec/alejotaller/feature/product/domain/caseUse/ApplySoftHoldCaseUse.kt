@@ -21,7 +21,7 @@ class ApplySoftHoldCaseUse(
             return@runCatching emptyList()
         }
 
-        val touched = linkedSetOf<String>()
+        val touched = linkedMapOf<String, Int>()
 
         try {
             for (item in sale.products) {
@@ -40,7 +40,7 @@ class ApplySoftHoldCaseUse(
                     item.quantity
                 ) ?: error("No se pudo aplicar soft-hold atómico a ${item.productId}")
 
-                touched += item.productId
+                touched.merge(item.productId, item.quantity, Int::plus)
                 Log.i(
                     TAG,
                     "event=soft_hold_applied productId=${item.productId} qty=${item.quantity} " +
@@ -53,33 +53,30 @@ class ApplySoftHoldCaseUse(
         }
 
         Log.i(TAG, "event=soft_hold_applied saleId=${sale.id} lines=${sale.products.size}")
-        touched.toList()
+        touched.keys.toList()
     }
 
-    private suspend fun compensate(productIds: Set<String>, saleId: String) {
-        if (productIds.isEmpty()) return
-
-        for (item in productIds.toList().asReversed()) {
-            val quantity = saleQuantity(saleId, item)
-            // La cantidad se resuelve desde el sale en invoke; este método no se usa
-            // para inventar cantidades. Se conserva como punto único de compensación.
-            if (quantity <= 0) continue
+    private suspend fun compensate(quantities: Map<String, Int>, saleId: String) {
+        for ((productId, quantity) in quantities.entries.toList().asReversed()) {
             runCatching {
-                repository.decrementReserved(item, quantity)
+                repository.decrementReserved(productId, quantity)
             }.onSuccess {
                 if (it == null) error("rollback returned null")
-                Log.w(TAG, "event=soft_hold_compensated productId=$item qty=$quantity saleId=$saleId")
+                Log.w(
+                    TAG,
+                    "event=soft_hold_compensated productId=$productId qty=$quantity saleId=$saleId"
+                )
             }.onFailure {
-                Log.e(TAG, "event=soft_hold_compensation_failed productId=$item saleId=$saleId", it)
+                Log.e(
+                    TAG,
+                    "event=soft_hold_compensation_failed productId=$productId saleId=$saleId",
+                    it
+                )
             }
         }
     }
 
-    private fun saleQuantity(saleId: String, productId: String): Int =
-        pendingQuantities[saleId]?.get(productId)?.coerceAtLeast(0) ?: 0
-
     companion object {
         private const val TAG = "ApplySoftHold"
-        private val pendingQuantities = mutableMapOf<String, Map<String, Int>>()
     }
 }
