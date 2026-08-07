@@ -171,6 +171,40 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         }
     }
 
+    async incrementReserved(id: string, quantity: number): Promise<Product | null> {
+        if (quantity <= 0) return this.getById(id)
+
+        // Read remote only to obtain the current existence used as atomic max.
+        // The mutation itself is performed by Appwrite; Dexie is never the authority.
+        try {
+            const current = await this.net.getById(id)
+            const updated = await this.net.incrementReserved(
+                id,
+                quantity,
+                Math.max(0, Math.floor(Number(current.existence ?? current.status ?? 0)))
+            )
+            await db.products.put(toPlainProductDoc(updated))
+            return productFromDTO(updated)
+        } catch (error: unknown) {
+            logger.error(`[product] atomic increment reserved failed id=${id}: ${formatCaughtError(error)}`)
+            return null
+        }
+    }
+
+    async decrementReserved(id: string, quantity: number): Promise<Product | null> {
+        if (quantity <= 0) return this.getById(id)
+
+        // Release is also server-authoritative and atomic; min=0 is enforced by Appwrite.
+        try {
+            const updated = await this.net.decrementReserved(id, quantity)
+            await db.products.put(toPlainProductDoc(updated))
+            return productFromDTO(updated)
+        } catch (error: unknown) {
+            logger.error(`[product] atomic decrement reserved failed id=${id}: ${formatCaughtError(error)}`)
+            return null
+        }
+    }
+
     async create(product: Product): Promise<Product> {
         try {
             const created = await this.net.create(productToDTO(product), product.id || undefined)
