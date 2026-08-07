@@ -190,25 +190,27 @@ export class RegisterNewSaleCaseUse {
         saleId: string
     ): Promise<void> {
         for (const [productId, quantity] of [...quantities.entries()].reverse()) {
-            try {
-                const released = await this.productRepository.decrementReserved(
-                    productId,
-                    quantity
-                );
-                if (!released) {
-                    throw new Error("rollback returned null");
+            await enqueueProductHold(productId, async () => {
+                try {
+                    const released = await this.productRepository.decrementReserved(
+                        productId,
+                        quantity
+                    );
+                    if (!released) {
+                        throw new Error("rollback returned null");
+                    }
+                    console.warn(
+                        `[RegisterNewSaleCaseUse] event=soft_hold_compensated ` +
+                            `saleId=${saleId} productId=${productId} qty=${quantity}`
+                    );
+                } catch (error) {
+                    console.error(
+                        `[RegisterNewSaleCaseUse] event=soft_hold_compensation_failed ` +
+                            `saleId=${saleId} productId=${productId} qty=${quantity}`,
+                        error
+                    );
                 }
-                console.warn(
-                    `[RegisterNewSaleCaseUse] event=soft_hold_compensated ` +
-                        `saleId=${saleId} productId=${productId} qty=${quantity}`
-                );
-            } catch (error) {
-                console.error(
-                    `[RegisterNewSaleCaseUse] event=soft_hold_compensation_failed ` +
-                        `saleId=${saleId} productId=${productId} qty=${quantity}`,
-                    error
-                );
-            }
+            });
         }
     }
 }
