@@ -15,8 +15,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Tests parciales Core 1 — SALE_POLICY + WAREHOUSE_POLICY (cliente Android).
- * Cubre: available = existence - reserved, soft-hold y idempotencia stockHoldApplied.
+ * Tests Core 1 — SALE_POLICY + WAREHOUSE_POLICY (cliente Android).
+ * Cubre: available = existence - reserved, soft-hold atómico, compensación
+ * multi-producto e idempotencia stockHoldApplied.
  */
 class SoftHoldCaseUseTest {
 
@@ -103,6 +104,33 @@ class SoftHoldCaseUseTest {
         assertTrue(repo.incrementReservedCalls.isEmpty())
     }
 
+    @Test
+    fun `multi-product soft-hold compensates confirmed previous lines when a later line fails`() = runTest {
+        val repo = FakeProductRepository(
+            products = listOf(
+                fakeProduct(id = "p1", existence = 10, reserved = 0),
+                fakeProduct(id = "p2", existence = 10, reserved = 0)
+            )
+        )
+        repo.incrementFailureIds += "p2"
+        val hold = ApplySoftHoldCaseUse(repo)
+
+        val result = hold(
+            sampleSale(
+                products = listOf(
+                    SaleItem(productId = "p1", productName = "Product p1", quantity = 2),
+                    SaleItem(productId = "p2", productName = "Product p2", quantity = 4)
+                )
+            )
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(listOf("p1" to 2, "p2" to 4), repo.incrementReservedCalls)
+        assertEquals(listOf("p1" to 2), repo.decrementReservedCalls)
+        assertEquals(0, repo.getById("p1")?.reserved)
+        assertEquals(0, repo.getById("p2")?.reserved)
+    }
+
     private fun fakeProduct(
         id: String = "p1",
         existence: Int = 10,
@@ -120,20 +148,21 @@ class SoftHoldCaseUseTest {
 
     private fun sampleSale(
         quantity: Int = 1,
-        stockHoldApplied: Boolean = false
+        stockHoldApplied: Boolean = false,
+        products: List<SaleItem> = listOf(
+            SaleItem(
+                productId = "p1",
+                productName = "Product p1",
+                quantity = quantity
+            )
+        )
     ) = Sale(
         id = "sale-1",
         date = LocalDate(2026, 8, 2),
         amount = 10.0,
         currency = Currency.USD,
         verified = BuyState.UNVERIFIED,
-        products = listOf(
-            SaleItem(
-                productId = "p1",
-                productName = "Product p1",
-                quantity = quantity
-            )
-        ),
+        products = products,
         userId = "user-1",
         stockHoldApplied = stockHoldApplied
     )
