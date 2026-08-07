@@ -22,7 +22,11 @@ function enqueueProductHold(productId: string, task: () => Promise<void>): Promi
 }
 
 /**
- * Registra venta UNVERIFIED + soft-hold con revalidación concurrente.
+ * Registra venta UNVERIFIED + soft-hold.
+ *
+ * Core 1: la decisión sigue viviendo en el cliente, pero la mutación de
+ * reserved se delega al operador atómico de Appwrite para evitar lost updates
+ * y respetar existence como límite remoto observado.
  */
 export class RegisterNewSaleCaseUse {
     constructor(
@@ -146,16 +150,22 @@ export class RegisterNewSaleCaseUse {
                     );
                 }
 
-                const nextReserved = (product.reserved ?? 0) + item.quantity;
-
                 console.info(
-                    `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
-                        `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
+                    `[RegisterNewSaleCaseUse] soft-hold atomic product=${item.productId} ` +
+                        `qty=${item.quantity} reserved=${product.reserved ?? 0} ` +
+                        `existence=${product.existence}`
                 );
 
-                await this.productRepository.update(item.productId, {
-                    reserved: nextReserved
-                });
+                const updated = await this.productRepository.incrementReserved(
+                    item.productId,
+                    item.quantity
+                );
+                if (!updated) {
+                    throw new Error(
+                        `Soft-hold atómico rechazado productId=${item.productId}`
+                    );
+                }
+
                 productIds.push(item.productId);
             });
         }
