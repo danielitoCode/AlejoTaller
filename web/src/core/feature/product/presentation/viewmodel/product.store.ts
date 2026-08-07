@@ -1,13 +1,16 @@
 import {derived, writable} from "svelte/store";
 import type {Product} from "../../domain/entity/Product";
 import {productContainer} from "../../di/product.container";
+import {
+    subscribeStockUpdates,
+    unsubscribeStockUpdates
+} from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
+import type {StockChangedPayload} from "../../../../infrastructure/data/alset-pulse/stock-pulse";
 
 interface ProductState {
     items: Product[]
     selected: Product | null
-    /** true solo cuando no hay items locales y se espera red */
     loading: boolean
-    /** true mientras se refresca desde Appwrite (catálogo visible) */
     stockSyncing: boolean
     saving: boolean
     error: string | null
@@ -32,6 +35,7 @@ function sortNewestFirst(products: Product[]): Product[] {
 
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
+    let stockUnsub: (() => void) | null = null
 
     async function runSaving<T>(task: () => Promise<T>): Promise<T> {
         update((state) => ({...state, saving: true, error: null}))
@@ -45,13 +49,60 @@ function createProductStore() {
         }
     }
 
-    /**
-     * Offline-first + fuente de verdad remota:
-     * 1) Pinta cache local al instante (sin bloquear catálogo).
-     * 2) stockSyncing = true → badges no muestran "Agotado" falso.
-     * 3) Refresca desde Appwrite y actualiza Dexie + UI.
-     */
+    function mergeProducts(current: Product[], incoming: Product[]): Product[] {
+        const map = new Map(current.map((p) => [p.id, p]))
+        for (const p of incoming) {
+            map.set(p.id, p)
+        }
+        return sortNewestFirst([...map.values()])
+    }
+
+    async function handleStockChanged(payload: StockChangedPayload): Promise<void> {
+        if (import.meta.env.DEV) {
+            console.info(
+                `[productStore] stock:changed reason=${payload.reason} ids=${payload.productIds.join(",")}`
+            )
+        }
+        update((state) => ({...state, stockSyncing: true}))
+        try {
+            const refreshed = await productContainer.useCases.refreshByIds.execute(payload.productIds)
+            update((state) => ({
+                ...state,
+                items: mergeProducts(state.items, refreshed),
+                selected:
+                    state.selected && refreshed.some((p) => p.id === state.selected!.id)
+                        ? refreshed.find((p) => p.id === state.selected!.id) ?? state.selected
+                        : state.selected,
+                stockSyncing: false
+            }))
+        } catch (error) {
+            update((state) => ({
+                ...state,
+                stockSyncing: false,
+                error: normalizeError(error)
+            }))
+        }
+    }
+
+    /** Arranca listener Pusher stock:changed (idempotente). */
+    function startStockRealtime(): void {
+        if (stockUnsub) return
+        stockUnsub = subscribeStockUpdates((payload) => {
+            void handleStockChanged(payload)
+        })
+    }
+
+    function stopStockRealtime(): void {
+        if (stockUnsub) {
+            stockUnsub()
+            stockUnsub = null
+        }
+        unsubscribeStockUpdates()
+    }
+
     async function syncAll(): Promise<void> {
+        startStockRealtime()
+
         update((state) => ({
             ...state,
             error: null,
@@ -72,7 +123,7 @@ function createProductStore() {
                         }))
                     }
                 } catch {
-                    /* ignore local read errors */
+                    /* ignore */
                 }
             }
 
@@ -102,11 +153,7 @@ function createProductStore() {
                 selected: product,
                 stockSyncing: false,
                 items: product
-                    ? sortNewestFirst(
-                          state.items.some((p) => p.id === product.id)
-                              ? state.items.map((p) => (p.id === product.id ? product : p))
-                              : [...state.items, product]
-                      )
+                    ? mergeProducts(state.items, [product])
                     : state.items
             }))
             return product
@@ -118,6 +165,15 @@ function createProductStore() {
             }))
             throw error
         }
+    }
+
+    /** Refresh parcial por ids (también usable tras hold local). */
+    async function refreshByIds(productIds: string[]): Promise<void> {
+        await handleStockChanged({
+            productIds,
+            reason: "hold",
+            timestamp: new Date().toISOString()
+        })
     }
 
     async function create(data: Product): Promise<void> {
@@ -152,6 +208,7 @@ function createProductStore() {
     }
 
     function reset(): void {
+        stopStockRealtime()
         update(() => initialState)
     }
 
@@ -162,6 +219,9 @@ function createProductStore() {
         hasData,
         syncAll,
         syncById,
+        refreshByIds,
+        startStockRealtime,
+        stopStockRealtime,
         create,
         updatePrice,
         removeById,

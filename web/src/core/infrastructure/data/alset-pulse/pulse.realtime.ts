@@ -1,9 +1,9 @@
 import Pusher, { type Channel } from "pusher-js";
 import { ENV } from "../../env";
+import { getStockChannelName, type StockChangedPayload } from "./stock-pulse";
 
 export type PulseUnsubscribe = () => void;
 
-// Event payload types
 export interface PromotionEventPayload {
     id: string;
     title: string;
@@ -20,6 +20,7 @@ export type PromotionEventHandler = (eventName: string, payload: PromotionEventP
 let pusherSingleton: Pusher | null = null;
 let saleVerificationSubscription: { channel: Channel; unsubscribe: PulseUnsubscribe } | null = null;
 let promotionSubscription: { channel: Channel; unsubscribe: PulseUnsubscribe } | null = null;
+let stockSubscription: { channel: Channel; unsubscribe: PulseUnsubscribe } | null = null;
 
 function getPusher(): Pusher | null {
     if (!ENV.pusherKey || !ENV.pusherCluster) {
@@ -36,7 +37,6 @@ function getPusher(): Pusher | null {
         });
         console.log('[Pusher] Initialized successfully');
         
-        // Manejo de cambios de conexión
         pusherSingleton.connection.bind('state_change', (states: any) => {
             const previous = states.previous;
             const current = states.current;
@@ -82,12 +82,6 @@ export function subscribePulseRefresh(handler: (eventName: string, payload: unkn
     });
 }
 
-/**
- * Suscribirse a eventos de verificación de ventas (confirmación/rechazo)
- * Solo debe estar activo si el usuario tiene ventas en estado UNVERIFIED
- * @param userId - ID del usuario (cliente)
- * @param handler - Manejador de eventos
- */
 export function subscribeSaleVerification(
     userId: string,
     handler: (eventName: string, payload: { saleId: string; decision: "confirmed" | "rejected"; timestamp: string; amount?: number; productCount?: number }) => void
@@ -124,9 +118,6 @@ export function subscribeSaleVerification(
     return saleVerificationSubscription.unsubscribe;
 }
 
-/**
- * Cerrar la suscripción actual a eventos de verificación de ventas
- */
 export function unsubscribeSaleVerification(): void {
     if (saleVerificationSubscription) {
         saleVerificationSubscription.unsubscribe();
@@ -134,11 +125,6 @@ export function unsubscribeSaleVerification(): void {
     }
 }
 
-/**
- * Suscribirse a eventos de promociones en tiempo real
- * Escucha cambios: creación, actualización y eliminación de promociones
- * @param handler - Manejador de eventos
- */
 export function subscribePromotionUpdates(handler: PromotionEventHandler): PulseUnsubscribe {
     const pusher = getPusher();
     if (!pusher) return () => {};
@@ -170,13 +156,66 @@ export function subscribePromotionUpdates(handler: PromotionEventHandler): Pulse
     return promotionSubscription.unsubscribe;
 }
 
-/**
- * Cerrar la suscripción actual a eventos de promociones
- */
 export function unsubscribePromotionUpdates(): void {
     if (promotionSubscription) {
         promotionSubscription.unsubscribe();
         promotionSubscription = null;
+    }
+}
+
+/**
+ * Escucha stock:changed → productIds a refrescar desde Appwrite (offline-first parcial).
+ */
+export function subscribeStockUpdates(
+    handler: (payload: StockChangedPayload) => void
+): PulseUnsubscribe {
+    const pusher = getPusher();
+    if (!pusher) return () => {};
+
+    if (stockSubscription) {
+        stockSubscription.unsubscribe();
+    }
+
+    const channelName = getStockChannelName();
+    const channel = pusher.subscribe(channelName);
+    const eventName = "stock:changed";
+
+    console.log(`[Pusher] Stock updates subscribe -> channel=${channelName}`);
+
+    channel.bind(eventName, (payload: unknown) => {
+        const data = payload as Partial<StockChangedPayload>;
+        const productIds = Array.isArray(data?.productIds)
+            ? data.productIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+            : [];
+        if (productIds.length === 0) {
+            console.warn("[Pusher] stock:changed sin productIds", payload);
+            return;
+        }
+        handler({
+            productIds,
+            reason: (data.reason as StockChangedPayload["reason"]) || "hold",
+            saleId: data.saleId ?? null,
+            timestamp: typeof data.timestamp === "string" ? data.timestamp : new Date().toISOString()
+        });
+    });
+
+    stockSubscription = {
+        channel,
+        unsubscribe: () => {
+            console.log(`[Pusher] Stock updates unsubscribe -> channel=${channelName}`);
+            channel.unbind(eventName);
+            pusher.unsubscribe(channelName);
+            stockSubscription = null;
+        }
+    };
+
+    return stockSubscription.unsubscribe;
+}
+
+export function unsubscribeStockUpdates(): void {
+    if (stockSubscription) {
+        stockSubscription.unsubscribe();
+        stockSubscription = null;
     }
 }
 

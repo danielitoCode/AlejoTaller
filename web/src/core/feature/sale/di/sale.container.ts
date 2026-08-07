@@ -5,14 +5,13 @@ import {GetSalesCaseUse} from "../domain/caseuse/GetSalesCaseUse";
 import { UpdateSaleVerifiedCaseUse } from "../domain/caseuse/UpdateSaleVerifiedCaseUse";
 import { UpdateSaleDeliveryTypeCaseUse } from "../domain/caseuse/UpdateSaleDeliveryTypeCaseUse";
 import { RegisterNewSaleCaseUse } from "../domain/caseuse/RegisterNewSaleCaseUse";
+import { CancelUnverifiedSaleCaseUse } from "../domain/caseuse/CancelUnverifiedSaleCaseUse";
 import { SessionSaleNotificationUserProvider } from "../data/repository/SessionSaleNotificationUserProvider";
 import { TelegramNotificatorImpl } from "../data/repository/TelegramNotificatorImpl";
 import {productContainer} from "../../product/di/product.container";
 
-// Infrastructure instance
 const netDatabases= infrastructureContainer.appwrite.databases
 
-// Data
 const saleNetRepository = new SaleNetRepository(netDatabases)
 const saleOfflineFirstRepository = new SaleOfflineFirstRepository(saleNetRepository)
 const saleNotificationUserProvider = new SessionSaleNotificationUserProvider(
@@ -20,7 +19,6 @@ const saleNotificationUserProvider = new SessionSaleNotificationUserProvider(
 )
 const telegramNotificator = new TelegramNotificatorImpl()
 
-// Domain
 const getSalesCaseUse = new GetSalesCaseUse(saleOfflineFirstRepository)
 const createSaleCaseUse = new RegisterNewSaleCaseUse(
     saleOfflineFirstRepository,
@@ -30,6 +28,10 @@ const createSaleCaseUse = new RegisterNewSaleCaseUse(
 )
 const updateSaleVerifiedCaseUse = new UpdateSaleVerifiedCaseUse(saleOfflineFirstRepository)
 const updateSaleDeliveryTypeCaseUse = new UpdateSaleDeliveryTypeCaseUse(saleOfflineFirstRepository)
+const cancelUnverifiedSaleCaseUse = new CancelUnverifiedSaleCaseUse(
+    saleOfflineFirstRepository,
+    productContainer.repositories.offlineFirst
+)
 
 export const saleContainer = {
     repositories: {
@@ -42,5 +44,6 @@ export const saleContainer = {
         create: createSaleCaseUse,
         updateVerified: updateSaleVerifiedCaseUse,
         updateDeliveryType: updateSaleDeliveryTypeCaseUse,
+        cancelUnverified: cancelUnverifiedSaleCaseUse
     }
 }
