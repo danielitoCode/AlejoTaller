@@ -18,7 +18,6 @@
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
-    /** Called when a guest user confirms they want to log in from the auth overlay. */
     export let onRequestLogin: (() => void) | undefined = undefined;
 
     let searchQuery = "";
@@ -28,9 +27,10 @@
     let resolvingPendingProductId: string | null = null;
     let isLoading = false;
     let stockSyncing = false;
+    let realtimeUpdating = false;
+    let syncMessage: string | null = null;
     let showAuthOverlay = false;
 
-    // Subscribe to stores
     let products: any[] = [];
     let promotions: any[] = [];
     let categories: any[] = [];
@@ -91,8 +91,9 @@
         products = state.items;
         isLoading = state.loading;
         stockSyncing = state.stockSyncing;
+        realtimeUpdating = state.realtimeUpdating;
+        syncMessage = state.syncMessage;
         resolvePendingProduct();
-        // Mantener carrito alineado con stock fresco
         if (state.items.length > 0) {
             cartStore.refreshProductStock(state.items);
         }
@@ -122,6 +123,7 @@
 
     onMount(() => {
         try {
+            productStore.startStockRealtime();
             productStore.syncAll();
             if (!$sessionStore.isGuest) {
                 promotionStore.syncAll({ suppressPermissionError: true });
@@ -232,6 +234,8 @@
             {selectedCategoryId}
             loading={isLoading}
             {stockSyncing}
+            {realtimeUpdating}
+            {syncMessage}
             onSearchQueryChanged={handleSearchQueryChanged}
             onCategorySelected={handleCategorySelected}
             onProductClick={handleProductClick}
