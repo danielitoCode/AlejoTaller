@@ -60,14 +60,10 @@ function createProductStore() {
         }))
 
         try {
-            const repo = productContainer.repository as {
-                getLocalAll?: () => Promise<Product[]>
-                getAll: () => Promise<Product[]>
-            }
-
-            if (typeof repo.getLocalAll === "function") {
+            const offline = productContainer.repositories.offlineFirst
+            if (typeof offline.getLocalAll === "function") {
                 try {
-                    const local = await repo.getLocalAll()
+                    const local = await offline.getLocalAll()
                     if (local.length > 0) {
                         update((state) => ({
                             ...state,
