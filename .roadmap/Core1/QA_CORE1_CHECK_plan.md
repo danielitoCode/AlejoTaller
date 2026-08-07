@@ -24,7 +24,7 @@
 - [X] 0.1 Productos A/B/C cargados en Appwrite con existence/reserved correctos
 - [X] 0.2 Cuenta cliente autenticada de prueba (email real)
 - [X] 0.3 Segunda sesión (otro navegador o dispositivo) para race de soft-hold
-- [ ] 0.4 Acceso a operador (`alejotallerscan`) con rol válido
+- [X] 0.4 Acceso a operador (`alejotallerscan`) con rol válido
 - [ ] 0.5 Anotar saleId / QR de cada pedido de prueba
 
 **Notas preparación:**
@@ -40,36 +40,37 @@
 ## A1. Auth — sesión y visitante
 
 ### Primera visita
-- [ ] A1.1 Abrir URL sin cookies/localStorage → se muestra **Welcome / Landing**
-- [ ] A1.2 Continuar como visitante → home en modo **visitante**, navegación limitada a productos
+- [X] A1.1 Abrir URL sin cookies/localStorage → se muestra **Welcome / Landing**
+- [X] A1.2 Continuar como visitante → home en modo **visitante**, navegación limitada a productos
 
 ### Visitante recurrente
-- [ ] A1.3 Con flag de visita (`alejo_has_visited` o equivalente) → **no** vuelve a Welcome; entra a productos como visitante
-- [ ] A1.4 Sesión anónima / email vacío → clasificado como **visitante** (no autenticado)
+- [X] A1.3 Con flag de visita (`alejo_has_visited` o equivalente) → **no** vuelve a Welcome; entra a productos como visitante
+- [X] A1.4 Sesión anónima / email vacío → clasificado como **visitante** (no autenticado)
 
 ### Deeplink
-- [ ] A1.5 URL directa de detalle de producto **sin sesión** → visitor + detalle, **sin** Welcome
-- [ ] A1.6 Desde ese detalle, intentar comprar → bloqueo / overlay de auth (no crea venta)
+- [X] A1.5 URL directa de detalle de producto **sin sesión** → visitor + detalle, **sin** Welcome
+- [X] A1.6 Desde ese detalle, intentar comprar → bloqueo / overlay de auth (no crea venta)
 
 ### Login / logout
-- [ ] A1.7 Login con email → modo **authenticated**, navegación completa
-- [ ] A1.8 Logout → vuelve a restricciones de visitante
+- [X] A1.7 Login con email → modo **authenticated**, navegación completa
+- [X] A1.8 Logout → vuelve a restricciones de visitante
 
 ### Visitante no vende
-- [ ] A1.9 Como visitante, checkout **no** crea `Sale UNVERIFIED`
-- [ ] A1.10 Overlay o redirección a login al intentar comprar
+- [X] A1.9 Como visitante, checkout **no** crea `Sale UNVERIFIED`
+- [X] A1.10 Overlay o redirección a login al intentar comprar
 
 **Notas Auth Web:**
-
+- Para mejor UX , debemos poner una boton que redirija a autenticacion dento de las vistas, en el topbar del lado derecho, independientemente de que cuando se va a comprar se redirija al login sin sesion , esto le da una via directa al visitante para loguearse , sino no hay forma clara de hacerlo
+- En la pantalla de login y en registro al darle click en Login o entrar o en registrarse , desplegar un loading indicator para que el usuario entienda que se esta esperando la validacion y no que se quedo congelada la aplicacion , esto para mejorar en UX, este loading indicator no debe ser generico , debe estar acorde con estilos modernos y elegantes
 ```
 
 ```
 
 ## A2. Catálogo y stock (check de available)
 
-- [ ] A2.1 Listado de productos carga (online y tras refresh)
-- [ ] A2.2 Detalle de producto coherente (precio, nombre, categoría)
-- [ ] A2.3 Producto available = 0 → al intentar pedir → error de **no disponibilidad**; no crea pedido
+- [X] A2.1 Listado de productos carga (online y tras refresh)
+- [X] A2.2 Detalle de producto coherente (precio, nombre, categoría)
+- [X] A2.3 Producto available = 0 → al intentar pedir → error de **no disponibilidad**; no crea pedido
 - [ ] A2.4 Producto available = 2 → permite qty 1 o 2; **rechaza** qty 3
 
 **Notas Catálogo Web:**
