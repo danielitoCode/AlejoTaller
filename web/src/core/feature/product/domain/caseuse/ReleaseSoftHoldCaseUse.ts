@@ -3,8 +3,9 @@ import type { ProductRepository } from "../repository/product.repository";
 
 /**
  * Rollback de soft-hold: reserved -= quantity por línea.
- * Usado cuando el pedido se cancela (cliente) o se rechaza (operador / DELETED).
- * Idempotente a nivel de llamada: clamp reserved >= 0.
+ *
+ * Core 1: el decremento se ejecuta atómicamente en Appwrite con min=0 y
+ * solamente la respuesta remota se persiste en Dexie.
  */
 export class ReleaseSoftHoldCaseUse {
     constructor(private readonly repository: ProductRepository) {}
@@ -16,23 +17,20 @@ export class ReleaseSoftHoldCaseUse {
             const qty = Math.max(0, Math.floor(item.quantity));
             if (qty === 0 || !item.productId) continue;
 
-            const product = await this.repository.getById(item.productId);
-            if (!product) {
+            const updated = await this.repository.decrementReserved(item.productId, qty);
+            if (!updated) {
                 console.warn(
-                    `[ReleaseSoftHold] producto ausente productId=${item.productId} saleId=${sale.id}`
+                    `[ReleaseSoftHold] decremento atómico falló productId=${item.productId} saleId=${sale.id}`
                 );
                 continue;
             }
 
-            const nextReserved = Math.max(0, (product.reserved ?? 0) - qty);
-
             if (import.meta.env.DEV) {
                 console.info(
-                    `[ReleaseSoftHold] product=${item.productId} reserved ${product.reserved ?? 0} → ${nextReserved}`
+                    `[ReleaseSoftHold] atomic product=${item.productId} qty=${qty} reserved=${updated.reserved ?? 0}`
                 );
             }
 
-            await this.repository.update(item.productId, { reserved: nextReserved });
             touched.push(item.productId);
         }
 

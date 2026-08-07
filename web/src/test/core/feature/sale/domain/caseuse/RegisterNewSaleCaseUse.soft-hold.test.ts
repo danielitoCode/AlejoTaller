@@ -1,6 +1,7 @@
 /**
- * Tests parciales Core 1 — SALE_POLICY + WAREHOUSE_POLICY (cliente web).
- * Cubre soft-hold en RegisterNewSaleCaseUse: reserved += qty, available, idempotencia.
+ * Tests Core 1 — SALE_POLICY + WAREHOUSE_POLICY (cliente web).
+ * Cubre validación de disponibilidad, delegación del soft-hold a la operación
+ * atómica del repositorio, compensación multi-producto, idempotencia y best-effort.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -52,7 +53,10 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
     }
 
     beforeEach(() => {
-        const products = new Map<string, Product>([["p1", { ...baseProduct }]]);
+        const products = new Map<string, Product>([
+            ["p1", { ...baseProduct }],
+            ["p2", { ...baseProduct, id: "p2", name: "Agua" }]
+        ]);
 
         saleRepo = {
             create: vi.fn().mockImplementation(async (sale: Sale) => ({
@@ -66,13 +70,22 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
 
         productRepo = {
             getById: vi.fn().mockImplementation(async (id: string) => products.get(id) ?? null),
-            update: vi.fn().mockImplementation(async (id: string, partial: Partial<Product>) => {
+            refreshFromRemote: vi.fn().mockImplementation(async (id: string) => products.get(id) ?? null),
+            incrementReserved: vi.fn().mockImplementation(async (id: string, quantity: number) => {
                 const current = products.get(id);
-                if (!current) throw new Error("missing");
-                const next = { ...current, ...partial };
-                products.set(id, next);
-                return next;
+                if (!current) return null;
+                const updated = { ...current, reserved: current.reserved + quantity };
+                products.set(id, updated);
+                return updated;
             }),
+            decrementReserved: vi.fn().mockImplementation(async (id: string, quantity: number) => {
+                const current = products.get(id);
+                if (!current) return null;
+                const updated = { ...current, reserved: Math.max(0, current.reserved - quantity) };
+                products.set(id, updated);
+                return updated;
+            }),
+            update: vi.fn(),
             getAll: vi.fn(),
             getByCategory: vi.fn(),
             create: vi.fn(),
@@ -95,52 +108,81 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
         );
     });
 
-    it("increments reserved by line quantity after creating UNVERIFIED sale", async () => {
+    it("increments reserved through the atomic repository operation after creating UNVERIFIED sale", async () => {
         const result = await useCase.execute(createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 3 }] }));
 
         expect(saleRepo.create).toHaveBeenCalled();
-        expect(productRepo.update).toHaveBeenCalledWith("p1", { reserved: 3 });
+        expect(productRepo.refreshFromRemote).toHaveBeenCalledWith("p1");
+        expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
+        expect(productRepo.update).not.toHaveBeenCalled();
         expect(result.stockHoldApplied).toBe(true);
     });
 
     it("uses available = existence - reserved when validating soft-hold", async () => {
-        vi.mocked(productRepo.getById).mockResolvedValue({
+        vi.mocked(productRepo.refreshFromRemote!).mockResolvedValue({
             ...baseProduct,
             existence: 10,
             reserved: 7
         });
 
-        // available = 3; quantity 3 → ok
         await expect(
             useCase.execute(createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 3 }] }))
         ).resolves.toBeDefined();
 
-        expect(productRepo.update).toHaveBeenCalledWith("p1", { reserved: 10 });
+        expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
+        expect(productRepo.update).not.toHaveBeenCalled();
     });
 
-    it("does not write reserved when quantity exceeds available", async () => {
-        vi.mocked(productRepo.getById).mockResolvedValue({
+    it("does not mutate reserved when quantity exceeds available", async () => {
+        vi.mocked(productRepo.refreshFromRemote!).mockResolvedValue({
             ...baseProduct,
             existence: 10,
             reserved: 8
         });
 
-        // available = 2; quantity 5 → soft-hold falla (best-effort: sale ya creada)
         const result = await useCase.execute(
             createSale({ products: [{ productId: "p1", productName: "Coca", quantity: 5 }] })
         );
 
         expect(saleRepo.create).toHaveBeenCalled();
+        expect(productRepo.incrementReserved).not.toHaveBeenCalled();
         expect(productRepo.update).not.toHaveBeenCalled();
-        // soft-hold no aplicado → flag no marcado
         expect(result.stockHoldApplied).toBeFalsy();
     });
 
-    it("skips soft-hold when stockHoldApplied is already true on domain sale", async () => {
-        // El case use crea con stockHoldApplied: false explícito en create;
-        // la idempotencia se valida en applySoftHold con el sale ya persistido.
-        // Si el producto ya tiene reserved y se reintenta apply con flag true en el objeto
-        // pasado a applySoftHold interno — aquí simulamos que create devuelve flag true.
+    it("fails the soft-hold when the atomic repository mutation is rejected", async () => {
+        vi.mocked(productRepo.incrementReserved).mockResolvedValue(null);
+
+        const result = await useCase.execute(createSale());
+
+        expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
+        expect(result.stockHoldApplied).toBe(false);
+        expect((result as Sale & { softHoldError?: string }).softHoldError).toContain("Soft-hold atómico rechazado");
+    });
+
+    it("compensates confirmed previous lines when a later product hold fails", async () => {
+        vi.mocked(productRepo.incrementReserved).mockImplementation(async (id: string, quantity: number) => {
+            if (id === "p2") return null;
+            return { ...baseProduct, id, reserved: quantity };
+        });
+
+        const result = await useCase.execute(
+            createSale({
+                products: [
+                    { productId: "p1", productName: "Coca", quantity: 2 },
+                    { productId: "p2", productName: "Agua", quantity: 4 }
+                ]
+            })
+        );
+
+        expect(result.stockHoldApplied).toBe(false);
+        expect(productRepo.incrementReserved).toHaveBeenNthCalledWith(1, "p1", 2);
+        expect(productRepo.incrementReserved).toHaveBeenNthCalledWith(2, "p2", 4);
+        expect(productRepo.decrementReserved).toHaveBeenCalledWith("p1", 2);
+        expect(productRepo.decrementReserved).toHaveBeenCalledTimes(1);
+    });
+
+    it("skips soft-hold when stockHoldApplied is already true on persisted sale", async () => {
         vi.mocked(saleRepo.create).mockResolvedValue({
             ...createSale(),
             id: "sale-1",
@@ -149,7 +191,7 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
 
         const result = await useCase.execute(createSale());
 
-        expect(productRepo.update).not.toHaveBeenCalled();
+        expect(productRepo.incrementReserved).not.toHaveBeenCalled();
         expect(result.stockHoldApplied).toBe(true);
     });
 
@@ -158,12 +200,12 @@ describe("RegisterNewSaleCaseUse soft-hold (WAREHOUSE_POLICY)", () => {
         expect(availableStock({ ...baseProduct, existence: 2, reserved: 5 })).toBe(0);
     });
 
-    it("telegram failure does not block sale + soft-hold", async () => {
+    it("telegram failure does not block sale + atomic soft-hold", async () => {
         vi.mocked(telegram.notify).mockRejectedValue(new Error("Telegram down"));
 
         const result = await useCase.execute(createSale());
 
         expect(result.id).toBeTruthy();
-        expect(productRepo.update).toHaveBeenCalledWith("p1", { reserved: 3 });
+        expect(productRepo.incrementReserved).toHaveBeenCalledWith("p1", 3);
     });
 });

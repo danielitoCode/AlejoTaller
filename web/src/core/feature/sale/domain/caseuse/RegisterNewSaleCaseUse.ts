@@ -22,7 +22,11 @@ function enqueueProductHold(productId: string, task: () => Promise<void>): Promi
 }
 
 /**
- * Registra venta UNVERIFIED + soft-hold con revalidación concurrente.
+ * Registra venta UNVERIFIED + soft-hold.
+ *
+ * Core 1: la decisión sigue viviendo en el cliente, pero la mutación de
+ * reserved se delega al operador atómico de Appwrite. Las ventas con varias
+ * líneas aplican compensación si falla una línea posterior.
  */
 export class RegisterNewSaleCaseUse {
     constructor(
@@ -127,39 +131,86 @@ export class RegisterNewSaleCaseUse {
             throw new Error("Sale sin líneas: no hay soft-hold que aplicar");
         }
 
-        const productIds: string[] = [];
+        const touched = new Map<string, number>();
 
-        for (const item of sale.products) {
-            await enqueueProductHold(item.productId, async () => {
-                const product = await this.productRepository.getById(item.productId);
-                if (!product) {
-                    throw new Error(
-                        `Soft-hold: producto no encontrado productId=${item.productId}`
+        try {
+            for (const item of sale.products) {
+                await enqueueProductHold(item.productId, async () => {
+                    // Para una mutación crítica, Core 1 exige lectura remota.
+                    const product = this.productRepository.refreshFromRemote
+                        ? await this.productRepository.refreshFromRemote(item.productId)
+                        : await this.productRepository.getById(item.productId);
+
+                    if (!product) {
+                        throw new Error(
+                            `Soft-hold: producto no disponible desde Appwrite productId=${item.productId}`
+                        );
+                    }
+
+                    const available = availableStock(product);
+                    if (item.quantity > available) {
+                        throw new Error(
+                            `Stock insuficiente (concurrencia): ${item.productName ?? item.productId} ` +
+                                `(pedido=${item.quantity}, disponible=${available})`
+                        );
+                    }
+
+                    console.info(
+                        `[RegisterNewSaleCaseUse] soft-hold atomic product=${item.productId} ` +
+                            `qty=${item.quantity} reserved=${product.reserved ?? 0} ` +
+                            `existence=${product.existence}`
                     );
-                }
 
-                const available = availableStock(product);
-                if (item.quantity > available) {
-                    throw new Error(
-                        `Stock insuficiente (concurrencia): ${item.productName ?? item.productId} ` +
-                            `(pedido=${item.quantity}, disponible=${available})`
+                    const updated = await this.productRepository.incrementReserved(
+                        item.productId,
+                        item.quantity
                     );
-                }
+                    if (!updated) {
+                        throw new Error(
+                            `Soft-hold atómico rechazado productId=${item.productId}`
+                        );
+                    }
 
-                const nextReserved = (product.reserved ?? 0) + item.quantity;
-
-                console.info(
-                    `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
-                        `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
-                );
-
-                await this.productRepository.update(item.productId, {
-                    reserved: nextReserved
+                    touched.set(
+                        item.productId,
+                        (touched.get(item.productId) ?? 0) + item.quantity
+                    );
                 });
-                productIds.push(item.productId);
-            });
+            }
+        } catch (error) {
+            await this.compensateSoftHold(touched, sale.id);
+            throw error;
         }
 
-        return { applied: productIds.length > 0, productIds: [...new Set(productIds)] };
+        return { applied: touched.size > 0, productIds: [...touched.keys()] };
+    }
+
+    private async compensateSoftHold(
+        quantities: Map<string, number>,
+        saleId: string
+    ): Promise<void> {
+        for (const [productId, quantity] of [...quantities.entries()].reverse()) {
+            await enqueueProductHold(productId, async () => {
+                try {
+                    const released = await this.productRepository.decrementReserved(
+                        productId,
+                        quantity
+                    );
+                    if (!released) {
+                        throw new Error("rollback returned null");
+                    }
+                    console.warn(
+                        `[RegisterNewSaleCaseUse] event=soft_hold_compensated ` +
+                            `saleId=${saleId} productId=${productId} qty=${quantity}`
+                    );
+                } catch (error) {
+                    console.error(
+                        `[RegisterNewSaleCaseUse] event=soft_hold_compensation_failed ` +
+                            `saleId=${saleId} productId=${productId} qty=${quantity}`,
+                        error
+                    );
+                }
+            });
+        }
     }
 }

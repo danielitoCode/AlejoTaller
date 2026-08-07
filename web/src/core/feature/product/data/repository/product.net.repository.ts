@@ -1,15 +1,13 @@
 
 import type { ProductDTO } from "../dto/ProductDTO";
 import type { Models } from "appwrite";
-import {type Databases, ID,  Query} from "appwrite";
+import {type Databases, ID, Query} from "appwrite";
 import type { ProductWriteDTO } from "../mapper/Mappers";
 import { ENV } from "../../../../infrastructure/env";
 import { APPWRITE_COLLECTIONS } from "../../../../infrastructure/data/appwrite/public-data-contract";
 
 const PAGE_SIZE = 100;
-
 const COLLECTION_ID = APPWRITE_COLLECTIONS.product;
-
 
 class ProductNetRepository {
     constructor(private readonly databases: Databases) {}
@@ -56,6 +54,42 @@ class ProductNetRepository {
             this.databaseId,
             COLLECTION_ID,
             id
+        )
+    }
+
+    /**
+     * Core 1: reserved se incrementa en Appwrite sin read-modify-write.
+     * max=existence evita que la reserva supere el stock observado por el cliente.
+     */
+    async incrementReserved(
+        id: string,
+        quantity: number,
+        maxReserved: number
+    ): Promise<ProductDTO> {
+        if (quantity <= 0) throw new Error("quantity debe ser > 0")
+        if (maxReserved < 0) throw new Error("maxReserved debe ser >= 0")
+
+        return await this.databases.incrementDocumentAttribute<ProductDTO>(
+            this.databaseId,
+            COLLECTION_ID,
+            id,
+            "reserved",
+            quantity,
+            maxReserved
+        )
+    }
+
+    /** Core 1: reserved se decrementa atómicamente y nunca baja de 0. */
+    async decrementReserved(id: string, quantity: number): Promise<ProductDTO> {
+        if (quantity <= 0) throw new Error("quantity debe ser > 0")
+
+        return await this.databases.decrementDocumentAttribute<ProductDTO>(
+            this.databaseId,
+            COLLECTION_ID,
+            id,
+            "reserved",
+            quantity,
+            0
         )
     }
 

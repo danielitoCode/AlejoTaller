@@ -36,23 +36,30 @@ class ProductOfflineFirstRepository(
 
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
         if (quantity <= 0) return getById(productId)
-        // Concurrencia: leer siempre de red antes de escribir
-        val current = runCatching { net.getById(productId) }.getOrNull()
-            ?: bd.getById(productId)
-            ?: return null
-        val nextReserved = (current.reserved + quantity).coerceAtLeast(0)
-        val updated = net.updateReserved(productId, nextReserved)
+
+        // Core 1: la mutación crítica nunca usa Room como fallback.
+        // existence se obtiene de Appwrite para usarla como límite de reserved.
+        val current = runCatching { net.getById(productId) }.getOrNull() ?: return null
+        val updated = runCatching {
+            net.incrementReserved(
+                productId = productId,
+                quantity = quantity,
+                maxReserved = current.existence.coerceAtLeast(0)
+            )
+        }.getOrNull() ?: return null
+
         bd.insert(updated)
         return updated.toDomain()
     }
 
     override suspend fun decrementReserved(productId: String, quantity: Int): Product? {
         if (quantity <= 0) return getById(productId)
-        val current = runCatching { net.getById(productId) }.getOrNull()
-            ?: bd.getById(productId)
-            ?: return null
-        val nextReserved = (current.reserved - quantity).coerceAtLeast(0)
-        val updated = net.updateReserved(productId, nextReserved)
+
+        // Core 1: liberación autoritativa también es remota y atómica.
+        val updated = runCatching {
+            net.decrementReserved(productId, quantity)
+        }.getOrNull() ?: return null
+
         bd.insert(updated)
         return updated.toDomain()
     }

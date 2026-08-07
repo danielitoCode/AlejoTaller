@@ -2,7 +2,6 @@ package com.elitec.alejotaller.data.fakesRepositories.product
 
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.data.dto.ProductDto
-import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import kotlin.random.Random
 
@@ -60,10 +59,27 @@ class FakeProductNetRepository : ProductNetRepository {
         return products.first { it.id == itemId }
     }
 
-    override suspend fun getAll(): List<ProductDto> {
-        return products
+    override suspend fun getAll(): List<ProductDto> = products
+
+    override suspend fun incrementReserved(
+        productId: String,
+        quantity: Int,
+        maxReserved: Int
+    ): ProductDto {
+        val current = getById(productId)
+        val next = current.reserved + quantity
+        check(next <= maxReserved) { "reserved exceeds max" }
+        return current.copy(reserved = next).also { updated ->
+            products = products.map { if (it.id == productId) updated else it }
+        }
     }
 
+    override suspend fun decrementReserved(productId: String, quantity: Int): ProductDto {
+        val current = getById(productId)
+        return current.copy(reserved = (current.reserved - quantity).coerceAtLeast(0)).also { updated ->
+            products = products.map { if (it.id == productId) updated else it }
+        }
+    }
 
     private fun productBuilder(listSize: Int = 10): List<ProductDto> = buildList {
         var temp = listSize

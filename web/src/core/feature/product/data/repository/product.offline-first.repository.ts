@@ -154,6 +154,17 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         }
     }
 
+    async refreshFromRemote(id: string): Promise<Product | null> {
+        try {
+            const remote = await this.net.getById(id)
+            await db.products.put(toPlainProductDoc(remote))
+            return productFromDTO(remote)
+        } catch (error: unknown) {
+            logger.error(`[product] refreshFromRemote failed id=${id}: ${formatCaughtError(error)}`)
+            return null
+        }
+    }
+
     async getByCategory(categoryId: string): Promise<Product[]> {
         try {
             const remote = await this.net.getByCategory(categoryId)
@@ -168,6 +179,40 @@ export class ProductOfflineFirstRepository implements ProductRepository {
                 .filter((it: any) => it?.category_id === categoryId)
                 .toArray()
             return local.map(productFromDTO)
+        }
+    }
+
+    async incrementReserved(id: string, quantity: number): Promise<Product | null> {
+        if (quantity <= 0) return this.getById(id)
+
+        // Read remote only to obtain the current existence used as atomic max.
+        // The mutation itself is performed by Appwrite; Dexie is never the authority.
+        try {
+            const current = await this.net.getById(id)
+            const updated = await this.net.incrementReserved(
+                id,
+                quantity,
+                Math.max(0, Math.floor(Number(current.existence ?? current.status ?? 0)))
+            )
+            await db.products.put(toPlainProductDoc(updated))
+            return productFromDTO(updated)
+        } catch (error: unknown) {
+            logger.error(`[product] atomic increment reserved failed id=${id}: ${formatCaughtError(error)}`)
+            return null
+        }
+    }
+
+    async decrementReserved(id: string, quantity: number): Promise<Product | null> {
+        if (quantity <= 0) return this.getById(id)
+
+        // Release is also server-authoritative and atomic; min=0 is enforced by Appwrite.
+        try {
+            const updated = await this.net.decrementReserved(id, quantity)
+            await db.products.put(toPlainProductDoc(updated))
+            return productFromDTO(updated)
+        } catch (error: unknown) {
+            logger.error(`[product] atomic decrement reserved failed id=${id}: ${formatCaughtError(error)}`)
+            return null
         }
     }
 
