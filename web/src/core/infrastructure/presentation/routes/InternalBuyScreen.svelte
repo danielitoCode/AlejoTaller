@@ -9,6 +9,8 @@
     import CurrencySwitch from "../../../feature/exchange/presentation/components/CurrencySwitch.svelte";
     import { exchangeStore, formatMoney } from "../../../feature/exchange/presentation/viewmodels/exchanges.store";
     import { getPrimaryProductImageUrl } from "../../../feature/product/presentation/utils/product.images";
+    import { availableStock } from "../../../feature/product/domain/entity/Product";
+    import { toastStore } from "../viewmodel/toast.store";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -17,6 +19,23 @@
     $: items = $cartStore.items;
     $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
     $: displayTotalAmount = formatMoney(totalAmount, $exchangeStore);
+
+    function increase(productId: string, current: number, max: number) {
+        if (current >= max) {
+            toastStore.info(`Máximo disponible: ${max}`);
+            return;
+        }
+        const res = cartStore.setQuantity(productId, current + 1);
+        if (res.ok && res.clamped) {
+            toastStore.info(`Solo hay ${res.max} disponibles`);
+        } else if (!res.ok && res.reason === "out_of_stock") {
+            toastStore.error("Sin stock disponible");
+        }
+    }
+
+    function decrease(productId: string, current: number) {
+        cartStore.setQuantity(productId, current - 1);
+    }
 </script>
 
 <section class="screen">
@@ -24,7 +43,7 @@
         <div>
             <p class="eyebrow">Compra</p>
             <h1>Tu carrito</h1>
-            <p class="support">Revisa cantidades y prepara tu reserva con una visual mas consistente.</p>
+            <p class="support">Revisa cantidades (limitadas al stock disponible) y prepara tu reserva.</p>
         </div>
         {#if items.length}
             <div class="total-pill">Total {displayTotalAmount}</div>
@@ -46,6 +65,8 @@
         <CurrencySwitch />
         <div class="list">
             {#each items as item}
+                {@const max = availableStock(item.product)}
+                {@const atMax = item.quantity >= max}
                 <div class="cart-card">
                     <Card variant="elevated">
                         <div class="cart-card-body">
@@ -56,13 +77,27 @@
                                 <div class="item-copy">
                                     <strong>{item.product.name}</strong>
                                     <span>{formatMoney(item.product.price, $exchangeStore)} c/u</span>
+                                    <span class="stock-hint" class:at-max={atMax}>
+                                        {#if max <= 0}
+                                            Sin stock
+                                        {:else if atMax}
+                                            Máximo: {max}
+                                        {:else}
+                                            Disponibles: {max}
+                                        {/if}
+                                    </span>
                                 </div>
                             </div>
                             <div class="controls">
                                 <div class="qty">
-                                    <Button variant="outlined" size="s" onclick={() => cartStore.setQuantity(item.product.id, item.quantity - 1)}>-1</Button>
+                                    <Button variant="outlined" size="s" onclick={() => decrease(item.product.id, item.quantity)}>-1</Button>
                                     <span>{item.quantity}</span>
-                                    <Button variant="tonal" size="s" onclick={() => cartStore.setQuantity(item.product.id, item.quantity + 1)}>+1</Button>
+                                    <Button
+                                        variant="tonal"
+                                        size="s"
+                                        disabled={atMax}
+                                        onclick={() => increase(item.product.id, item.quantity, max)}
+                                    >+1</Button>
                                 </div>
                                 <Button variant="text" size="s" iconType="left" onclick={() => cartStore.remove(item.product.id)}>
                                     <Icon icon={deleteIcon} />
@@ -213,6 +248,16 @@
     .item-copy span,
     .empty-state-content p {
         color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .stock-hint {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--md-sys-color-secondary);
+    }
+
+    .stock-hint.at-max {
+        color: var(--md-sys-color-tertiary);
     }
 
     .controls,

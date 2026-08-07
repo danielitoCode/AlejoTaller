@@ -14,6 +14,7 @@
     import {productDetail} from "../../../../infrastructure/presentation/navigation/nested.router";
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
     import { logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
+    import { availableStock } from "../../domain/entity/Product";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -91,6 +92,10 @@
         isLoading = state.loading;
         stockSyncing = state.stockSyncing;
         resolvePendingProduct();
+        // Mantener carrito alineado con stock fresco
+        if (state.items.length > 0) {
+            cartStore.refreshProductStock(state.items);
+        }
         if (selectedProduct) {
             const updated = products.find(p => p.id === selectedProduct.id);
             if (updated) {
@@ -167,8 +172,33 @@
             showAuthOverlay = true;
             return;
         }
-        cartStore.addProduct(selectedProduct, 1);
-        toastStore.success(`${selectedProduct.name} agregado al carrito`);
+
+        const max = availableStock(selectedProduct);
+        if (max <= 0) {
+            toastStore.error("Producto agotado");
+            return;
+        }
+
+        const res = cartStore.addProduct(selectedProduct, 1);
+        if (!res.ok) {
+            toastStore.error(
+                res.reason === "out_of_stock"
+                    ? "Producto agotado"
+                    : "No se pudo agregar"
+            );
+            return;
+        }
+
+        if (res.clamped && res.quantity === res.max) {
+            toastStore.info(
+                `Solo hay ${res.max} disponibles. Ya tienes el máximo en el carrito.`
+            );
+            return;
+        }
+
+        toastStore.success(
+            `${selectedProduct.name} agregado (${res.quantity}/${res.max})`
+        );
     };
 
     const handleAuthRequiredClick = () => {
