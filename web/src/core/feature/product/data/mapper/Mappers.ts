@@ -7,9 +7,9 @@ import type {Product} from "../../domain/entity/Product";
  * - reserved: soft-hold UNVERIFIED
  *
  * `status` se mantiene solo como fallback de lectura mientras migras datos.
+ * Nunca incluir $id en el body de update/create (Appwrite lo rechaza).
  */
 export type ProductWriteDTO = {
-    $id: string
     name: string
     description: string
     price: number
@@ -55,12 +55,10 @@ export function productFromDTO(dto: ProductDTO | Record<string, unknown>): Produ
 }
 
 /**
- * Domain → DTO Appwrite
- * Solo escribe atributos canónicos: existence + reserved.
+ * Domain → payload Appwrite (sin $id).
  */
 export function productToDTO(product: Product): ProductWriteDTO {
     return {
-        $id: product.id,
         name: product.name,
         description: product.description,
         existence: product.existence,
@@ -70,4 +68,19 @@ export function productToDTO(product: Product): ProductWriteDTO {
         category_id: product.categoryId,
         rating: product.rating
     };
+}
+
+/** Solo campos de stock para soft-hold / operador (payload mínimo). */
+export function productStockPatch(patch: {
+    existence?: number
+    reserved?: number
+}): Record<string, number> {
+    const out: Record<string, number> = {};
+    if (patch.existence != null && Number.isFinite(patch.existence)) {
+        out.existence = Math.max(0, Math.floor(patch.existence));
+    }
+    if (patch.reserved != null && Number.isFinite(patch.reserved)) {
+        out.reserved = Math.max(0, Math.floor(patch.reserved));
+    }
+    return out;
 }

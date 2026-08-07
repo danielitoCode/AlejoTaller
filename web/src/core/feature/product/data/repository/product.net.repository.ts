@@ -59,12 +59,19 @@ class ProductNetRepository {
         )
     }
 
-    async update(id: string, data: Partial<ProductWriteDTO>): Promise<ProductDTO> {
+    async update(id: string, data: Partial<ProductWriteDTO> | Record<string, unknown>): Promise<ProductDTO> {
+        // Nunca enviar $id / meta Appwrite en el body
+        const clean: Record<string, unknown> = {}
+        for (const [key, value] of Object.entries(data ?? {})) {
+            if (key.startsWith("$")) continue
+            if (value === undefined) continue
+            clean[key] = value
+        }
         return await this.databases.updateDocument<ProductDTO>(
             this.databaseId,
             COLLECTION_ID,
             id,
-            data
+            clean
         )
     }
 
@@ -78,11 +85,11 @@ class ProductNetRepository {
         return response.documents
     }
 
-    async create(product: ProductWriteDTO): Promise<ProductDTO> {
+    async create(product: ProductWriteDTO, id?: string): Promise<ProductDTO> {
         return await this.databases.createDocument<ProductDTO>(
             this.databaseId,
             COLLECTION_ID,
-            product.$id || ID.unique(),
+            id || ID.unique(),
             product as ProductDTO
         )
     }

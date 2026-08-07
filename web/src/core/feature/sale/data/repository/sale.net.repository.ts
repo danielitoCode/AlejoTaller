@@ -5,6 +5,16 @@ import { ENV } from "../../../../infrastructure/env";
 
 const COLLECTION_ID = "sale";
 
+function stripMeta(data: Record<string, unknown>): Record<string, unknown> {
+    const clean: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+        if (key.startsWith("$")) continue;
+        if (value === undefined) continue;
+        clean[key] = value;
+    }
+    return clean;
+}
+
 export class SaleNetRepository {
     constructor(private databases: Databases) {}
 
@@ -24,13 +34,14 @@ export class SaleNetRepository {
     }
 
     async create(
-        data: Omit<SaleDTO, keyof Models.Document>
+        data: Omit<SaleDTO, keyof Models.Document> | Record<string, unknown>
     ): Promise<SaleDTO> {
+        const payload = stripMeta(data as Record<string, unknown>);
         return await this.databases.createDocument<SaleDTO>(
             this.databaseId,
             COLLECTION_ID,
             ID.unique(),
-            data
+            payload
         )
     }
 
@@ -59,6 +70,15 @@ export class SaleNetRepository {
             COLLECTION_ID,
             id,
             { delivery_type: deliveryType }
+        );
+    }
+
+    async updateStockHoldApplied(id: string, value: boolean): Promise<SaleDTO> {
+        return await this.databases.updateDocument<SaleDTO>(
+            this.databaseId,
+            COLLECTION_ID,
+            id,
+            { stock_hold_applied: value }
         );
     }
 }

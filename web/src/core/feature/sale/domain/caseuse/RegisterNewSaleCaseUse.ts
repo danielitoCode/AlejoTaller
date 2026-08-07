@@ -11,7 +11,7 @@ import { availableStock } from "../../../product/domain/entity/Product";
  * Flujo:
  * 1. Persist sale (camino crítico)
  * 2. Por cada línea: reserved += quantity (si aún no stock_hold_applied)
- * 3. Marca stock_hold_applied en sale (idempotencia)
+ * 3. Marca stock_hold_applied en dominio (+ best-effort remoto si el repo lo permite)
  * 4. Telegram best-effort
  *
  * El stock físico (existence) solo baja en VERIFIED (operador).
@@ -31,23 +31,42 @@ export class RegisterNewSaleCaseUse {
         });
 
         let holdApplied = false;
+        let holdError: string | null = null;
+
         try {
             holdApplied = await this.applySoftHold(created);
+            if (import.meta.env.DEV) {
+                console.info(
+                    `[RegisterNewSaleCaseUse] soft-hold OK saleId=${created.id} applied=${holdApplied}`
+                );
+            }
         } catch (error) {
-            console.warn(
-                `[RegisterNewSaleCaseUse] event=soft_hold_partial_failure ` +
-                `saleId=${created.id} cause=${error instanceof Error ? error.message : String(error)}`
+            holdError = error instanceof Error ? error.message : String(error);
+            console.error(
+                `[RegisterNewSaleCaseUse] event=soft_hold_failure ` +
+                `saleId=${created.id} cause=${holdError}`
             );
         }
 
-        let result = created;
-        if (holdApplied && !created.stockHoldApplied) {
+        let result: Sale = {
+            ...created,
+            stockHoldApplied: holdApplied
+        };
+
+        // Best-effort: persistir flag si el repositorio tiene update parcial de stock_hold_applied
+        if (holdApplied) {
             try {
-                // Best-effort: marcar flag en remoto si el repo lo soporta vía updateVerified no aplica;
-                // se deja en dominio local; el flag se puede persistir en una actualización futura.
-                result = { ...created, stockHoldApplied: true };
-            } catch {
-                result = { ...created, stockHoldApplied: true };
+                const repoAny = this.repository as SaleRepository & {
+                    updateStockHoldApplied?: (id: string, value: boolean) => Promise<Sale>
+                };
+                if (typeof repoAny.updateStockHoldApplied === "function") {
+                    result = await repoAny.updateStockHoldApplied(created.id, true);
+                }
+            } catch (flagErr) {
+                console.warn(
+                    `[RegisterNewSaleCaseUse] no se pudo persistir stock_hold_applied saleId=${created.id}: ` +
+                    `${flagErr instanceof Error ? flagErr.message : String(flagErr)}`
+                );
             }
         }
 
@@ -61,17 +80,26 @@ export class RegisterNewSaleCaseUse {
             );
         }
 
+        // Si el hold falló, la venta existe pero el inventario no se reservó:
+        // se anexa señal para que la UI avise (no tumba el pedido).
+        if (!holdApplied && holdError) {
+            (result as Sale & { softHoldError?: string }).softHoldError = holdError;
+        }
+
         return result;
     }
 
     /**
      * Incrementa `reserved` por cada línea del pedido.
      * Re-valida available justo antes de escribir (reduce race).
-     * @returns true si se aplicó hold en al menos un producto
      */
     private async applySoftHold(sale: Sale): Promise<boolean> {
         if (sale.stockHoldApplied) {
             return true;
+        }
+
+        if (!sale.products?.length) {
+            throw new Error("Sale sin líneas: no hay soft-hold que aplicar");
         }
 
         let anyApplied = false;
@@ -79,10 +107,9 @@ export class RegisterNewSaleCaseUse {
         for (const item of sale.products) {
             const product = await this.productRepository.getById(item.productId);
             if (!product) {
-                console.warn(
-                    `[RegisterNewSaleCaseUse] soft-hold skip missing productId=${item.productId}`
+                throw new Error(
+                    `Soft-hold: producto no encontrado productId=${item.productId}`
                 );
-                continue;
             }
 
             const available = availableStock(product);
@@ -94,6 +121,15 @@ export class RegisterNewSaleCaseUse {
             }
 
             const nextReserved = (product.reserved ?? 0) + item.quantity;
+
+            if (import.meta.env.DEV) {
+                console.info(
+                    `[RegisterNewSaleCaseUse] soft-hold product=${item.productId} ` +
+                    `qty=${item.quantity} reserved ${product.reserved ?? 0} → ${nextReserved}`
+                );
+            }
+
+            // Payload mínimo: solo reserved (evita $id y campos ajenos)
             await this.productRepository.update(item.productId, {
                 reserved: nextReserved
             });

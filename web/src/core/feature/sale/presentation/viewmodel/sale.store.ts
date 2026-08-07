@@ -6,6 +6,7 @@ import { logger } from "../../../../infrastructure/presentation/util/logger.serv
 import { subscribeSaleVerification, unsubscribeSaleVerification } from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import {productContainer} from "../../../product/di/product.container";
+import { productStore } from "../../../product/presentation/viewmodel/product.store";
 import { saleAlertStore } from "./sale-alert.store";
 import { BuyState } from "../../domain/entity/enums";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
@@ -45,15 +46,10 @@ function createSaleStore() {
                 }
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
-                logger.log("[SaleStore] Pusher disabled for guest session");
                 return;
             }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
             const currentUserId = currentUser?.$id ?? null;
-            logger.log(
-                `[SaleStore] managePusherSubscription userId=${currentUserId ?? "null"} ` +
-                `sales=${state.items.length} pending=${state.items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length}`
-            );
 
             if (!currentUserId) {
                 if (pusherUnsubscribe) {
@@ -62,7 +58,6 @@ function createSaleStore() {
                 }
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
-                logger.log("[SaleStore] Pusher disabled because there is no active user");
                 return;
             }
 
@@ -77,26 +72,18 @@ function createSaleStore() {
                 }
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
-                logger.log(`[SaleStore] Resetting sale subscription because user changed to ${currentUserId}`);
             }
 
             if (hasUnverified && !pusherUnsubscribe) {
-                logger.log(`[SaleStore] Suscribiendo a eventos de verificacion de ventas para userId=${currentUserId}`);
                 pusherUnsubscribe = subscribeSaleVerification(currentUserId, (eventName, payload) => {
                     handleSaleVerificationEvent(eventName, payload);
                 });
                 subscribedUserId = currentUserId;
             } else if (!hasUnverified && pusherUnsubscribe) {
-                logger.log(`[SaleStore] Desuscribiendo de eventos de verificacion de ventas para userId=${currentUserId}`);
                 pusherUnsubscribe();
                 pusherUnsubscribe = null;
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
-            } else {
-                logger.log(
-                    `[SaleStore] Subscription unchanged hasUnverified=${hasUnverified} ` +
-                    `alreadySubscribed=${pusherUnsubscribe != null} subscribedUserId=${subscribedUserId ?? "null"}`
-                );
             }
         } finally {
             isSubscriptionPending = false;
@@ -113,11 +100,6 @@ function createSaleStore() {
             logger.error(`[Pusher Event] Invalid payload: ${JSON.stringify(payload)}`);
             return;
         }
-
-        logger.log(
-            `[Pusher Event] ${eventName} - saleId=${saleId} decision=${decision} ` +
-            `timestamp=${payload.timestamp} amount=${payload.amount ?? "null"} productCount=${payload.productCount ?? "null"}`
-        );
 
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
         update((state) => ({
@@ -145,27 +127,8 @@ function createSaleStore() {
             toastStore.error(toastMessage, 4200);
         }
 
-        if (window.Notification && Notification.permission === "granted") {
-            const title = decision === "confirmed" ? "Pedido confirmado" : "Pedido rechazado";
-            const body = decision === "confirmed"
-                ? `Tu pedido ha sido confirmado${payload.amount ? ` por $${payload.amount} CUP` : ""}`
-                : "Tu pedido ha sido rechazado";
-            const notif = new Notification(title, {
-                body,
-                icon: "/alejoicon_clean.svg",
-                data: { saleId }
-            });
-
-            notif.onclick = () => {
-                window.focus();
-                window.dispatchEvent(
-                    new CustomEvent("sale-verification-open", {
-                        detail: { saleId }
-                    })
-                );
-                notif.close();
-            };
-        }
+        // Stock cambió en operador → refrescar catálogo
+        void productStore.syncAll().catch(() => {});
 
         void managePusherSubscription();
     }
@@ -181,11 +144,9 @@ function createSaleStore() {
                 unsubscribeSaleVerification();
                 subscribedUserId = null;
                 update((state) => ({ ...state, items: [] }));
-                logger.log("[SaleStore] syncAll skipped for guest session");
                 return;
             }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
-            logger.log(`[SaleStore] syncAll currentUser=${currentUser?.$id ?? "null"}`);
 
             if (!currentUser?.$id) {
                 if (pusherUnsubscribe) {
@@ -199,7 +160,6 @@ function createSaleStore() {
             }
 
             const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUser.$id);
-            logger.log(`[SaleStore] syncAll loaded sales=${sales.length} userId=${currentUser.$id}`);
             update((state) => ({ ...state, items: sales }));
             await managePusherSubscription();
         } catch (error) {
@@ -237,19 +197,29 @@ function createSaleStore() {
         }));
 
         try {
-            // Verifica disponibilidad de productos
             await productContainer.useCases.checkAProductExistence.execute(sale);
 
-            // Crea la venta
             const created = await saleContainer.useCases.create.execute(sale);
 
-            // Actualiza el estado
             update((state) => ({
                 ...state,
                 items: [created, ...state.items]
             }));
 
-            // Gestiona la suscripción
+            // Soft-hold mutó reserved → refrescar catálogo/badges
+            void productStore.syncAll().catch(() => {});
+
+            const softHoldError = (created as Sale & { softHoldError?: string }).softHoldError;
+            if (softHoldError) {
+                toastStore.warning(
+                    `Pedido creado, pero no se pudo reservar stock: ${softHoldError}`
+                );
+            } else if (created.stockHoldApplied) {
+                if (import.meta.env.DEV) {
+                    console.info(`[SaleStore] soft-hold aplicado saleId=${created.id}`);
+                }
+            }
+
             await managePusherSubscription();
 
             return created;

@@ -1,6 +1,5 @@
 import type { DeliveryType } from "../../domain/entity/enums";
 import type {Sale} from "../../domain/entity/Sale";
-import type {SaleDTO} from "../dto/SaleDTO";
 import {saleFromDTO, saleToDTO} from "../mapper/Mappers";
 import type {SaleRepository} from "../../domain/repository/SaleRepository";
 import {SaleNetRepository} from "./sale.net.repository";
@@ -69,6 +68,20 @@ export class SaleOfflineFirstRepository implements SaleRepository {
         } catch (error: any) {
             logger.error(
                 `Error al actualizar entrega en Appwrite: ${error?.message ?? "desconocido"}`,
+                error?.stack
+            );
+            throw error;
+        }
+    }
+
+    async updateStockHoldApplied(id: string, value: boolean): Promise<Sale> {
+        try {
+            const updated = await this.net.updateStockHoldApplied(id, value);
+            await db.sales.put(updated);
+            return saleFromDTO(updated);
+        } catch (error: any) {
+            logger.error(
+                `Error al marcar stock_hold_applied: ${error?.message ?? "desconocido"}`,
                 error?.stack
             );
             throw error;

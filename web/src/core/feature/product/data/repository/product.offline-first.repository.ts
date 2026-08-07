@@ -2,7 +2,7 @@ import ProductNetRepository from "./product.net.repository"
 import type {ProductRepository} from "../../domain/repository/product.repository";
 import type {Product} from "../../domain/entity/Product";
 import {db} from "../../../../infrastructure/di/dexie.db";
-import {productFromDTO, productToDTO} from "../mapper/Mappers";
+import {productFromDTO, productStockPatch, productToDTO} from "../mapper/Mappers";
 import {logger} from "../../../../infrastructure/presentation/util/logger.service";
 import type {ProductDTO} from "../dto/ProductDTO";
 
@@ -41,7 +41,6 @@ function prim(value: unknown): string {
     }
 }
 
-/** Documento plano para Dexie. Persiste status + existence para no perder stock. */
 function toPlainProductDoc(doc: ProductDTO): ProductDTO {
     const raw = doc as Record<string, unknown>
     const existence = Number(
@@ -58,7 +57,6 @@ function toPlainProductDoc(doc: ProductDTO): ProductDTO {
         photo_url: raw.photo_url ?? "",
         category_id: raw.category_id ?? "",
         rating: raw.rating ?? 0,
-        // schema real + canónico
         status: Number.isFinite(existence) ? Math.max(0, Math.floor(existence)) : 0,
         existence: Number.isFinite(existence) ? Math.max(0, Math.floor(existence)) : 0,
         reserved: Number.isFinite(reserved) ? Math.max(0, Math.floor(reserved)) : 0
@@ -99,19 +97,6 @@ function logRemoteStockSnapshot(source: string, remote: ProductDTO[]): void {
         for (const line of lines) {
             console.info(line)
         }
-
-        const missing = remote.filter((doc) => {
-            const raw = doc as Record<string, unknown>
-            return raw.existence == null && raw.status == null
-        })
-        if (missing.length > 0) {
-            const sampleKeys = Object.keys(missing[0] as object)
-                .filter((k) => !k.startsWith("$") || k === "$id")
-                .join(",")
-            console.warn(
-                `[product][DEV] ${missing.length}/${remote.length} docs SIN status/existence. sample keys=[${sampleKeys}]`
-            )
-        }
     } catch (logErr) {
         console.warn(`[product][DEV] falló logRemoteStockSnapshot: ${formatCaughtError(logErr)}`)
     }
@@ -135,13 +120,7 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         } catch (error: unknown) {
             const msg = formatCaughtError(error)
             logger.error(`[product] getAll RED falló: ${msg}`)
-            if (import.meta.env.DEV) {
-                console.error(`[product][DEV] getAll RED error: ${msg}`)
-            }
             const local = await db.products.toArray()
-            if (import.meta.env.DEV) {
-                console.warn(`[product][DEV] fallback Dexie ${local.length} docs (stock puede estar stale)`)
-            }
             return sortNewestFirst(local).map(productFromDTO)
         }
 
@@ -153,11 +132,7 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             await db.products.clear()
             await db.products.bulkPut(plain)
         } catch (error: unknown) {
-            const msg = formatCaughtError(error)
-            logger.error(`[product] getAll Dexie write falló: ${msg}`)
-            if (import.meta.env.DEV) {
-                console.error(`[product][DEV] Dexie bulkPut error: ${msg}`)
-            }
+            logger.error(`[product] getAll Dexie write falló: ${formatCaughtError(error)}`)
         }
 
         return remote.map(productFromDTO)
@@ -169,16 +144,11 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             logRemoteStockSnapshot(`getById(${id})`, [remote])
             try {
                 await db.products.put(toPlainProductDoc(remote))
-            } catch (dexieErr) {
-                if (import.meta.env.DEV) {
-                    console.warn(`[product][DEV] put Dexie falló: ${formatCaughtError(dexieErr)}`)
-                }
+            } catch {
+                /* ignore */
             }
             return productFromDTO(remote)
         } catch (error: unknown) {
-            if (import.meta.env.DEV) {
-                console.warn(`[product][DEV] getById red falló: ${formatCaughtError(error)}`)
-            }
             const local = await db.products.get(id)
             return local ? productFromDTO(local) : null
         }
@@ -187,11 +157,10 @@ export class ProductOfflineFirstRepository implements ProductRepository {
     async getByCategory(categoryId: string): Promise<Product[]> {
         try {
             const remote = await this.net.getByCategory(categoryId)
-            logRemoteStockSnapshot(`getByCategory(${categoryId})`, remote)
             try {
                 await db.products.bulkPut(remote.map(toPlainProductDoc))
             } catch {
-                /* ignore dexie */
+                /* ignore */
             }
             return remote.map(productFromDTO)
         } catch {
@@ -204,7 +173,7 @@ export class ProductOfflineFirstRepository implements ProductRepository {
 
     async create(product: Product): Promise<Product> {
         try {
-            const created = await this.net.create(productToDTO(product))
+            const created = await this.net.create(productToDTO(product), product.id || undefined)
             await db.products.put(toPlainProductDoc(created))
             return productFromDTO(created)
         } catch (error: unknown) {
@@ -225,12 +194,33 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             id
         }
 
+        // Soft-hold / stock-only: payload mínimo (solo reserved / existence)
+        const stockOnly =
+            Object.keys(product).every((k) => k === "reserved" || k === "existence" || k === "id")
+
         try {
-            const updated = await this.net.update(id, productToDTO(merged))
+            const payload = stockOnly
+                ? productStockPatch({
+                      existence: product.existence,
+                      reserved: product.reserved
+                  })
+                : productToDTO(merged)
+
+            if (import.meta.env.DEV) {
+                console.info(
+                    `[product][DEV] update ${id} stockOnly=${stockOnly} payload=${JSON.stringify(payload)}`
+                )
+            }
+
+            const updated = await this.net.update(id, payload)
             await db.products.put(toPlainProductDoc(updated))
             return productFromDTO(updated)
         } catch (error: unknown) {
-            logger.error(`Error al actualizar producto en Appwrite: ${formatCaughtError(error)}`)
+            const msg = formatCaughtError(error)
+            logger.error(`Error al actualizar producto en Appwrite: ${msg}`)
+            if (import.meta.env.DEV) {
+                console.error(`[product][DEV] update FAILED id=${id}: ${msg}`)
+            }
             throw error
         }
     }
