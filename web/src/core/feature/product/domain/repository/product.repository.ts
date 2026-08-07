@@ -5,6 +5,8 @@ export interface ProductRepository {
     /** Cache local inmediato (opcional; offline-first). */
     getLocalAll?(): Promise<Product[]>
     getById(id: string): Promise<Product | null>
+    /** Fuente de verdad remota para operaciones críticas de stock. */
+    refreshFromRemote?(id: string): Promise<Product | null>
     getByCategory(categoryId: string): Promise<Product[]>
     create(product: Product): Promise<Product>
     update(id: string, product: Partial<Product>): Promise<Product>
