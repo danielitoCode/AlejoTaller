@@ -12,9 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,23 +49,46 @@ private fun StockBadge(
     available: Int,
     modifier: Modifier = Modifier
 ) {
-    val (container, content) = when {
-        available <= 0 -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
-        available <= 5 -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
-        else -> MaterialTheme.colorScheme.secondaryContainer to MaterialTheme.colorScheme.onSecondaryContainer
+    val (container, content, icon) = when {
+        available <= 0 -> Triple(
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer,
+            Icons.Filled.Block
+        )
+        available <= 5 -> Triple(
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer,
+            Icons.Filled.Warning
+        )
+        else -> Triple(
+            MaterialTheme.colorScheme.secondaryContainer,
+            MaterialTheme.colorScheme.onSecondaryContainer,
+            Icons.Filled.Inventory2
+        )
     }
     Surface(
         color = container,
         shape = RoundedCornerShape(999.dp),
         modifier = modifier
     ) {
-        Text(
-            text = stockLabel(available),
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = content,
-            maxLines = 1
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = stockLabel(available),
+                style = MaterialTheme.typography.labelSmall,
+                color = content,
+                maxLines = 1
+            )
+        }
     }
 }
 
