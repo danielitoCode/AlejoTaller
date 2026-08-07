@@ -5,18 +5,19 @@ import {
     subscribeStockUpdates,
     unsubscribeStockUpdates
 } from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
-import type {StockChangedPayload} from "../../../../infrastructure/data/alset-pulse/stock-pulse";
+import {
+    STOCK_BROADCAST_NAME,
+    STOCK_CHANGED_EVENT,
+    type StockChangedPayload
+} from "../../../../infrastructure/data/alset-pulse/stock-pulse";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
 interface ProductState {
     items: Product[]
     selected: Product | null
     loading: boolean
-    /** true mientras se refresca stock (inicial o realtime) */
     stockSyncing: boolean
-    /** true solo cuando el sync viene de señal Pusher stock:changed */
     realtimeUpdating: boolean
-    /** mensaje corto para banner de UI */
     syncMessage: string | null
     saving: boolean
     error: string | null
@@ -54,9 +55,17 @@ function reasonLabel(reason: StockChangedPayload["reason"]): string {
     }
 }
 
+function isStockPayload(value: unknown): value is StockChangedPayload {
+    if (!value || typeof value !== "object") return false
+    const v = value as Partial<StockChangedPayload>
+    return Array.isArray(v.productIds) && v.productIds.length > 0
+}
+
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
     let stockUnsub: (() => void) | null = null
+    let localEventBound = false
+    let broadcast: BroadcastChannel | null = null
 
     async function runSaving<T>(task: () => Promise<T>): Promise<T> {
         update((state) => ({...state, saving: true, error: null}))
@@ -80,15 +89,16 @@ function createProductStore() {
 
     async function handleStockChanged(
         payload: StockChangedPayload,
-        options: { silent?: boolean; fromRealtime?: boolean } = {}
+        options: { silent?: boolean; fromRealtime?: boolean; source?: string } = {}
     ): Promise<void> {
         const fromRealtime = options.fromRealtime === true
         const silent = options.silent === true
+        const source = options.source ?? (fromRealtime ? "pusher" : "local")
         const count = payload.productIds.length
         const t0 = performance.now()
 
         console.info(
-            `[stock-rt] UI handle start realtime=${fromRealtime} silent=${silent} ` +
+            `[stock-rt] UI handle start source=${source} realtime=${fromRealtime} silent=${silent} ` +
                 `reason=${payload.reason} saleId=${payload.saleId ?? "-"} count=${count} ` +
                 `ids=${payload.productIds.join(",")}`
         )
@@ -131,7 +141,7 @@ function createProductStore() {
             }))
 
             console.info(
-                `[stock-rt] UI merge done refreshed=${refreshed.length}/${count} in ${ms}ms — banner OFF`
+                `[stock-rt] UI merge done source=${source} refreshed=${refreshed.length}/${count} in ${ms}ms — banner OFF`
             )
 
             if (fromRealtime && !silent) {
@@ -144,7 +154,7 @@ function createProductStore() {
             }
         } catch (error) {
             const msg = normalizeError(error)
-            console.error(`[stock-rt] UI handle FAIL: ${msg}`, error)
+            console.error(`[stock-rt] UI handle FAIL source=${source}: ${msg}`, error)
             update((state) => ({
                 ...state,
                 stockSyncing: false,
@@ -159,27 +169,93 @@ function createProductStore() {
         }
     }
 
-    /** Arranca listener Pusher stock:changed (idempotente). */
-    function startStockRealtime(): void {
-        if (stockUnsub) {
-            console.info("[stock-rt] startStockRealtime: ya activo, skip")
+    function onLocalStockEvent(ev: Event): void {
+        const detail = (ev as CustomEvent).detail
+        if (!isStockPayload(detail)) {
+            console.warn("[stock-rt] CustomEvent inválido", detail)
             return
         }
-        console.info("[stock-rt] startStockRealtime: suscribiendo…")
+        console.info("[stock-rt] CustomEvent recibido → handle (toast+banner)")
+        void handleStockChanged(detail, {
+            fromRealtime: true,
+            silent: false,
+            source: "custom-event"
+        })
+    }
+
+    function onBroadcastMessage(ev: MessageEvent): void {
+        const msg = ev.data
+        if (!msg || msg.type !== "stock:changed" || !isStockPayload(msg.data)) {
+            return
+        }
+        console.info("[stock-rt] BroadcastChannel recibido → handle (toast+banner)")
+        void handleStockChanged(msg.data, {
+            fromRealtime: true,
+            silent: false,
+            source: "broadcast"
+        })
+    }
+
+    function startLocalStockListeners(): void {
+        if (typeof window === "undefined") return
+
+        if (!localEventBound) {
+            window.addEventListener(STOCK_CHANGED_EVENT, onLocalStockEvent)
+            localEventBound = true
+            console.info(`[stock-rt] listener CustomEvent ${STOCK_CHANGED_EVENT} activo`)
+        }
+
+        if (!broadcast && typeof BroadcastChannel !== "undefined") {
+            try {
+                broadcast = new BroadcastChannel(STOCK_BROADCAST_NAME)
+                broadcast.onmessage = onBroadcastMessage
+                console.info(`[stock-rt] listener BroadcastChannel ${STOCK_BROADCAST_NAME} activo`)
+            } catch (e) {
+                console.warn(
+                    `[stock-rt] BroadcastChannel no disponible: ${e instanceof Error ? e.message : String(e)}`
+                )
+            }
+        }
+    }
+
+    function stopLocalStockListeners(): void {
+        if (typeof window !== "undefined" && localEventBound) {
+            window.removeEventListener(STOCK_CHANGED_EVENT, onLocalStockEvent)
+            localEventBound = false
+        }
+        if (broadcast) {
+            broadcast.close()
+            broadcast = null
+        }
+    }
+
+    /** Arranca listener Pusher + local (idempotente). */
+    function startStockRealtime(): void {
+        startLocalStockListeners()
+
+        if (stockUnsub) {
+            console.info("[stock-rt] startStockRealtime: Pusher ya activo, skip")
+            return
+        }
+        console.info("[stock-rt] startStockRealtime: suscribiendo Pusher…")
         stockUnsub = subscribeStockUpdates((payload) => {
             console.info("[stock-rt] callback desde Pusher → handleStockChanged")
-            void handleStockChanged(payload, { fromRealtime: true })
+            void handleStockChanged(payload, {
+                fromRealtime: true,
+                source: "pusher"
+            })
         })
-        console.info("[stock-rt] listener stock:changed activo en productStore")
+        console.info("[stock-rt] listener stock:changed (Pusher) activo en productStore")
     }
 
     function stopStockRealtime(): void {
         if (stockUnsub) {
-            console.info("[stock-rt] stopStockRealtime")
+            console.info("[stock-rt] stopStockRealtime Pusher")
             stockUnsub()
             stockUnsub = null
         }
         unsubscribeStockUpdates()
+        stopLocalStockListeners()
     }
 
     async function syncAll(): Promise<void> {
@@ -262,7 +338,6 @@ function createProductStore() {
         }
     }
 
-    /** Refresh parcial (local, sin toast de “recibimos actualización”). */
     async function refreshByIds(productIds: string[]): Promise<void> {
         console.info(`[stock-rt] refreshByIds local (silent) ids=${productIds.join(",")}`)
         await handleStockChanged(
@@ -271,7 +346,7 @@ function createProductStore() {
                 reason: "hold",
                 timestamp: new Date().toISOString()
             },
-            { silent: true, fromRealtime: false }
+            { silent: true, fromRealtime: false, source: "refreshByIds" }
         )
     }
 
