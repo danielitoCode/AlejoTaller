@@ -46,6 +46,29 @@ Relacionado: [SALE_POLICY](../sale/SALE_POLICY.md)
 5. `reserved >= 0` y `existence >= 0` siempre (clamp).
 6. Tras hold/release/consume se emite `stock:changed` con `productIds[]`.
 7. Clientes (web/Android) refrescan **solo esos ids** desde Appwrite → cache offline-first.
+8. **Soft-hold multi-producto debe ser compensatorio:** si una venta contiene varios productos y el proceso de hold falla después de aplicar reservas a una o más líneas, se deben liberar (`reserved -= quantity`) todas las reservas aplicadas previamente para esa misma venta antes de considerar el hold fallido. No debe quedar una venta parcialmente reservada ni reservas huérfanas por un fallo intermedio.
+
+### Compensación de soft-hold multi-producto
+
+Cuando una venta contiene múltiples líneas de productos, el soft-hold debe tratarse como una operación lógica todo-o-nada dentro de Core 1:
+
+```text
+Producto A → hold OK
+Producto B → hold OK
+Producto C → ERROR
+
+        ↓ compensación
+
+Producto A → release
+Producto B → release
+Producto C → sin cambios
+
+Resultado: ningún hold parcial de la venta.
+```
+
+La compensación debe ejecutarse únicamente sobre los `productIds` cuyas reservas hayan sido confirmadas como aplicadas durante ese intento. Debe ser segura ante reintentos y no debe liberar reservas pertenecientes a otra venta.
+
+Si la compensación también falla, el sistema debe dejar trazabilidad del estado parcial para permitir reconciliación posterior; `stock_hold_applied` **no debe marcarse como `true`** salvo que todas las líneas hayan quedado correctamente reservadas.
 
 ---
 
@@ -72,6 +95,7 @@ Relacionado: [SALE_POLICY](../sale/SALE_POLICY.md)
 - Mitigación: re-read remoto + validación `available` + cola local por producto.
 - Si dos clientes compiten por el último cupo, el segundo falla en soft-hold con mensaje de stock insuficiente.
 - Operador al confirmar hace clamp `existence/reserved >= 0`.
+- En ventas con múltiples productos, un fallo durante el soft-hold requiere compensar todas las líneas ya aplicadas antes de considerar fallido el intento.
 
 ---
 
@@ -92,5 +116,8 @@ Relacionado: [SALE_POLICY](../sale/SALE_POLICY.md)
 - [x] VERIFIED resta existence + reserved
 - [x] Re-read remoto en soft-hold (concurrencia)
 - [x] Señal `stock:changed` + refresh selectivo por ids
+- [ ] Compensación de soft-hold multi-producto ante fallo parcial
 - [ ] Appwrite Function atómica hold (Core 2)
 - [ ] StockMovement persistido (Core 2)
+
+> (Model: GPT-5.6 Luna__fecha: 2026-08-07)
