@@ -7,4 +7,9 @@ export interface SaleRepository {
     getByUser(userId: string): Promise<Sale[]>
     updateVerified(id: string, verified: string): Promise<Sale>
     updateDeliveryType(id: string, deliveryType: DeliveryType): Promise<Sale>
+
+    /**
+     * Realtime: persiste documento Appwrite post-cambio en cache local (sin red).
+     */
+    applyLocalSnapshot?(raw: Record<string, unknown>): Promise<Sale | null>
 }

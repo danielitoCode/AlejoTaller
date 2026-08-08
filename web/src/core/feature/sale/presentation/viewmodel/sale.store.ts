@@ -3,7 +3,11 @@ import type { Sale } from "../../domain/entity/Sale";
 import { derived, get, writable } from "svelte/store";
 import { saleContainer } from "../../di/sale.container";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
-import { subscribeSaleVerification, unsubscribeSaleVerification } from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
+import {
+    startAppwriteSaleRealtime,
+    stopAppwriteSaleRealtime,
+    type AppwriteSaleChangeSignal
+} from "../../../../infrastructure/data/appwrite/appwrite-sale-realtime";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import {productContainer} from "../../../product/di/product.container";
 import { productStore } from "../../../product/presentation/viewmodel/product.store";
@@ -27,159 +31,207 @@ function normalizeError(error: unknown): string {
     return error instanceof Error ? error.message : "Unexpected error";
 }
 
+function decisionFromBuyState(
+    buyState: string
+): "confirmed" | "rejected" | null {
+    if (buyState === BuyState.VERIFIED || buyState === "VERIFIED") return "confirmed";
+    if (buyState === BuyState.DELETED || buyState === "DELETED") return "rejected";
+    return null;
+}
+
 function createSaleStore() {
     const { subscribe, update } = writable<SaleState>(initialState);
-    let pusherUnsubscribe: (() => void) | null = null;
+    let realtimeUnsub: (() => void) | null = null;
     let isSubscriptionPending = false;
     let subscribedUserId: string | null = null;
 
-    async function managePusherSubscription(): Promise<void> {
+    /**
+     * Appwrite Realtime sobre colección `sale` (sin Pusher ni secret de publish).
+     * Se mantiene suscripción mientras haya sesión (no solo UNVERIFIED) para
+     * no perder el update del operador si el timing es justo tras el create.
+     */
+    async function manageSaleRealtimeSubscription(): Promise<void> {
         if (isSubscriptionPending) return;
         isSubscriptionPending = true;
 
         try {
-            const state = get({ subscribe });
             if (get(sessionStore).isGuest) {
-                if (pusherUnsubscribe) {
-                    pusherUnsubscribe();
-                    pusherUnsubscribe = null;
-                }
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+                stopSaleRealtime();
                 return;
             }
+
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
             const currentUserId = currentUser?.$id ?? null;
 
             if (!currentUserId) {
-                if (pusherUnsubscribe) {
-                    pusherUnsubscribe();
-                    pusherUnsubscribe = null;
-                }
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+                stopSaleRealtime();
                 return;
             }
 
-            const hasUnverified = state.items.some(
-                (sale) => sale.userId === currentUserId && sale.verified === BuyState.UNVERIFIED
-            );
-
             if (subscribedUserId && subscribedUserId !== currentUserId) {
-                if (pusherUnsubscribe) {
-                    pusherUnsubscribe();
-                    pusherUnsubscribe = null;
-                }
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+                stopSaleRealtime();
             }
 
-            if (hasUnverified && !pusherUnsubscribe) {
+            if (!realtimeUnsub) {
                 console.info(
-                    `[SaleStore] suscribiendo sale-verification userId=${currentUserId}`
+                    `[SaleStore] suscribiendo Appwrite sale realtime userId=${currentUserId}`
                 );
-                pusherUnsubscribe = subscribeSaleVerification(currentUserId, (eventName, payload) => {
-                    console.info(
-                        `[SaleStore] evento sale-verification recibido event=${eventName}`,
-                        payload
-                    );
-                    handleSaleVerificationEvent(eventName, payload);
+                realtimeUnsub = startAppwriteSaleRealtime((signal) => {
+                    void handleAppwriteSaleSignal(signal, currentUserId);
                 });
                 subscribedUserId = currentUserId;
-            } else if (!hasUnverified && pusherUnsubscribe) {
-                console.info("[SaleStore] sin pedidos UNVERIFIED → unsuscribe sale-verification");
-                pusherUnsubscribe();
-                pusherUnsubscribe = null;
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+            } else {
+                // re-bind handler con userId actual
+                startAppwriteSaleRealtime((signal) => {
+                    void handleAppwriteSaleSignal(signal, currentUserId);
+                });
+                subscribedUserId = currentUserId;
             }
         } finally {
             isSubscriptionPending = false;
         }
     }
 
-    function handleSaleVerificationEvent(
-        eventName: string,
-        payload: { saleId: string; decision: "confirmed" | "rejected"; timestamp: string; amount?: number; productCount?: number }
-    ): void {
-        const { saleId, decision } = payload;
+    /** Alias de compatibilidad con callers antiguos */
+    async function managePusherSubscription(): Promise<void> {
+        return manageSaleRealtimeSubscription();
+    }
 
-        if (!saleId || !decision) {
-            logger.error(`[Pusher Event] Invalid payload: ${JSON.stringify(payload)}`);
-            console.error("[SaleStore] payload inválido sale-verification", payload);
+    function stopSaleRealtime(): void {
+        if (realtimeUnsub) {
+            realtimeUnsub();
+            realtimeUnsub = null;
+        }
+        stopAppwriteSaleRealtime();
+        subscribedUserId = null;
+    }
+
+    async function handleAppwriteSaleSignal(
+        signal: AppwriteSaleChangeSignal,
+        currentUserId: string
+    ): Promise<void> {
+        const snap = signal.snapshot;
+        const ownerId = String(snap.user_id ?? "");
+        const buyState = String(snap.buy_state ?? "");
+
+        // Solo ventas del usuario autenticado
+        if (ownerId && ownerId !== currentUserId) {
+            console.info(
+                `[SaleStore] Appwrite sale ignorada (otro user) saleId=${signal.saleId} owner=${ownerId}`
+            );
+            return;
+        }
+
+        const decision = decisionFromBuyState(buyState);
+        if (!decision) {
+            // create / update aún UNVERIFIED: solo sincroniza cache local
+            console.info(
+                `[SaleStore] Appwrite sale snapshot sin decisión final saleId=${signal.saleId} buy_state=${buyState}`
+            );
+            try {
+                const sale = await saleContainer.useCases.applyRealtimeSnapshot.execute(snap);
+                if (sale) {
+                    update((state) => {
+                        const exists = state.items.some((s) => s.id === sale.id);
+                        return {
+                            ...state,
+                            items: exists
+                                ? state.items.map((s) => (s.id === sale.id ? sale : s))
+                                : [sale, ...state.items]
+                        };
+                    });
+                }
+            } catch (e) {
+                console.warn("[SaleStore] apply snapshot UNVERIFIED falló", e);
+            }
             return;
         }
 
         console.info(
-            `[SaleStore] aplicando decisión saleId=${saleId} decision=${decision} event=${eventName}`
+            `[SaleStore] Appwrite decisión saleId=${signal.saleId} decision=${decision} buy_state=${buyState}`
         );
 
-        const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
-        update((state) => ({
-            ...state,
-            items: state.items.map((sale) =>
-                sale.id === saleId ? { ...sale, verified: newState } : sale
-            )
-        }));
+        toastStore.info("Se está actualizando el estado de tu pedido…", 2200);
 
-        saleAlertStore.addAlert({
-            saleId,
-            decision,
-            timestamp: payload.timestamp,
-            amount: payload.amount,
-            productCount: payload.productCount
-        });
-
-        const toastMessage = decision === "confirmed"
-            ? `Tu pedido ${saleId.slice(0, 8)} fue confirmado`
-            : `Tu pedido ${saleId.slice(0, 8)} fue rechazado`;
-
-        if (decision === "confirmed") {
-            toastStore.success(toastMessage, 3600);
-        } else {
-            toastStore.error(toastMessage, 4200);
+        let applied: Sale | null = null;
+        try {
+            applied = await saleContainer.useCases.applyRealtimeSnapshot.execute(snap);
+        } catch (e) {
+            console.error("[SaleStore] applyRealtimeSnapshot FAIL", e);
         }
 
-        console.info("[SaleStore] toast mostrado + refresh catálogo tras decisión operador");
-        void productStore.syncAll().catch((e) => {
-            console.warn("[SaleStore] syncAll tras verificación falló", e);
+        const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
+
+        update((state) => ({
+            ...state,
+            items: state.items.map((sale) => {
+                if (sale.id !== signal.saleId) return sale;
+                if (applied) return applied;
+                return { ...sale, verified: newState };
+            })
+        }));
+
+        const amount =
+            typeof snap.amount === "number"
+                ? snap.amount
+                : applied?.amount;
+
+        let productCount: number | undefined;
+        try {
+            if (typeof snap.products === "string") {
+                const parsed = JSON.parse(snap.products);
+                if (Array.isArray(parsed)) productCount = parsed.length;
+            } else if (Array.isArray(snap.products)) {
+                productCount = snap.products.length;
+            } else if (applied?.products) {
+                productCount = applied.products.length;
+            }
+        } catch {
+            /* ignore */
+        }
+
+        saleAlertStore.addAlert({
+            saleId: signal.saleId,
+            decision,
+            timestamp: signal.timestamp,
+            amount,
+            productCount
         });
 
-        void managePusherSubscription();
+        const shortId = signal.saleId.slice(0, 8);
+        if (decision === "confirmed") {
+            toastStore.success(`Tu pedido ${shortId} fue confirmado`, 3600);
+        } else {
+            toastStore.error(`Tu pedido ${shortId} fue rechazado`, 4200);
+        }
+
+        // Stock se actualiza por Appwrite Realtime de product; no forzar syncAll
+        console.info(
+            `[SaleStore] decisión aplicada vía Appwrite RT (sin Pusher) saleId=${signal.saleId}`
+        );
     }
 
     async function syncAll(): Promise<void> {
-        // Asegura listeners de stock aunque no estemos en la grilla de productos
         productStore.startStockRealtime();
 
         update((state) => ({ ...state, loading: true, error: null }));
         try {
             if (get(sessionStore).isGuest) {
-                if (pusherUnsubscribe) {
-                    pusherUnsubscribe();
-                    pusherUnsubscribe = null;
-                }
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+                stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
                 return;
             }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
 
             if (!currentUser?.$id) {
-                if (pusherUnsubscribe) {
-                    pusherUnsubscribe();
-                    pusherUnsubscribe = null;
-                }
-                unsubscribeSaleVerification();
-                subscribedUserId = null;
+                stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
                 return;
             }
 
             const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUser.$id);
             update((state) => ({ ...state, items: sales }));
-            await managePusherSubscription();
+            await manageSaleRealtimeSubscription();
         } catch (error) {
             logger.error(`[SaleStore] syncAll failed: ${normalizeError(error)}`);
             update((state) => ({ ...state, error: normalizeError(error) }));
@@ -197,7 +249,7 @@ function createSaleStore() {
                 ...state,
                 items: state.items.map((sale) => (sale.id === id ? updated : sale))
             }));
-            await managePusherSubscription();
+            await manageSaleRealtimeSubscription();
         } catch (error: any) {
             logger.error(error?.message ?? error, error?.stack);
             update((state) => ({ ...state, error: normalizeError(error) }));
@@ -208,7 +260,6 @@ function createSaleStore() {
     }
 
     async function create(sale: Sale): Promise<Sale> {
-        // Crítico: listeners activos antes del soft-hold / publish local
         productStore.startStockRealtime();
 
         update((state) => ({
@@ -242,26 +293,22 @@ function createSaleStore() {
                     "Pedido registrado. Actualizando disponibilidad de productos…",
                     3000
                 );
-                console.info(`[SaleStore] soft-hold aplicado saleId=${created.id} → refresh visible`);
             } else {
                 toastStore.success("Pedido registrado");
             }
 
-            // Refresh con feedback (banner/toast stock-rt) aunque no haya Pulse
+            // Stock: Appwrite product RT aplicará snapshot; refresh local opcional
             if (ids.length) {
                 try {
                     await productStore.refreshByIdsVisible(ids, "hold");
                 } catch {
                     void productStore.syncAll().catch(() => {});
                 }
-            } else {
-                void productStore.syncAll().catch(() => {});
             }
 
-            await managePusherSubscription();
+            await manageSaleRealtimeSubscription();
 
             return created;
-
         } catch (error: any) {
             logger.error(error?.message ?? error, error?.stack);
 
@@ -297,7 +344,7 @@ function createSaleStore() {
                 }
             }
             toastStore.info("Pedido cancelado. Stock liberado.");
-            await managePusherSubscription();
+            await manageSaleRealtimeSubscription();
             return updated;
         } catch (error: any) {
             logger.error(error?.message ?? error, error?.stack);
@@ -330,12 +377,7 @@ function createSaleStore() {
     }
 
     function reset(): void {
-        if (pusherUnsubscribe) {
-            pusherUnsubscribe();
-            pusherUnsubscribe = null;
-        }
-        unsubscribeSaleVerification();
-        subscribedUserId = null;
+        stopSaleRealtime();
         update(() => initialState);
     }
 
@@ -356,7 +398,8 @@ function createSaleStore() {
         updateDeliveryType,
         clearError,
         reset,
-        managePusherSubscription
+        managePusherSubscription,
+        manageSaleRealtimeSubscription
     };
 }
 

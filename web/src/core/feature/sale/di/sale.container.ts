@@ -6,6 +6,7 @@ import { UpdateSaleVerifiedCaseUse } from "../domain/caseuse/UpdateSaleVerifiedC
 import { UpdateSaleDeliveryTypeCaseUse } from "../domain/caseuse/UpdateSaleDeliveryTypeCaseUse";
 import { RegisterNewSaleCaseUse } from "../domain/caseuse/RegisterNewSaleCaseUse";
 import { CancelUnverifiedSaleCaseUse } from "../domain/caseuse/CancelUnverifiedSaleCaseUse";
+import { ApplySaleRealtimeSnapshotCaseUse } from "../domain/caseuse/ApplySaleRealtimeSnapshotCaseUse";
 import { SessionSaleNotificationUserProvider } from "../data/repository/SessionSaleNotificationUserProvider";
 import { TelegramNotificatorImpl } from "../data/repository/TelegramNotificatorImpl";
 import {productContainer} from "../../product/di/product.container";
@@ -32,6 +33,9 @@ const cancelUnverifiedSaleCaseUse = new CancelUnverifiedSaleCaseUse(
     saleOfflineFirstRepository,
     productContainer.repositories.offlineFirst
 )
+const applySaleRealtimeSnapshotCaseUse = new ApplySaleRealtimeSnapshotCaseUse(
+    saleOfflineFirstRepository
+)
 
 export const saleContainer = {
     repositories: {
@@ -44,6 +48,7 @@ export const saleContainer = {
         create: createSaleCaseUse,
         updateVerified: updateSaleVerifiedCaseUse,
         updateDeliveryType: updateSaleDeliveryTypeCaseUse,
-        cancelUnverified: cancelUnverifiedSaleCaseUse
+        cancelUnverified: cancelUnverifiedSaleCaseUse,
+        applyRealtimeSnapshot: applySaleRealtimeSnapshotCaseUse
     }
 }
