@@ -2,6 +2,10 @@
     import {Button, Card, Icon} from "m3-svelte";
     import deleteIcon from "@ktibow/iconset-material-symbols/delete-rounded";
     import shoppingCartIcon from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
+    import storefrontIcon from "@ktibow/iconset-material-symbols/storefront-rounded";
+    import arrowForwardIcon from "@ktibow/iconset-material-symbols/arrow-forward-rounded";
+    import addIcon from "@ktibow/iconset-material-symbols/add-rounded";
+    import removeIcon from "@ktibow/iconset-material-symbols/remove-rounded";
     import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../lib/navigation/NavController";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
@@ -45,7 +49,7 @@
 </script>
 
 <section class="screen">
-    <header class="hero header">
+    <header class="hero header anim-in">
         <div class="hero-copy">
             <p class="eyebrow">Compra</p>
             <h1>Tu carrito</h1>
@@ -66,31 +70,38 @@
     </header>
 
     {#if !items.length}
-        <div class="empty-state">
+        <div class="empty-state anim-in">
             <Card variant="outlined">
                 <div class="empty-state-content">
-                    <div class="empty-icon">
+                    <div class="empty-icon bounce-soft">
                         <Icon icon={shoppingCartIcon} />
                     </div>
                     <h2>Carrito vacío</h2>
                     <p>Agrega piezas desde el catálogo para continuar con la reserva.</p>
-                    <Button variant="filled" size="m" onclick={() => navController.navigate(dashboard.path)}>
+                    <Button
+                        class="action-btn primary-action"
+                        variant="filled"
+                        size="m"
+                        iconType="left"
+                        onclick={() => navController.navigate(dashboard.path)}
+                    >
+                        <Icon icon={storefrontIcon} />
                         Ver productos
                     </Button>
                 </div>
             </Card>
         </div>
     {:else}
-        <div class="toolbar">
+        <div class="toolbar anim-in">
             <CurrencySwitch />
         </div>
 
         <div class="list">
-            {#each items as item (item.product.id)}
+            {#each items as item, i (item.product.id)}
                 {@const max = availableStock(item.product)}
                 {@const atMax = item.quantity >= max}
                 {@const img = getPrimaryProductImageUrl(item.product.photoUrl) ?? "/alejoicon_clean.svg"}
-                <article class="cart-card">
+                <article class="cart-card anim-in" style={`--i: ${i}`}>
                     <div class="cart-card-body">
                         <div class="item-main">
                             <div class="item-thumb">
@@ -121,7 +132,9 @@
                                     class="qty-btn"
                                     aria-label="Quitar una unidad"
                                     on:click={() => decrease(item.product.id, item.quantity)}
-                                >−</button>
+                                >
+                                    <Icon icon={removeIcon} />
+                                </button>
                                 <span class="qty-value">{item.quantity}</span>
                                 <button
                                     type="button"
@@ -129,7 +142,9 @@
                                     aria-label="Añadir una unidad"
                                     disabled={atMax}
                                     on:click={() => increase(item.product.id, item.quantity, max)}
-                                >+</button>
+                                >
+                                    <Icon icon={addIcon} />
+                                </button>
                             </div>
                             <button
                                 type="button"
@@ -145,17 +160,31 @@
             {/each}
         </div>
 
-        <div class="checkout-bar">
+        <div class="checkout-bar anim-in-up">
             <div class="checkout-total">
                 <span class="checkout-label">Total a reservar</span>
                 <strong class="checkout-amount">{displayTotalAmount}</strong>
             </div>
             <div class="footer-actions">
-                <Button variant="outlined" size="m" onclick={() => navController.navigate(dashboard.path)}>
+                <Button
+                    class="action-btn secondary-action"
+                    variant="outlined"
+                    size="m"
+                    iconType="left"
+                    onclick={() => navController.navigate(dashboard.path)}
+                >
+                    <Icon icon={storefrontIcon} />
                     Seguir comprando
                 </Button>
-                <Button variant="filled" size="m" onclick={() => navController.navigate(buyConfirm.path)}>
+                <Button
+                    class="action-btn primary-action"
+                    variant="filled"
+                    size="m"
+                    iconType="right"
+                    onclick={() => navController.navigate(buyConfirm.path)}
+                >
                     Continuar
+                    <Icon icon={arrowForwardIcon} />
                 </Button>
             </div>
         </div>
@@ -290,14 +319,19 @@
             linear-gradient(180deg, var(--md-sys-color-surface-container-high), var(--md-sys-color-surface-container));
         border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 58%, transparent);
         box-shadow: 0 12px 26px rgb(0 0 0 / 0.12);
-        transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        transition:
+            transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 0.22s ease,
+            box-shadow 0.22s ease;
         overflow: hidden;
+        animation: card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: calc(var(--i, 0) * 55ms);
     }
 
     .cart-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-3px);
         border-color: color-mix(in srgb, var(--md-sys-color-primary) 28%, var(--md-sys-color-outline-variant));
-        box-shadow: 0 16px 32px rgb(0 0 0 / 0.16);
+        box-shadow: 0 18px 36px rgb(0 0 0 / 0.18);
     }
 
     .cart-card-body {
@@ -320,6 +354,11 @@
         overflow: hidden;
         background: var(--md-sys-color-surface-container-highest, var(--md-sys-color-surface-container-high));
         border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+        transition: transform 0.25s ease;
+    }
+
+    .cart-card:hover .item-thumb {
+        transform: scale(1.04);
     }
 
     .item-thumb img {
@@ -396,23 +435,35 @@
     }
 
     .qty-btn {
-        width: 2.1rem;
-        height: 2.1rem;
+        width: 2.15rem;
+        height: 2.15rem;
         border: 0;
         border-radius: 999px;
         background: color-mix(in srgb, var(--md-sys-color-surface) 55%, transparent);
         color: inherit;
-        font-size: 1.15rem;
-        font-weight: 700;
-        line-height: 1;
         cursor: pointer;
         display: grid;
         place-items: center;
-        transition: background 0.15s ease, opacity 0.15s ease;
+        transition:
+            background 0.15s ease,
+            transform 0.15s cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 0.15s ease,
+            box-shadow 0.15s ease;
+    }
+
+    .qty-btn :global(svg) {
+        width: 1.05rem;
+        height: 1.05rem;
     }
 
     .qty-btn:hover:not(:disabled) {
-        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
+        transform: scale(1.08);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
+    }
+
+    .qty-btn:active:not(:disabled) {
+        transform: scale(0.92);
     }
 
     .qty-btn:disabled {
@@ -425,6 +476,7 @@
         text-align: center;
         font-weight: 800;
         font-variant-numeric: tabular-nums;
+        transition: transform 0.2s ease;
     }
 
     .remove-btn {
@@ -437,17 +489,31 @@
         font-weight: 700;
         font-size: 0.85rem;
         cursor: pointer;
-        padding: 0.35rem 0.5rem;
-        border-radius: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 0.65rem;
+        transition:
+            background 0.18s ease,
+            transform 0.15s ease,
+            color 0.15s ease;
     }
 
     .remove-btn:hover {
-        background: color-mix(in srgb, var(--md-sys-color-error) 12%, transparent);
+        background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent);
+        transform: translateY(-1px);
+    }
+
+    .remove-btn:active {
+        transform: scale(0.96);
     }
 
     .remove-btn :global(svg) {
         width: 1rem;
         height: 1rem;
+        transition: transform 0.2s ease;
+    }
+
+    .remove-btn:hover :global(svg) {
+        transform: rotate(-8deg) scale(1.08);
     }
 
     .checkout-bar {
@@ -494,6 +560,44 @@
         align-items: center;
     }
 
+    /* Botones con icono + feedback */
+    .footer-actions :global(.action-btn),
+    .empty-state-content :global(.action-btn) {
+        transition:
+            transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+            box-shadow 0.18s ease,
+            filter 0.18s ease;
+    }
+
+    .footer-actions :global(.action-btn:hover),
+    .empty-state-content :global(.action-btn:hover) {
+        transform: translateY(-2px);
+        filter: brightness(1.05);
+    }
+
+    .footer-actions :global(.action-btn:active),
+    .empty-state-content :global(.action-btn:active) {
+        transform: translateY(0) scale(0.97);
+    }
+
+    .footer-actions :global(.primary-action:hover) {
+        box-shadow: 0 8px 22px color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
+    }
+
+    .footer-actions :global(.primary-action svg),
+    .empty-state-content :global(.primary-action svg) {
+        transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .footer-actions :global(.primary-action:hover svg) {
+        transform: translateX(3px);
+    }
+
+    .footer-actions :global(.secondary-action:hover svg),
+    .empty-state-content :global(.primary-action:hover svg) {
+        transform: scale(1.08);
+    }
+
     .empty-state {
         border-radius: 1.5rem;
     }
@@ -524,6 +628,73 @@
     .empty-state-content p {
         color: var(--md-sys-color-on-surface-variant);
         max-width: 22rem;
+    }
+
+    .anim-in {
+        animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .anim-in-up {
+        animation: slide-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+        animation-delay: 0.12s;
+    }
+
+    .bounce-soft {
+        animation: bounce-soft 1.8s ease-in-out infinite;
+    }
+
+    @keyframes fade-up {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slide-up {
+        from {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes card-in {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes bounce-soft {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .anim-in,
+        .anim-in-up,
+        .cart-card,
+        .bounce-soft {
+            animation: none !important;
+        }
+
+        .qty-btn,
+        .remove-btn,
+        .cart-card,
+        .footer-actions :global(.action-btn) {
+            transition: none !important;
+        }
     }
 
     @media (max-width: 640px) {
