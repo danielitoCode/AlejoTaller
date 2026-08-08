@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.product.di
 
 import com.elitec.alejotaller.feature.product.data.repository.ProductNetRepositoryImpl
 import com.elitec.alejotaller.feature.product.data.repository.ProductOfflineFirstRepository
+import com.elitec.alejotaller.feature.product.domain.caseUse.ApplyProductRealtimeSnapshotsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ApplySoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.CheckAProductExistenceCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
@@ -15,7 +16,7 @@ import com.elitec.alejotaller.feature.product.domain.repository.ProductRepositor
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.infraestructure.core.data.bd.AppBD
-import com.elitec.alejotaller.infraestructure.core.data.realtime.PusherStockUpdatesListener
+import com.elitec.alejotaller.infraestructure.core.data.realtime.AppwriteStockUpdatesListener
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
@@ -25,7 +26,8 @@ val productFeatureModule = module {
     single<ProductNetRepository> { ProductNetRepositoryImpl(get()) }
     single<ProductRepository> { ProductOfflineFirstRepository(get(), get()) }
 
-    single<StockUpdatesListener> { PusherStockUpdatesListener(get()) }
+    // Appwrite Realtime (reemplaza Pusher stock-updates)
+    single<StockUpdatesListener> { AppwriteStockUpdatesListener(get()) }
 
     factory { GetProductByIdCaseUse(get()) }
     factory { ObserveProductsCaseUse(get()) }
@@ -34,7 +36,17 @@ val productFeatureModule = module {
     factory { ApplySoftHoldCaseUse(get()) }
     factory { ReleaseSoftHoldCaseUse(get()) }
     factory { RefreshProductsByIdsCaseUse(get()) }
+    factory { ApplyProductRealtimeSnapshotsCaseUse(get()) }
 
     viewModel { ShopCartViewModel() }
-    viewModel { ProductViewModel(get(), get(), get(), get(), get()) }
+    viewModel {
+        ProductViewModel(
+            observeProductsCaseUse = get(),
+            syncProductCaseUse = get(),
+            getProductByIdCaseUse = get(),
+            refreshProductsByIdsCaseUse = get(),
+            applyProductRealtimeSnapshotsCaseUse = get(),
+            stockUpdatesListener = get()
+        )
+    }
 }

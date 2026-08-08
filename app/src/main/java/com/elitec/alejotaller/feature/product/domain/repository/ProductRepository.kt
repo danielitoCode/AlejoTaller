@@ -16,7 +16,12 @@ interface ProductRepository {
 
     /**
      * Fuente de verdad: lee Appwrite por id y actualiza cache offline-first.
-     * Usado por soft-hold concurrente y por stock:changed.
+     * Usado por soft-hold concurrente y por stock:changed sin snapshot.
      */
     suspend fun refreshFromRemote(productId: String): Product?
+
+    /**
+     * Realtime Appwrite: aplica documento post-mutación a Room sin re-fetch.
+     */
+    suspend fun applyLocalSnapshot(raw: Map<String, Any>): Product?
 }

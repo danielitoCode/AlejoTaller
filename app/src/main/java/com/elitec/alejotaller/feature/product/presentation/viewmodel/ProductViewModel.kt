@@ -3,6 +3,7 @@ package com.elitec.alejotaller.feature.product.presentation.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.elitec.alejotaller.feature.product.domain.caseUse.ApplyProductRealtimeSnapshotsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.GetProductByIdCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.RefreshProductsByIdsCaseUse
@@ -19,14 +20,15 @@ import kotlinx.coroutines.launch
 
 /**
  * Catálogo offline-first.
- * stock:changed → RefreshProductsByIds (Appwrite → Room) sin sync completo.
- * available = existence - reserved (WAREHOUSE_POLICY).
+ * Appwrite Realtime product.documents → applyLocalSnapshot (sin re-fetch).
+ * Fallback: RefreshProductsByIds si no hay snapshot.
  */
 class ProductViewModel(
     observeProductsCaseUse: ObserveProductsCaseUse,
     private val syncProductCaseUse: SyncProductCaseUse,
     private val getProductByIdCaseUse: GetProductByIdCaseUse,
     private val refreshProductsByIdsCaseUse: RefreshProductsByIdsCaseUse,
+    private val applyProductRealtimeSnapshotsCaseUse: ApplyProductRealtimeSnapshotsCaseUse,
     private val stockUpdatesListener: StockUpdatesListener
 ) : ViewModel() {
 
@@ -41,7 +43,6 @@ class ProductViewModel(
     private val _selectedCategoryId = MutableStateFlow<String?>(null)
     val selectedCategoryId = _selectedCategoryId.asStateFlow()
 
-    /** true mientras se refrescan productos por señal stock:changed */
     private val _stockSyncing = MutableStateFlow(false)
     val stockSyncing = _stockSyncing.asStateFlow()
 
@@ -103,13 +104,12 @@ class ProductViewModel(
         }
     }
 
-    /** Arranca listener stock:changed (idempotente). */
     fun startStockRealtime() {
         if (stockUnsubscribe != null) {
             Log.i(TAG, "event=stock_listener_already_active")
             return
         }
-        Log.i(TAG, "event=stock_listener_start")
+        Log.i(TAG, "event=stock_listener_start source=appwrite")
         stockUnsubscribe = stockUpdatesListener.start { payload ->
             onStockChanged(payload)
         }
@@ -125,32 +125,39 @@ class ProductViewModel(
         Log.i(
             TAG,
             "event=stock_changed_handle reason=${payload.reason} " +
-                "ids=${payload.productIds.joinToString(",")} saleId=${payload.saleId}"
+                "ids=${payload.productIds.joinToString(",")} hasSnapshot=${payload.snapshotByProductId != null}"
         )
         viewModelScope.launch {
             _stockSyncing.value = true
-            _stockSyncMessage.value = reasonLabel(payload.reason)
-            refreshProductsByIdsCaseUse(payload.productIds)
-                .onSuccess { updated ->
-                    Log.i(
-                        TAG,
-                        "event=stock_refresh_ok count=${updated.size} " +
-                            "ids=${updated.joinToString(",") { "${it.id}:ex=${it.existence}:rs=${it.reserved}" }}"
-                    )
-                }
-                .onFailure { error ->
-                    Log.w(TAG, "event=stock_refresh_fail cause=${error.message}", error)
-                }
+            _stockSyncMessage.value = "Se están actualizando los datos…"
+
+            val snapshots = payload.snapshotByProductId
+            if (!snapshots.isNullOrEmpty()) {
+                applyProductRealtimeSnapshotsCaseUse(snapshots)
+                    .onSuccess { updated ->
+                        Log.i(
+                            TAG,
+                            "event=stock_snapshot_ok count=${updated.size} " +
+                                "ids=${updated.joinToString(",") { "${it.id}:ex=${it.existence}:rs=${it.reserved}" }}"
+                        )
+                    }
+                    .onFailure { error ->
+                        Log.w(TAG, "event=stock_snapshot_fail fallback_refresh cause=${error.message}", error)
+                        refreshProductsByIdsCaseUse(payload.productIds)
+                    }
+            } else {
+                refreshProductsByIdsCaseUse(payload.productIds)
+                    .onSuccess { updated ->
+                        Log.i(TAG, "event=stock_refresh_ok count=${updated.size}")
+                    }
+                    .onFailure { error ->
+                        Log.w(TAG, "event=stock_refresh_fail cause=${error.message}", error)
+                    }
+            }
+
             _stockSyncing.value = false
             _stockSyncMessage.value = null
         }
-    }
-
-    private fun reasonLabel(reason: String): String = when (reason) {
-        "hold" -> "Actualizando reservas…"
-        "release" -> "Liberando stock…"
-        "consume" -> "Confirmando venta…"
-        else -> "Actualizando inventario…"
     }
 
     override fun onCleared() {

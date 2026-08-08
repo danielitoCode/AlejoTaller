@@ -2,6 +2,7 @@ package com.elitec.alejotaller.feature.product.data.repository
 
 import com.elitec.alejotaller.feature.product.data.dao.ProductDao
 import com.elitec.alejotaller.feature.product.data.mapper.toDomain
+import com.elitec.alejotaller.feature.product.data.mapper.toProductDtoFromRealtime
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
@@ -34,11 +35,16 @@ class ProductOfflineFirstRepository(
         }.getOrNull()
     }
 
+    override suspend fun applyLocalSnapshot(raw: Map<String, Any>): Product? {
+        val dto = raw.toProductDtoFromRealtime() ?: return null
+        bd.insert(dto)
+        return dto.toDomain()
+    }
+
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
         if (quantity <= 0) return getById(productId)
 
         // Core 1: la mutación crítica nunca usa Room como fallback.
-        // existence se obtiene de Appwrite para usarla como límite de reserved.
         val current = runCatching { net.getById(productId) }.getOrNull() ?: return null
         val updated = runCatching {
             net.incrementReserved(
@@ -55,7 +61,6 @@ class ProductOfflineFirstRepository(
     override suspend fun decrementReserved(productId: String, quantity: Int): Product? {
         if (quantity <= 0) return getById(productId)
 
-        // Core 1: liberación autoritativa también es remota y atómica.
         val updated = runCatching {
             net.decrementReserved(productId, quantity)
         }.getOrNull() ?: return null

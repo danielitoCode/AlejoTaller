@@ -1,11 +1,15 @@
 package com.elitec.alejotaller.feature.product.domain.realtime
 
 /**
- * Contrato alineado con web: canal stock-updates, evento stock:changed.
+ * Señal de cambio de stock.
+ * - Pusher legacy: solo productIds + reason.
+ * - Appwrite Realtime: productIds + snapshotByProductId (documento post-mutación).
  */
 data class StockChangedPayload(
     val productIds: List<String>,
-    val reason: String, // hold | release | consume
+    val reason: String, // hold | release | consume | stock-or-doc-update
     val saleId: String? = null,
-    val timestamp: String
+    val timestamp: String,
+    /** Documento Appwrite por productId cuando el canal es Appwrite Realtime. */
+    val snapshotByProductId: Map<String, Map<String, Any>>? = null
 )

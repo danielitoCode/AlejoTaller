@@ -41,7 +41,6 @@ val infrastructureModule = module {
         Client(context = androidContext())
             .setEndpoint(BuildConfig.APPWRITE_PROJECT_ENDPOINT)
             .setProject(BuildConfig.APPWRITE_PROJECT_ID)
-            // .setDevKey(getApiKey())
             .setSelfSigned(false)
     }
     single { Databases(get()) }
@@ -61,11 +60,11 @@ val infrastructureModule = module {
             klass = AppBD::class.java,
             name = "app_database"
         )
-            .addMigrations(*AppBDMigrations.ALL)  // âœ… Migraciones registradas
+            .addMigrations(*AppBDMigrations.ALL)
             .build()
     }
 
-    // Realtime
+    // Realtime: Appwrite (sale) + Pusher (promo residual)
     single {
         Pusher(
             BuildConfig.PUSHER_API_KEY,
@@ -73,7 +72,7 @@ val infrastructureModule = module {
                 .setCluster(BuildConfig.PUSHER_CLUSTER))
     }
     single { PusherManager(get()) }
-    single<RealtimeSyncGateway> { RealTimeManagerImpl(get()) }
+    single<RealtimeSyncGateway> { RealTimeManagerImpl(client = get(), pusherManager = get()) }
     single { OrderNotificationService(androidContext()) }
     factory { InterpretSaleRealtimeEventCaseUse() }
 
@@ -97,11 +96,9 @@ val infrastructureModule = module {
         }
     }
 
-    // GoogleSingInProvider
-    single<GoogleAuthProvider> { GoogleAuthProviderImpl() }//androidContext()) }
+    single<GoogleAuthProvider> { GoogleAuthProviderImpl() }
     single<SessionManager> { AppwriteSessionManager(get()) }
 
-    // ViewModels
     viewModel { ToasterViewModel() }
     viewModel { RealtimeSyncViewModel(get(), get(), get(), get(), get()) }
 }
