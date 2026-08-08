@@ -106,7 +106,7 @@ function createProductStore() {
             syncMessage:
                 count === 1
                     ? "Actualizando producto…"
-                    : `Actualizando ${count} productos…"`
+                    : `Actualizando ${count} productos…`
         }))
 
         try {
@@ -230,7 +230,6 @@ function createProductStore() {
     function onLocalStockEvent(ev: Event): void {
         const detail = (ev as CustomEvent).detail
         if (!isStockPayload(detail)) return
-        // Same-tab: Appwrite RT también llegará con snapshot; este path es silent backup
         void handleStockChanged(detail, {
             fromRealtime: true,
             silent: true,
