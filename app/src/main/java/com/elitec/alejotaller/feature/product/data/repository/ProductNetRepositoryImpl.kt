@@ -41,8 +41,8 @@ class ProductNetRepositoryImpl(
             collectionId = BuildConfig.PRODUCT_TABLE_ID,
             documentId = productId,
             attribute = "reserved",
-            value = quantity,
-            max = maxReserved
+            value = quantity.toDouble(),
+            max = maxReserved.toDouble()
         )
         return response.toProductDto()
     }
@@ -55,8 +55,8 @@ class ProductNetRepositoryImpl(
             collectionId = BuildConfig.PRODUCT_TABLE_ID,
             documentId = productId,
             attribute = "reserved",
-            value = quantity,
-            min = 0
+            value = quantity.toDouble(),
+            min = 0.0
         )
         return response.toProductDto()
     }

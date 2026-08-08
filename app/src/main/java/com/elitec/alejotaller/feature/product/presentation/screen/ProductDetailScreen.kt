@@ -51,7 +51,7 @@ import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTalle
 import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
 import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
 
-private fun stockLabel(available: Int): String = when {
+private fun stockDetailLabel(available: Int): String = when {
     available <= 0 -> "Agotado"
     available <= 5 -> "Ultimas $available unidades"
     else -> "Disponibles: $available"
