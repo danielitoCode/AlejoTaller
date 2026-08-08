@@ -176,17 +176,26 @@ private fun SaleType.labelEs(): String = when (this) {
 
 private fun SaleType.hintEs(): String = when (this) {
     SaleType.NORMAL -> "Precio de lista del pedido"
-    SaleType.DISCOUNT -> "Ingresa el importe efectivo (menor al de lista)"
+    SaleType.DISCOUNT -> "Ingresa el importe efectivo (menor al de lista, misma moneda del cliente)"
     SaleType.GIFT -> "Obsequio: importe final 0; el stock si baja"
 }
 
-/** Formato dinero sin comillas anidadas en templates (evita romper el parser). */
-private fun money(amount: Double): String =
-    String.format(Locale.US, "%.2f", amount)
+/** Código de moneda del pedido (CUP / USD / MLC). */
+private fun Currency.code(): String = name
+
+/**
+ * Formato dinero con la moneda del cliente.
+ * No aplica tasa: amount ya viene en esa moneda desde el checkout.
+ */
+private fun money(amount: Double, currency: Currency): String {
+    val value = String.format(Locale.US, "%.2f", amount)
+    return "$value ${currency.code()}"
+}
 
 /**
  * Valida importe efectivo según SALE_POLICY.
  * DISCOUNT: >= 0 y estrictamente menor al de lista (si lista > 0).
+ * Misma unidad que sale.currency.
  */
 private fun isDiscountAmountValid(listAmount: Double, text: String): Boolean {
     val value = text.replace(',', '.').toDoubleOrNull() ?: return false
@@ -225,16 +234,18 @@ private fun OperatorConfirmPaymentScreenContent(
 ) {
     LocalConfiguration.current.toDeviceMode()
     val sale = uiState.selectedSale
+    val currency = sale?.currency ?: Currency.USD
     val listAmount = sale?.amount ?: 0.0
     val displayAmount = resolveDisplayAmount(listAmount, saleType, discountAmountText)
     val discountValid = saleType != SaleType.DISCOUNT || isDiscountAmountValid(listAmount, discountAmountText)
     val canConfirm = sale != null && !uiState.isLoading && discountValid
-    val listAmountLabel = money(listAmount)
-    val displayAmountLabel = money(displayAmount)
+    val listAmountLabel = money(listAmount, currency)
+    val displayAmountLabel = money(displayAmount, currency)
 
     OperatorScreen(
         title = "Confirmar reservacion",
-        subtitle = "Revisa la reserva, elige el tipo de venta e importe efectivo segun SALE_POLICY.",
+        subtitle = "Revisa la reserva, elige el tipo de venta e importe efectivo segun SALE_POLICY. " +
+            "La moneda es la que eligio el cliente (sin reconvertir tasa).",
         heroIcon = Icons.Rounded.CheckCircle,
         modifier = modifier.fillMaxSize()
     ) {
@@ -266,12 +277,17 @@ private fun OperatorConfirmPaymentScreenContent(
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         StateBadge(
-                            text = "Lista $$listAmountLabel",
+                            text = "Moneda ${currency.code()}",
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                        StateBadge(
+                            text = "Lista $listAmountLabel",
                             containerColor = MaterialTheme.colorScheme.surfaceVariant,
                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         StateBadge(
-                            text = "Efectivo $$displayAmountLabel",
+                            text = "Efectivo $displayAmountLabel",
                             containerColor = MaterialTheme.colorScheme.primaryContainer,
                             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -286,6 +302,7 @@ private fun OperatorConfirmPaymentScreenContent(
                         lines = listOf(
                             "Fecha: ${sale.date}",
                             "Cliente: ${sale.userId}",
+                            "Moneda elegida por el cliente: ${currency.code()}",
                             "Entrega: ${sale.deliveryType ?: "Sin definir"}",
                             "Lineas del pedido: ${sale.products.size} - Unidades: ${sale.products.sumOf { it.quantity }}"
                         )
@@ -313,7 +330,8 @@ private fun OperatorConfirmPaymentScreenContent(
                 OperatorPanelCard {
                     OperatorSectionLabel("Tipo de venta")
                     Text(
-                        "Define el tipo comercial al confirmar. El stock baja igual en los tres casos.",
+                        "Define el tipo comercial al confirmar. El stock baja igual en los tres casos. " +
+                            "Importes en ${currency.code()} (misma moneda del pedido).",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -358,12 +376,12 @@ private fun OperatorConfirmPaymentScreenContent(
                             value = discountAmountText,
                             onValueChange = onDiscountAmountTextChange,
                             modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Importe efectivo (descuento)") },
+                            label = { Text("Importe efectivo (${currency.code()})") },
                             supportingText = {
                                 val support = if (discountValid) {
-                                    "Debe ser >= 0 y menor a $$listAmountLabel (precio de lista)"
+                                    "Debe ser >= 0 y menor a $listAmountLabel (precio de lista)"
                                 } else {
-                                    "Importe invalido: usa un valor >= 0 y menor al de lista"
+                                    "Importe invalido: usa un valor >= 0 y menor al de lista (${currency.code()})"
                                 }
                                 Text(support)
                             },
@@ -375,7 +393,7 @@ private fun OperatorConfirmPaymentScreenContent(
 
                     if (saleType == SaleType.GIFT) {
                         Text(
-                            "Importe final al confirmar: $0.00",
+                            "Importe final al confirmar: ${money(0.0, currency)}",
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -489,7 +507,7 @@ private fun OperatorConfirmPaymentScreenContent(
                 ) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null)
                     Text(
-                        "Confirmar (${saleType.labelEs()} · $$displayAmountLabel)",
+                        "Confirmar (${saleType.labelEs()} · $displayAmountLabel)",
                         modifier = Modifier.padding(start = 10.dp)
                     )
                 }
@@ -524,8 +542,8 @@ fun OperatorConfirmPaymentScreenContentPreview() {
                 selectedSale = Sale(
                     id = "id",
                     date = LocalDate(year = 2026, month = 12, day = 23),
-                    amount = 23.4,
-                    currency = Currency.USD,
+                    amount = 1350.0,
+                    currency = Currency.CUP,
                     verified = BuyState.UNVERIFIED,
                     products = listOf(
                         SaleItem(
