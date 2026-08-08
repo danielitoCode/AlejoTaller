@@ -1,9 +1,9 @@
 import type { SaleDTO } from "../dto/SaleDTO";
-import { type Databases, ID, Query } from "appwrite";
+import { type TablesDB, ID, Query } from "appwrite";
 import type { Models } from "appwrite";
 import { ENV } from "../../../../infrastructure/env";
 
-const COLLECTION_ID = "sale";
+const TABLE_ID = "sale";
 
 function stripMeta(data: Record<string, unknown>): Record<string, unknown> {
     const clean: Record<string, unknown> = {};
@@ -16,7 +16,7 @@ function stripMeta(data: Record<string, unknown>): Record<string, unknown> {
 }
 
 export class SaleNetRepository {
-    constructor(private databases: Databases) {}
+    constructor(private tablesDB: TablesDB) {}
 
     private get databaseId(): string {
         const id = ENV.databaseId;
@@ -25,60 +25,60 @@ export class SaleNetRepository {
     }
 
     async getAll(): Promise<SaleDTO[]> {
-        const response = await this.databases.listDocuments<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID
-        )
+        const response = await this.tablesDB.listRows<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+        });
 
-        return response.documents
+        return response.rows as unknown as SaleDTO[];
     }
 
     async create(
-        data: Omit<SaleDTO, keyof Models.Document> | Record<string, unknown>
+        data: Omit<SaleDTO, keyof Models.Row> | Record<string, unknown>
     ): Promise<SaleDTO> {
         const payload = stripMeta(data as Record<string, unknown>);
-        return await this.databases.createDocument<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            ID.unique(),
-            payload
-        )
+        return await this.tablesDB.createRow<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+            rowId: ID.unique(),
+            data: payload,
+        }) as unknown as SaleDTO;
     }
 
     async getByUser(userId: string): Promise<SaleDTO[]> {
-        const response = await this.databases.listDocuments<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            [Query.equal("user_id", userId)]
-        )
+        const response = await this.tablesDB.listRows<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+            queries: [Query.equal("user_id", userId)],
+        });
 
-        return response.documents
+        return response.rows as unknown as SaleDTO[];
     }
 
     async updateVerified(id: string, verified: string): Promise<SaleDTO> {
-        return await this.databases.updateDocument<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            id,
-            { buy_state: verified }
-        );
+        return await this.tablesDB.updateRow<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+            rowId: id,
+            data: { buy_state: verified },
+        }) as unknown as SaleDTO;
     }
 
     async updateDeliveryType(id: string, deliveryType: string): Promise<SaleDTO> {
-        return await this.databases.updateDocument<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            id,
-            { delivery_type: deliveryType }
-        );
+        return await this.tablesDB.updateRow<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+            rowId: id,
+            data: { delivery_type: deliveryType },
+        }) as unknown as SaleDTO;
     }
 
     async updateStockHoldApplied(id: string, value: boolean): Promise<SaleDTO> {
-        return await this.databases.updateDocument<SaleDTO>(
-            this.databaseId,
-            COLLECTION_ID,
-            id,
-            { stock_hold_applied: value }
-        );
+        return await this.tablesDB.updateRow<SaleDTO>({
+            databaseId: this.databaseId,
+            tableId: TABLE_ID,
+            rowId: id,
+            data: { stock_hold_applied: value },
+        }) as unknown as SaleDTO;
     }
 }
