@@ -4,25 +4,41 @@ import { ENV } from "../../env";
 import { APPWRITE_COLLECTIONS } from "./public-data-contract";
 
 /**
- * Canal ALTERNATIVO a Pusher `stock-updates` / `stock:changed`.
+ * Canal primario de stock (sustituye Pusher stock-updates en Core 1).
  *
- * Usa Appwrite Realtime sobre la colección de productos.
- * Core 1 (probe): SOLO registra en logs que la notificación llegó.
- * NO dispara casos de uso de dominio ni actualiza el offline-first todavía.
+ * Contrato de señal (invalidación), no mutación:
+ *   { productIds: string[], action: create|update|delete }
  *
- * Canal:
- *   databases.{DATABASE_ID}.collections.{product}.documents
+ * La UI / casos de uso deben re-leer Appwrite (refreshByIds).
+ * El documento completo en el payload de Appwrite se usa solo para logs;
+ * no se aplica a cache desde aquí (fuente de verdad = getById remoto).
  *
- * Eventos típicos:
- *   databases.*.collections.*.documents.*.create|update|delete
- *   (incluye mutaciones por increment/decrement attribute)
+ * Canal: databases.{DATABASE_ID}.collections.product.documents
  */
+
+export type AppwriteProductChangeAction = "create" | "update" | "delete" | "unknown";
+
+export interface AppwriteProductChangeSignal {
+    productIds: string[];
+    action: AppwriteProductChangeAction;
+    /** ISO timestamp local de recepción */
+    timestamp: string;
+}
+
+export type AppwriteProductRealtimeHandler = (signal: AppwriteProductChangeSignal) => void;
 
 export type AppwriteProductRealtimeUnsubscribe = () => void;
 
 const LOG = "[appwrite-rt]";
 
 let activeUnsub: AppwriteProductRealtimeUnsubscribe | null = null;
+let activeHandler: AppwriteProductRealtimeHandler | null = null;
+
+/** Agrupa ids que llegan en ráfaga (p.ej. multi-línea soft-hold). */
+const DEBOUNCE_MS = 280;
+let pendingIds = new Set<string>();
+let pendingAction: AppwriteProductChangeAction = "update";
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 function buildProductDocumentsChannel(): string | null {
     const databaseId = ENV.databaseId?.trim();
@@ -30,12 +46,10 @@ function buildProductDocumentsChannel(): string | null {
         console.warn(`${LOG} omitido: falta VITE_APPWRITE_DATABASE_ID`);
         return null;
     }
-    const collectionId = APPWRITE_COLLECTIONS.product;
-    // Sintaxis oficial sin corchetes (no usar databases.[id].collections.[id]...)
-    return `databases.${databaseId}.collections.${collectionId}.documents`;
+    return `databases.${databaseId}.collections.${APPWRITE_COLLECTIONS.product}.documents`;
 }
 
-function classifyAction(events: string[]): "create" | "update" | "delete" | "unknown" {
+function classifyAction(events: string[]): AppwriteProductChangeAction {
     const joined = events.join(" ").toLowerCase();
     if (joined.includes(".create")) return "create";
     if (joined.includes(".delete")) return "delete";
@@ -43,69 +57,87 @@ function classifyAction(events: string[]): "create" | "update" | "delete" | "unk
     return "unknown";
 }
 
-function readStockFields(payload: Record<string, unknown>): {
-    id: string;
-    existence: number | null;
-    reserved: number | null;
-    available: number | null;
-    name: string | null;
-} {
-    const id = String(payload.$id ?? payload.id ?? "");
-    const existenceRaw = payload.existence ?? payload.status ?? payload.Estado ?? null;
-    const reservedRaw = payload.reserved ?? payload.reservado ?? null;
-    const existence =
-        existenceRaw == null ? null : Math.max(0, Math.floor(Number(existenceRaw)));
-    const reserved =
-        reservedRaw == null ? null : Math.max(0, Math.floor(Number(reservedRaw)));
-    const available =
-        existence != null && reserved != null
-            ? Math.max(0, existence - reserved)
-            : null;
-    const name = typeof payload.name === "string" ? payload.name : null;
-    return { id, existence, reserved, available, name };
+function extractProductId(payload: Record<string, unknown>): string | null {
+    const id = String(payload.$id ?? payload.id ?? "").trim();
+    return id || null;
 }
 
-/**
- * Handler de probe: solo logs. Paridad conceptual con stock:changed de Pusher.
- */
-function onRealtimeMessage(response: RealtimeResponseEvent<Record<string, unknown>>): void {
-    const events = Array.isArray(response.events) ? response.events : [];
-    const channels = Array.isArray(response.channels) ? response.channels : [];
-    const action = classifyAction(events);
-    const payload = (response.payload ?? {}) as Record<string, unknown>;
-    const stock = readStockFields(payload);
+function flushPending(): void {
+    debounceTimer = null;
+    const ids = [...pendingIds];
+    const action = pendingAction;
+    pendingIds = new Set();
+    pendingAction = "update";
 
-    // Equivalente liviano al payload stock:changed (solo para inspección en consola)
-    const probeLikeStockChanged = {
-        source: "appwrite-realtime",
+    if (ids.length === 0 || !activeHandler) return;
+
+    const signal: AppwriteProductChangeSignal = {
+        productIds: ids,
         action,
-        productIds: stock.id ? [stock.id] : [],
-        reason: action === "update" ? "stock-or-doc-update" : action,
-        timestamp: new Date().toISOString(),
-        existence: stock.existence,
-        reserved: stock.reserved,
-        available: stock.available
+        timestamp: new Date().toISOString()
     };
 
     console.info(
-        `${LOG} NOTIFICATION RECEIVED action=${action} ` +
-            `productId=${stock.id || "-"} name=${stock.name ?? "-"} ` +
-            `existence=${stock.existence ?? "?"} reserved=${stock.reserved ?? "?"} ` +
-            `available=${stock.available ?? "?"}`
+        `${LOG} signal → dominio action=${action} count=${ids.length} ids=${ids.join(",")}`
     );
-    console.info(`${LOG} events=`, events);
-    console.info(`${LOG} channels=`, channels);
-    console.info(`${LOG} probe-payload (paridad conceptual stock:changed)=`, probeLikeStockChanged);
-    console.info(`${LOG} raw payload keys=`, Object.keys(payload));
+    try {
+        activeHandler(signal);
+    } catch (err) {
+        console.error(
+            `${LOG} handler dominio falló: ${err instanceof Error ? err.message : String(err)}`,
+            err
+        );
+    }
+}
+
+function queueSignal(productId: string, action: AppwriteProductChangeAction): void {
+    pendingIds.add(productId);
+    // prioriza delete si aparece en el batch
+    if (action === "delete" || pendingAction === "unknown") {
+        pendingAction = action;
+    } else if (pendingAction !== "delete") {
+        pendingAction = action;
+    }
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(flushPending, DEBOUNCE_MS);
+}
+
+function onRealtimeMessage(response: RealtimeResponseEvent<Record<string, unknown>>): void {
+    const events = Array.isArray(response.events) ? response.events : [];
+    const action = classifyAction(events);
+    const payload = (response.payload ?? {}) as Record<string, unknown>;
+    const productId = extractProductId(payload);
+
+    if (!productId) {
+        console.warn(`${LOG} evento sin $id — ignorado events=${events.slice(0, 3).join(",")}`);
+        return;
+    }
+
+    // Log compacto: no volcamos el documento completo ni la lista enorme de events
+    const existence = payload.existence ?? payload.status ?? "?";
+    const reserved = payload.reserved ?? "?";
+    console.info(
+        `${LOG} NOTIFICATION RECEIVED action=${action} productId=${productId} ` +
+            `existence=${existence} reserved=${reserved} (payload solo para log; refresh irá a Appwrite)`
+    );
+
+    queueSignal(productId, action);
 }
 
 /**
- * Arranca la suscripción (idempotente).
- * Devuelve unsubscribe; también se puede llamar stopAppwriteProductRealtime().
+ * Suscribe al canal de productos.
+ * @param onChange callback de dominio (p.ej. refreshByIds). Idempotente: reasigna handler.
  */
-export function startAppwriteProductRealtime(): AppwriteProductRealtimeUnsubscribe {
+export function startAppwriteProductRealtime(
+    onChange?: AppwriteProductRealtimeHandler
+): AppwriteProductRealtimeUnsubscribe {
+    if (onChange) {
+        activeHandler = onChange;
+    }
+
     if (activeUnsub) {
-        console.info(`${LOG} ya activo — skip re-subscribe`);
+        console.info(`${LOG} ya activo — handler actualizado, skip re-subscribe`);
         return activeUnsub;
     }
 
@@ -115,26 +147,28 @@ export function startAppwriteProductRealtime(): AppwriteProductRealtimeUnsubscri
     }
 
     const channel = buildProductDocumentsChannel();
-    if (!channel) {
-        return () => {};
-    }
+    if (!channel) return () => {};
 
-    console.info(`${LOG} subscribe channel=${channel}`);
+    console.info(`${LOG} subscribe channel=${channel} (canal primario stock)`);
 
     try {
-        // appwrite SDK (v16+): Client#subscribe(channels, callback) → () => void
         const unsubscribe = client.subscribe(channel, (response) => {
             try {
                 onRealtimeMessage(response as RealtimeResponseEvent<Record<string, unknown>>);
             } catch (err) {
                 console.error(
-                    `${LOG} handler error: ${err instanceof Error ? err.message : String(err)}`,
+                    `${LOG} parse error: ${err instanceof Error ? err.message : String(err)}`,
                     err
                 );
             }
         });
 
         activeUnsub = () => {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
+            pendingIds = new Set();
             try {
                 unsubscribe();
                 console.info(`${LOG} unsubscribed channel=${channel}`);
@@ -144,10 +178,11 @@ export function startAppwriteProductRealtime(): AppwriteProductRealtimeUnsubscri
                 );
             } finally {
                 activeUnsub = null;
+                activeHandler = null;
             }
         };
 
-        console.info(`${LOG} listener activo (probe-only, sin dominio)`);
+        console.info(`${LOG} listener activo → dominio vía refreshByIds`);
         return activeUnsub;
     } catch (err) {
         console.error(
@@ -164,6 +199,7 @@ export function stopAppwriteProductRealtime(): void {
         activeUnsub();
         activeUnsub = null;
     }
+    activeHandler = null;
 }
 
 export function isAppwriteProductRealtimeActive(): boolean {

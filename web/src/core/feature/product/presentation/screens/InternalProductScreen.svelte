@@ -15,10 +15,6 @@
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
     import { logProductFlow, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
     import { availableStock } from "../../domain/entity/Product";
-    import {
-        startAppwriteProductRealtime,
-        stopAppwriteProductRealtime
-    } from "../../../../infrastructure/data/appwrite/appwrite-product-realtime";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -127,9 +123,8 @@
 
     onMount(() => {
         try {
+            // Appwrite Realtime (primario) + fallbacks locales viven en productStore
             productStore.startStockRealtime();
-            // Canal alternativo Appwrite Realtime (probe-only: logs, sin dominio)
-            startAppwriteProductRealtime();
             productStore.syncAll();
             if (!$sessionStore.isGuest) {
                 promotionStore.syncAll({ suppressPermissionError: true });
@@ -143,7 +138,6 @@
             unsubscribeProducts();
             unsubscribePromotions();
             unsubscribeCategories();
-            stopAppwriteProductRealtime();
         };
     });
 

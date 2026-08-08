@@ -2,14 +2,15 @@ import {derived, writable} from "svelte/store";
 import type {Product} from "../../domain/entity/Product";
 import {productContainer} from "../../di/product.container";
 import {
-    subscribeStockUpdates,
-    unsubscribeStockUpdates
-} from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
-import {
     STOCK_BROADCAST_NAME,
     STOCK_CHANGED_EVENT,
     type StockChangedPayload
 } from "../../../../infrastructure/data/alset-pulse/stock-pulse";
+import {
+    startAppwriteProductRealtime,
+    stopAppwriteProductRealtime,
+    type AppwriteProductChangeSignal
+} from "../../../../infrastructure/data/appwrite/appwrite-product-realtime";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
 interface ProductState {
@@ -61,9 +62,17 @@ function isStockPayload(value: unknown): value is StockChangedPayload {
     return Array.isArray(v.productIds) && v.productIds.length > 0
 }
 
+function mapAppwriteActionToReason(
+    action: AppwriteProductChangeSignal["action"]
+): StockChangedPayload["reason"] {
+    // Appwrite no distingue hold/release/consume; tratamos update como hold genérico de inventario
+    if (action === "delete") return "release"
+    return "hold"
+}
+
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
-    let stockUnsub: (() => void) | null = null
+    let appwriteUnsub: (() => void) | null = null
     let localEventBound = false
     let broadcast: BroadcastChannel | null = null
 
@@ -93,7 +102,7 @@ function createProductStore() {
     ): Promise<void> {
         const fromRealtime = options.fromRealtime === true
         const silent = options.silent === true
-        const source = options.source ?? (fromRealtime ? "pusher" : "local")
+        const source = options.source ?? (fromRealtime ? "appwrite" : "local")
         const count = payload.productIds.length
         const t0 = performance.now()
 
@@ -169,16 +178,36 @@ function createProductStore() {
         }
     }
 
+    function onAppwriteProductSignal(signal: AppwriteProductChangeSignal): void {
+        console.info(
+            `[stock-rt] Appwrite signal → refreshByIds action=${signal.action} ids=${signal.productIds.join(",")}`
+        )
+        void handleStockChanged(
+            {
+                productIds: signal.productIds,
+                reason: mapAppwriteActionToReason(signal.action),
+                timestamp: signal.timestamp
+            },
+            {
+                fromRealtime: true,
+                silent: false,
+                source: "appwrite-realtime"
+            }
+        )
+    }
+
     function onLocalStockEvent(ev: Event): void {
         const detail = (ev as CustomEvent).detail
         if (!isStockPayload(detail)) {
             console.warn("[stock-rt] CustomEvent inválido", detail)
             return
         }
-        console.info("[stock-rt] CustomEvent recibido → handle (toast+banner)")
+        // Misma pestaña: el hold local ya escribió Dexie vía soft-hold;
+        // Appwrite Realtime también disparará. Marcamos silent para no duplicar toast.
+        console.info("[stock-rt] CustomEvent recibido → handle silent (Appwrite RT es canónico)")
         void handleStockChanged(detail, {
             fromRealtime: true,
-            silent: false,
+            silent: true,
             source: "custom-event"
         })
     }
@@ -188,10 +217,10 @@ function createProductStore() {
         if (!msg || msg.type !== "stock:changed" || !isStockPayload(msg.data)) {
             return
         }
-        console.info("[stock-rt] BroadcastChannel recibido → handle (toast+banner)")
+        console.info("[stock-rt] BroadcastChannel recibido → handle silent")
         void handleStockChanged(msg.data, {
             fromRealtime: true,
-            silent: false,
+            silent: true,
             source: "broadcast"
         })
     }
@@ -202,14 +231,14 @@ function createProductStore() {
         if (!localEventBound) {
             window.addEventListener(STOCK_CHANGED_EVENT, onLocalStockEvent)
             localEventBound = true
-            console.info(`[stock-rt] listener CustomEvent ${STOCK_CHANGED_EVENT} activo`)
+            console.info(`[stock-rt] listener CustomEvent ${STOCK_CHANGED_EVENT} activo (fallback same-tab)`)
         }
 
         if (!broadcast && typeof BroadcastChannel !== "undefined") {
             try {
                 broadcast = new BroadcastChannel(STOCK_BROADCAST_NAME)
                 broadcast.onmessage = onBroadcastMessage
-                console.info(`[stock-rt] listener BroadcastChannel ${STOCK_BROADCAST_NAME} activo`)
+                console.info(`[stock-rt] listener BroadcastChannel ${STOCK_BROADCAST_NAME} activo (fallback tabs)`)
             } catch (e) {
                 console.warn(
                     `[stock-rt] BroadcastChannel no disponible: ${e instanceof Error ? e.message : String(e)}`
@@ -229,31 +258,33 @@ function createProductStore() {
         }
     }
 
+    /**
+     * Canal primario: Appwrite Realtime.
+     * Pusher stock-updates queda fuera (sin backend Pulse).
+     * CustomEvent / BroadcastChannel siguen como fallback same-origin.
+     */
     function startStockRealtime(): void {
         startLocalStockListeners()
 
-        if (stockUnsub) {
-            console.info("[stock-rt] startStockRealtime: Pusher ya activo, skip")
+        if (appwriteUnsub) {
+            console.info("[stock-rt] startStockRealtime: Appwrite RT ya activo, skip")
+            // re-bind handler por si el store se reinició parcialmente
+            startAppwriteProductRealtime(onAppwriteProductSignal)
             return
         }
-        console.info("[stock-rt] startStockRealtime: suscribiendo Pusher…")
-        stockUnsub = subscribeStockUpdates((payload) => {
-            console.info("[stock-rt] callback desde Pusher → handleStockChanged")
-            void handleStockChanged(payload, {
-                fromRealtime: true,
-                source: "pusher"
-            })
-        })
-        console.info("[stock-rt] listener stock:changed (Pusher) activo en productStore")
+
+        console.info("[stock-rt] startStockRealtime: suscribiendo Appwrite Realtime (primario)…")
+        appwriteUnsub = startAppwriteProductRealtime(onAppwriteProductSignal)
+        console.info("[stock-rt] listener Appwrite product documents activo en productStore")
     }
 
     function stopStockRealtime(): void {
-        if (stockUnsub) {
-            console.info("[stock-rt] stopStockRealtime Pusher")
-            stockUnsub()
-            stockUnsub = null
+        if (appwriteUnsub) {
+            console.info("[stock-rt] stopStockRealtime Appwrite")
+            appwriteUnsub()
+            appwriteUnsub = null
         }
-        unsubscribeStockUpdates()
+        stopAppwriteProductRealtime()
         stopLocalStockListeners()
     }
 
