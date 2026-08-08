@@ -316,7 +316,7 @@ fun BannerSection(
                 .clip(RoundedCornerShape(20.dp))
                 .background(MaterialTheme.colorScheme.primary)
                 .clickable(enabled = activePromotion != null) {
-                    activePromotion?.let { onPromotionClick(it.id) }
+                    activePromotion?.let { promotion: Promotion -> onPromotionClick(promotion.id) }
                 }
                 .padding(20.dp)
         ) {
