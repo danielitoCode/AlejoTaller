@@ -25,7 +25,7 @@ export class SaleNetRepository {
     }
 
     async getAll(): Promise<SaleDTO[]> {
-        const response = await this.tablesDB.listRows<SaleDTO>({
+        const response = await this.tablesDB.listRows({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
         });
@@ -37,7 +37,7 @@ export class SaleNetRepository {
         data: Omit<SaleDTO, keyof Models.Row> | Record<string, unknown>
     ): Promise<SaleDTO> {
         const payload = stripMeta(data as Record<string, unknown>);
-        return await this.tablesDB.createRow<SaleDTO>({
+        return await this.tablesDB.createRow({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
             rowId: ID.unique(),
@@ -46,7 +46,7 @@ export class SaleNetRepository {
     }
 
     async getByUser(userId: string): Promise<SaleDTO[]> {
-        const response = await this.tablesDB.listRows<SaleDTO>({
+        const response = await this.tablesDB.listRows({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
             queries: [Query.equal("user_id", userId)],
@@ -56,7 +56,7 @@ export class SaleNetRepository {
     }
 
     async updateVerified(id: string, verified: string): Promise<SaleDTO> {
-        return await this.tablesDB.updateRow<SaleDTO>({
+        return await this.tablesDB.updateRow({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
             rowId: id,
@@ -65,7 +65,7 @@ export class SaleNetRepository {
     }
 
     async updateDeliveryType(id: string, deliveryType: string): Promise<SaleDTO> {
-        return await this.tablesDB.updateRow<SaleDTO>({
+        return await this.tablesDB.updateRow({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
             rowId: id,
@@ -74,7 +74,7 @@ export class SaleNetRepository {
     }
 
     async updateStockHoldApplied(id: string, value: boolean): Promise<SaleDTO> {
-        return await this.tablesDB.updateRow<SaleDTO>({
+        return await this.tablesDB.updateRow({
             databaseId: this.databaseId,
             tableId: TABLE_ID,
             rowId: id,
