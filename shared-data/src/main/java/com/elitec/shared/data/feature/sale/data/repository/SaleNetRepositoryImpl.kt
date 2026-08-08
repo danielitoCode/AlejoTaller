@@ -6,30 +6,30 @@ import com.elitec.shared.data.feature.sale.data.mapper.toSaleDto
 import com.elitec.shared.data.infraestructure.core.data.config.SaleRemoteConfig
 import io.appwrite.ID
 import io.appwrite.Query
-import io.appwrite.services.Databases
+import io.appwrite.services.TablesDB
 import kotlinx.serialization.json.Json
 
 class SaleNetRepositoryImpl(
-    private val netDB: Databases,
+    private val netDB: TablesDB,
     private val config: SaleRemoteConfig
 ): SaleNetRepository {
     override suspend fun getAll(userId: String): List<SaleDto> {
         Log.i(TAG, "event=sale_net_get_all_start userId=$userId collection=${config.saleCollectionId}")
-        val response = netDB.listDocuments(
+        val response = netDB.listRows(
             databaseId = config.databaseId,
-            collectionId = config.saleCollectionId,
+            tableId = config.saleCollectionId,
             queries = listOf(Query.equal("user_id", userId))
         )
-        Log.i(TAG, "event=sale_net_get_all_success userId=$userId count=${response.documents.size}")
-        return response.documents.map { document -> document.toSaleDto() }
+        Log.i(TAG, "event=sale_net_get_all_success userId=$userId count=${response.rows.size}")
+        return response.rows.map { row -> row.toSaleDto() }
     }
 
     override suspend fun getById(itemId: String): SaleDto {
         Log.i(TAG, "event=sale_net_get_by_id_start saleId=$itemId collection=${config.saleCollectionId}")
-        val response = netDB.getDocument(
+        val response = netDB.getRow(
             databaseId = config.databaseId,
-            collectionId = config.saleCollectionId,
-            documentId = itemId
+            tableId = config.saleCollectionId,
+            rowId = itemId
         )
         Log.i(TAG, "event=sale_net_get_by_id_success saleId=$itemId")
         return response.toSaleDto()
@@ -39,13 +39,13 @@ class SaleNetRepositoryImpl(
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank()) return emptyList()
 
-        val response = netDB.listDocuments(
+        val response = netDB.listRows(
             databaseId = config.databaseId,
-            collectionId = config.saleCollectionId,
+            tableId = config.saleCollectionId,
             queries = listOf(Query.limit(limit))
         )
 
-        return response.documents
+        return response.rows
             .map { it.toSaleDto() }
             .filter { sale ->
                 when (field.uppercase()) {
@@ -61,10 +61,10 @@ class SaleNetRepositoryImpl(
     override suspend fun save(item: SaleDto) {
         val resolvedId = item.id.ifBlank { ID.unique() }
         Log.i(TAG, "event=sale_net_save_start saleId=$resolvedId userId=${item.userId} verified=${item.verified}")
-        netDB.createDocument(
+        netDB.createRow(
             databaseId = config.databaseId,
-            collectionId = config.saleCollectionId,
-            documentId = resolvedId,
+            tableId = config.saleCollectionId,
+            rowId = resolvedId,
             data = item.toAppwriteData()
         )
         Log.i(TAG, "event=sale_net_save_success saleId=$resolvedId")
@@ -73,10 +73,10 @@ class SaleNetRepositoryImpl(
     override suspend fun upsert(item: SaleDto) {
         if (item.id.isBlank()) return
         Log.i(TAG, "event=sale_net_upsert_start saleId=${item.id} userId=${item.userId} verified=${item.verified}")
-        netDB.updateDocument(
+        netDB.updateRow(
             databaseId = config.databaseId,
-            collectionId = config.saleCollectionId,
-            documentId = item.id,
+            tableId = config.saleCollectionId,
+            rowId = item.id,
             data = item.toAppwriteData()
         )
         Log.i(TAG, "event=sale_net_upsert_updated saleId=${item.id}")

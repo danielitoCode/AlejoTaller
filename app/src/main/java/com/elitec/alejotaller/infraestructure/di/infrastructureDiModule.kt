@@ -22,6 +22,7 @@ import io.appwrite.Client
 import io.appwrite.services.Account
 import io.appwrite.services.Databases
 import io.appwrite.services.Storage
+import io.appwrite.services.TablesDB
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -45,6 +46,7 @@ val infrastructureModule = module {
             .setSelfSigned(false)
     }
     single { Databases(get()) }
+    single { TablesDB(get()) }
     single { Account(get()) }
     single { Storage(get()) }
     single {
@@ -61,7 +63,7 @@ val infrastructureModule = module {
             klass = AppBD::class.java,
             name = "app_database"
         )
-            .addMigrations(*AppBDMigrations.ALL)  // âœ… Migraciones registradas
+            .addMigrations(*AppBDMigrations.ALL)
             .build()
     }
 

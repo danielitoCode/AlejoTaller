@@ -3,7 +3,7 @@ package com.elitec.shared.data.feature.sale.data.mapper
 import com.elitec.shared.data.feature.sale.data.dto.SaleDto
 import com.elitec.shared.sale.feature.sale.domain.entity.Currency
 import com.elitec.shared.sale.feature.sale.domain.entity.SaleItem
-import io.appwrite.models.Document
+import io.appwrite.models.Row
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -12,7 +12,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 
-fun Document<Map<String, Any>>.toSaleDto(): SaleDto =
+fun Row<Map<String, Any>>.toSaleDto(): SaleDto =
     SaleDto(
         id = id,
         date = data["date"].toLocalDate(),
