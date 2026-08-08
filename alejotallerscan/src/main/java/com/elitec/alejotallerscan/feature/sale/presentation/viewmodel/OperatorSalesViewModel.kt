@@ -9,6 +9,7 @@ import com.elitec.alejotallerscan.feature.history.domain.entity.OperatorSaleReco
 import com.elitec.alejotallerscan.feature.product.domain.caseuse.ApplyOperatorStockDecisionCaseUse
 import com.elitec.shared.data.feature.sale.data.dao.SaleDao
 import com.elitec.shared.data.feature.sale.data.mapper.toDomain
+import com.elitec.shared.data.feature.sale.data.mapper.toDto
 import com.elitec.shared.data.feature.sale.data.repository.SaleNetRepository
 import com.elitec.shared.sale.feature.sale.domain.caseUse.ObserveAllSalesCaseUse
 import com.elitec.shared.sale.feature.sale.domain.caseUse.UpdateSaleVerificationFromRealtimeCaseUse
@@ -24,7 +25,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class OperatorSalesViewModel(
-    private val observeAllSalesCaseUse: ObserveAllSalesCaseUse,
+    observeAllSalesCaseUse: ObserveAllSalesCaseUse,
     private val saleNetRepository: SaleNetRepository,
     private val saleDao: SaleDao,
     private val updateSaleVerificationFromRealtimeCaseUse: UpdateSaleVerificationFromRealtimeCaseUse,
@@ -32,9 +33,21 @@ class OperatorSalesViewModel(
     private val registerOperatorSaleRecordCaseUse: RegisterOperatorSaleRecordCaseUse,
     private val applyOperatorStockDecisionCaseUse: ApplyOperatorStockDecisionCaseUse
 ) : ViewModel() {
-
     companion object {
-        private const val TAG = "OperatorSalesVM"
+        const val TAG = "OperatorSalesVM"
+        fun extractSaleId(rawPayload: String): String {
+            val trimmed = rawPayload.trim()
+            if (trimmed.isBlank()) return ""
+
+            val queryId = Regex("""(?:^|[?&])(id|saleId|reservationId)=([^&]+)""", RegexOption.IGNORE_CASE)
+                .find(trimmed)
+                ?.groupValues
+                ?.getOrNull(2)
+                ?.trim()
+            if (!queryId.isNullOrBlank()) return queryId
+
+            return trimmed.substringAfterLast('/').substringAfterLast('=').trim()
+        }
 
         /**
          * Resuelve el amount final según SALE_POLICY.
@@ -112,7 +125,7 @@ class OperatorSalesViewModel(
         discountAmount: Double? = null,
         onDone: () -> Unit = {}
     ) {
-        decideSelectedSale(
+        changeSelectedSale(
             isSuccess = true,
             saleType = saleType,
             discountAmount = discountAmount,
@@ -121,7 +134,7 @@ class OperatorSalesViewModel(
     }
 
     fun rejectSelectedSale(onDone: () -> Unit = {}) {
-        decideSelectedSale(
+        changeSelectedSale(
             isSuccess = false,
             saleType = null,
             discountAmount = null,
@@ -129,7 +142,7 @@ class OperatorSalesViewModel(
         )
     }
 
-    private fun decideSelectedSale(
+    private fun changeSelectedSale(
         isSuccess: Boolean,
         saleType: SaleType?,
         discountAmount: Double?,
@@ -140,9 +153,16 @@ class OperatorSalesViewModel(
             return
         }
 
-        viewModelScope.launch {
-            val effectiveType = if (isSuccess) (saleType ?: SaleType.NORMAL) else null
+        if (selectedSale.verified != BuyState.UNVERIFIED) {
+            _uiState.value = _uiState.value.copy(
+                notice = "La venta ya fue procesada anteriormente."
+            )
+            onDone()
+            return
+        }
 
+        viewModelScope.launch {
+            val effectiveType = if (isSuccess) saleType ?: SaleType.NORMAL else null
             val resolvedAmount = if (isSuccess && effectiveType != null) {
                 runCatching {
                     resolveConfirmedAmount(selectedSale.amount, effectiveType, discountAmount)
@@ -150,7 +170,7 @@ class OperatorSalesViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         loadingMessage = null,
-                        error = error.message ?: "Importe invalido para el tipo de venta."
+                        error = error.message ?: "Importe inválido para el tipo de venta"
                     )
                     return@launch
                 }
@@ -160,23 +180,16 @@ class OperatorSalesViewModel(
 
             _uiState.value = _uiState.value.copy(
                 isLoading = true,
-                loadingMessage = if (isSuccess) {
-                    "Confirmando venta en Appwrite..."
-                } else {
-                    "Rechazando venta en Appwrite..."
-                },
+                loadingMessage = "Actualizando la venta en Appwrite...",
                 error = null,
                 notice = null
             )
-
             Log.i(
                 TAG,
-                "event=operator_sale_decide saleId=${selectedSale.id} " +
+                "event=operator_sale_update_start saleId=${selectedSale.id} " +
                     "userId=${selectedSale.userId} decision=${if (isSuccess) "confirmed" else "rejected"} " +
-                    "saleType=${effectiveType?.name ?: "n/a"} amount=$resolvedAmount " +
-                    "currency=${selectedSale.currency.name}"
+                    "saleType=${effectiveType?.name ?: "n/a"} amount=$resolvedAmount currency=${selectedSale.currency.name}"
             )
-
             updateSaleVerificationFromRealtimeCaseUse(
                 saleId = selectedSale.id,
                 isSuccess = isSuccess,
@@ -186,43 +199,43 @@ class OperatorSalesViewModel(
                 .onSuccess {
                     val nextState = if (isSuccess) BuyState.VERIFIED else BuyState.DELETED
                     val resolvedType = if (isSuccess) effectiveType else selectedSale.saleType
-                    val optimisticSale = selectedSale.copy(
+                    val updatedSale = selectedSale.copy(
                         verified = nextState,
                         saleType = resolvedType,
                         amount = resolvedAmount
                     )
+                    val action = if (isSuccess) {
+                        OperatorSaleRecordAction.CONFIRMED
+                    } else {
+                        OperatorSaleRecordAction.REJECTED
+                    }
 
                     Log.i(
                         TAG,
-                        "event=operator_sale_remote_ok saleId=${selectedSale.id} " +
-                            "nextState=$nextState saleType=${resolvedType?.name} amount=$resolvedAmount " +
-                            "currency=${selectedSale.currency.name}"
-                    )
-
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = true,
-                        loadingMessage = "Verificando el estado en Appwrite..."
+                        "event=operator_sale_update_success saleId=${updatedSale.id} " +
+                            "nextState=$nextState saleType=${resolvedType?.name} amount=$resolvedAmount"
                     )
 
                     val remoteVerification = runCatching {
-                        val remoteSale = saleNetRepository.getById(selectedSale.id)
-                        saleDao.insert(remoteSale)
-                        remoteSale.toDomain()
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = true,
+                            loadingMessage = "Verificando el cambio remoto de la venta..."
+                        )
+                        verifyRemoteSaleState(updatedSale.id, nextState)
                     }
-
                     val confirmedRemoteSale = remoteVerification.getOrElse { error ->
+                        rollbackLocalSale(selectedSale)
                         Log.e(
                             TAG,
-                            "event=operator_sale_verify_failure saleId=${selectedSale.id} cause=${error.message}",
+                            "event=operator_remote_verification_failure saleId=${updatedSale.id} cause=${error.message}",
                             error
                         )
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
                             loadingMessage = null,
-                            selectedSale = optimisticSale,
+                            selectedSale = selectedSale,
                             error = error.message ?: "Appwrite no confirmo el cambio de estado."
                         )
-                        onDone()
                         return@onSuccess
                     }
 
@@ -231,79 +244,60 @@ class OperatorSalesViewModel(
                         amount = if (isSuccess) resolvedAmount else confirmedRemoteSale.amount
                     )
 
-                    if (saleForSideEffects.verified != nextState) {
-                        Log.e(
-                            TAG,
-                            "event=operator_sale_state_mismatch saleId=${saleForSideEffects.id} " +
-                                "expected=$nextState actual=${saleForSideEffects.verified}"
-                        )
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            loadingMessage = null,
-                            selectedSale = saleForSideEffects,
-                            error = "Appwrite no confirmo el estado esperado para la venta ${selectedSale.id}."
-                        )
-                        onDone()
-                        return@onSuccess
-                    }
-
                     Log.i(
                         TAG,
-                        "event=operator_sale_verified saleId=${saleForSideEffects.id} " +
+                        "event=operator_remote_verification_success saleId=${saleForSideEffects.id} " +
+                            "verified=${saleForSideEffects.verified} saleType=${saleForSideEffects.saleType} " +
                             "amount=${saleForSideEffects.amount} currency=${saleForSideEffects.currency.name}"
                     )
 
+                    var stockWarning: String? = null
                     _uiState.value = _uiState.value.copy(
                         isLoading = true,
                         loadingMessage = if (isSuccess) {
-                            "Actualizando inventario..."
+                            "Actualizando inventario (salida de stock)..."
                         } else {
-                            "Liberando reservas de stock..."
+                            "Liberando reserva de inventario..."
                         }
                     )
+                    applyOperatorStockDecisionCaseUse(saleForSideEffects, isSuccess)
+                        .onFailure { error ->
+                            Log.e(
+                                TAG,
+                                "event=operator_stock_failure saleId=${saleForSideEffects.id} cause=${error.message}",
+                                error
+                            )
+                            stockWarning =
+                                "La venta quedó actualizada, pero falló el ajuste de stock. " +
+                                    "Revisar inventario manualmente. (${error.message ?: "sin detalle"})"
+                        }
+                        .onSuccess {
+                            Log.i(
+                                TAG,
+                                "event=operator_stock_success saleId=${saleForSideEffects.id} confirmed=$isSuccess"
+                            )
+                        }
 
-                    val stockResult = runCatching {
-                        applyOperatorStockDecisionCaseUse(saleForSideEffects, isSuccess)
-                    }
-                    val stockWarning = stockResult.exceptionOrNull()?.let { error ->
-                        Log.e(
-                            TAG,
-                            "event=operator_stock_failure saleId=${saleForSideEffects.id} cause=${error.message}",
-                            error
+                    var realtimeWarning: String? = null
+                    val notificationResult = runCatching {
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = true,
+                            loadingMessage = "Publicando notificación en tiempo real..."
                         )
-                        "Advertencia de stock: ${error.message ?: "no se pudo actualizar inventario."}"
-                    }
-                    if (stockResult.isSuccess) {
-                        Log.i(
-                            TAG,
-                            "event=operator_stock_success saleId=${saleForSideEffects.id} confirmed=$isSuccess"
-                        )
-                    }
-
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = true,
-                        loadingMessage = "Notificando decision..."
-                    )
-
-                    val realtimeResult = runCatching {
                         notifyOperatorSaleDecisionCaseUse(saleForSideEffects, isSuccess)
                     }
-                    val realtimeWarning = realtimeResult.exceptionOrNull()?.let { error ->
+                    notificationResult.onFailure { error ->
                         Log.e(
                             TAG,
                             "event=operator_pusher_failure saleId=${saleForSideEffects.id} cause=${error.message}",
                             error
                         )
-                        "Aviso realtime: ${error.message ?: "no se pudo notificar por canal legado."}"
+                        realtimeWarning =
+                            "La venta quedó actualizada en el servidor, pero no se pudo notificar en tiempo real. " +
+                                "El cliente puede ver el cambio al sincronizar. (${error.message ?: "sin detalle"})"
                     }
-                    if (realtimeResult.isSuccess) {
+                    if (notificationResult.isSuccess) {
                         Log.i(TAG, "event=operator_pusher_success saleId=${saleForSideEffects.id}")
-                    }
-
-                    val action = if (isSuccess) {
-                        OperatorSaleRecordAction.CONFIRMED
-                    } else {
-                        OperatorSaleRecordAction.REJECTED
                     }
 
                     val recordResult = runCatching {
@@ -366,23 +360,37 @@ class OperatorSalesViewModel(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         loadingMessage = null,
-                        error = error.message ?: "No se pudo actualizar la venta en Appwrite."
+                        error = error.message ?: "No se pudo actualizar la venta."
                     )
                 }
         }
+    }
+
+    fun clearMessages() {
+        _uiState.value = _uiState.value.copy(error = null, notice = null)
     }
 
     fun resetState() {
         _uiState.value = OperatorSalesUiState()
     }
 
-    private fun extractSaleId(rawPayload: String): String {
-        val trimmed = rawPayload.trim()
-        if (trimmed.isBlank()) return ""
-        // Prefer explicit id query/path patterns if present
-        val idFromQuery = Regex("[?&]id=([^&]+)").find(trimmed)?.groupValues?.getOrNull(1)
-        if (!idFromQuery.isNullOrBlank()) return idFromQuery.trim()
-        val lastSegment = trimmed.substringAfterLast('/').substringBefore('?').trim()
-        return lastSegment.ifBlank { trimmed }
+    private suspend fun verifyRemoteSaleState(saleId: String, expectedState: BuyState): Sale {
+        val remoteSale = saleNetRepository.getById(saleId).toDomain()
+        if (remoteSale.verified != expectedState) {
+            error(
+                "Appwrite no confirmo el estado esperado para la venta $saleId. " +
+                    "Esperado=$expectedState actual=${remoteSale.verified}"
+            )
+        }
+        return remoteSale
+    }
+
+    private suspend fun rollbackLocalSale(originalSale: Sale) {
+        runCatching {
+            saleDao.insert(originalSale.toDto())
+            Log.i(TAG, "event=operator_local_rollback_success saleId=${originalSale.id}")
+        }.onFailure { error ->
+            Log.e(TAG, "event=operator_local_rollback_failure saleId=${originalSale.id} cause=${error.message}", error)
+        }
     }
 }
