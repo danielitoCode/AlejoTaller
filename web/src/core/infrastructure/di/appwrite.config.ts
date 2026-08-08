@@ -1,4 +1,4 @@
-import {Client, TablesDB, Storage, Account, Functions} from "appwrite"
+import {Client, Databases, TablesDB, Storage, Account, Functions} from "appwrite"
 import {ENV} from "../env";
 
 const client = new Client()
@@ -13,6 +13,7 @@ if (ENV.appwriteEndpoint && ENV.appwriteProjectId) {
     );
 }
 
+export const databases = new Databases(client)
 export const tablesDB = new TablesDB(client)
 export const storage = new Storage(client)
 export const account = new Account(client)
