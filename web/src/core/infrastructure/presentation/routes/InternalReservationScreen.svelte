@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onDestroy, onMount } from "svelte";
+    import { onMount } from "svelte";
     import {Button, Card, Icon} from "m3-svelte";
     import shoppingBagIcon from "@ktibow/iconset-material-symbols/inventory-2-rounded";
     import scheduleIcon from "@ktibow/iconset-material-symbols/schedule-rounded";
@@ -11,7 +11,7 @@
     import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
     import type {NavController} from "../../../../lib/navigation/NavController";
     import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
-    import {BuyState, DeliveryType} from "../../../feature/sale/domain/entity/enums";
+    import {BuyState, DeliveryType, type Currency} from "../../../feature/sale/domain/entity/enums";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
     import {dashboard, reservationDetail} from "../navigation/nested.router";
 
@@ -76,36 +76,80 @@
         };
     }
 
+    function formatSaleMoney(amount: number, currency?: Currency | string | null): string {
+        const code = (currency && String(currency)) || "USD";
+        const value = Number.isFinite(amount) ? amount : 0;
+        return `${value.toLocaleString("es-CU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${code}`;
+    }
+
+    function formatSaleDate(raw: string): string {
+        try {
+            return new Date(raw).toLocaleString("es-CU", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        } catch {
+            return String(raw);
+        }
+    }
+
     $: items = $saleStore.items
         .filter((sale) => !currentUserId || sale.userId === currentUserId)
         .slice()
         .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+    $: pendingCount = items.filter((s) => s.verified === BuyState.UNVERIFIED).length;
+    $: readyCount = items.filter((s) => s.verified === BuyState.VERIFIED).length;
 </script>
 
 <section class="screen">
-    <div class="hero">
-        <p class="eyebrow">Reservas</p>
-        <h1>Mis reservas</h1>
-        <p class="support">Consulta el estado de tus pedidos y entra al detalle con el mismo lenguaje visual del modulo.</p>
-    </div>
+    <header class="hero">
+        <div class="hero-copy">
+            <p class="eyebrow">Reservas</p>
+            <h1>Mis reservas</h1>
+            <p class="support">Estado de tus pedidos, importes en la moneda elegida y acceso rápido al detalle.</p>
+        </div>
+        {#if items.length}
+            <div class="hero-stats" aria-label="Resumen de reservas">
+                <div class="stat">
+                    <span class="stat-value">{items.length}</span>
+                    <span class="stat-label">Total</span>
+                </div>
+                <div class="stat pending">
+                    <span class="stat-value">{pendingCount}</span>
+                    <span class="stat-label">Pendientes</span>
+                </div>
+                <div class="stat ready">
+                    <span class="stat-value">{readyCount}</span>
+                    <span class="stat-label">Listos</span>
+                </div>
+            </div>
+        {/if}
+    </header>
 
     {#if bootstrapping}
         <Card variant="filled" class="empty-state">
-            <h2>Cargando reservas...</h2>
-            <p>Estamos sincronizando tus pedidos.</p>
+            <div class="skeleton-pulse"></div>
+            <h2>Cargando reservas…</h2>
+            <p>Sincronizando tus pedidos.</p>
         </Card>
     {:else if !items.length}
         <Card variant="outlined" class="empty-state">
-            <Icon icon={shoppingBagIcon} />
-            <h2>Aun no tienes compras</h2>
-            <p>Aqui apareceran tus pedidos una vez que realices una reserva.</p>
+            <div class="empty-icon">
+                <Icon icon={shoppingBagIcon} />
+            </div>
+            <h2>Aún no tienes compras</h2>
+            <p>Aquí aparecerán tus pedidos cuando realices una reserva.</p>
             <Button variant="filled" size="m" onclick={() => navController.navigate(dashboard.path)}>
                 Ver productos
             </Button>
         </Card>
     {:else}
         <div class="list">
-            {#each items as sale}
+            {#each items as sale (sale.id)}
                 {@const meta = saleStatusMeta(sale.verified)}
                 {@const delivery = deliveryMeta(sale.deliveryType)}
                 {@const summary = itemsSummary(sale.products)}
@@ -118,7 +162,7 @@
                         <div class="card-head">
                             <div class="title-block">
                                 <span class="card-kicker">Pedido</span>
-                                <strong>#{sale.id.slice(0, 8)}</strong>
+                                <strong class="order-id">#{sale.id.slice(0, 8)}</strong>
                             </div>
                             <div class="badge {meta.tone}">
                                 <Icon icon={meta.icon} />
@@ -129,7 +173,7 @@
                         <div class="card-main">
                             <div class="amount-block">
                                 <span class="amount-label">Total reservado</span>
-                                <strong>${sale.amount.toFixed(2)} CUP</strong>
+                                <strong class="amount-value">{formatSaleMoney(sale.amount, sale.currency)}</strong>
                             </div>
                             <div class="arrow-chip" aria-hidden="true">
                                 <Icon icon={arrowOutwardIcon} />
@@ -143,18 +187,23 @@
                             </span>
                             <span class="info-pill">
                                 <Icon icon={shoppingBagIcon} />
-                                <span>{summary.totalUnits} {summary.totalUnits === 1 ? "articulo" : "articulos"}</span>
+                                <span>{summary.totalUnits} {summary.totalUnits === 1 ? "artículo" : "artículos"}</span>
                             </span>
+                            {#if sale.currency}
+                                <span class="info-pill muted">
+                                    <span>{String(sale.currency)}</span>
+                                </span>
+                            {/if}
                         </div>
 
                         <div class="meta-grid">
                             <div class="meta-block">
                                 <span class="meta-label">Fecha</span>
-                                <span>{new Date(sale.date).toLocaleString()}</span>
+                                <span class="meta-value">{formatSaleDate(sale.date)}</span>
                             </div>
                             <div class="meta-block">
                                 <span class="meta-label">Productos</span>
-                                <span>{summary.preview}</span>
+                                <span class="meta-value">{summary.preview}</span>
                             </div>
                         </div>
                     </div>
@@ -167,267 +216,368 @@
 <style>
     .screen {
         display: grid;
-        gap: 18px;
+        gap: 1.25rem;
         align-content: start;
-        padding-bottom: 8px;
+        padding-bottom: 1rem;
+        max-width: 960px;
+        margin-inline: auto;
+        width: 100%;
     }
+
     .eyebrow,
     h1,
     h2,
     p {
         margin: 0;
     }
+
     .eyebrow {
         color: var(--md-sys-color-primary);
         text-transform: uppercase;
-        font-size: 0.78rem;
+        font-size: 0.72rem;
         font-weight: 800;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.1em;
     }
+
     .hero {
-        padding: 18px;
-        border-radius: 28px;
-        background: linear-gradient(180deg, var(--md-sys-color-surface-container-high) 0%, var(--md-sys-color-surface-container) 100%);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 76%, transparent);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1.25rem;
+        align-items: end;
+        padding: 1.25rem 1.35rem;
+        border-radius: 1.5rem;
+        background:
+            radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent), transparent 55%),
+            linear-gradient(165deg, var(--md-sys-color-surface-container-high) 0%, var(--md-sys-color-surface-container) 100%);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
     }
+
+    .hero-copy {
+        flex: 1 1 16rem;
+        min-width: 0;
+    }
+
+    .hero h1 {
+        font-size: clamp(1.45rem, 3.5vw, 1.85rem);
+        letter-spacing: -0.03em;
+        margin-top: 0.2rem;
+    }
+
     .support {
-        margin-top: 6px;
+        margin-top: 0.4rem;
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.92rem;
+        line-height: 1.45;
+        max-width: 36rem;
+    }
+
+    .hero-stats {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .stat {
+        display: grid;
+        gap: 0.15rem;
+        min-width: 4.5rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--md-sys-color-surface) 40%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .stat-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
         color: var(--md-sys-color-on-surface-variant);
     }
+
+    .stat.pending .stat-value { color: #f0b429; }
+    .stat.ready .stat-value { color: #7fd98f; }
+
     .list {
         display: grid;
-        gap: 12px;
+        gap: 0.85rem;
     }
+
     .sale-card {
         width: 100%;
         border: 0;
-        border-radius: 28px;
+        border-radius: 1.35rem;
         padding: 0;
         background: transparent;
         text-align: left;
         cursor: pointer;
-        transition:
-            transform 180ms ease,
-            filter 180ms ease;
+        color: inherit;
+        transition: transform 180ms ease, filter 180ms ease;
     }
+
     .sale-card:hover {
         transform: translateY(-2px);
-        filter: saturate(1.04);
     }
+
     .sale-card:focus-visible {
-        outline: 2px solid color-mix(in srgb, var(--md-sys-color-primary) 76%, white);
-        outline-offset: 4px;
+        outline: 2px solid color-mix(in srgb, var(--md-sys-color-primary) 80%, white);
+        outline-offset: 3px;
     }
+
     .sale-copy {
         display: grid;
-        gap: 16px;
-        padding: 18px;
-        border-radius: 28px;
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 66%, transparent);
+        gap: 1rem;
+        padding: 1.1rem 1.2rem 1.15rem;
+        border-radius: 1.35rem;
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
         background:
-            radial-gradient(circle at top right, rgb(255 255 255 / 0.06), transparent 26%),
-            linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 95%, transparent) 0%, var(--md-sys-color-surface-container) 100%);
-        box-shadow: 0 18px 34px rgb(0 0 0 / 0.12);
+            radial-gradient(circle at 100% 0%, rgb(255 255 255 / 0.05), transparent 32%),
+            linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 96%, transparent), var(--md-sys-color-surface-container));
+        box-shadow: 0 14px 28px rgb(0 0 0 / 0.14);
         position: relative;
         overflow: hidden;
     }
+
     .sale-copy::before {
         content: "";
         position: absolute;
         inset: 0 auto 0 0;
-        width: 5px;
-        background: color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
+        width: 4px;
+        background: color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
     }
+
     .sale-card.pending .sale-copy {
         background:
-            radial-gradient(circle at top right, rgb(255 193 92 / 0.18), transparent 28%),
-            linear-gradient(
-                135deg,
-                color-mix(in srgb, #f59e0b 14%, var(--md-sys-color-surface-container-high)) 0%,
-                color-mix(in srgb, #f59e0b 7%, var(--md-sys-color-surface-container)) 42%,
-                var(--md-sys-color-surface-container) 100%
-            );
-        border-color: color-mix(in srgb, #f59e0b 24%, var(--md-sys-color-outline-variant));
-        box-shadow:
-            0 18px 34px rgb(0 0 0 / 0.12),
-            inset 0 1px 0 rgb(255 196 118 / 0.08);
+            radial-gradient(circle at 100% 0%, rgb(245 158 11 / 0.16), transparent 34%),
+            linear-gradient(145deg, color-mix(in srgb, #f59e0b 12%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
+        border-color: color-mix(in srgb, #f59e0b 22%, var(--md-sys-color-outline-variant));
     }
     .sale-card.pending .sale-copy::before {
-        background: linear-gradient(180deg, #f6ad2e 0%, #d97706 100%);
+        background: linear-gradient(180deg, #f6ad2e, #d97706);
     }
+
     .sale-card.ready .sale-copy {
         background:
-            radial-gradient(circle at top right, color-mix(in srgb, #7fd98f 20%, transparent) 0%, transparent 28%),
-            linear-gradient(
-                135deg,
-                color-mix(in srgb, #7fd98f 14%, var(--md-sys-color-surface-container-high)) 0%,
-                color-mix(in srgb, #7fd98f 8%, var(--md-sys-color-surface-container)) 40%,
-                var(--md-sys-color-surface-container) 100%
-            );
-        border-color: color-mix(in srgb, #7fd98f 22%, var(--md-sys-color-outline-variant));
-        box-shadow:
-            0 18px 34px rgb(0 0 0 / 0.12),
-            inset 0 1px 0 rgb(180 255 196 / 0.08);
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, #7fd98f 18%, transparent), transparent 34%),
+            linear-gradient(145deg, color-mix(in srgb, #7fd98f 12%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
+        border-color: color-mix(in srgb, #7fd98f 20%, var(--md-sys-color-outline-variant));
     }
     .sale-card.ready .sale-copy::before {
-        background: linear-gradient(180deg, #7fd98f 0%, var(--md-sys-color-primary) 100%);
+        background: linear-gradient(180deg, #7fd98f, var(--md-sys-color-primary));
     }
+
     .sale-card.cancelled .sale-copy {
         background:
-            radial-gradient(circle at top right, color-mix(in srgb, #ff8f8f 20%, transparent) 0%, transparent 28%),
-            linear-gradient(
-                135deg,
-                color-mix(in srgb, #ff8f8f 13%, var(--md-sys-color-surface-container-high)) 0%,
-                color-mix(in srgb, #ff8f8f 7%, var(--md-sys-color-surface-container)) 40%,
-                var(--md-sys-color-surface-container) 100%
-            );
-        border-color: color-mix(in srgb, #ff8f8f 22%, var(--md-sys-color-outline-variant));
-        box-shadow:
-            0 18px 34px rgb(0 0 0 / 0.12),
-            inset 0 1px 0 rgb(255 205 205 / 0.07);
+            radial-gradient(circle at 100% 0%, color-mix(in srgb, #ff8f8f 16%, transparent), transparent 34%),
+            linear-gradient(145deg, color-mix(in srgb, #ff8f8f 10%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
+        border-color: color-mix(in srgb, #ff8f8f 20%, var(--md-sys-color-outline-variant));
+        opacity: 0.92;
     }
     .sale-card.cancelled .sale-copy::before {
-        background: linear-gradient(180deg, #ff8f8f 0%, var(--md-sys-color-error) 100%);
+        background: linear-gradient(180deg, #ff8f8f, var(--md-sys-color-error));
     }
+
     .card-head,
-    .card-main,
-    .badge {
+    .card-main {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        gap: 10px;
+        gap: 0.75rem;
     }
+
     .title-block,
     .amount-block,
     .meta-block {
         display: grid;
-        gap: 4px;
+        gap: 0.2rem;
+        min-width: 0;
     }
+
     .card-kicker,
     .amount-label,
     .meta-label {
-        font-size: 0.76rem;
+        font-size: 0.7rem;
         font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--md-sys-color-on-surface-variant);
     }
-    .title-block strong,
-    .amount-block strong {
-        display: block;
-    }
-    .title-block strong {
-        font-size: 1.18rem;
+
+    .order-id {
+        font-size: 1.12rem;
         letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
     }
-    .amount-block strong {
-        font-size: clamp(1.2rem, 2vw, 1.55rem);
+
+    .amount-value {
+        font-size: clamp(1.25rem, 2.4vw, 1.55rem);
         letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
     }
-    .empty-state p,
-    .meta-block span:last-child {
-        color: var(--md-sys-color-on-surface-variant);
-    }
+
     .pill-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 0.5rem;
     }
+
     .info-pill,
-    .arrow-chip {
+    .arrow-chip,
+    .badge {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.4rem;
         border-radius: 999px;
     }
+
     .info-pill {
-        padding: 8px 12px;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 34%, transparent);
-        color: var(--md-sys-color-on-surface);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 48%, transparent);
-        font-size: 0.86rem;
+        padding: 0.4rem 0.75rem;
+        background: color-mix(in srgb, var(--md-sys-color-surface) 42%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 42%, transparent);
+        font-size: 0.8rem;
         font-weight: 700;
     }
+
+    .info-pill.muted {
+        opacity: 0.85;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+    }
+
+    .info-pill :global(svg) {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+    }
+
     .arrow-chip {
         justify-content: center;
-        width: 42px;
-        height: 42px;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 48%, transparent);
-        color: var(--md-sys-color-on-surface);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 42%, transparent);
+        width: 2.5rem;
+        height: 2.5rem;
         flex: 0 0 auto;
+        background: color-mix(in srgb, var(--md-sys-color-surface) 50%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
     }
+
     .meta-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
+        gap: 0.65rem;
     }
+
     .meta-block {
-        padding: 12px 14px;
-        border-radius: 18px;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 28%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 36%, transparent);
-        min-width: 0;
+        padding: 0.7rem 0.85rem;
+        border-radius: 0.9rem;
+        background: color-mix(in srgb, var(--md-sys-color-surface) 32%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 32%, transparent);
     }
-    .meta-block span:last-child {
+
+    .meta-value {
+        color: var(--md-sys-color-on-surface-variant);
+        font-size: 0.88rem;
         overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
+
     .badge {
         width: fit-content;
-        padding: 6px 10px;
-        border-radius: 999px;
-        font-size: 0.8rem;
+        padding: 0.35rem 0.7rem;
+        font-size: 0.75rem;
         font-weight: 800;
+        flex-shrink: 0;
     }
+
     .badge :global(svg) {
-        width: 16px;
-        height: 16px;
+        width: 15px;
+        height: 15px;
     }
+
     .badge.pending {
-        background: color-mix(in srgb, #f59e0b 16%, transparent);
-        color: #e59a17;
-        border: 1px solid color-mix(in srgb, #f59e0b 26%, transparent);
+        background: color-mix(in srgb, #f59e0b 18%, transparent);
+        color: #f0b429;
+        border: 1px solid color-mix(in srgb, #f59e0b 28%, transparent);
     }
     .badge.ready {
-        background: color-mix(in srgb, #7fd98f 16%, transparent);
+        background: color-mix(in srgb, #7fd98f 18%, transparent);
         color: #84d99a;
-        border: 1px solid color-mix(in srgb, #7fd98f 22%, transparent);
+        border: 1px solid color-mix(in srgb, #7fd98f 24%, transparent);
     }
     .badge.cancelled {
-        background: color-mix(in srgb, #ff8f8f 15%, transparent);
+        background: color-mix(in srgb, #ff8f8f 16%, transparent);
         color: #ff9d9d;
         border: 1px solid color-mix(in srgb, #ff8f8f 24%, transparent);
     }
+
     .empty-state {
         text-align: center;
         align-items: center;
-        gap: 10px;
-        border-radius: 28px;
+        gap: 0.65rem;
+        border-radius: 1.5rem;
+        padding: 1.5rem 1rem;
     }
-    .empty-state :global(svg) {
-        width: 42px;
-        height: 42px;
+
+    .empty-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        margin-inline: auto;
+        display: grid;
+        place-items: center;
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 80%, transparent);
         color: var(--md-sys-color-on-surface-variant);
     }
-    @media (max-width: 680px) {
-        .card-head,
-        .card-main {
-            align-items: start;
+
+    .empty-icon :global(svg) {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+
+    .skeleton-pulse {
+        width: 2.5rem;
+        height: 2.5rem;
+        margin-inline: auto;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
+        animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 0.45; transform: scale(0.92); }
+        50% { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 640px) {
+        .hero {
+            padding: 1.1rem 1rem;
         }
-        .card-head,
+
+        .card-head {
+            align-items: flex-start;
+        }
+
         .meta-grid {
             grid-template-columns: 1fr;
         }
-        .card-head {
-            display: grid;
+
+        .meta-value {
+            white-space: normal;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
-        .card-main {
-            gap: 14px;
-        }
-        .arrow-chip {
-            width: 38px;
-            height: 38px;
+
+        .amount-value {
+            font-size: 1.2rem;
         }
     }
 </style>
