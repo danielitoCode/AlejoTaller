@@ -21,5 +21,12 @@ export interface ProductRepository {
     /** Core 1: decrementa reserved atómicamente en Appwrite (mínimo 0). */
     decrementReserved(id: string, quantity: number): Promise<Product | null>
 
+    /**
+     * Aplica documentos ya emitidos por Appwrite Realtime a la cache local
+     * (sin nueva lectura de red). El payload del evento ES la fuente de verdad
+     * post-cambio.
+     */
+    applyLocalSnapshots?(rawDocuments: Record<string, unknown>[]): Promise<Product[]>
+
     sync(): Promise<void>
 }

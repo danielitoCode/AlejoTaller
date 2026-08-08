@@ -9,6 +9,7 @@ import {UpdateProductPriceCaseUse} from "../domain/caseuse/UpdateProductPriceCas
 import {CheckAProductExistenceCaseUse} from "../domain/caseuse/CheckAProductExistenceCaseUse";
 import {ReleaseSoftHoldCaseUse} from "../domain/caseuse/ReleaseSoftHoldCaseUse";
 import {RefreshProductsByIdsCaseUse} from "../domain/caseuse/RefreshProductsByIdsCaseUse";
+import {ApplyProductRealtimeSnapshotsCaseUse} from "../domain/caseuse/ApplyProductRealtimeSnapshotsCaseUse";
 
 const database = infrastructureContainer.appwrite.databases
 
@@ -23,6 +24,9 @@ const saveProductCaseUse = new SaveProductCaseUse(productOfflineFirstRepository)
 const checkAProductExistenceCaseUse = new CheckAProductExistenceCaseUse(productOfflineFirstRepository)
 const releaseSoftHoldCaseUse = new ReleaseSoftHoldCaseUse(productOfflineFirstRepository)
 const refreshProductsByIdsCaseUse = new RefreshProductsByIdsCaseUse(productOfflineFirstRepository)
+const applyProductRealtimeSnapshotsCaseUse = new ApplyProductRealtimeSnapshotsCaseUse(
+    productOfflineFirstRepository
+)
 
 export const productContainer = {
     repositories: {
@@ -37,6 +41,7 @@ export const productContainer = {
         delete: deletedProductCaseUse,
         checkAProductExistence: checkAProductExistenceCaseUse,
         releaseSoftHold: releaseSoftHoldCaseUse,
-        refreshByIds: refreshProductsByIdsCaseUse
+        refreshByIds: refreshProductsByIdsCaseUse,
+        applyRealtimeSnapshots: applyProductRealtimeSnapshotsCaseUse
     }
 }

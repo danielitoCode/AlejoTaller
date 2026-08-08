@@ -41,14 +41,14 @@ function prim(value: unknown): string {
     }
 }
 
-function toPlainProductDoc(doc: ProductDTO): ProductDTO {
+function toPlainProductDoc(doc: ProductDTO | Record<string, unknown>): ProductDTO {
     const raw = doc as Record<string, unknown>
     const existence = Number(
         raw.existence ?? raw.status ?? raw.Estado ?? raw.stock ?? raw.cantidad ?? 0
     )
     const reserved = Number(raw.reserved ?? raw.reservado ?? 0)
     const plain: Record<string, unknown> = {
-        $id: String(raw.$id ?? ""),
+        $id: String(raw.$id ?? raw.id ?? ""),
         $createdAt: raw.$createdAt ?? null,
         $updatedAt: raw.$updatedAt ?? null,
         name: raw.name ?? "",
@@ -165,6 +165,37 @@ export class ProductOfflineFirstRepository implements ProductRepository {
         }
     }
 
+    /**
+     * Realtime: Appwrite ya envió el documento post-mutación.
+     * Solo normaliza y escribe Dexie — sin red.
+     */
+    async applyLocalSnapshots(rawDocuments: Record<string, unknown>[]): Promise<Product[]> {
+        const updated: Product[] = []
+
+        for (const raw of rawDocuments) {
+            try {
+                const plain = toPlainProductDoc(raw)
+                if (!plain.$id) continue
+                await db.products.put(plain)
+                const product = productFromDTO(plain)
+                updated.push(product)
+                if (import.meta.env.DEV) {
+                    console.info(
+                        `[product][DEV] applyLocalSnapshot id=${product.id} ` +
+                            `ex=${product.existence} rs=${product.reserved} ` +
+                            `av=${product.existence - product.reserved}`
+                    )
+                }
+            } catch (error: unknown) {
+                logger.error(
+                    `[product] applyLocalSnapshot falló: ${formatCaughtError(error)}`
+                )
+            }
+        }
+
+        return updated
+    }
+
     async getByCategory(categoryId: string): Promise<Product[]> {
         try {
             const remote = await this.net.getByCategory(categoryId)
@@ -185,8 +216,6 @@ export class ProductOfflineFirstRepository implements ProductRepository {
     async incrementReserved(id: string, quantity: number): Promise<Product | null> {
         if (quantity <= 0) return this.getById(id)
 
-        // Read remote only to obtain the current existence used as atomic max.
-        // The mutation itself is performed by Appwrite; Dexie is never the authority.
         try {
             const current = await this.net.getById(id)
             const updated = await this.net.incrementReserved(
@@ -205,7 +234,6 @@ export class ProductOfflineFirstRepository implements ProductRepository {
     async decrementReserved(id: string, quantity: number): Promise<Product | null> {
         if (quantity <= 0) return this.getById(id)
 
-        // Release is also server-authoritative and atomic; min=0 is enforced by Appwrite.
         try {
             const updated = await this.net.decrementReserved(id, quantity)
             await db.products.put(toPlainProductDoc(updated))
@@ -239,7 +267,6 @@ export class ProductOfflineFirstRepository implements ProductRepository {
             id
         }
 
-        // Soft-hold / stock-only: payload mínimo (solo reserved / existence)
         const stockOnly =
             Object.keys(product).every((k) => k === "reserved" || k === "existence" || k === "id")
 

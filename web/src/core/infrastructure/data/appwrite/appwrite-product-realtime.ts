@@ -4,16 +4,12 @@ import { ENV } from "../../env";
 import { APPWRITE_COLLECTIONS } from "./public-data-contract";
 
 /**
- * Canal primario de stock (sustituye Pusher stock-updates en Core 1).
+ * Canal primario de stock vía Appwrite Realtime.
  *
- * Contrato de señal (invalidación), no mutación:
- *   { productIds: string[], action: create|update|delete }
- *
- * La UI / casos de uso deben re-leer Appwrite (refreshByIds).
- * El documento completo en el payload de Appwrite se usa solo para logs;
- * no se aplica a cache desde aquí (fuente de verdad = getById remoto).
- *
- * Canal: databases.{DATABASE_ID}.collections.product.documents
+ * El payload del evento ES el documento post-cambio (fuente de verdad).
+ * Señal al dominio:
+ *   { productIds, action, snapshots[] }
+ * Los clientes aplican snapshots al offline-first local — sin re-fetch.
  */
 
 export type AppwriteProductChangeAction = "create" | "update" | "delete" | "unknown";
@@ -21,7 +17,8 @@ export type AppwriteProductChangeAction = "create" | "update" | "delete" | "unkn
 export interface AppwriteProductChangeSignal {
     productIds: string[];
     action: AppwriteProductChangeAction;
-    /** ISO timestamp local de recepción */
+    /** Documentos Appwrite post-mutación (uno por productId, último gana). */
+    snapshots: Record<string, unknown>[];
     timestamp: string;
 }
 
@@ -34,9 +31,9 @@ const LOG = "[appwrite-rt]";
 let activeUnsub: AppwriteProductRealtimeUnsubscribe | null = null;
 let activeHandler: AppwriteProductRealtimeHandler | null = null;
 
-/** Agrupa ids que llegan en ráfaga (p.ej. multi-línea soft-hold). */
 const DEBOUNCE_MS = 280;
-let pendingIds = new Set<string>();
+/** id → último snapshot recibido en la ventana de debounce */
+let pendingById = new Map<string, Record<string, unknown>>();
 let pendingAction: AppwriteProductChangeAction = "update";
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -64,21 +61,23 @@ function extractProductId(payload: Record<string, unknown>): string | null {
 
 function flushPending(): void {
     debounceTimer = null;
-    const ids = [...pendingIds];
+    const snapshots = [...pendingById.values()];
+    const productIds = [...pendingById.keys()];
     const action = pendingAction;
-    pendingIds = new Set();
+    pendingById = new Map();
     pendingAction = "update";
 
-    if (ids.length === 0 || !activeHandler) return;
+    if (productIds.length === 0 || !activeHandler) return;
 
     const signal: AppwriteProductChangeSignal = {
-        productIds: ids,
+        productIds,
         action,
+        snapshots,
         timestamp: new Date().toISOString()
     };
 
     console.info(
-        `${LOG} signal → dominio action=${action} count=${ids.length} ids=${ids.join(",")}`
+        `${LOG} signal → dominio action=${action} count=${productIds.length} ids=${productIds.join(",")} (snapshots locales, sin re-fetch)`
     );
     try {
         activeHandler(signal);
@@ -90,9 +89,12 @@ function flushPending(): void {
     }
 }
 
-function queueSignal(productId: string, action: AppwriteProductChangeAction): void {
-    pendingIds.add(productId);
-    // prioriza delete si aparece en el batch
+function queueSnapshot(
+    productId: string,
+    action: AppwriteProductChangeAction,
+    snapshot: Record<string, unknown>
+): void {
+    pendingById.set(productId, snapshot);
     if (action === "delete" || pendingAction === "unknown") {
         pendingAction = action;
     } else if (pendingAction !== "delete") {
@@ -110,25 +112,20 @@ function onRealtimeMessage(response: RealtimeResponseEvent<Record<string, unknow
     const productId = extractProductId(payload);
 
     if (!productId) {
-        console.warn(`${LOG} evento sin $id — ignorado events=${events.slice(0, 3).join(",")}`);
+        console.warn(`${LOG} evento sin $id — ignorado`);
         return;
     }
 
-    // Log compacto: no volcamos el documento completo ni la lista enorme de events
-    const existence = payload.existence ?? payload.status ?? "?";
+    const existence = payload.existence ?? "?";
     const reserved = payload.reserved ?? "?";
     console.info(
         `${LOG} NOTIFICATION RECEIVED action=${action} productId=${productId} ` +
-            `existence=${existence} reserved=${reserved} (payload solo para log; refresh irá a Appwrite)`
+            `existence=${existence} reserved=${reserved} (aplicará snapshot local)`
     );
 
-    queueSignal(productId, action);
+    queueSnapshot(productId, action, payload);
 }
 
-/**
- * Suscribe al canal de productos.
- * @param onChange callback de dominio (p.ej. refreshByIds). Idempotente: reasigna handler.
- */
 export function startAppwriteProductRealtime(
     onChange?: AppwriteProductRealtimeHandler
 ): AppwriteProductRealtimeUnsubscribe {
@@ -149,7 +146,7 @@ export function startAppwriteProductRealtime(
     const channel = buildProductDocumentsChannel();
     if (!channel) return () => {};
 
-    console.info(`${LOG} subscribe channel=${channel} (canal primario stock)`);
+    console.info(`${LOG} subscribe channel=${channel} (snapshot → offline-first local)`);
 
     try {
         const unsubscribe = client.subscribe(channel, (response) => {
@@ -168,7 +165,7 @@ export function startAppwriteProductRealtime(
                 clearTimeout(debounceTimer);
                 debounceTimer = null;
             }
-            pendingIds = new Set();
+            pendingById = new Map();
             try {
                 unsubscribe();
                 console.info(`${LOG} unsubscribed channel=${channel}`);
@@ -182,7 +179,7 @@ export function startAppwriteProductRealtime(
             }
         };
 
-        console.info(`${LOG} listener activo → dominio vía refreshByIds`);
+        console.info(`${LOG} listener activo → ApplyProductRealtimeSnapshots`);
         return activeUnsub;
     } catch (err) {
         console.error(
