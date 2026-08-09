@@ -1,9 +1,6 @@
 package com.elitec.alejotaller.feature.sale.presentation.screen
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -120,28 +115,13 @@ fun BuyScreen(
                             )
                         }
                     }
-                    /*LazyColumn(
-                        modifier = Modifier.weight(1.45f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(items, key = { it.product.id }) { item ->
-                            CartItemCard(
-                                item = item,
-                                onIncreaseQuantity = onIncreaseQuantity,
-                                onDecreaseQuantity = onDecreaseQuantity,
-                                onRemoveItem = onRemoveItem
-                            )
-                        }
-                    }*/
 
                     Card(
                         modifier = Modifier,
                         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
                     ) {
                         Column(
-                            modifier = Modifier
-                                //.fillMaxWidth()
-                                .padding(18.dp),
+                            modifier = Modifier.padding(18.dp),
                             verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
                             Text(
@@ -162,7 +142,7 @@ fun BuyScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = onConfirmClick,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)//.fillMaxWidth()
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
                             ) {
                                 Text(text = "Continuar")
                             }
@@ -207,14 +187,16 @@ private fun CartItemCard(
     onDecreaseQuantity: (String) -> Unit,
     onRemoveItem: (String) -> Unit
 ) {
+    val max = item.product.availableStock()
+    val atMax = item.quantity >= max
+
     Card(
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(5.dp),
-            modifier = Modifier
-                .padding(12.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
@@ -225,7 +207,9 @@ private fun CartItemCard(
                 placeholder = painterResource(R.drawable.image),
                 error = painterResource(R.drawable.errorimage),
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
             )
             Text(
                 fontWeight = FontWeight.SemiBold,
@@ -254,6 +238,19 @@ private fun CartItemCard(
                     style = MaterialTheme.typography.titleMedium
                 )
             }
+            Text(
+                text = when {
+                    max <= 0 -> "Sin stock"
+                    atMax -> "Máximo alcanzado · $max"
+                    else -> "Disponibles: $max"
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = when {
+                    max <= 0 -> MaterialTheme.colorScheme.error
+                    atMax -> MaterialTheme.colorScheme.tertiary
+                    else -> MaterialTheme.colorScheme.secondary
+                }
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -274,8 +271,10 @@ private fun CartItemCard(
                         )
                     }
                     OutlinedButton(
+                        enabled = !atMax && max > 0,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF57965C).copy(alpha = 0.7f)
+                            containerColor = Color(0xFF57965C).copy(alpha = 0.7f),
+                            disabledContainerColor = Color(0xFF57965C).copy(alpha = 0.25f)
                         ),
                         onClick = { onIncreaseQuantity(item.product.id) }
                     ) {
@@ -306,7 +305,6 @@ private fun CartItemCard(
                     }
                 }
             }
-
         }
     }
 }
@@ -323,9 +321,11 @@ private fun BuyScreenPreview() {
                 332.2,
                 "photo url 1",
                 "categoryId",
-                4.3
+                4.3,
+                existence = 4,
+                reserved = 0
             ),
-            5
+            2
         ),
         UiSaleItem(
             Product(
@@ -335,9 +335,11 @@ private fun BuyScreenPreview() {
                 332.2,
                 "photo url 2",
                 "categoryId",
-                4.7
+                4.7,
+                existence = 3,
+                reserved = 1
             ),
-            3
+            2
         ),
     )
     val totalAmount = remember { salesUIState.sumOf { it.product.price * it.quantity } }
