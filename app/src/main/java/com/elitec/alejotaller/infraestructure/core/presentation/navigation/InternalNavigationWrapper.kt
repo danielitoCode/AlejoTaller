@@ -42,6 +42,7 @@ import com.elitec.alejotaller.feature.product.presentation.model.UiSaleItem
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailScreen
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductDetailsPlaceholder
 import com.elitec.alejotaller.feature.product.presentation.screen.ProductScreen
+import com.elitec.alejotaller.feature.product.presentation.viewmodel.CartQtyResult
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ShopCartViewModel
 import com.elitec.alejotaller.feature.sale.presentation.screen.BuyConfirmScreen
@@ -136,6 +137,22 @@ fun InternalNavigationWrapper(
     // AUTH_POLICY: visitors do not require a clear profile to enter the shell
     val profileHydrated = isGuest || hasAttemptedProfileHydration || profileInfo != null
 
+    fun reportCartQtyResult(result: CartQtyResult) {
+        when (result) {
+            is CartQtyResult.Fail -> when (result.reason) {
+                CartQtyResult.Reason.OUT_OF_STOCK ->
+                    toasterViewModel.showMessage("Sin stock disponible", ToastType.Error)
+                CartQtyResult.Reason.NOT_FOUND -> Unit
+            }
+            is CartQtyResult.Ok -> if (result.clamped) {
+                toasterViewModel.showMessage(
+                    "Solo hay ${result.max} disponibles",
+                    ToastType.Warning
+                )
+            }
+        }
+    }
+
     LaunchedEffect(userId, productsHydrated) {
         if (productsHydrated) {
             hasAttemptedProductHydration = true
@@ -157,9 +174,15 @@ fun InternalNavigationWrapper(
         )
     }
 
+    // Paridad web refreshProductStock: al sincronizar / RT, re-aplicar topes del carrito
+    LaunchedEffect(products) {
+        if (products.isNotEmpty()) {
+            shopCartViewModel.refreshProductStock(products)
+        }
+    }
+
     LaunchedEffect(userId, profileInfo, isGuest) {
         if (isGuest) {
-            // Visitors: mark hydrated without requiring clear profile; do not bounce to Landing
             hasAttemptedProfileHydration = true
             return@LaunchedEffect
         }
@@ -180,7 +203,6 @@ fun InternalNavigationWrapper(
         )
     }
 
-    // AUTH_POLICY: no private sale sync for visitors
     LaunchedEffect(userId, isGuest) {
         if (!isGuest && userId.isNotBlank() && !hasPerformedInitialSaleSync) {
             hasPerformedInitialSaleSync = true
@@ -265,14 +287,12 @@ fun InternalNavigationWrapper(
         FabMenuItem("Ajustes", Icons.Default.Settings, InternalRoutesKey.Settings),
         FabMenuItem("Cerrar Sesión", Icons.Default.Logout, InternalRoutesKey.Logout)
     )
-    // AUTH_POLICY: visitors only see catalog (productos). Protected destinations stay hidden.
     val fabItems = if (isGuest) {
         allFabItems.filter { it.route == InternalRoutesKey.Home }
     } else {
         allFabItems
     }
 
-    // AUTH_POLICY: guests only wait for products; authenticated still need profile
     val showShellLoading = if (isGuest) {
         !productsHydrated
     } else {
@@ -284,7 +304,6 @@ fun InternalNavigationWrapper(
         return
     }
 
-    // For guests profileInfo may be null — still render catalog shell
     val canRenderShell = isGuest || profileInfo != null
 
     if (canRenderShell) {
@@ -369,7 +388,14 @@ fun InternalNavigationWrapper(
                                         ToastType.Warning
                                     )
                                 } else {
-                                    shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
+                                    val result = shopCartViewModel.addProductToACart(resolvedProduct!!, 1)
+                                    reportCartQtyResult(result)
+                                    if (result is CartQtyResult.Ok && !result.clamped) {
+                                        toasterViewModel.showMessage(
+                                            "Añadido al carrito",
+                                            ToastType.Success
+                                        )
+                                    }
                                 }
                             }
                         )
@@ -400,7 +426,11 @@ fun InternalNavigationWrapper(
                         totalAmount = shopCartViewModel.getTotalAmount(),
                         onIncreaseQuantity = { productId ->
                             cartItems.firstOrNull { it.product.id == productId }?.let { item ->
-                                shopCartViewModel.updateProductQuantity(productId, item.quantity + 1)
+                                val result = shopCartViewModel.updateProductQuantity(
+                                    productId,
+                                    item.quantity + 1
+                                )
+                                reportCartQtyResult(result)
                             }
                         },
                         onDecreaseQuantity = { productId ->
