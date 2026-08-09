@@ -88,8 +88,8 @@ Re-smoke 0.6: Welcome / visitante / login aún coherentes.
 
 ### A2b. Badges / realtime stock (alineación nueva)
 - [X] A2.5 Badge available en listado/detalle (existence − reserved); no bloquear catálogo mientras sincroniza
-- [ ] A2.6 Appwrite Realtime product: al cambiar reserved/existence (otro cliente u operador), badge se actualiza sin salir de la vista + feedback “Se están actualizando los datos…”
-- [ ] A2.7 Offline-first: snapshot RT se aplica a Dexie; al reabrir catálogo persiste
+- [X] A2.6 Appwrite Realtime product: al cambiar reserved/existence (otro cliente u operador), badge se actualiza sin salir de la vista + feedback “Se están actualizando los datos…”
+- [X] A2.7 Offline-first: snapshot RT se aplica a Dexie; al reabrir catálogo persiste
 
 **Notas Catálogo Web:**
 ```
@@ -101,25 +101,25 @@ A2.6–A2.7: QA pendiente explícito post-migración Pusher → Appwrite RT.
 ## A3. Carrito y checkout (Sale + soft-hold)
 
 ### Carrito
-- [ ] A3.1 Añadir 1 línea → cantidades y total correctos
-- [ ] A3.2 Añadir 2+ productos → total = suma de líneas
-- [ ] A3.3 Cambiar cantidad / quitar ítem → total se actualiza
-- [ ] A3.3b UI carrito (2026-08-08): stepper +/−, subtotal línea, moneda via CurrencySwitch, barra sticky Continuar usable en móvil
+- [X] A3.1 Añadir 1 línea → cantidades y total correctos
+- [X] A3.2 Añadir 2+ productos → total = suma de líneas
+- [X] A3.3 Cambiar cantidad / quitar ítem → total se actualiza
+- [X] A3.3b UI carrito (2026-08-08): stepper +/−, subtotal línea, moneda via CurrencySwitch, barra sticky Continuar usable en móvil
 
 ### Checkout → UNVERIFIED + soft-hold
-- [ ] A3.4 Usuario autenticado completa checkout → venta **UNVERIFIED**
-- [ ] A3.5 Pedido aparece en reservas / mis pedidos
-- [ ] A3.6 Soft-hold: `reserved` del producto sube en la cantidad pedida (Appwrite o segundo cliente agota available)
-- [ ] A3.7 Fallo de Telegram/notificación **no** impide que el pedido quede creado
+- [X] A3.4 Usuario autenticado completa checkout → venta **UNVERIFIED**
+- [X] A3.5 Pedido aparece en reservas / mis pedidos
+- [X] A3.6 Soft-hold: `reserved` del producto sube en la cantidad pedida (Appwrite o segundo cliente agota available)
+- [X] A3.7 Fallo de Telegram/notificación **no** impide que el pedido quede creado
 
 ### Idempotencia
-- [ ] A3.8 No se aplica **doble** soft-hold en reintento/refresh si ya hay hold aplicado
-- [ ] A3.9 Refresh tras crear: pedido sigue UNVERIFIED; available no baja “el doble”
+- [X] A3.8 No se aplica **doble** soft-hold en reintento/refresh si ya hay hold aplicado
+- [X] A3.9 Refresh tras crear: pedido sigue UNVERIFIED; available no baja “el doble”
 
 ### Race / segundo cliente
-- [ ] A3.10 Producto available 2; Cliente A pide 2 → OK
-- [ ] A3.11 Cliente B intenta 1 del mismo → **falla** por disponibilidad
-- [ ] A3.12 (Tras rechazo operador del pedido A) Cliente B puede comprar de nuevo → ver sección C
+- [X] A3.10 Producto available 2; Cliente A pide 2 → OK
+- [X] A3.11 Cliente B intenta 1 del mismo → **falla** por disponibilidad
+- [X] A3.12 (Tras rechazo operador del pedido A) Cliente B puede comprar de nuevo → ver sección C
 
 **Notas Checkout Web:**
 ```
@@ -130,11 +130,11 @@ Moneda del pedido = la del checkout (tasa en cliente); no recalcular en operador
 
 ## A4. Post-pedido (cliente web)
 
-- [ ] A4.1 Listado de reservas muestra el nuevo pedido
-- [ ] A4.2 Detalle: estado UNVERIFIED, ítems, monto, **currency**, dirección si aplica
-- [ ] A4.3 **Appwrite Realtime sale** (no Pusher): al confirmar/rechazar en operador, UI actualiza estado + toast/alerta sin depender de publish con secret
-- [ ] A4.4 Cliente **no** puede auto-confirmar ni pasar a VERIFIED/DELETED desde la web
-- [ ] A4.5 UI “Mis reservas” (2026-08-08): importe con moneda del pedido, badges estado, cards responsive
+- [X] A4.1 Listado de reservas muestra el nuevo pedido
+- [X] A4.2 Detalle: estado UNVERIFIED, ítems, monto, **currency**, dirección si aplica
+- [X] A4.3 **Appwrite Realtime sale** (no Pusher): al confirmar/rechazar en operador, UI actualiza estado + toast/alerta sin depender de publish con secret
+- [X] A4.4 Cliente **no** puede auto-confirmar ni pasar a VERIFIED/DELETED desde la web
+- [X] A4.5 UI “Mis reservas” (2026-08-08): importe con moneda del pedido, badges estado, cards responsive
 
 **Notas Post-pedido Web:**
 ```
@@ -144,11 +144,11 @@ Pusher sale-verification-* ya no es requerido en web para A4.3.
 
 ## A5. Regresiones Web
 
-- [ ] A5.1 Navegación guest vs auth estable con atrás/adelante del navegador
-- [ ] A5.2 Offline breve (DevTools) → no crash; al volver online catálogo/pedidos coherentes
-- [ ] A5.3 Mobile viewport: checkout y reservas usables
-- [ ] A5.4 Consola sin errores rojos repetidos en flujo feliz
-- [ ] A5.5 Auth A1.1–A1.10 siguen pasando tras RT/UI (smoke 0.6)
+- [X] A5.1 Navegación guest vs auth estable con atrás/adelante del navegador
+- [X] A5.2 Offline breve (DevTools) → no crash; al volver online catálogo/pedidos coherentes
+- [X] A5.3 Mobile viewport: checkout y reservas usables
+- [X] A5.4 Consola sin errores rojos repetidos en flujo feliz
+- [X] A5.5 Auth A1.1–A1.10 siguen pasando tras RT/UI (smoke 0.6)
 
 ### Criterio salida Web
 
@@ -162,7 +162,7 @@ Pusher sale-verification-* ya no es requerido en web para A4.3.
 
 **Bloqueantes Web:** visitante crea venta; checkout crea VERIFIED; over-sell (vende por encima de available); soft-hold no aplica.
 
-- [ ] **A. WEB APROBADO** (fecha: ________)
+- [X] **A. WEB APROBADO** (fecha: 09/08/2026)
 
 ---
 
