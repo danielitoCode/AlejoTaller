@@ -55,8 +55,8 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
-import com.elitec.alejotaller.feature.notification.domain.entity.Promotion
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
+import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 import kotlinx.coroutines.delay
 
 @Composable
@@ -226,7 +226,7 @@ private fun ProductScreenContent(
             value = searchQuery,
             onValueChange = onSearchQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.search_products, defaultValue = "Buscar")) },
+            placeholder = { Text("Buscar") },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {

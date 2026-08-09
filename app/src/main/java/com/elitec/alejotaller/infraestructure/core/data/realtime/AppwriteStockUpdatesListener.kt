@@ -2,11 +2,12 @@ package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
 import com.elitec.alejotaller.BuildConfig
-import com.elitec.alejotaller.feature.product.domain.realtime.StockChangedPayload
-import com.elitec.alejotaller.feature.product.domain.realtime.StockUpdatesListener
+import com.elitec.shared.core.feature.product.domain.realtime.StockChangedPayload
+import com.elitec.shared.core.feature.product.domain.realtime.StockUpdatesListener
 import io.appwrite.Client
-import io.appwrite.models.RealtimeResponse
+import io.appwrite.models.RealtimeResponseEvent
 import io.appwrite.models.RealtimeSubscription
+import io.appwrite.services.Realtime
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -35,9 +36,10 @@ class AppwriteStockUpdatesListener(
         val channel = "databases.$databaseId.collections.$collectionId.documents"
         Log.i(TAG, "event=stock_rt_subscribe channel=$channel")
 
+        val realtime = Realtime(client)
         val subscription = try {
-            client.subscribe(listOf(channel)) { response ->
-                handleResponse(response, onEvent)
+            realtime.subscribe(channel) { event ->
+                handleResponse(event, onEvent)
             }
         } catch (error: Throwable) {
             Log.e(TAG, "event=stock_rt_subscribe_failed cause=${error.message}", error)
@@ -54,11 +56,11 @@ class AppwriteStockUpdatesListener(
     }
 
     private fun handleResponse(
-        response: RealtimeResponse,
+        event: RealtimeResponseEvent<Any>,
         onEvent: (StockChangedPayload) -> Unit
     ) {
-        val events = response.events.orEmpty()
-        val payloadAny = response.payload
+        val events = event.events
+        val payloadAny = event.payload
         val map = payloadToMap(payloadAny) ?: run {
             Log.w(TAG, "event=stock_rt_ignored reason=no_payload events=$events")
             return

@@ -1,8 +1,8 @@
 package com.elitec.alejotaller.infraestructure.core.data.realtime
 
 import android.util.Log
-import com.elitec.alejotaller.feature.product.domain.realtime.StockChangedPayload
-import com.elitec.alejotaller.feature.product.domain.realtime.StockUpdatesListener
+import com.elitec.shared.core.feature.product.domain.realtime.StockChangedPayload
+import com.elitec.shared.core.feature.product.domain.realtime.StockUpdatesListener
 import org.json.JSONArray
 import org.json.JSONObject
 

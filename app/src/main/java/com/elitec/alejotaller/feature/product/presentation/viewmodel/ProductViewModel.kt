@@ -9,8 +9,8 @@ import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCase
 import com.elitec.alejotaller.feature.product.domain.caseUse.RefreshProductsByIdsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
 import com.elitec.alejotaller.feature.product.domain.entity.Product
-import com.elitec.alejotaller.feature.product.domain.realtime.StockChangedPayload
-import com.elitec.alejotaller.feature.product.domain.realtime.StockUpdatesListener
+import com.elitec.shared.core.feature.product.domain.realtime.StockChangedPayload
+import com.elitec.shared.core.feature.product.domain.realtime.StockUpdatesListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow

@@ -10,7 +10,7 @@ import com.elitec.alejotaller.feature.product.domain.caseUse.ObserveProductsCase
 import com.elitec.alejotaller.feature.product.domain.caseUse.RefreshProductsByIdsCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.ReleaseSoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.caseUse.SyncProductCaseUse
-import com.elitec.alejotaller.feature.product.domain.realtime.StockUpdatesListener
+import com.elitec.shared.core.feature.product.domain.realtime.StockUpdatesListener
 import com.elitec.alejotaller.feature.product.domain.repository.ProductNetRepository
 import com.elitec.alejotaller.feature.product.domain.repository.ProductRepository
 import com.elitec.alejotaller.feature.product.presentation.viewmodel.ProductViewModel

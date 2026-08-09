@@ -9,6 +9,7 @@ import com.elitec.shared.sale.feature.sale.domain.realtime.RealtimeSyncGateway
 import com.elitec.shared.sale.feature.sale.domain.realtime.SaleRealtimeEvent
 import io.appwrite.Client
 import io.appwrite.models.RealtimeSubscription
+import io.appwrite.services.Realtime
 
 /**
  * Realtime híbrido:
@@ -39,10 +40,11 @@ class RealTimeManagerImpl(
             val channel = "databases.$databaseId.collections.$saleCollectionId.documents"
             Log.i(TAG, "event=sale_rt_subscribe channel=$channel userId=$userId")
 
+            val realtime = Realtime(client)
             runCatching {
                 saleSubscription?.close()
-                saleSubscription = client.subscribe(listOf(channel)) { response ->
-                    handleSaleRealtime(response.events.orEmpty(), response.payload, userId, onSaleEvent)
+                saleSubscription = realtime.subscribe(channel) { response ->
+                    handleSaleRealtime(response.events.toList(), response.payload, userId, onSaleEvent)
                 }
                 onConnect()
             }.onFailure { error ->

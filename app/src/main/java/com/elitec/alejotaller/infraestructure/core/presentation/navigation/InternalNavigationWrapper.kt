@@ -316,7 +316,7 @@ fun InternalNavigationWrapper(
                             productViewModel.onSearchQueryChanged(query)
                         },
                         onCategorySelected = { category ->
-                            productViewModel.onCategorySelected(category)
+                            productViewModel.onCategorySelected(category?.id)
                         },
                         onPromotionClick = { promotionId ->
                             backStack.navigateTo(InternalRoutesKey.PromotionDetail(promotionId))
