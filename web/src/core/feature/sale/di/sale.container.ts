@@ -11,9 +11,9 @@ import { SessionSaleNotificationUserProvider } from "../data/repository/SessionS
 import { TelegramNotificatorImpl } from "../data/repository/TelegramNotificatorImpl";
 import {productContainer} from "../../product/di/product.container";
 
-const netDatabases= infrastructureContainer.appwrite.databases
+const netTablesDB = infrastructureContainer.appwrite.tablesDB
 
-const saleNetRepository = new SaleNetRepository(netDatabases)
+const saleNetRepository = new SaleNetRepository(netTablesDB)
 const saleOfflineFirstRepository = new SaleOfflineFirstRepository(saleNetRepository)
 const saleNotificationUserProvider = new SessionSaleNotificationUserProvider(
     () => infrastructureContainer.appwrite.account.get()
