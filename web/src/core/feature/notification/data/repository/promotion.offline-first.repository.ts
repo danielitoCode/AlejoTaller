@@ -2,7 +2,7 @@ import {PromotionNetRepository} from "./promotion.net.repository";
 import type {PromotionRepository} from "../../domain/repository/PromotionRepository";
 import type {Promotion} from "../../domain/entity/Promotion";
 import {db} from "../../../../infrastructure/di/dexie.db";
-import {promotionFromDTO, promotionToDTO} from "../mapper/Mappers";
+import {promotionFromDTO} from "../mapper/Mappers";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 
 export class PromotionOfflineFirstRepository implements PromotionRepository {
