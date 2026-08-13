@@ -18,11 +18,8 @@
     export let searchQuery: string = "";
     export let selectedCategoryId: string | null = null;
     export let loading: boolean = false;
-    /** true mientras se refresca stock desde Appwrite — badges en estado neutro */
     export let stockSyncing: boolean = false;
-    /** true si el sync viene de señal realtime stock:changed */
     export let realtimeUpdating: boolean = false;
-    /** texto del banner de sincronización */
     export let syncMessage: string | null = null;
     export let onSearchQueryChanged: (query: string) => void = () => {};
     export let onCategorySelected: (categoryId: string | null) => void = () => {};
@@ -31,33 +28,71 @@
     export let onFavoriteClick: (productId: string) => void = () => {};
     $: exchangeState = $exchangeStore;
 
-    let isPromoVisible = false;
+    const DISMISS_KEY = "alejo-web-dismissed-promos";
+
+    function readDismissed(): Set<string> {
+        try {
+            const raw = sessionStorage.getItem(DISMISS_KEY);
+            if (!raw) return new Set();
+            const arr = JSON.parse(raw);
+            return new Set(Array.isArray(arr) ? arr.map(String) : []);
+        } catch {
+            return new Set();
+        }
+    }
+
+    function writeDismissed(ids: Set<string>): void {
+        try {
+            sessionStorage.setItem(DISMISS_KEY, JSON.stringify([...ids]));
+        } catch {
+            /* ignore */
+        }
+    }
+
+    let dismissedIds = readDismissed();
+    let isPromoVisible = true;
+
+    function dismissPromo(id: string): void {
+        dismissedIds = new Set(dismissedIds);
+        dismissedIds.add(id);
+        writeDismissed(dismissedIds);
+        isPromoVisible = false;
+    }
 
     $: filteredProducts = products
         .filter((product) => {
             const matchesSearch =
                 product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 product.description?.toLowerCase().includes(searchQuery.toLowerCase());
-
             const matchesCategory =
                 !selectedCategoryId || product.categoryId === selectedCategoryId;
-
             return matchesSearch && matchesCategory;
         })
-        .map((product) => {
-            return {
-                ...product,
-                displayPrice: formatMoney(product.price, exchangeState)
-            };
+        .map((product) => ({
+            ...product,
+            displayPrice: formatMoney(product.price, exchangeState),
+        }));
+
+    $: activePromotion = (() => {
+        const now = Date.now();
+        const list = promotions.filter((p) => {
+            if (dismissedIds.has(p.id)) return false;
+            const from = Number(p.validFromEpochMillis) || 0;
+            const until = Number(p.validUntilEpochMillis) || Number.MAX_SAFE_INTEGER;
+            return now >= from && now <= until;
         });
+        const banners = list.filter(
+            (p) => !p.productId || String(p.productId).trim() === "" || p.kind === "banner"
+        );
+        const discounts = list.filter(
+            (p) => p.productId && String(p.productId).trim() !== "" && p.kind !== "banner"
+        );
+        return banners[0] ?? discounts[0] ?? null;
+    })();
 
-    const testPromotion = {
-        id: "promo-local-test",
-        title: "Diagnostico y montaje",
-        message: "Promocion visual de prueba con recursos locales del proyecto"
-    };
-
-    $: activePromotion = promotions.length > 0 ? promotions[0] : testPromotion;
+    $: if (activePromotion) {
+        isPromoVisible = true;
+    }
 </script>
 
 <div class="product-screen">
@@ -71,41 +106,41 @@
                     onClearQuery={() => onSearchQueryChanged("")}
                 />
             </div>
+        </div>
 
-            {#if isPromoVisible && activePromotion}
+        {#if isPromoVisible && activePromotion}
+            <div
+                class="promo-banner"
+                role="region"
+                aria-label="Promoción"
+                transition:fly={{ y: -12, duration: 220 }}
+            >
                 <button
-                    class="promo-inline"
+                    class="promo-banner-main"
                     type="button"
-                    aria-label="Ver promocion"
-                    in:fly={{ y: -16, duration: 220, opacity: 0.2 }}
+                    aria-label="Ver promoción"
                     on:click={() => onPromotionClick(activePromotion.id)}
                 >
-                    <img class="promo-image" src={promoImage} alt="" />
-                    <span class="promo-copy">
+                    <img
+                        class="promo-banner-img"
+                        src={activePromotion.imageUrl || promoImage}
+                        alt=""
+                    />
+                    <span class="promo-banner-copy">
                         <strong>{activePromotion.title || "Promo activa"}</strong>
                         <small>{activePromotion.message || "Oferta disponible por tiempo limitado"}</small>
                     </span>
-                    <span
-                        class="promo-close"
-                        role="button"
-                        tabindex="0"
-                        aria-label="Cerrar promocion"
-                        on:click={(e) => {
-                            e.stopPropagation();
-                            isPromoVisible = false;
-                        }}
-                        on:keydown={(e) => {
-                            if (e.key === "Enter") {
-                                e.stopPropagation();
-                                isPromoVisible = false;
-                            }
-                        }}
-                    >
-                        <Icon icon={closeIcon} />
-                    </span>
                 </button>
-            {/if}
-        </div>
+                <button
+                    class="promo-banner-close"
+                    type="button"
+                    aria-label="Cerrar promoción"
+                    on:click={() => dismissPromo(activePromotion.id)}
+                >
+                    <Icon icon={closeIcon} />
+                </button>
+            </div>
+        {/if}
 
         {#if stockSyncing || realtimeUpdating}
             <div
@@ -170,21 +205,14 @@
                 {/if}
                 <div class="products-grid">
                     {#each filteredProducts as product, index (product.id)}
-                        <div
-                                transition:fly={{
-                                    y: 16,
-                                    duration: 250,
-                                    delay: index * 25
-                                }}
-                        >
+                        <div transition:fly={{ y: 16, duration: 250, delay: index * 25 }}>
                             <ProductCard
-                                    {product}
-                                    stockPending={stockSyncing}
-                                    onClick={() => onProductClick(product.id)}
-                                    onFavoriteClick={() => onFavoriteClick(product.id)}
+                                {product}
+                                stockPending={stockSyncing}
+                                onClick={() => onProductClick(product.id)}
+                                onFavoriteClick={() => onFavoriteClick(product.id)}
                             />
                         </div>
-
                     {/each}
                 </div>
             {/if}
@@ -199,14 +227,11 @@
         box-sizing: border-box;
         height: 100%;
         min-height: 0;
-        background:
-                linear-gradient(
-                        180deg,
-                        var(--md-sys-color-surface-container-low)
-                        0%,
-                        var(--md-sys-color-background)
-                        25%
-                );
+        background: linear-gradient(
+            180deg,
+            var(--md-sys-color-surface-container-low) 0%,
+            var(--md-sys-color-background) 25%
+        );
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -219,7 +244,7 @@
         min-height: 0;
         overflow: hidden;
         display: grid;
-        grid-template-rows: auto auto auto auto minmax(0, 1fr);
+        grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
         gap: 16px;
         padding: 0;
     }
@@ -242,16 +267,8 @@
         z-index: 20;
         padding-top: 16px;
         backdrop-filter: blur(20px);
-        background:
-                color-mix(
-                        in srgb,
-                        var(--md-sys-color-background)
-                        85%,
-                        transparent
-                );
-        border-bottom:
-                1px solid
-                var(--md-sys-color-outline-variant);
+        background: color-mix(in srgb, var(--md-sys-color-background) 85%, transparent);
+        border-bottom: 1px solid var(--md-sys-color-outline-variant);
     }
 
     .search-section {
@@ -259,6 +276,90 @@
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
+    }
+
+    .promo-banner {
+        margin: 0 16px;
+        flex-shrink: 0;
+        height: 64px;
+        max-height: 64px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: stretch;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 28%, var(--md-sys-color-outline-variant));
+        background: linear-gradient(
+            105deg,
+            color-mix(in srgb, var(--md-sys-color-primary-container) 88%, transparent) 0%,
+            color-mix(in srgb, var(--md-sys-color-tertiary-container) 55%, transparent) 100%
+        );
+        box-shadow: 0 8px 22px color-mix(in srgb, black 10%, transparent);
+    }
+
+    .promo-banner-main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .promo-banner-img {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: color-mix(in srgb, var(--md-sys-color-surface) 40%, transparent);
+    }
+
+    .promo-banner-copy {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+    }
+
+    .promo-banner-copy strong,
+    .promo-banner-copy small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .promo-banner-copy strong {
+        font-size: 0.9rem;
+        font-weight: 800;
+        line-height: 1.15;
+    }
+
+    .promo-banner-copy small {
+        font-size: 0.76rem;
+        opacity: 0.88;
+        color: var(--md-sys-color-on-surface-variant, inherit);
+    }
+
+    .promo-banner-close {
+        width: 44px;
+        flex-shrink: 0;
+        border: none;
+        border-left: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
+        background: color-mix(in srgb, var(--md-sys-color-surface) 35%, transparent);
+        color: inherit;
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+    }
+
+    .promo-banner-close:hover {
+        background: color-mix(in srgb, var(--md-sys-color-surface) 55%, transparent);
     }
 
     .stock-sync-banner {
@@ -305,7 +406,9 @@
     }
 
     @keyframes stock-spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .featured-strip {
@@ -313,7 +416,7 @@
         align-items: center;
         gap: 12px;
         margin-bottom: 18px;
-        font-size: .9rem;
+        font-size: 0.9rem;
         font-weight: 700;
         color: var(--md-sys-color-primary);
     }
@@ -331,67 +434,12 @@
         min-width: 0;
         box-sizing: border-box;
         overflow-x: hidden;
-        scroll-behavior: smooth;
         min-height: 0;
         height: 100%;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         -webkit-overflow-scrolling: touch;
         padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px));
-    }
-
-    .promo-inline {
-        min-height: 110px;
-        border-radius: 28px;
-        overflow: hidden;
-        position: relative;
-        box-shadow: 0 12px 32px rgba(0,0,0,.18);
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-
-    .promo-inline:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 20px 42px rgba(0,0,0,.22);
-    }
-
-    .promo-image,
-    .promo-close {
-        width: 34px;
-        height: 34px;
-        border-radius: 999px;
-        object-fit: cover;
-        display: block;
-        background: color-mix(in srgb, var(--md-sys-color-on-tertiary-container) 12%, transparent);
-    }
-
-    .promo-close {
-        display: grid;
-        place-items: center;
-        background: color-mix(in srgb, var(--md-sys-color-on-tertiary-container) 8%, transparent);
-    }
-
-    .promo-copy {
-        min-width: 0;
-        display: grid;
-        gap: 2px;
-        text-align: left;
-    }
-
-    .promo-copy strong,
-    .promo-copy small {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .promo-copy strong {
-        font-size: 0.9rem;
-        line-height: 1.1;
-    }
-
-    .promo-copy small {
-        font-size: 0.76rem;
-        opacity: 0.84;
     }
 
     .category-section {
@@ -403,32 +451,12 @@
         top: 84px;
         z-index: 15;
         backdrop-filter: blur(20px);
-        background:
-                color-mix(
-                        in srgb,
-                        var(--md-sys-color-background)
-                        92%,
-                        transparent
-                );
+        background: color-mix(in srgb, var(--md-sys-color-background) 92%, transparent);
         padding-top: 8px;
         padding-bottom: 8px;
     }
 
-    .loading-container {
-        min-height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        padding: 32px;
-    }
-
-    .loading-container p {
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 0.95rem;
-    }
-
+    .loading-container,
     .empty-state {
         min-height: 100%;
         display: flex;
@@ -436,28 +464,13 @@
         align-items: center;
         justify-content: center;
         gap: 16px;
-        padding: 40px 32px;
+        padding: 32px;
         text-align: center;
     }
 
     .empty-icon {
         font-size: 48px;
         opacity: 0.4;
-    }
-
-    .empty-state h3 {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: var(--md-sys-color-on-surface-variant);
-        margin: 0;
-    }
-
-    .empty-state p {
-        font-size: 0.9rem;
-        color: var(--md-sys-color-on-surface-variant);
-        margin: 0;
-        max-width: 300px;
-        opacity: 0.6;
     }
 
     .products-grid {
@@ -478,42 +491,23 @@
         box-sizing: border-box;
     }
 
-    @media (min-width: 1200px) {
-        .products-grid {
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        }
-    }
-
     @media (max-width: 768px) {
         .screen-content {
             gap: 12px;
         }
-
         .exchange-section {
             padding: 0 12px;
         }
-
+        .promo-banner,
         .stock-sync-banner {
             margin: 0 12px;
         }
-
-        .top-row {
-            padding: 12px 12px 0;
-            grid-template-columns: 1fr;
-        }
-
         .products-region {
             padding: 0 12px calc(128px + env(safe-area-inset-bottom, 0px));
         }
-
         .products-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 12px;
-        }
-
-        .category-section {
-            padding-left: 12px;
-            padding-right: 12px;
         }
     }
 
@@ -521,38 +515,16 @@
         .screen-content {
             gap: 6px;
         }
-
-        .exchange-section {
-            padding: 0 8px;
-            display: flex;
-            justify-content: flex-start;
-        }
-
+        .promo-banner,
         .stock-sync-banner {
             margin: 0 8px;
-            padding: 10px 12px;
         }
-
-        .top-row {
-            padding: 6px 8px 0;
-            border-bottom-color: transparent;
-        }
-
         .products-region {
             padding: 0 8px calc(128px + env(safe-area-inset-bottom, 0px));
         }
-
         .products-grid {
-            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 12px;
-        }
-
-        .category-section {
-            top: 56px;
-            padding-top: 6px;
-            padding-left: 8px;
-            padding-right: 8px;
         }
     }
 </style>
