@@ -680,8 +680,15 @@
         min-height: 0;
         height: 100%;
         display: grid;
-        align-content: start;
+        align-content: stretch;
+        align-items: stretch;
         overflow: hidden;
+    }
+
+    .route-stage > :global(*) {
+        min-height: 0;
+        height: 100%;
+        max-height: 100%;
     }
 
     .route-stage.route-stage-scroll {
