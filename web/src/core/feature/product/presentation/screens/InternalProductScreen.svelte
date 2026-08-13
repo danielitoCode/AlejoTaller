@@ -27,7 +27,6 @@
     let showAuthOverlay = false;
 
     let products: any[] = [];
-    let promotions: any[] = [];
     let categories: any[] = [];
 
     $: isLoading = $productStore.loading && products.length === 0;
@@ -49,9 +48,7 @@
     const unsubscribeProducts = productStore.subscribe((state) => {
         products = state.items;
         resolvePendingProduct();
-        if (state.items.length > 0) {
-            cartStore.refreshProductStock(state.items);
-        }
+        if (state.items.length > 0) cartStore.refreshProductStock(state.items);
         if (selectedProduct) {
             const updated = products.find((p) => p.id === selectedProduct.id);
             if (updated) selectedProduct = updated;
@@ -60,7 +57,6 @@
     });
 
     let knownPromoIds: Set<string> | null = null;
-
     const unsubscribePromotions = promotionStore.subscribe((state) => {
         const nextIds = state.items.map((p) => p.id);
         if (knownPromoIds === null) {
@@ -68,19 +64,11 @@
         } else {
             for (const p of state.items) {
                 if (!knownPromoIds.has(p.id)) {
-                    toastStore.promo(
-                        p.title ? `Nueva promo: ${p.title}` : "Hay una nueva promoción disponible"
-                    );
-                    try {
-                        sessionStorage.removeItem("alejo-web-dismissed-promos");
-                    } catch {
-                        /* ignore */
-                    }
+                    toastStore.promo(p.title ? `Nueva promo: ${p.title}` : "Hay una nueva promoción disponible");
                 }
             }
             knownPromoIds = new Set(nextIds);
         }
-        promotions = state.items;
     });
 
     const unsubscribeCategories = categoryStore.subscribe((state) => {
@@ -119,17 +107,6 @@
     const handleProductClick = (productId: string) => {
         const product = products.find((p) => p.id === productId);
         if (product) selectedProduct = product;
-    };
-    const handlePromotionClick = (promotionId: string) => {
-        const promo = promotions.find((p) => p.id === promotionId);
-        if (promo?.productId) {
-            const product = products.find((p) => p.id === promo.productId);
-            if (product) {
-                selectedProduct = product;
-                return;
-            }
-        }
-        toastStore.info(promo?.message || "Promoción activa");
     };
     const handleFavoriteClick = (_productId: string) => {};
 
@@ -192,7 +169,6 @@
         <div class="list-layer" transition:fade={{ duration: 160 }}>
             <ProductScreen
                 {products}
-                {promotions}
                 {categories}
                 {searchQuery}
                 {selectedCategoryId}
@@ -203,7 +179,6 @@
                 onSearchQueryChanged={handleSearchQueryChanged}
                 onCategorySelected={handleCategorySelected}
                 onProductClick={handleProductClick}
-                onPromotionClick={handlePromotionClick}
                 onFavoriteClick={handleFavoriteClick}
             />
         </div>
@@ -230,6 +205,9 @@
     .detail-layer {
         position: absolute;
         inset: 0;
+        width: 100%;
+        height: 100%;
         min-height: 0;
+        overflow: hidden;
     }
 </style>
