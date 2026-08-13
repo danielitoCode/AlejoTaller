@@ -35,64 +35,24 @@
     let promotions: any[] = [];
     let categories: any[] = [];
 
-    async function resolvePendingProduct() {
-        if (!pendingProductId || resolvingPendingProductId === pendingProductId) return;
+    $: isLoading = $productStore.loading && products.length === 0;
+    $: stockSyncing = $productStore.stockSyncing === true;
+    $: realtimeUpdating = $productStore.realtimeUpdating === true;
+    $: syncMessage = $productStore.syncMessage ?? null;
 
-        if (import.meta.env.DEV) {
-            logProductFlow(pendingProductId, "resolve-start");
-        }
-
-        const product = products.find(p => p.id === pendingProductId);
-        if (product) {
-            if (import.meta.env.DEV) {
-                logProductFlow(pendingProductId, "resolve-success");
-            }
-            selectedProduct = product;
+    function resolvePendingProduct() {
+        if (!pendingProductId) return;
+        if (resolvingPendingProductId === pendingProductId) return;
+        const found = products.find((p) => p.id === pendingProductId);
+        if (found) {
+            selectedProduct = found;
             pendingProductId = null;
-            return;
-        }
-
-        const productIdToResolve = pendingProductId;
-        resolvingPendingProductId = productIdToResolve;
-        try {
-            const syncedProduct = await productStore.syncById(productIdToResolve);
-            if (pendingProductId !== productIdToResolve) return;
-
-            if (syncedProduct) {
-                if (import.meta.env.DEV) {
-                    logProductFlow(productIdToResolve, "resolve-success");
-                }
-                selectedProduct = syncedProduct;
-            } else {
-                if (import.meta.env.DEV) {
-                    logProductFlow(productIdToResolve, "resolve-fail");
-                }
-                toastStore.error("No se pudo abrir el producto compartido");
-            }
-            pendingProductId = null;
-        } catch (error) {
-            if (import.meta.env.DEV) {
-                logProductFlow(productIdToResolve, "resolve-fail");
-                logNavError("Error resolving pending product", error);
-            }
-            console.error("Error resolving pending product:", error);
-            if (pendingProductId === productIdToResolve) {
-                toastStore.error("No se pudo abrir el producto compartido");
-                pendingProductId = null;
-            }
-        } finally {
-            if (resolvingPendingProductId === productIdToResolve) {
-                resolvingPendingProductId = null;
-            }
+            resolvingPendingProductId = null;
         }
     }
 
     const unsubscribeProducts = productStore.subscribe((state) => {
         products = state.items;
-        isLoading = state.loading;
-        stockSyncing = state.stockSyncing;
-        realtimeUpdating = state.realtimeUpdating;
-        syncMessage = state.syncMessage;
         resolvePendingProduct();
         if (state.items.length > 0) {
             cartStore.refreshProductStock(state.items);
@@ -107,7 +67,29 @@
         }
     });
 
+    let knownPromoIds: Set<string> | null = null;
+
     const unsubscribePromotions = promotionStore.subscribe((state) => {
+        const nextIds = state.items.map((p) => p.id);
+        if (knownPromoIds === null) {
+            knownPromoIds = new Set(nextIds);
+        } else {
+            for (const p of state.items) {
+                if (!knownPromoIds.has(p.id)) {
+                    toastStore.promo(
+                        p.title
+                            ? `Nueva promo: ${p.title}`
+                            : "Hay una nueva promoción disponible"
+                    );
+                    try {
+                        sessionStorage.removeItem("alejo-web-dismissed-promos");
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            }
+            knownPromoIds = new Set(nextIds);
+        }
         promotions = state.items;
     });
 
@@ -123,12 +105,10 @@
 
     onMount(() => {
         try {
-            // Appwrite Realtime (primario) + fallbacks locales viven en productStore
             productStore.startStockRealtime();
             productStore.syncAll();
-            if (!$sessionStore.isGuest) {
-                promotionStore.syncAll({ suppressPermissionError: true });
-            }
+            // Promos públicas / staff: silent si el visitante no tiene permiso
+            promotionStore.syncAll({ suppressPermissionError: true });
             categoryStore.syncAll();
         } catch (error) {
             console.error("Error loading data:", error);
@@ -162,7 +142,15 @@
     };
 
     const handlePromotionClick = (promotionId: string) => {
-        console.log("Promotion clicked:", promotionId);
+        const promo = promotions.find((p) => p.id === promotionId);
+        if (promo?.productId) {
+            const product = products.find((p) => p.id === promo.productId);
+            if (product) {
+                selectedProduct = product;
+                return;
+            }
+        }
+        toastStore.info(promo?.message || "Promoción activa");
     };
 
     const handleFavoriteClick = (productId: string) => {
@@ -178,183 +166,94 @@
 
         const max = availableStock(selectedProduct);
         if (max <= 0) {
-            toastStore.error("Producto agotado");
+            toastStore.warning("Producto agotado");
             return;
         }
 
-        const res = cartStore.addProduct(selectedProduct, 1);
-        if (!res.ok) {
-            toastStore.error(
-                res.reason === "out_of_stock"
-                    ? "Producto agotado"
-                    : "No se pudo agregar"
-            );
+        const result = cartStore.addProduct(selectedProduct, 1);
+        if (!result.ok) {
+            toastStore.warning(result.reason === "out_of_stock" ? "Sin stock disponible" : "No se pudo añadir");
             return;
         }
-
-        if (res.clamped && res.quantity === res.max) {
-            toastStore.info(
-                `Solo hay ${res.max} disponibles. Ya tienes el máximo en el carrito.`
-            );
-            return;
+        if (result.clamped) {
+            toastStore.info(`Cantidad ajustada al máximo disponible (${result.max})`);
+        } else {
+            toastStore.success("Añadido al carrito");
         }
-
-        toastStore.success(
-            `${selectedProduct.name} agregado (${res.quantity}/${res.max})`
-        );
     };
 
-    const handleAuthRequiredClick = () => {
-        showAuthOverlay = true;
+    const handleCloseDetail = () => {
+        selectedProduct = null;
+        if (navController && navBackStackEntry?.args?.productId) {
+            try {
+                navController.popBackStack();
+            } catch (e) {
+                logNavError("popBackStack product detail", e);
+            }
+        }
     };
 
-    function handleOverlayLogin() {
+    function handleAuthSuccess() {
         showAuthOverlay = false;
-        onRequestLogin?.();
-        if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("request-guest-login"));
+        if (selectedProduct) {
+            handleAddToCartClick();
         }
     }
-
-    const closeProductDetail = () => {
-        selectedProduct = null;
-        if (navBackStackEntry?.route === productDetail.path && navController) {
-            navController.popBackStack();
-        }
-    };
-
 </script>
 
-<div class="internal-product-screen">
-    <div class="product-list-panel">
-        <ProductScreen
-            {products}
-            {promotions}
-            {categories}
-            {searchQuery}
-            {selectedCategoryId}
-            loading={isLoading}
-            {stockSyncing}
-            {realtimeUpdating}
-            {syncMessage}
-            onSearchQueryChanged={handleSearchQueryChanged}
-            onCategorySelected={handleCategorySelected}
-            onProductClick={handleProductClick}
-            onPromotionClick={handlePromotionClick}
-            onFavoriteClick={handleFavoriteClick}
-        />
-    </div>
-
+<div class="internal-product-host">
     {#if selectedProduct}
-        <div class="product-detail-modal" role="presentation" out:fade={{ duration: 120 }}>
-            <button
-                    class="product-detail-scrim"
-                    type="button"
-                    aria-label="Cerrar detalle del producto"
-                    on:click={closeProductDetail}
-            ></button>
-            <div
-                    class="product-detail-dialog"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={`Detalle de ${selectedProduct.name}`}
-                    in:fly={{ y: 32, duration: 220, opacity: 0.25 }}
-                    out:fly={{ y: 32, duration: 150, opacity: 0.2 }}
-            >
-                <ProductDetailScreen
-                        product={selectedProduct}
-                        showTopBar={true}
-                        onBackClick={closeProductDetail}
-                        onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
-                        canAddToCart={!$sessionStore.isGuest}
-                        isGuest={$sessionStore.isGuest}
-                        onAddToCartClick={handleAddToCartClick}
-                        onAuthRequiredClick={handleAuthRequiredClick}
-                />
-            </div>
+        <div class="detail-layer" transition:fly={{ x: 24, duration: 220 }}>
+            <ProductDetailScreen
+                product={selectedProduct}
+                onClose={handleCloseDetail}
+                onAddToCart={handleAddToCartClick}
+                onFavorite={() => handleFavoriteClick(selectedProduct.id)}
+            />
         </div>
+    {:else}
+        <div class="list-layer" transition:fade={{ duration: 160 }}>
+            <ProductScreen
+                products={products}
+                promotions={promotions}
+                categories={categories}
+                {searchQuery}
+                {selectedCategoryId}
+                loading={isLoading}
+                {stockSyncing}
+                {realtimeUpdating}
+                {syncMessage}
+                onSearchQueryChanged={handleSearchQueryChanged}
+                onCategorySelected={handleCategorySelected}
+                onProductClick={handleProductClick}
+                onPromotionClick={handlePromotionClick}
+                onFavoriteClick={handleFavoriteClick}
+            />
+        </div>
+    {/if}
+
+    {#if showAuthOverlay}
+        <GuestAuthOverlay
+            onSuccess={handleAuthSuccess}
+            onDismiss={() => (showAuthOverlay = false)}
+            onRequestLogin={onRequestLogin}
+        />
     {/if}
 </div>
 
-<GuestAuthOverlay
-    open={showAuthOverlay}
-    on:login={handleOverlayLogin}
-    on:close={() => (showAuthOverlay = false)}
-/>
-
 <style>
-    .internal-product-screen {
+    .internal-product-host {
+        position: relative;
         width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
-        height: 100%;
-        min-height: 0;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 0;
-        background: var(--md-sys-color-background);
-    }
-
-    .product-list-panel {
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        box-sizing: border-box;
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
-    .product-detail-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 90;
-        display: grid;
-        place-items: stretch;
-        padding: 18px;
-    }
-
-    .product-detail-scrim {
+    .list-layer,
+    .detail-layer {
         position: absolute;
         inset: 0;
-        border: 0;
-        background:
-                radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent), transparent 42%),
-                color-mix(in srgb, black 68%, transparent);
-        backdrop-filter: blur(4px);
-        cursor: pointer;
-    }
-
-    .product-detail-dialog {
-        position: relative;
-        z-index: 1;
-        width: min(100%, 980px);
-        height: min(100dvh, 900px);
-        justify-self: center;
-        align-self: center;
-        display: grid;
         min-height: 0;
-        background-color: #1a1c19;
-        background: var(--md-sys-color-surface-container, #1a1c19);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
-        border-radius: 32px;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        box-shadow: 0 28px 72px color-mix(in srgb, black 42%, transparent);
-    }
-
-    @media (max-width: 768px) {
-        .product-detail-modal {
-            padding: 0;
-        }
-
-        .product-detail-dialog {
-            width: 100%;
-            height: 100%;
-            border-radius: 0;
-            border: 0;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
     }
 </style>
