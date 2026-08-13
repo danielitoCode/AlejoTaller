@@ -3,7 +3,7 @@
     import { fly, fade } from "svelte/transition";
     import { Icon } from "m3-svelte";
     import closeIcon from "@ktibow/iconset-material-symbols/close-rounded";
-    import localOfferIcon from "@ktibow/iconset-material-symbols/local-offer-rounded";
+    import localOfferIcon from "@ktibow/iconset-material-symbols/campaign-rounded";
     import { promotionStore } from "../viewmodel/promotion.store";
     import {
         isActiveBanner,

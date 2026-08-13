@@ -1,6 +1,6 @@
 <script lang="ts">
     import { Icon } from "m3-svelte";
-    import localOfferIcon from "@ktibow/iconset-material-symbols/local-offer-rounded";
+    import localOfferIcon from "@ktibow/iconset-material-symbols/campaign-rounded";
     import { promotionStore } from "../viewmodel/promotion.store";
     import PromotionDrawer from "./PromotionDrawer.svelte";
 
