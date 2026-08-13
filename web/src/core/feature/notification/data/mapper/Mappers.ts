@@ -1,21 +1,22 @@
-import type {PromotionDTO} from "../dto/PromotionDTO";
-import type {Promotion} from "../../domain/entity/Promotion";
+import type { PromotionDTO } from "../dto/PromotionDTO"
+import type { Promotion, PromotionKind, PromotionStatus } from "../../domain/entity/Promotion"
 
-export type PromotionWriteDTO = Pick<
-    PromotionDTO,
-    | "$id"
-    | "title"
-    | "message"
-    | "imageUrl"
-    | "oldPrice"
-    | "currentPrice"
-    | "validFromEpochMillis"
-    | "validUntilEpochMillis"
->;
+function asKind(value: unknown): PromotionKind | undefined {
+    if (value === "banner" || value === "product_discount") return value
+    return undefined
+}
+
+function asStatus(value: unknown): PromotionStatus | undefined {
+    if (value === "draft" || value === "active" || value === "ended" || value === "cancelled") {
+        return value
+    }
+    return undefined
+}
 
 export function promotionFromDTO(dto: PromotionDTO): Promotion {
     return {
         id: dto.$id,
+        productId: dto.productId ?? null,
         title: dto.title,
         message: dto.message,
         imageUrl: dto.imageUrl ?? null,
@@ -23,22 +24,8 @@ export function promotionFromDTO(dto: PromotionDTO): Promotion {
         currentPrice: dto.currentPrice ?? null,
         validFromEpochMillis: dto.validFromEpochMillis,
         validUntilEpochMillis: dto.validUntilEpochMillis,
-    };
-}
-
-/**
- * Domain → DTO (create/update payload)
- * El id de dominio se serializa en $id de Appwrite.
- */
-export function promotionToDTO(promotion: Promotion): PromotionWriteDTO {
-    return {
-        $id: promotion.id,
-        title: promotion.title,
-        message: promotion.message,
-        imageUrl: promotion.imageUrl ?? null,
-        oldPrice: promotion.oldPrice ?? null,
-        currentPrice: promotion.currentPrice ?? null,
-        validFromEpochMillis: promotion.validFromEpochMillis,
-        validUntilEpochMillis: promotion.validUntilEpochMillis,
-    };
+        source: dto.source === "manual" ? "manual" : dto.source === "automatic" ? "automatic" : undefined,
+        kind: asKind(dto.kind),
+        status: asStatus(dto.status),
+    }
 }
