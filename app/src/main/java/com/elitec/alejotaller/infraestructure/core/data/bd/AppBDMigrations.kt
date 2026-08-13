@@ -4,20 +4,10 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 object AppBDMigrations {
-    /**
-     * Ejemplo de migración de versión 5 → 6.
-     * Reemplaza este bloque con los cambios reales del esquema.
-     * Consulta app/schemas/ para ver el diff entre versiones.
-     */
     val MIGRATION_5_6 = object : Migration(5, 6) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // Ejemplo: columna agregada en SaleDto entre v5 y v6
-            // db.execSQL("ALTER TABLE sale ADD COLUMN new_column TEXT NOT NULL DEFAULT ''")
-            // Si no hubo cambios de esquema estructurales entre estas versiones,
-            // se puede dejar el cuerpo vacío (solo sube el número de versión).
         }
     }
-    // ← NUEVA migración para el campo deliveryType
     val MIGRATION_6_7 = object : Migration(6, 7) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -81,19 +71,30 @@ object AppBDMigrations {
         }
     }
 
-    /** v9 → v10: salto de versión previo sin cambio de ProductDto documentado en repo. */
     val MIGRATION_9_10 = object : Migration(9, 10) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // Sin cambios estructurales requeridos entre 9 y 10 en el historial del monorepo.
         }
     }
 
-    /** v10 → v11: stock disponible (existence) en productos. */
     val MIGRATION_10_11 = object : Migration(10, 11) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
                 "ALTER TABLE ProductDto ADD COLUMN existence INTEGER NOT NULL DEFAULT 0"
             )
+        }
+    }
+
+    val MIGRATION_11_12 = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+        }
+    }
+
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE promotions ADD COLUMN productId TEXT DEFAULT NULL")
+            db.execSQL("ALTER TABLE promotions ADD COLUMN kind TEXT DEFAULT NULL")
+            db.execSQL("ALTER TABLE promotions ADD COLUMN status TEXT DEFAULT NULL")
+            db.execSQL("ALTER TABLE promotions ADD COLUMN source TEXT DEFAULT NULL")
         }
     }
 
@@ -103,6 +104,8 @@ object AppBDMigrations {
         MIGRATION_7_8,
         MIGRATION_8_9,
         MIGRATION_9_10,
-        MIGRATION_10_11
+        MIGRATION_10_11,
+        MIGRATION_11_12,
+        MIGRATION_12_13
     )
 }
