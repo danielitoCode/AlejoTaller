@@ -1,194 +1,153 @@
-import { derived, writable, get } from "svelte/store";
-import type { Promotion } from "../../domain/entity/Promotion";
-import { notificationContainer } from "../../di/notification.container";
+import { derived, writable } from "svelte/store"
+import type { Promotion } from "../../domain/entity/Promotion"
+import { notificationContainer } from "../../di/notification.container"
+import { logger } from "../../../../infrastructure/presentation/util/logger.service"
+import { promotionFromDTO } from "../../data/mapper/Mappers"
+import { isAppwritePermissionError } from "../../../../infrastructure/data/appwrite/public-data-contract"
 import {
-    subscribePromotionUpdates,
-    unsubscribePromotionUpdates,
-    type PromotionEventPayload
-} from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
-import { logger } from "../../../../infrastructure/presentation/util/logger.service";
-import { promotionFromDTO } from "../../data/mapper/Mappers";
-import { isAppwritePermissionError } from "../../../../infrastructure/data/appwrite/public-data-contract";
+    subscribeAppwritePromotions,
+    unsubscribeAppwritePromotions,
+    type AppwritePromotionChangeSignal,
+} from "../../../../infrastructure/data/appwrite/appwrite-promotion-realtime"
+import {
+    isActiveBanner,
+    isActiveProductDiscount,
+} from "../../domain/policy/PromotionPolicy"
+import type { PromotionDTO } from "../../data/dto/PromotionDTO"
 
 interface PromotionState {
-    items: Promotion[];
-    loading: boolean;
-    saving: boolean;
-    error: string | null;
+    items: Promotion[]
+    loading: boolean
+    saving: boolean
+    error: string | null
 }
 
 const initialState: PromotionState = {
     items: [],
     loading: false,
     saving: false,
-    error: null
-};
-
-function normalizeError(error: unknown): string {
-    return error instanceof Error ? error.message : "Unexpected error";
+    error: null,
 }
 
-
+function normalizeError(error: unknown): string {
+    return error instanceof Error ? error.message : "Unexpected error"
+}
 
 function createPromotionStore() {
-    const { subscribe, update } = writable<PromotionState>(initialState);
-    let pusherUnsubscribe: (() => void) | null = null;
-    let isSubscriptionPending = false;
+    const { subscribe, update } = writable<PromotionState>(initialState)
+    let appwriteUnsub: (() => void) | null = null
 
     async function runLoading<T>(fn: () => Promise<T>): Promise<T> {
-        update((state) => ({ ...state, loading: true, error: null }));
-
+        update((state) => ({ ...state, loading: true, error: null }))
         try {
-            return await fn();
+            return await fn()
         } catch (error) {
-            update((state) => ({ ...state, error: normalizeError(error) }));
-            throw error;
+            update((state) => ({ ...state, error: normalizeError(error) }))
+            throw error
         } finally {
-            update((state) => ({ ...state, loading: false }));
+            update((state) => ({ ...state, loading: false }))
         }
     }
 
-    // ...existing code...
-    /**
-     * Gestiona automáticamente la suscripción a Pusher
-     * Activa si hay promociones, desactiva si no hay
-     */
-    async function managePusherSubscription(): Promise<void> {
-        // Evitar race conditions
-        if (isSubscriptionPending) return;
-        isSubscriptionPending = true;
-
-        try {
-            const state = get({ subscribe });
-            const hasPromotions = state.items.length > 0;
-
-            if (hasPromotions && !pusherUnsubscribe) {
-                // Activar suscripción a eventos realtime
-                logger.log("[PromotionStore] Activating promotion realtime updates");
-                pusherUnsubscribe = subscribePromotionUpdates((eventName, payload) => {
-                    handlePromotionEvent(eventName, payload);
-                });
-            } else if (!hasPromotions && pusherUnsubscribe) {
-                // Desactivar suscripción cuando no hay promociones
-                logger.log("[PromotionStore] Deactivating promotion realtime updates");
-                pusherUnsubscribe();
-                unsubscribePromotionUpdates();
-                pusherUnsubscribe = null;
-            }
-        } finally {
-            isSubscriptionPending = false;
-        }
+    function ensureAppwriteSubscription(): void {
+        if (appwriteUnsub) return
+        logger.log("[PromotionStore] Activating Appwrite RT promotions")
+        appwriteUnsub = subscribeAppwritePromotions((signal) => {
+            handleAppwriteSignal(signal)
+        })
     }
 
-    /**
-     * Maneja eventos de promociones recibidos desde Pusher
-     * Sincroniza con el estado local en tiempo real
-     */
-    function handlePromotionEvent(eventName: string, payload: PromotionEventPayload): void {
-        logger.log(`[PromotionEvent] Received: ${eventName} \n ${{
-            id: payload.id,
-            title: payload.title,
-            currentPrice: payload.currentPrice
-        }}`);
-
-        const promotion = promotionFromDTO(payload as any);
+    function handleAppwriteSignal(signal: AppwritePromotionChangeSignal): void {
+        logger.log(
+            `[PromotionRT] action=${signal.action} ids=${signal.promotionIds.join(",")}`
+        )
 
         update((state) => {
-            switch (eventName) {
-                case "promotion:created":
-                    logger.log(`[PromotionEvent] Adding new promotion: ${promotion.id}`);
-                    return {
-                        ...state,
-                        items: [...state.items, promotion],
-                    };
+            let items = [...state.items]
 
-                case "promotion:updated":
-                    logger.log(`[PromotionEvent] Updating promotion: ${promotion.id}`);
-                    return {
-                        ...state,
-                        items: state.items.map((p) =>
-                            p.id === promotion.id ? promotion : p
-                        ),
-                    };
+            for (const snap of signal.snapshots) {
+                const id = String(snap.$id ?? snap.id ?? "").trim()
+                if (!id) continue
 
-                case "promotion:deleted":
-                    logger.log(`[PromotionEvent] Deleting promotion: ${promotion.id}`);
-                    return {
-                        ...state,
-                        items: state.items.filter((p) => p.id !== promotion.id),
-                    };
+                if (snap._deleted || signal.action === "delete") {
+                    items = items.filter((p) => p.id !== id)
+                    continue
+                }
 
-                default:
-                    logger.warn(`[PromotionEvent] Unknown event: ${eventName}`);
-                    return state;
+                try {
+                    const promo = promotionFromDTO(snap as unknown as PromotionDTO)
+                    const idx = items.findIndex((p) => p.id === promo.id)
+                    if (idx >= 0) items[idx] = promo
+                    else items = [...items, promo]
+                } catch (e: any) {
+                    logger.warn(`[PromotionRT] map failed id=${id}: ${e?.message ?? e}`)
+                }
             }
-        });
 
-        // Enviar notificación del navegador si está permitida
-        if (window.Notification && Notification.permission === "granted") {
-            const title = eventName === "promotion:created"
-                ? "¡Nueva promoción!"
-                : eventName === "promotion:updated"
-                ? "Promoción actualizada"
-                : "Promoción removida";
-
-            new Notification(title, {
-                body: promotion.title,
-                icon: promotion.imageUrl || undefined,
-                tag: `promotion-${promotion.id}`
-            });
-        }
+            return { ...state, items }
+        })
     }
 
     async function syncAll(options: { suppressPermissionError?: boolean } = {}): Promise<void> {
         if (options.suppressPermissionError) {
             try {
-                await syncAll();
+                await syncAllInner()
             } catch (error) {
-                if (!isAppwritePermissionError(error)) throw error;
-                logger.warn("[PromotionStore] Promotions are not public for this visitor session; keeping sync silent.");
-                update((state) => ({ ...state, error: null, loading: false }));
+                if (!isAppwritePermissionError(error)) throw error
+                logger.warn(
+                    "[PromotionStore] Promotions are not public for this visitor session; keeping sync silent."
+                )
+                update((state) => ({ ...state, error: null, loading: false }))
             }
-            return;
+            return
         }
+        await syncAllInner()
+    }
+
+    async function syncAllInner(): Promise<void> {
         await runLoading(async () => {
-            const items = await notificationContainer.useCases.promo.getAll();
-            update((state) => ({ ...state, items }));
-
-            // Activar suscripción Pusher después de sincronizar
-            await managePusherSubscription();
-        });
+            const items = await notificationContainer.useCases.promo.getAll()
+            update((state) => ({ ...state, items }))
+            ensureAppwriteSubscription()
+        })
     }
 
-    /**
-     * Limpia las suscripciones cuando el store se destruye
-     */
     function cleanup(): void {
-        if (pusherUnsubscribe) {
-            pusherUnsubscribe();
-            unsubscribePromotionUpdates();
-            pusherUnsubscribe = null;
+        if (appwriteUnsub) {
+            appwriteUnsub()
+            appwriteUnsub = null
         }
+        unsubscribeAppwritePromotions()
     }
 
-    const hasData = derived({ subscribe }, ($state) => $state.items.length > 0);
-    const activePromotions = derived(
-        { subscribe },
-        ($state) => {
-            const now = Date.now();
-            return $state.items.filter(
-                (p) => now >= p.validFromEpochMillis && now <= p.validUntilEpochMillis
-            );
-        }
-    );
+    const hasData = derived({ subscribe }, ($state) => $state.items.length > 0)
+
+    const activePromotions = derived({ subscribe }, ($state) => {
+        const now = Date.now()
+        return $state.items.filter(
+            (p) => isActiveProductDiscount(p, now) || isActiveBanner(p, now)
+        )
+    })
+
+    const activeProductDiscounts = derived({ subscribe }, ($state) => {
+        const now = Date.now()
+        return $state.items.filter((p) => isActiveProductDiscount(p, now))
+    })
+
+    const activeBanners = derived({ subscribe }, ($state) => {
+        const now = Date.now()
+        return $state.items.filter((p) => isActiveBanner(p, now))
+    })
 
     return {
         subscribe,
         hasData,
         activePromotions,
+        activeProductDiscounts,
+        activeBanners,
         syncAll,
-        cleanup
-    };
+        cleanup,
+    }
 }
 
-export const promotionStore = createPromotionStore();
+export const promotionStore = createPromotionStore()
