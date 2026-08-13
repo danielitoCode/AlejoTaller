@@ -26,9 +26,11 @@
 
     $: filteredProducts = products
         .filter((product) => {
+            const name = String(product?.name ?? "");
+            const desc = String(product?.description ?? "");
+            const q = searchQuery.toLowerCase();
             const matchesSearch =
-                product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+                name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
             const matchesCategory =
                 !selectedCategoryId || product.categoryId === selectedCategoryId;
             return matchesSearch && matchesCategory;
@@ -132,7 +134,7 @@
     .product-screen {
         width: 100%;
         height: 100%;
-        min-height: 0;
+        min-height: 100%;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;

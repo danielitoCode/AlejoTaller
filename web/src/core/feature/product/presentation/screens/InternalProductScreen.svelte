@@ -184,30 +184,45 @@
         </div>
     {/if}
 
-    {#if showAuthOverlay}
-        <GuestAuthOverlay
-            onSuccess={handleAuthSuccess}
-            onDismiss={() => (showAuthOverlay = false)}
-            onRequestLogin={onRequestLogin}
-        />
-    {/if}
+    <GuestAuthOverlay
+        open={showAuthOverlay}
+        on:login={() => {
+            showAuthOverlay = false;
+            onRequestLogin?.();
+        }}
+        on:close={() => (showAuthOverlay = false)}
+    />
 </div>
 
 <style>
     .internal-product-host {
-        position: relative;
         width: 100%;
         height: 100%;
         min-height: 0;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
+        box-sizing: border-box;
+        position: relative;
     }
+
     .list-layer,
     .detail-layer {
-        position: absolute;
-        inset: 0;
+        flex: 1 1 auto;
+        min-height: 0;
         width: 100%;
         height: 100%;
-        min-height: 0;
         overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    .list-layer :global(.product-screen),
+    .detail-layer :global(.product-detail-screen) {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
     }
 </style>
