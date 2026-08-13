@@ -288,13 +288,45 @@
         align-items: stretch;
         border-radius: 16px;
         overflow: hidden;
+        position: relative;
+        isolation: isolate;
         border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 28%, var(--md-sys-color-outline-variant));
         background: linear-gradient(
             105deg,
             color-mix(in srgb, var(--md-sys-color-primary-container) 88%, transparent) 0%,
             color-mix(in srgb, var(--md-sys-color-tertiary-container) 55%, transparent) 100%
         );
-        box-shadow: 0 8px 22px color-mix(in srgb, black 10%, transparent);
+        box-shadow:
+            0 8px 22px color-mix(in srgb, black 10%, transparent),
+            0 0 0 1px color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        animation:
+            promo-banner-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both,
+            promo-banner-glow 3.2s ease-in-out 0.45s infinite;
+    }
+
+    .promo-banner::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(
+            110deg,
+            transparent 0%,
+            transparent 38%,
+            color-mix(in srgb, white 28%, transparent) 50%,
+            transparent 62%,
+            transparent 100%
+        );
+        background-size: 220% 100%;
+        animation: promo-shimmer 4.5s ease-in-out 0.6s infinite;
+        opacity: 0.55;
+        z-index: 0;
+    }
+
+    .promo-banner-main,
+    .promo-banner-close {
+        position: relative;
+        z-index: 1;
     }
 
     .promo-banner-main {
@@ -310,6 +342,15 @@
         font: inherit;
         text-align: left;
         cursor: pointer;
+        transition: transform 180ms ease, filter 180ms ease;
+    }
+
+    .promo-banner-main:hover {
+        filter: brightness(1.04);
+    }
+
+    .promo-banner-main:active {
+        transform: scale(0.992);
     }
 
     .promo-banner-img {
@@ -319,12 +360,15 @@
         object-fit: cover;
         flex-shrink: 0;
         background: color-mix(in srgb, var(--md-sys-color-surface) 40%, transparent);
+        box-shadow: 0 4px 12px color-mix(in srgb, black 12%, transparent);
+        animation: promo-img-pop 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
     }
 
     .promo-banner-copy {
         min-width: 0;
         display: grid;
         gap: 2px;
+        animation: promo-copy-in 480ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
     }
 
     .promo-banner-copy strong,
@@ -356,10 +400,85 @@
         cursor: pointer;
         display: grid;
         place-items: center;
+        transition: background 180ms ease, transform 180ms ease, color 180ms ease;
     }
 
     .promo-banner-close:hover {
         background: color-mix(in srgb, var(--md-sys-color-surface) 55%, transparent);
+        transform: scale(1.06);
+    }
+
+    .promo-banner-close:active {
+        transform: scale(0.94);
+    }
+
+    @keyframes promo-banner-in {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes promo-banner-glow {
+        0%,
+        100% {
+            box-shadow:
+                0 8px 22px color-mix(in srgb, black 10%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        }
+        50% {
+            box-shadow:
+                0 10px 26px color-mix(in srgb, black 12%, transparent),
+                0 0 18px color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
+        }
+    }
+
+    @keyframes promo-shimmer {
+        0% {
+            background-position: 120% 0;
+        }
+        100% {
+            background-position: -120% 0;
+        }
+    }
+
+    @keyframes promo-img-pop {
+        from {
+            opacity: 0;
+            transform: scale(0.86);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    @keyframes promo-copy-in {
+        from {
+            opacity: 0;
+            transform: translateX(8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .promo-banner,
+        .promo-banner::after,
+        .promo-banner-img,
+        .promo-banner-copy {
+            animation: none !important;
+        }
+        .promo-banner-main,
+        .promo-banner-close {
+            transition: none !important;
+        }
     }
 
     .stock-sync-banner {
