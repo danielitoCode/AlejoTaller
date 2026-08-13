@@ -6,24 +6,32 @@ import com.elitec.shared.core.feature.notifications.domain.entity.Promotion
 
 fun PromotionDto.toDomain(): Promotion = Promotion(
     id = id,
+    productId = productId,
     title = title,
     message = message,
     imageUrl = imageUrl,
     oldPrice = oldPrice,
     currentPrice = currentPrice,
     validFromEpochMillis = validFromEpochMillis,
-    validUntilEpochMillis = validUntilEpochMillis
+    validUntilEpochMillis = validUntilEpochMillis,
+    kind = kind,
+    status = status,
+    source = source,
 )
 
 fun Promotion.toDto(): PromotionDto = PromotionDto(
     id = id,
+    productId = productId,
     title = title,
     message = message,
     imageUrl = imageUrl,
     oldPrice = oldPrice,
     currentPrice = currentPrice,
     validFromEpochMillis = validFromEpochMillis,
-    validUntilEpochMillis = validUntilEpochMillis
+    validUntilEpochMillis = validUntilEpochMillis,
+    kind = kind,
+    status = status,
+    source = source,
 )
 
 private const val DEFAULT_PROMO_TTL = 1000L * 60L * 60L * 24L * 7L
@@ -33,12 +41,13 @@ fun PromotionEvent.toDomainPromotion(): Promotion {
 
     return Promotion(
         id = id.ifBlank { "promo-$now" },
+        productId = null,
         title = title,
         message = message,
         imageUrl = imageUrl,
         oldPrice = oldPrice,
         currentPrice = currentPrice,
         validFromEpochMillis = validFromEpochMillis ?: now,
-        validUntilEpochMillis = validUntilEpochMillis ?: (now + DEFAULT_PROMO_TTL)
+        validUntilEpochMillis = validUntilEpochMillis ?: (now + DEFAULT_PROMO_TTL),
     )
 }
