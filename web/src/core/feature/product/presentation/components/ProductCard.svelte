@@ -13,9 +13,19 @@
     export let product: Product;
     /** true mientras se sincroniza stock desde la nube — no mostrar Agotado falso */
     export let stockPending: boolean = false;
+    /** Precio efectivo (Policy B). Si null, usa product.price */
+    export let salePrice: number | null = null;
+    /** Precio de lista tachado cuando hay promo */
+    export let listPrice: number | null = null;
+    export let promoBadge: boolean = false;
     export let onClick: () => void = () => {};
     export let onFavoriteClick: (event: Event) => void = () => {};
 
+    $: unitPrice = salePrice != null && Number.isFinite(salePrice) ? salePrice : product.price;
+    $: showListStrike =
+        listPrice != null &&
+        Number.isFinite(listPrice) &&
+        Number(listPrice) > Number(unitPrice);
     $: available = availableStock(product);
     $: stockTone = stockPending
         ? "pending"
@@ -29,8 +39,8 @@
         : available === 0
           ? "Agotado"
           : available <= 5
-            ? `Ultimas ${available}`
-            : `Disponibles: ${available}`;
+            ? `Últimas ${available}`
+            : `${available} disp.`;
     $: stockIcon =
         stockTone === "pending"
             ? SyncRounded
@@ -39,40 +49,26 @@
               : stockTone === "low"
                 ? WarningRounded
                 : Inventory2Rounded;
+    $: imageUrl = getPrimaryProductImageUrl(product);
 </script>
 
-<div
-        class="product-item"
-        class:is-out={!stockPending && available === 0}
-        on:click={onClick}
-        role="button"
-        tabindex="0"
-        on:keydown={(e) => e.key === "Enter" && onClick()}
->
+<button type="button" class="product-item" on:click={onClick}>
     <div class="card-image">
-        <img
-                src={
-                getPrimaryProductImageUrl(product.photoUrl) ??
-                `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Crect fill='%23f5f5f5' width='300' height='300'/%3E%3C/svg%3E`
-            }
-                alt={product.name}
-                loading="lazy"
-        />
-
-        <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel} aria-busy={stockPending}>
-            <span class="stock-badge-icon" class:spin={stockTone === "pending"} aria-hidden="true">
+        {#if imageUrl}
+            <img src={imageUrl} alt={product.name} loading="lazy" />
+        {:else}
+            <div class="img-fallback" aria-hidden="true">📦</div>
+        {/if}
+        <div class="image-overlay">
+            <span class="stock-badge stock-{stockTone}">
                 <Icon icon={stockIcon} />
+                {stockLabel}
             </span>
-            <span class="stock-badge-text">{stockLabel}</span>
-        </span>
-
-        <div class="card-overlay">
             <button
-                    class="favorite-btn"
-                    type="button"
-                    aria-label="Agregar a favoritos"
-                    title="Favoritos"
-                    on:click={(e) => {
+                type="button"
+                class="favorite-btn"
+                aria-label="Favorito"
+                on:click={(e) => {
                     e.stopPropagation();
                     onFavoriteClick(e);
                 }}
@@ -83,287 +79,184 @@
     </div>
 
     <div class="card-footer">
-        <h3 class="product-name">
-            {product.name}
-        </h3>
+        <h3 class="product-name">{product.name}</h3>
 
-        {#if product.price}
-            <p class="product-price">
-                {formatMoney(product.price, $exchangeStore)}
+        {#if unitPrice || unitPrice === 0}
+            <p class="product-price" class:has-promo={showListStrike}>
+                {#if showListStrike}
+                    <span class="list-strike">{formatMoney(listPrice, $exchangeStore)}</span>
+                {/if}
+                <span class="sale-price">{formatMoney(unitPrice, $exchangeStore)}</span>
+                {#if promoBadge}
+                    <span class="promo-pill">Promo</span>
+                {/if}
             </p>
         {/if}
     </div>
-</div>
+</button>
 
 <style>
     .product-item {
         display: flex;
         flex-direction: column;
         gap: 10px;
-
-        min-width: 0;
-
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        text-align: left;
         cursor: pointer;
-
-        user-select: none;
-
-        transition:
-                transform 0.22s ease,
-                opacity 0.22s ease;
-    }
-
-    .product-item.is-out {
-        opacity: 0.78;
-    }
-
-    .product-item:active {
-        transform: scale(0.985);
     }
 
     .card-image {
         position: relative;
-
-        width: 100%;
-        aspect-ratio: 1 / 1;
-
-        overflow: hidden;
-
+        aspect-ratio: 1;
         border-radius: 24px;
-
+        overflow: hidden;
         background: var(--md-sys-color-surface-container-high);
-
-        box-shadow:
-                0 2px 6px rgba(0, 0, 0, 0.06),
-                0 10px 24px rgba(0, 0, 0, 0.10);
-
-        transition:
-                transform 0.25s ease,
-                box-shadow 0.25s ease;
     }
 
     .card-image img {
         width: 100%;
         height: 100%;
-
         object-fit: cover;
-        object-position: center;
-
-        transition:
-                transform 0.45s ease,
-                filter 0.3s ease;
+        display: block;
+        transition: transform 0.25s ease;
     }
 
-    .product-item.is-out .card-image img {
-        filter: grayscale(0.35);
-    }
-
-    .product-item:hover .card-image {
-        transform: translateY(-3px);
-
-        box-shadow:
-                0 8px 18px rgba(0, 0, 0, 0.12),
-                0 18px 38px rgba(0, 0, 0, 0.16);
+    .img-fallback {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        font-size: 2rem;
+        opacity: 0.45;
     }
 
     .product-item:hover .card-image img {
-        transform: scale(1.05);
+        transform: scale(1.04);
+    }
+
+    .image-overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 10px;
+        pointer-events: none;
+    }
+
+    .image-overlay > * {
+        pointer-events: auto;
     }
 
     .stock-badge {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        z-index: 2;
-
-        max-width: calc(100% - 20px);
-
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-
-        padding: 5px 10px 5px 7px;
-
+        gap: 4px;
+        padding: 4px 10px 4px 6px;
         border-radius: 999px;
-
         font-size: 0.72rem;
         font-weight: 700;
-        line-height: 1.2;
-        letter-spacing: 0.01em;
-
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(8px);
+        background: color-mix(in srgb, var(--md-sys-color-surface) 82%, transparent);
     }
 
-    .stock-badge-icon {
-        display: inline-flex;
-        flex-shrink: 0;
-        width: 14px;
-        height: 14px;
-        align-items: center;
-        justify-content: center;
+    .stock-ok {
+        color: var(--md-sys-color-primary);
     }
-
-    .stock-badge-icon :global(svg) {
-        width: 14px;
-        height: 14px;
+    .stock-low {
+        color: #c47a00;
     }
-
-    .stock-badge-icon.spin :global(svg) {
-        animation: stock-spin 0.9s linear infinite;
+    .stock-out {
+        color: var(--md-sys-color-error);
     }
-
-    .stock-badge-text {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .stock-badge--ok {
-        color: var(--md-sys-color-on-secondary-container, #1a1c19);
-        background: var(--md-sys-color-secondary-container, #c8efc8);
-    }
-
-    .stock-badge--low {
-        color: var(--md-sys-color-on-tertiary-container, #3b2f00);
-        background: var(--md-sys-color-tertiary-container, #ffe08a);
-    }
-
-    .stock-badge--out {
-        color: var(--md-sys-color-on-error-container, #410002);
-        background: var(--md-sys-color-error-container, #ffdad6);
-    }
-
-    .stock-badge--pending {
-        color: var(--md-sys-color-on-surface-variant, #444);
-        background: var(--md-sys-color-surface-container-highest, #e8e8e8);
-        animation: stock-pulse 1.2s ease-in-out infinite;
-    }
-
-    @keyframes stock-pulse {
-        0%, 100% { opacity: 0.75; }
-        50% { opacity: 1; }
-    }
-
-    @keyframes stock-spin {
-        to { transform: rotate(360deg); }
-    }
-
-    .card-overlay {
-        position: absolute;
-
-        left: 0;
-        right: 0;
-        bottom: 0;
-
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-
-        padding: 12px;
-
-        background:
-                linear-gradient(
-                        to top,
-                        rgba(0, 0, 0, 0.55) 0%,
-                        rgba(0, 0, 0, 0.20) 35%,
-                        transparent 100%
-                );
+    .stock-pending {
+        color: var(--md-sys-color-on-surface-variant);
     }
 
     .favorite-btn {
         width: 42px;
         height: 42px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
         border: none;
-        border-radius: 50%;
-
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
         cursor: pointer;
-
+        background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
         color: var(--md-sys-color-on-surface);
-
-        background:
-                radial-gradient(
-                    circle at center,
-                    #242724 0%,
-                    var(--m3c-outline-variant) 100%
-                );
-
-        box-shadow:
-                0 2px 8px rgba(0, 0, 0, 0.15);
-
-        transition:
-                transform 0.2s ease,
-                background 0.2s ease;
-    }
-
-    .favorite-btn:hover {
-        transform: scale(1.08);
-    }
-
-    .favorite-btn:active {
-        transform: scale(0.95);
+        backdrop-filter: blur(8px);
     }
 
     .card-footer {
         display: flex;
         flex-direction: column;
-
         gap: 6px;
-
         padding: 2px;
     }
 
     .product-name {
         margin: 0;
-
         color: var(--md-sys-color-on-surface);
-
         font-size: 0.96rem;
         font-weight: 600;
-
         line-height: 1.35;
-
         overflow: hidden;
-
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 2;
-
         min-height: calc(1.35em * 2);
     }
 
     .product-price {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 6px;
         margin: 0;
-
         color: var(--md-sys-color-primary);
-
         font-size: 1.1rem;
         font-weight: 800;
-
         letter-spacing: -0.02em;
+    }
+
+    .list-strike {
+        text-decoration: line-through;
+        opacity: 0.65;
+        font-size: 0.85em;
+        font-weight: 600;
+    }
+
+    .sale-price {
+        font-weight: 800;
+    }
+
+    .product-price.has-promo .sale-price {
+        color: var(--md-sys-color-primary);
+    }
+
+    .promo-pill {
+        font-size: 0.68rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        color: var(--md-sys-color-primary);
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
     }
 
     @media (max-width: 768px) {
         .card-image {
             border-radius: 22px;
         }
-
         .favorite-btn {
             width: 40px;
             height: 40px;
         }
-
-        .product-price {
-            font-size: 1.02rem;
-        }
-
         .stock-badge {
             font-size: 0.68rem;
             padding: 4px 9px 4px 6px;
@@ -374,19 +267,12 @@
         .product-item {
             gap: 8px;
         }
-
         .card-image {
             border-radius: 18px;
         }
-
         .product-name {
             font-size: 0.88rem;
         }
-
-        .product-price {
-            font-size: 0.98rem;
-        }
-
         .favorite-btn {
             width: 38px;
             height: 38px;
@@ -394,22 +280,8 @@
     }
 
     @media (hover: none) {
-        .product-item:hover .card-image {
-            transform: none;
-        }
-
         .product-item:hover .card-image img {
             transform: none;
         }
-    }
-
-    .product-item:focus-visible {
-        outline: none;
-    }
-
-    .product-item:focus-visible .card-image {
-        box-shadow:
-                0 0 0 3px var(--md-sys-color-primary),
-                0 10px 24px rgba(0, 0, 0, 0.14);
     }
 </style>
