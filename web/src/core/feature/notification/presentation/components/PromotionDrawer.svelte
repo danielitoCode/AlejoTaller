@@ -141,9 +141,10 @@
         position: absolute;
         inset: 0;
         border: none;
-        background: color-mix(in srgb, black 62%, transparent);
-        backdrop-filter: blur(3px);
-        -webkit-backdrop-filter: blur(3px);
+        /* Opaca fuerte el fondo mientras el drawer está abierto */
+        background: color-mix(in srgb, black 78%, transparent);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         cursor: pointer;
     }
 
@@ -155,12 +156,17 @@
         max-height: 100dvh;
         display: flex;
         flex-direction: column;
-        /* Fondo sólido: evita que el contenido de detrás se vea a través */
-        background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
+        /* Fondo 100% opaco: no deja ver el contenido de detrás */
+        background: var(--md-sys-color-surface);
         color: var(--md-sys-color-on-surface);
-        box-shadow: -16px 0 48px color-mix(in srgb, black 35%, transparent);
+        box-shadow: -20px 0 56px color-mix(in srgb, black 45%, transparent);
         outline: none;
         isolation: isolate;
+        /* Capa sólida extra por si el token surface fuera semitransparente */
+        background-image: linear-gradient(
+            var(--md-sys-color-surface),
+            var(--md-sys-color-surface)
+        );
     }
 
     .promo-drawer-head {
@@ -209,7 +215,7 @@
         min-height: 0;
         overflow-y: auto;
         padding: 12px;
-        background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
+        background: var(--md-sys-color-surface);
     }
 
     .promo-muted {
@@ -312,5 +318,18 @@
         font-style: normal;
         font-weight: 800;
         color: var(--md-sys-color-primary);
+    }
+
+    @media (max-width: 840px) {
+        .promo-drawer {
+            width: min(100vw, 420px);
+        }
+    }
+
+    @media (max-width: 480px) {
+        .promo-drawer {
+            width: 100vw;
+            max-width: 100vw;
+        }
     }
 </style>
