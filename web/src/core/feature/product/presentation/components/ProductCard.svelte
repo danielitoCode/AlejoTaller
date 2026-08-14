@@ -11,11 +11,8 @@
     import { getPrimaryProductImageUrl } from "../utils/product.images";
 
     export let product: Product;
-    /** true mientras se sincroniza stock desde la nube — no mostrar Agotado falso */
     export let stockPending: boolean = false;
-    /** Precio efectivo (Policy B). Si null, usa product.price */
     export let salePrice: number | null = null;
-    /** Precio de lista tachado cuando hay promo */
     export let listPrice: number | null = null;
     export let promoBadge: boolean = false;
     export let onClick: () => void = () => {};
@@ -52,7 +49,19 @@
     $: imageUrl = getPrimaryProductImageUrl(product);
 </script>
 
-<button type="button" class="product-item" on:click={onClick}>
+<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+<div
+    class="product-item"
+    role="button"
+    tabindex="0"
+    on:click={onClick}
+    on:keydown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick();
+        }
+    }}
+>
     <div class="card-image">
         {#if imageUrl}
             <img src={imageUrl} alt={product.name} loading="lazy" />
@@ -93,7 +102,7 @@
             </p>
         {/if}
     </div>
-</button>
+</div>
 
 <style>
     .product-item {
