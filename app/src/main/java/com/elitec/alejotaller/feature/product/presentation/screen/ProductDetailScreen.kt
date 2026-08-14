@@ -1,7 +1,6 @@
 package com.elitec.alejotaller.feature.product.presentation.screen
 
 import android.content.Intent
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -47,15 +45,10 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.presentation.components.LikeHeartButton
 import com.elitec.alejotaller.infraestructure.core.presentation.theme.AlejoTallerTheme
 import com.elitec.alejotaller.infraestructure.core.presentation.util.AppWindowType
 import com.elitec.alejotaller.infraestructure.core.presentation.util.toDeviceMode
-
-private fun stockDetailLabel(available: Int): String = when {
-    available <= 0 -> "Agotado"
-    available <= 5 -> "Ultimas $available unidades"
-    else -> "Disponibles: $available"
-}
 
 @Composable
 private fun StockStatusBadge(
@@ -86,6 +79,7 @@ fun ProductDetailScreen(
     modifier: Modifier = Modifier,
     product: Product,
     showTopBar: Boolean = true,
+    isLiked: Boolean = false,
     onBackClick: () -> Unit = {},
     onFavoriteClick: () -> Unit = {},
     onAddToCartClick: () -> Unit = {}
@@ -125,6 +119,7 @@ fun ProductDetailScreen(
                     if (showTopBar) {
                         HeaderSection(
                             onBackClick = onBackClick,
+                            isLiked = isLiked,
                             onFavoriteClick = onFavoriteClick,
                             onShareClick = handleShare
                         )
@@ -155,6 +150,7 @@ fun ProductDetailScreen(
                     if (showTopBar) {
                         HeaderSection(
                             onBackClick = onBackClick,
+                            isLiked = isLiked,
                             onFavoriteClick = onFavoriteClick,
                             onShareClick = handleShare,
                             modifier = Modifier.align(Alignment.TopCenter)
@@ -194,6 +190,7 @@ fun ProductDetailScreen(
                 if (showTopBar) {
                     HeaderSection(
                         onBackClick = onBackClick,
+                        isLiked = isLiked,
                         onFavoriteClick = onFavoriteClick,
                         onShareClick = handleShare
                     )
@@ -236,6 +233,7 @@ fun ProductDetailScreen(
 @Composable
 private fun HeaderSection(
     onBackClick: () -> Unit,
+    isLiked: Boolean,
     onFavoriteClick: () -> Unit,
     onShareClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -262,19 +260,13 @@ private fun HeaderSection(
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(15.dp)) {
-            IconButton(
-                onClick = onFavoriteClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.surface, CircleShape)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-            ) {
-                Icon(
-                    imageVector = Icons.Rounded.Star,
-                    contentDescription = "like",
-                    tint = MaterialTheme.colorScheme.onBackground
-                )
-            }
+            LikeHeartButton(
+                isLiked = isLiked,
+                onToggle = onFavoriteClick,
+                size = 40.dp,
+                iconSize = 20.dp,
+                showBackground = true
+            )
             IconButton(
                 onClick = onShareClick,
                 modifier = Modifier
@@ -460,6 +452,7 @@ private fun ProductDetailScreenPreview() {
         ProductDetailScreen(
             modifier = Modifier.fillMaxSize(),
             showTopBar = true,
+            isLiked = false,
             onBackClick = {},
             onFavoriteClick = {},
             onAddToCartClick = {},
