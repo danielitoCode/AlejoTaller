@@ -141,7 +141,9 @@
         position: absolute;
         inset: 0;
         border: none;
-        background: color-mix(in srgb, black 42%, transparent);
+        background: color-mix(in srgb, black 62%, transparent);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
         cursor: pointer;
     }
 
@@ -153,10 +155,12 @@
         max-height: 100dvh;
         display: flex;
         flex-direction: column;
-        background: var(--md-sys-color-surface);
+        /* Fondo sólido: evita que el contenido de detrás se vea a través */
+        background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
         color: var(--md-sys-color-on-surface);
-        box-shadow: -12px 0 40px color-mix(in srgb, black 22%, transparent);
+        box-shadow: -16px 0 48px color-mix(in srgb, black 35%, transparent);
         outline: none;
+        isolation: isolate;
     }
 
     .promo-drawer-head {
@@ -167,6 +171,7 @@
         padding: 16px 14px;
         border-bottom: 1px solid var(--md-sys-color-outline-variant);
         flex-shrink: 0;
+        background: var(--md-sys-color-surface-container-low, var(--md-sys-color-surface));
     }
 
     .promo-drawer-title {
@@ -189,7 +194,7 @@
 
     .promo-drawer-close {
         border: none;
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 40%, transparent);
+        background: var(--md-sys-color-surface-container-high);
         border-radius: 12px;
         width: 40px;
         height: 40px;
@@ -204,6 +209,7 @@
         min-height: 0;
         overflow-y: auto;
         padding: 12px;
+        background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
     }
 
     .promo-muted {
@@ -229,7 +235,7 @@
         border: 1px solid var(--md-sys-color-outline-variant);
         border-radius: 16px;
         padding: 10px;
-        background: color-mix(in srgb, var(--md-sys-color-surface-container) 80%, transparent);
+        background: var(--md-sys-color-surface-container);
         color: inherit;
         font: inherit;
         cursor: pointer;
@@ -241,6 +247,7 @@
             var(--md-sys-color-primary) 40%,
             var(--md-sys-color-outline-variant)
         );
+        background: var(--md-sys-color-surface-container-high);
     }
 
     .promo-card-img {
