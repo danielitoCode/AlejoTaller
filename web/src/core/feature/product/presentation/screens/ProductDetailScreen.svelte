@@ -1,1 +1,850 @@
-PLACEHOLDER_WILL_FAIL
+<script lang="ts">
+    import { Button, Icon } from "m3-svelte";
+    import ArrowBackRounded from "@ktibow/iconset-material-symbols/arrow-back-rounded";
+    import FavoriteBorderRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
+    import ShareRounded from "@ktibow/iconset-material-symbols/share";
+    import ShoppingCartRounded from "@ktibow/iconset-material-symbols/shopping-cart-rounded";
+    import Inventory2Rounded from "@ktibow/iconset-material-symbols/inventory-2-rounded";
+    import WarningRounded from "@ktibow/iconset-material-symbols/warning-rounded";
+    import BlockRounded from "@ktibow/iconset-material-symbols/block";
+    import type { Product } from "../../domain/entity/Product";
+    import { availableStock } from "../../domain/entity/Product";
+    import { exchangeStore, formatMoney } from "../../../exchange/presentation/viewmodels/exchanges.store";
+    import { parseProductImageUrls } from "../utils/product.images";
+    import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
+    import { buildHomeHash } from "../../../../infrastructure/presentation/navigation/deeplink";
+    import { productDetail } from "../../../../infrastructure/presentation/navigation/nested.router";
+    import { promotionStore } from "../../../notification/presentation/viewmodel/promotion.store";
+    import {
+        discountPercent,
+        effectivePrice,
+        findActiveProductPromo,
+    } from "../../../notification/domain/policy/PromotionPolicy";
+
+    const placeholderImageUrl = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Crect fill='%23f5f5f5' width='400' height='400'/%3E%3C/svg%3E`;
+
+    export let product: Product;
+    export let showTopBar: boolean = true;
+    export let onBackClick: () => void = () => {};
+    export let onFavoriteClick: () => void = () => {};
+    export let onAddToCartClick: () => void = () => {};
+    export let onAuthRequiredClick: () => void = () => {};
+    export let canAddToCart: boolean = true;
+    export let isGuest: boolean = false;
+
+    $: promos = $promotionStore.items;
+    $: nowMs = Date.now();
+    $: activePromo = findActiveProductPromo(product.id, promos, nowMs);
+    $: salePrice = effectivePrice(product.price, product.id, promos, nowMs);
+    $: hasPromo = activePromo != null && Number(salePrice) < Number(product.price);
+    $: promoPct = hasPromo ? Math.round(discountPercent(Number(product.price), Number(salePrice))) : 0;
+    $: promoTitle = activePromo?.title?.trim() || "";
+    $: available = availableStock(product);
+    $: stockTone = available === 0 ? "out" : available <= 5 ? "low" : "ok";
+    $: stockLabel =
+        available === 0
+            ? "Agotado"
+            : available <= 5
+              ? `Ultimas ${available} unidades`
+              : `Disponibles: ${available}`;
+    $: stockIcon =
+        stockTone === "out"
+            ? BlockRounded
+            : stockTone === "low"
+              ? WarningRounded
+              : Inventory2Rounded;
+    $: inStock = available > 0;
+    $: showCartButton = canAddToCart && inStock;
+
+    function handleShare() {
+        const hash = buildHomeHash(productDetail.path, { productId: product.id });
+        const url = new URL(hash, window.location.origin).toString();
+        if (navigator.share) {
+            navigator.share({ title: product.name, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).catch(() => {});
+            toastStore.success("Enlace copiado al portapapeles");
+        }
+    }
+
+    $: imageUrls = parseProductImageUrls(product.photoUrl);
+
+    let activeIndex = 0;
+    let galleryEl: HTMLDivElement;
+
+    function goToImage(index: number) {
+        if (!galleryEl || imageUrls.length === 0) return;
+        const total = imageUrls.length;
+        const target = ((index % total) + total) % total;
+        galleryEl.scrollTo({
+            left: target * galleryEl.clientWidth,
+            behavior: "smooth"
+        });
+        activeIndex = target;
+    }
+
+    function onGalleryScroll() {
+        if (!galleryEl) return;
+        const idx = Math.round(galleryEl.scrollLeft / galleryEl.clientWidth);
+        if (idx !== activeIndex && idx >= 0 && idx < imageUrls.length) {
+            activeIndex = idx;
+        }
+    }
+</script>
+
+<div class="product-detail-screen">
+    {#if showTopBar}
+        <header class="header-section">
+            <button
+                class="icon-button back-button"
+                type="button"
+                aria-label="Volver"
+                title="Volver"
+                on:click={onBackClick}
+            >
+                <Icon icon={ArrowBackRounded} />
+            </button>
+
+            <div class="header-actions">
+                <button
+                    class="icon-button action-button"
+                    type="button"
+                    aria-label="Agregar a favoritos"
+                    title="Favoritos"
+                    on:click={onFavoriteClick}
+                >
+                    <Icon icon={FavoriteBorderRounded} />
+                </button>
+                <button
+                    class="share-button"
+                    type="button"
+                    aria-label="Compartir"
+                    title="Compartir"
+                    on:click={handleShare}
+                >
+                    <Icon icon={ShareRounded} />
+                    <span class="share-label">Compartir</span>
+                </button>
+            </div>
+        </header>
+    {/if}
+
+    <div class="product-image-section">
+        {#if imageUrls.length > 0}
+            <div class="carousel-container">
+                <div
+                    class="product-image-gallery"
+                    aria-label={`Imagenes de ${product.name}`}
+                    bind:this={galleryEl}
+                    on:scroll={onGalleryScroll}
+                >
+                    {#each imageUrls as imageUrl, imageIndex}
+                        <img
+                            src={imageUrl}
+                            alt={imageUrls.length === 1 ? product.name : `${product.name} - imagen ${imageIndex + 1}`}
+                            class="product-image"
+                        />
+                    {/each}
+                </div>
+
+                {#if imageUrls.length > 1}
+                    <button
+                        class="carousel-btn carousel-btn--prev"
+                        type="button"
+                        aria-label="Imagen anterior"
+                        title="Imagen anterior"
+                        on:click={() => goToImage(activeIndex - 1)}
+                    >
+                        <span class="carousel-btn-icon">&#9664;</span>
+                    </button>
+                    <button
+                        class="carousel-btn carousel-btn--next"
+                        type="button"
+                        aria-label="Imagen siguiente"
+                        title="Imagen siguiente"
+                        on:click={() => goToImage(activeIndex + 1)}
+                    >
+                        <span class="carousel-btn-icon">&#9654;</span>
+                    </button>
+                {/if}
+            </div>
+
+            {#if imageUrls.length > 1}
+                <div class="carousel-dots" role="tablist" aria-label="Selector de imagen">
+                    {#each imageUrls as _, dotIndex}
+                        <button
+                            class="carousel-dot"
+                            class:active={dotIndex === activeIndex}
+                            role="tab"
+                            aria-selected={dotIndex === activeIndex}
+                            aria-label={`Imagen ${dotIndex + 1}`}
+                            on:click={() => goToImage(dotIndex)}
+                        />
+                    {/each}
+                </div>
+            {/if}
+        {:else}
+            <img
+                src={placeholderImageUrl}
+                alt={product.name}
+                class="product-image"
+            />
+        {/if}
+    </div>
+
+    <div class="detail-copy-card">
+        <section class="product-info-section">
+            <h1 class="product-name">{product.name}</h1>
+
+            <span class="stock-badge stock-badge--{stockTone}" aria-label={stockLabel}>
+                <span class="stock-badge-icon" aria-hidden="true">
+                    <Icon icon={stockIcon} />
+                </span>
+                <span class="stock-badge-text">{stockLabel}</span>
+            </span>
+
+            {#if salePrice || salePrice === 0}
+                <div class="price-section" class:has-promo={hasPromo}>
+                    {#if hasPromo}
+                        <span class="price-list">{formatMoney(product.price, $exchangeStore)}</span>
+                        {#if promoPct > 0}
+                            <span class="price-badge">-{promoPct}%</span>
+                        {/if}
+                    {/if}
+                    <span class="price-value">{formatMoney(salePrice, $exchangeStore)}</span>
+                </div>
+                {#if hasPromo && (promoTitle || activePromo?.message)}
+                    <p class="promo-hint" role="status">
+                        <strong>{promoTitle || "Promoción activa"}</strong>
+                        {#if activePromo?.message}
+                            <span>{activePromo.message}</span>
+                        {/if}
+                    </p>
+                {/if}
+            {/if}
+        </section>
+
+        <section class="description-section">
+            <h2 class="description-title">Descripcion</h2>
+            <div class="description-scroll">
+                <p class="product-description">
+                    {product.description}
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <footer class="bottom-bar">
+        {#if showCartButton}
+            <div class="cart-action">
+                <Button variant="filled" size="m" onclick={onAddToCartClick}>
+                    <Icon icon={ShoppingCartRounded} />
+                    <span>Agregar al carrito</span>
+                </Button>
+            </div>
+        {:else if canAddToCart && !inStock}
+            <div class="out-of-stock-action" role="status">
+                Producto agotado — no hay unidades disponibles para comprar.
+            </div>
+        {:else if isGuest}
+            <div class="guest-cta-card">
+                <p>Crea una cuenta para comprar y reservar</p>
+                <Button variant="filled" size="m" onclick={onAuthRequiredClick}>
+                    <span>Crear cuenta / Iniciar sesion</span>
+                </Button>
+            </div>
+        {:else}
+            <div class="guest-action">
+                Inicia sesion para comprar o reservar.
+            </div>
+        {/if}
+    </footer>
+</div>
+
+<style>
+    .product-detail-screen {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-rows:
+            minmax(200px, 34%)
+            minmax(0, 1fr)
+            auto;
+        background: var(--md-sys-color-surface);
+        overflow: hidden;
+    }
+
+    .header-section {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .icon-button {
+        width: 46px;
+        height: 46px;
+        border-radius: 999px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-on-surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .icon-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .icon-button:active {
+        transform: scale(0.96);
+    }
+
+    .icon-button :global(svg) {
+        color: var(--md-sys-color-on-surface);
+    }
+
+    .guest-action,
+    .guest-cta-card,
+    .out-of-stock-action {
+        padding: 12px 16px;
+        border-radius: 999px;
+        background: var(--md-sys-color-surface-container-high);
+        color: var(--md-sys-color-on-surface-variant);
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .out-of-stock-action {
+        border-radius: 20px;
+        background: var(--md-sys-color-error-container, #ffdad6);
+        color: var(--md-sys-color-on-error-container, #410002);
+    }
+
+    .guest-cta-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 28px;
+        background: color-mix(in srgb, var(--md-sys-color-primary-container) 12%, var(--md-sys-color-surface-container-high));
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+    }
+
+    .guest-cta-card p {
+        margin: 0;
+        font-size: 0.92rem;
+        color: var(--md-sys-color-on-surface-variant);
+        font-weight: 600;
+    }
+
+    .guest-cta-card :global(.m3-container) {
+        width: 100%;
+        min-height: 52px;
+        border-radius: 999px;
+    }
+
+    .back-button {
+        background: radial-gradient(circle at center, #242724 0%, var(--m3c-outline-variant) 100%);
+        color: var(--md-sys-color-on-primary-container);
+    }
+
+    .action-button {
+        background: radial-gradient(circle at center, #242724 0%, var(--m3c-outline-variant) 100%);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .share-button {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        color: var(--md-sys-color-on-surface);
+        background: radial-gradient(circle at center, #242724 0%, var(--m3c-outline-variant) 100%);
+        cursor: pointer;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+        transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .share-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+    }
+
+    .share-button:active {
+        transform: scale(0.96);
+    }
+
+    .share-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .product-image-section {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 32px 32px;
+        background: var(--md-sys-color-surface-container-high);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    }
+
+    .product-image-gallery {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+    }
+
+    .product-image-gallery::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .product-image-gallery::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--md-sys-color-outline-variant);
+    }
+
+    .carousel-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 5;
+        width: 40px;
+        height: 40px;
+        border-radius: 999px;
+        border: none;
+        background: radial-gradient(circle at center, #242724 0%, var(--m3c-outline-variant) 100%);
+        color: var(--md-sys-color-on-surface);
+        cursor: pointer;
+        display: grid;
+        place-items: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: transform 0.15s ease, opacity 0.2s ease;
+        opacity: 0;
+    }
+
+    .carousel-container:hover .carousel-btn {
+        opacity: 1;
+    }
+
+    .carousel-btn:hover {
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .carousel-btn:active {
+        transform: translateY(-50%) scale(0.95);
+    }
+
+    .carousel-btn--prev {
+        left: 12px;
+    }
+
+    .carousel-btn--next {
+        right: 12px;
+    }
+
+    .carousel-btn-icon {
+        font-size: 1.1rem;
+        line-height: 1;
+    }
+
+    .carousel-dots {
+        position: absolute;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--md-sys-color-surface-container-high);
+    }
+
+    .carousel-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        border: none;
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 40%, transparent);
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .carousel-dot.active {
+        background: var(--md-sys-color-primary);
+        transform: scale(1.4);
+    }
+
+    .carousel-dot:hover {
+        background: var(--md-sys-color-primary);
+    }
+
+    @media (hover: none) {
+        .carousel-btn {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .carousel-btn {
+            width: 36px;
+            height: 36px;
+            opacity: 1;
+        }
+        .carousel-btn--prev {
+            left: 8px;
+        }
+        .carousel-btn--next {
+            right: 8px;
+        }
+        .carousel-dots {
+            bottom: 10px;
+            gap: 6px;
+            padding: 4px 10px;
+        }
+        .carousel-dot {
+            width: 6px;
+            height: 6px;
+        }
+    }
+
+    .product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        scroll-snap-align: center;
+    }
+
+    .product-image:hover {
+        transform: scale(1.03);
+    }
+
+    .detail-copy-card {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        overflow: hidden;
+        margin-top: -12px;
+        border-radius: 28px 28px 0 0;
+        background: var(--md-sys-color-surface);
+        position: relative;
+        z-index: 2;
+    }
+
+    .product-info-section {
+        padding: 28px 24px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .product-name {
+        margin: 0;
+        font-size: clamp(1.5rem, 3vw, 2.1rem);
+        font-weight: 700;
+        line-height: 1.15;
+        color: var(--md-sys-color-on-surface);
+    }
+
+    .stock-badge {
+        align-self: flex-start;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px 6px 9px;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .stock-badge-icon {
+        display: inline-flex;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .stock-badge-icon :global(svg) {
+        width: 16px;
+        height: 16px;
+    }
+
+    .stock-badge--ok {
+        color: var(--md-sys-color-on-secondary-container, #1a1c19);
+        background: var(--md-sys-color-secondary-container, #c8efc8);
+    }
+
+    .stock-badge--low {
+        color: var(--md-sys-color-on-tertiary-container, #3b2f00);
+        background: var(--md-sys-color-tertiary-container, #ffe08a);
+    }
+
+    .stock-badge--out {
+        color: var(--md-sys-color-on-error-container, #410002);
+        background: var(--md-sys-color-error-container, #ffdad6);
+    }
+
+    .price-section {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px 12px;
+    }
+
+    .price-section.has-promo .price-value {
+        color: var(--md-sys-color-primary);
+    }
+
+    .price-list {
+        text-decoration: line-through;
+        opacity: 0.65;
+        font-size: clamp(1rem, 2.2vw, 1.2rem);
+        font-weight: 650;
+        color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .price-badge {
+        font-size: 0.78rem;
+        font-weight: 850;
+        padding: 4px 10px;
+        border-radius: 999px;
+        letter-spacing: 0.02em;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        color: var(--md-sys-color-primary);
+    }
+
+    .price-value {
+        font-size: clamp(1.6rem, 3vw, 2rem);
+        font-weight: 800;
+        color: var(--md-sys-color-primary);
+        letter-spacing: -0.03em;
+    }
+
+    .promo-hint {
+        margin: 8px 0 0;
+        display: grid;
+        gap: 2px;
+        font-size: 0.88rem;
+        color: var(--md-sys-color-on-surface-variant);
+        line-height: 1.35;
+    }
+
+    .promo-hint strong {
+        color: var(--md-sys-color-primary);
+        font-weight: 800;
+    }
+
+    .description-section {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 12px;
+        min-height: 0;
+        overflow: hidden;
+        padding: 0 24px 24px;
+    }
+
+    .description-title {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--md-sys-color-on-surface-variant);
+    }
+
+    .description-scroll {
+        overflow-y: auto;
+        min-height: 0;
+        padding-right: 6px;
+    }
+
+    .description-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .description-scroll::-webkit-scrollbar-thumb {
+        border-radius: 999px;
+        background: var(--md-sys-color-outline-variant);
+    }
+
+    .product-description {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.75;
+        color: var(--md-sys-color-on-surface);
+        white-space: pre-wrap;
+    }
+
+    .bottom-bar {
+        position: sticky;
+        bottom: 0;
+        padding: 16px 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+        background: color-mix(in srgb, var(--md-sys-color-surface) 92%, transparent);
+        backdrop-filter: blur(18px);
+        border-top: 1px solid var(--md-sys-color-outline-variant);
+    }
+
+    .cart-action {
+        display: grid;
+    }
+
+    .cart-action :global(.m3-container) {
+        width: 100%;
+        min-height: 60px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    /* Vista reducida: imagen importante pero deja sitio a precio, descripción y botones */
+    @media (max-width: 840px) {
+        .product-detail-screen {
+            grid-template-rows: minmax(180px, 30vh) minmax(0, 1fr) auto;
+        }
+        .product-info-section {
+            padding: 20px 18px 8px;
+            gap: 10px;
+        }
+        .description-section {
+            padding: 0 18px 12px;
+            gap: 8px;
+        }
+        .bottom-bar {
+            padding: 12px 16px calc(env(safe-area-inset-bottom, 0px) + 12px);
+        }
+        .icon-button {
+            width: 44px;
+            height: 44px;
+        }
+        .cart-action :global(.m3-container) {
+            min-height: 52px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .product-detail-screen {
+            grid-template-rows: minmax(160px, 26vh) minmax(0, 1fr) auto;
+        }
+        .product-image-section {
+            border-radius: 0 0 24px 24px;
+        }
+        .detail-copy-card {
+            border-radius: 24px 24px 0 0;
+        }
+        .product-name {
+            font-size: 1.28rem;
+        }
+        .price-value {
+            font-size: 1.5rem;
+        }
+        .product-description {
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+        .icon-button {
+            width: 42px;
+            height: 42px;
+        }
+        .share-label {
+            display: none;
+        }
+        .product-info-section {
+            padding: 16px 14px 6px;
+        }
+        .description-section {
+            padding: 0 14px 10px;
+        }
+    }
+
+    /* Tablet / desktop (dentro del modal): layout más equilibrado */
+    @media (min-width: 841px) {
+        .product-detail-screen {
+            grid-template-rows: minmax(220px, 42%) minmax(0, 1fr) auto;
+            border-radius: 28px;
+        }
+        .product-image-section {
+            border-radius: 0;
+        }
+        .detail-copy-card {
+            margin-top: 0;
+            border-radius: 0;
+        }
+        .bottom-bar {
+            border-radius: 0 0 28px 28px;
+        }
+    }
+
+    /* Desktop ancho: imagen a la izquierda, info + acciones a la derecha */
+    @media (min-width: 1100px) {
+        .product-detail-screen {
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+            grid-template-rows: minmax(0, 1fr) auto;
+        }
+
+        .product-image-section {
+            grid-row: 1 / -1;
+            grid-column: 1;
+            border-radius: 0;
+            min-height: 0;
+            height: 100%;
+        }
+
+        .detail-copy-card {
+            grid-column: 2;
+            grid-row: 1;
+            margin-top: 0;
+            border-radius: 0;
+            min-height: 0;
+        }
+
+        .bottom-bar {
+            grid-column: 2;
+            grid-row: 2;
+            border-radius: 0;
+        }
+
+        .header-section {
+            right: auto;
+            width: calc(50% - 16px);
+            max-width: calc(50% - 16px);
+        }
+    }
+</style>
