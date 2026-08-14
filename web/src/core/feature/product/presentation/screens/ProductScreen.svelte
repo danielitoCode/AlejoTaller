@@ -8,6 +8,11 @@
     import type { Product } from "../../domain/entity/Product";
     import type { Category } from "../../../category/domain/entity/Category";
     import CurrencySwitch from "../../../exchange/presentation/components/CurrencySwitch.svelte";
+    import { promotionStore } from "../../../notification/presentation/viewmodel/promotion.store";
+    import {
+        effectivePrice,
+        findActiveProductPromo,
+    } from "../../../notification/domain/policy/PromotionPolicy";
 
     export let products: Product[] = [];
     export let categories: Category[] = [];
@@ -23,6 +28,8 @@
     export let onFavoriteClick: (productId: string) => void = () => {};
 
     $: exchangeState = $exchangeStore;
+    $: promos = $promotionStore.items;
+    $: nowMs = Date.now();
 
     $: filteredProducts = products
         .filter((product) => {
@@ -35,10 +42,22 @@
                 !selectedCategoryId || product.categoryId === selectedCategoryId;
             return matchesSearch && matchesCategory;
         })
-        .map((product) => ({
-            ...product,
-            displayPrice: formatMoney(product.price, exchangeState),
-        }));
+        .map((product) => {
+            const promo = findActiveProductPromo(product.id, promos, nowMs);
+            const salePrice = effectivePrice(product.price, product.id, promos, nowMs);
+            return {
+                ...product,
+                listPrice: product.price,
+                salePrice,
+                activePromo: promo,
+                hasPromo: promo != null && salePrice < Number(product.price),
+                displayPrice: formatMoney(salePrice, exchangeState),
+                displayListPrice:
+                    promo != null && salePrice < Number(product.price)
+                        ? formatMoney(product.price, exchangeState)
+                        : null,
+            };
+        });
 </script>
 
 <div class="product-screen">
@@ -119,6 +138,9 @@
                             <ProductCard
                                 {product}
                                 stockPending={stockSyncing}
+                                salePrice={product.salePrice}
+                                listPrice={product.hasPromo ? product.listPrice : null}
+                                promoBadge={product.hasPromo}
                                 onClick={() => onProductClick(product.id)}
                                 onFavoriteClick={() => onFavoriteClick(product.id)}
                             />
