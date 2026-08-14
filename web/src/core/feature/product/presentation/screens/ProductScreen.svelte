@@ -13,6 +13,7 @@
         effectivePrice,
         findActiveProductPromo,
     } from "../../../notification/domain/policy/PromotionPolicy";
+    import { likedStore, isProductLiked } from "../viewmodel/liked.store";
 
     export let products: Product[] = [];
     export let categories: Category[] = [];
@@ -141,6 +142,7 @@
                                 salePrice={product.salePrice}
                                 listPrice={product.hasPromo ? product.listPrice : null}
                                 promoBadge={product.hasPromo}
+                                isLiked={isProductLiked(product.id, $likedStore)}
                                 onClick={() => onProductClick(product.id)}
                                 onFavoriteClick={() => onFavoriteClick(product.id)}
                             />
