@@ -9,12 +9,14 @@ export type SaleWriteDTO = Pick<
 >;
 
 function saleItemFromDTO(item: SaleItemDTO): SaleItem {
+    const unit = Number(item.price) || 0;
     return {
         productId: item.productId,
         productName: item.productName ?? null,
         quantity: item.quantity,
-        price: item.price,
-        unitPrice: item.price,
+        price: unit,
+        unitPrice: unit,
+        listUnitPrice: item.listUnitPrice ?? null,
     };
 }
 
@@ -24,7 +26,8 @@ function saleItemToDTO(item: SaleItem): SaleItemDTO {
         productId: item.productId,
         productName: item.productName ?? null,
         quantity: item.quantity,
-        price: unit
+        price: unit,
+        listUnitPrice: item.listUnitPrice ?? null,
     };
 }
 
