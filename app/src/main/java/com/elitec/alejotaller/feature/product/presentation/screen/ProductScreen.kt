@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -66,6 +64,8 @@ fun ProductScreen(
     categories: List<com.elitec.alejotaller.feature.category.domain.entity.Category> = emptyList(),
     promotions: List<Promotion> = emptyList(),
     onPromotionClick: (String) -> Unit = {},
+    likedProductIds: Set<String> = emptySet(),
+    onFavoriteClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     searchQuery: String = "",
     onSearchQueryChange: (String) -> Unit = {},
@@ -78,6 +78,8 @@ fun ProductScreen(
         categories = categories,
         promotions = promotions,
         onPromotionClick = onPromotionClick,
+        likedProductIds = likedProductIds,
+        onFavoriteClick = onFavoriteClick,
         modifier = modifier,
         searchQuery = searchQuery,
         onSearchQueryChange = onSearchQueryChange,
@@ -90,6 +92,8 @@ fun ProductScreen(
 fun ProductGrid(
     onProductClick: (String) -> Unit,
     products: List<Product>,
+    likedProductIds: Set<String> = emptySet(),
+    onFavoriteClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -107,7 +111,9 @@ fun ProductGrid(
             items(products, key = { it.id }) { product ->
                 ProductItem(
                     onClick = { onProductClick(product.id) },
-                    product = product
+                    product = product,
+                    isLiked = product.id in likedProductIds,
+                    onFavoriteClick = { onFavoriteClick(product.id) }
                 )
             }
         }
@@ -210,6 +216,8 @@ private fun ProductScreenContent(
     categories: List<com.elitec.alejotaller.feature.category.domain.entity.Category>,
     promotions: List<Promotion>,
     onPromotionClick: (String) -> Unit,
+    likedProductIds: Set<String>,
+    onFavoriteClick: (String) -> Unit,
     modifier: Modifier,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
@@ -285,6 +293,8 @@ private fun ProductScreenContent(
         ProductGrid(
             onProductClick = onProductClick,
             products = products,
+            likedProductIds = likedProductIds,
+            onFavoriteClick = onFavoriteClick,
             modifier = Modifier.fillMaxSize()
         )
     }
