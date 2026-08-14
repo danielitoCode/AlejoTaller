@@ -176,16 +176,16 @@
 
     /* Fondo = color de estado; texto/icono con contraste */
     .stock-ok {
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
+        background: #2e7d32;
+        color: #fff;
     }
     .stock-low {
         background: #c47a00;
         color: #fff;
     }
     .stock-out {
-        background: var(--md-sys-color-error);
-        color: var(--md-sys-color-on-error);
+        background: #ef9a9a;
+        color: #b71c1c;
     }
     .stock-pending {
         background: var(--md-sys-color-surface-container-highest);
