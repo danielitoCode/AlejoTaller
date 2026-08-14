@@ -46,7 +46,7 @@
               : stockTone === "low"
                 ? WarningRounded
                 : Inventory2Rounded;
-    $: imageUrl = getPrimaryProductImageUrl(product);
+    $: imageUrl = getPrimaryProductImageUrl(product?.photoUrl);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
@@ -196,8 +196,6 @@
         place-items: center;
         cursor: pointer;
         background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
-        color: var(--md-sys-color-on-surface);
-        backdrop-filter: blur(8px);
     }
 
     .card-footer {
