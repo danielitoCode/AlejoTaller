@@ -151,36 +151,44 @@
     }
 </script>
 
-<div class="internal-product-host">
+<div class="internal-product-host" class:has-detail={!!selectedProduct}>
+    <div class="list-layer" class:list-hidden-mobile={!!selectedProduct} transition:fade={{ duration: 160 }}>
+        <ProductScreen
+            {products}
+            {categories}
+            {searchQuery}
+            {selectedCategoryId}
+            loading={isLoading}
+            {stockSyncing}
+            {realtimeUpdating}
+            {syncMessage}
+            onSearchQueryChanged={handleSearchQueryChanged}
+            onCategorySelected={handleCategorySelected}
+            onProductClick={handleProductClick}
+            onFavoriteClick={handleFavoriteClick}
+        />
+    </div>
+
     {#if selectedProduct}
         <div class="detail-layer" transition:fly={{ x: 24, duration: 220 }}>
-            <ProductDetailScreen
-                product={selectedProduct}
-                showTopBar={true}
-                onBackClick={closeProductDetail}
-                onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
-                canAddToCart={!$sessionStore.isGuest}
-                isGuest={$sessionStore.isGuest}
-                onAddToCartClick={handleAddToCartClick}
-                onAuthRequiredClick={handleAuthRequired}
-            />
-        </div>
-    {:else}
-        <div class="list-layer" transition:fade={{ duration: 160 }}>
-            <ProductScreen
-                {products}
-                {categories}
-                {searchQuery}
-                {selectedCategoryId}
-                loading={isLoading}
-                {stockSyncing}
-                {realtimeUpdating}
-                {syncMessage}
-                onSearchQueryChanged={handleSearchQueryChanged}
-                onCategorySelected={handleCategorySelected}
-                onProductClick={handleProductClick}
-                onFavoriteClick={handleFavoriteClick}
-            />
+            <button
+                type="button"
+                class="detail-scrim"
+                aria-label="Cerrar detalle"
+                on:click={closeProductDetail}
+            ></button>
+            <div class="detail-panel" role="dialog" aria-modal="true" aria-label="Detalle del producto">
+                <ProductDetailScreen
+                    product={selectedProduct}
+                    showTopBar={true}
+                    onBackClick={closeProductDetail}
+                    onFavoriteClick={() => handleFavoriteClick(selectedProduct.id)}
+                    canAddToCart={!$sessionStore.isGuest}
+                    isGuest={$sessionStore.isGuest}
+                    onAddToCartClick={handleAddToCartClick}
+                    onAuthRequiredClick={handleAuthRequired}
+                />
+            </div>
         </div>
     {/if}
 
@@ -206,8 +214,7 @@
         position: relative;
     }
 
-    .list-layer,
-    .detail-layer {
+    .list-layer {
         flex: 1 1 auto;
         min-height: 0;
         width: 100%;
@@ -219,10 +226,98 @@
         box-sizing: border-box;
     }
 
-    .list-layer :global(.product-screen),
-    .detail-layer :global(.product-detail-screen) {
+    .list-layer :global(.product-screen) {
         flex: 1 1 auto;
         min-height: 0;
         height: 100%;
+    }
+
+    /* Capa de detalle: móvil = pantalla completa; tablet/desktop = modal */
+    .detail-layer {
+        position: absolute;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: stretch;
+        justify-content: stretch;
+        box-sizing: border-box;
+    }
+
+    .detail-scrim {
+        display: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .detail-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: var(--md-sys-color-surface);
+        box-sizing: border-box;
+    }
+
+    .detail-panel :global(.product-detail-screen) {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+    }
+
+    /* Móvil / vista reducida: lista ocultada, detalle a pantalla completa */
+    @media (max-width: 840px) {
+        .list-hidden-mobile {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .detail-layer {
+            background: var(--md-sys-color-surface);
+        }
+    }
+
+    /* Tablet y desktop: modal centrado, lista visible detrás */
+    @media (min-width: 841px) {
+        .detail-layer {
+            align-items: center;
+            justify-content: center;
+            padding: max(16px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom));
+            background: transparent;
+        }
+
+        .detail-scrim {
+            display: block;
+            position: absolute;
+            inset: 0;
+            background: color-mix(in srgb, black 55%, transparent);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 0;
+        }
+
+        .detail-panel {
+            position: relative;
+            z-index: 1;
+            flex: 0 1 auto;
+            width: min(960px, 100%);
+            height: min(820px, calc(100dvh - 48px));
+            max-height: calc(100dvh - 48px);
+            border-radius: 28px;
+            overflow: hidden;
+            box-shadow:
+                0 24px 64px color-mix(in srgb, black 35%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
+        }
+    }
+
+    @media (min-width: 841px) and (max-width: 1100px) {
+        .detail-panel {
+            width: min(720px, 100%);
+            height: min(760px, calc(100dvh - 40px));
+        }
     }
 </style>
