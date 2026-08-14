@@ -1,5 +1,7 @@
-import { derived, writable } from "svelte/store";
+import { derived, get, writable } from "svelte/store";
 import type { Product } from "../../../product/domain/entity/Product";
+import { promotionStore } from "../../../notification/presentation/viewmodel/promotion.store";
+import { effectivePrice } from "../../../notification/domain/policy/PromotionPolicy";
 import { availableStock } from "../../../product/domain/entity/Product";
 
 export interface CartItem {
@@ -68,10 +70,6 @@ function createCartStore() {
         });
     }
 
-    /**
-     * Añade unidades respetando available = existence − reserved.
-     * Si ya hay N en carrito y max=2, solo suma hasta el tope.
-     */
     function addProduct(product: Product, quantity = 1): CartQtyResult {
         const max = maxQtyFor(product);
         if (max <= 0) {
@@ -128,9 +126,10 @@ function createCartStore() {
             const nextQty = clampQty(existing.product, desired);
             const clamped = desired > max;
 
-            result = nextQty <= 0 && desired > 0 && max <= 0
-                ? { ok: false, reason: "out_of_stock", max: 0 }
-                : { ok: true, quantity: nextQty, max, clamped };
+            result =
+                nextQty <= 0 && desired > 0 && max <= 0
+                    ? { ok: false, reason: "out_of_stock", max: 0 }
+                    : { ok: true, quantity: nextQty, max, clamped };
 
             return {
                 items: state.items
@@ -156,7 +155,6 @@ function createCartStore() {
         commit(() => ({ items: [] }));
     }
 
-    /** Re-aplica topes cuando llega stock fresco de Appwrite (misma id). */
     function refreshProductStock(products: Product[]): void {
         commit((state) => {
             const byId = new Map(products.map((p) => [p.id, p]));
@@ -174,9 +172,14 @@ function createCartStore() {
     const totalItems = derived({ subscribe }, ($state) =>
         $state.items.reduce((sum, item) => sum + item.quantity, 0)
     );
-    const totalAmount = derived({ subscribe }, ($state) =>
-        $state.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
-    );
+    const totalAmount = derived({ subscribe }, ($state) => {
+        const promos = get(promotionStore).items;
+        const now = Date.now();
+        return $state.items.reduce((sum, item) => {
+            const unit = effectivePrice(item.product.price, item.product.id, promos, now);
+            return sum + unit * item.quantity;
+        }, 0);
+    });
 
     return {
         subscribe,
@@ -187,7 +190,6 @@ function createCartStore() {
         refreshProductStock,
         totalItems,
         totalAmount,
-        /** Helpers para UI */
         maxFor: maxQtyFor
     };
 }
