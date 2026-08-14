@@ -8,8 +8,11 @@
     import {
         isActiveBanner,
         isActiveProductDiscount,
+        resolvePromotionKind,
     } from "../../domain/policy/PromotionPolicy";
     import type { Promotion } from "../../domain/entity/Promotion";
+    import { productStore } from "../../../product/presentation/viewmodel/product.store";
+    import { resolvePromotionImageUrl } from "../utils/promotion.images";
 
     export let open = false;
     export let onClose: () => void = () => {};
@@ -24,6 +27,17 @@
     $: active = items.filter(
         (p) => isActiveBanner(p, now) || isActiveProductDiscount(p, now)
     );
+    $: productPhotoById = new Map(
+        ($productStore.items ?? []).map((prod) => [prod.id, prod.photoUrl] as const)
+    );
+
+    function imageFor(promo: Promotion): string | null {
+        return resolvePromotionImageUrl(promo, productPhotoById);
+    }
+
+    function kindLabel(promo: Promotion): string {
+        return resolvePromotionKind(promo) === "banner" ? "Banner" : "Descuento";
+    }
 
     function handleKey(e: KeyboardEvent) {
         if (e.key === "Escape") onClose();
@@ -72,19 +86,34 @@
                                         onClose();
                                     }}
                                 >
-                                    {#if promo.imageUrl}
-                                        <img src={promo.imageUrl} alt="" class="promo-card-img" />
+                                    {#if imageFor(promo)}
+                                        <img
+                                            src={imageFor(promo)}
+                                            alt=""
+                                            class="promo-card-img"
+                                            referrerpolicy="no-referrer"
+                                            loading="lazy"
+                                            on:error={(e) => {
+                                                const el = e.currentTarget;
+                                                if (el) el.style.display = "none";
+                                            }}
+                                        />
                                     {:else}
                                         <span class="promo-card-img placeholder" aria-hidden="true">
                                             <Icon icon={localOfferIcon} />
                                         </span>
                                     {/if}
                                     <span class="promo-card-copy">
+                                        <span class="promo-kind">{kindLabel(promo)}</span>
                                         <strong>{promo.title}</strong>
                                         <small>{promo.message}</small>
                                         {#if promo.oldPrice != null && promo.currentPrice != null}
                                             <span class="promo-price">
                                                 <s>{promo.oldPrice}</s>
+                                                <em>{promo.currentPrice}</em>
+                                            </span>
+                                        {:else if promo.currentPrice != null}
+                                            <span class="promo-price">
                                                 <em>{promo.currentPrice}</em>
                                             </span>
                                         {/if}
@@ -207,7 +236,11 @@
     }
 
     .promo-card:hover {
-        border-color: color-mix(in srgb, var(--md-sys-color-primary) 40%, var(--md-sys-color-outline-variant));
+        border-color: color-mix(
+            in srgb,
+            var(--md-sys-color-primary) 40%,
+            var(--md-sys-color-outline-variant)
+        );
     }
 
     .promo-card-img {
@@ -236,6 +269,15 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .promo-kind {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--md-sys-color-primary);
+        opacity: 0.9;
     }
 
     .promo-card-copy strong {
