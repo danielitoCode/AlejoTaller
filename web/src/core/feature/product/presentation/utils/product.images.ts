@@ -16,33 +16,53 @@ function isProductImagesPayload(value: unknown): value is ProductImagesPayload {
     );
 }
 
-export function parseProductImageUrls(photoUrl: string | null | undefined): string[] {
-    const normalizedPhotoUrl = photoUrl?.trim();
+function coerceToStringList(value: unknown): string[] {
+    if (value == null) return [];
 
-    if (!normalizedPhotoUrl) {
+    if (Array.isArray(value)) {
+        return value
+            .filter((v): v is string => typeof v === "string")
+            .map((v) => v.trim())
+            .filter((v) => v.length > 0);
+    }
+
+    if (typeof value === "object") {
+        const record = value as Record<string, unknown>;
+        if ("photoUrl" in record) return coerceToStringList(record.photoUrl);
+        if ("photo_url" in record) return coerceToStringList(record.photo_url);
+        if (isProductImagesPayload(value)) {
+            return value.images
+                .filter((imageUrl): imageUrl is string => typeof imageUrl === "string")
+                .map((imageUrl) => imageUrl.trim())
+                .filter((imageUrl) => imageUrl.length > 0);
+        }
         return [];
     }
 
-    if (normalizedPhotoUrl.startsWith("http://") || normalizedPhotoUrl.startsWith("https://")) {
-        return [normalizedPhotoUrl];
+    if (typeof value !== "string") {
+        return [];
+    }
+
+    const normalized = value.trim();
+    if (!normalized) return [];
+
+    if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+        return [normalized];
     }
 
     try {
-        const parsed = JSON.parse(normalizedPhotoUrl) as unknown;
-
-        if (!isProductImagesPayload(parsed)) {
-            return [];
-        }
-
-        return parsed.images
-            .filter((imageUrl): imageUrl is string => typeof imageUrl === "string")
-            .map((imageUrl) => imageUrl.trim())
-            .filter((imageUrl) => imageUrl.length > 0);
+        const parsed = JSON.parse(normalized) as unknown;
+        return coerceToStringList(parsed);
     } catch {
         return [];
     }
 }
 
-export function getPrimaryProductImageUrl(photoUrl: string | null | undefined): string | null {
+/** Acepta string | JSON versionado | array | objeto producto (defensivo). */
+export function parseProductImageUrls(photoUrl: unknown): string[] {
+    return coerceToStringList(photoUrl);
+}
+
+export function getPrimaryProductImageUrl(photoUrl: unknown): string | null {
     return parseProductImageUrls(photoUrl)[0] ?? null;
 }
