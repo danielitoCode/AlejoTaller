@@ -170,20 +170,25 @@
         border-radius: 999px;
         font-size: 0.72rem;
         font-weight: 700;
-        backdrop-filter: blur(8px);
-        background: color-mix(in srgb, var(--md-sys-color-surface) 82%, transparent);
+        line-height: 1.2;
+        box-shadow: 0 1px 3px color-mix(in srgb, #000 22%, transparent);
     }
 
+    /* Fondo = color de estado; texto/icono con contraste */
     .stock-ok {
-        color: var(--md-sys-color-primary);
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
     }
     .stock-low {
-        color: #c47a00;
+        background: #c47a00;
+        color: #fff;
     }
     .stock-out {
-        color: var(--md-sys-color-error);
+        background: var(--md-sys-color-error);
+        color: var(--md-sys-color-on-error);
     }
     .stock-pending {
+        background: var(--md-sys-color-surface-container-highest);
         color: var(--md-sys-color-on-surface-variant);
     }
 
