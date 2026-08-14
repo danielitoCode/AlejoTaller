@@ -14,6 +14,7 @@
     import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
     import { logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
     import { availableStock } from "../../domain/entity/Product";
+    import { likedStore } from "../viewmodel/liked.store";
 
     export let navBackStackEntry: NavBackStackEntry<{ productId?: string }> | undefined = undefined;
     export let navController: NavController | undefined = undefined;
@@ -83,6 +84,7 @@
             productStore.syncAll();
             promotionStore.syncAll({ suppressPermissionError: true });
             categoryStore.syncAll();
+            likedStore.hydrate();
         } catch (error) {
             console.error("Error loading data:", error);
         }
@@ -108,7 +110,9 @@
         const product = products.find((p) => p.id === productId);
         if (product) selectedProduct = product;
     };
-    const handleFavoriteClick = (_productId: string) => {};
+    const handleFavoriteClick = (productId: string) => {
+        likedStore.toggle(productId);
+    };
 
     const handleAddToCartClick = () => {
         if (!selectedProduct) return;
