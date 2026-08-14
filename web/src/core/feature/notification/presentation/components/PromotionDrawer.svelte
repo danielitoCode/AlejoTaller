@@ -36,7 +36,18 @@
     }
 
     function kindLabel(promo: Promotion): string {
-        return resolvePromotionKind(promo) === "banner" ? "Banner" : "Descuento";
+        return resolvePromotionKind(promo) === "banner" ? "Banner" : "Oferta de producto";
+    }
+
+    function kindClass(promo: Promotion): string {
+        return resolvePromotionKind(promo) === "banner" ? "is-banner" : "is-product";
+    }
+
+    function discountPct(promo: Promotion): number | null {
+        const oldP = Number(promo.oldPrice);
+        const cur = Number(promo.currentPrice);
+        if (!Number.isFinite(oldP) || oldP <= 0 || !Number.isFinite(cur) || cur >= oldP) return null;
+        return Math.round(((oldP - cur) / oldP) * 100);
     }
 
     function handleKey(e: KeyboardEvent) {
@@ -80,42 +91,53 @@
                             <li>
                                 <button
                                     type="button"
-                                    class="promo-card"
+                                    class="promo-card {kindClass(promo)}"
                                     on:click={() => {
                                         onSelect(promo);
                                         onClose();
                                     }}
                                 >
-                                    {#if imageFor(promo)}
-                                        <img
-                                            src={imageFor(promo)}
-                                            alt=""
-                                            class="promo-card-img"
-                                            referrerpolicy="no-referrer"
-                                            loading="lazy"
-                                            on:error={(e) => {
-                                                const el = e.currentTarget;
-                                                if (el) el.style.display = "none";
-                                            }}
-                                        />
-                                    {:else}
-                                        <span class="promo-card-img placeholder" aria-hidden="true">
-                                            <Icon icon={localOfferIcon} />
-                                        </span>
-                                    {/if}
+                                    <span class="promo-card-media">
+                                        {#if imageFor(promo)}
+                                            <img
+                                                src={imageFor(promo)}
+                                                alt=""
+                                                class="promo-card-img"
+                                                referrerpolicy="no-referrer"
+                                                loading="lazy"
+                                                on:error={(e) => {
+                                                    const el = e.currentTarget;
+                                                    if (el) el.style.display = "none";
+                                                }}
+                                            />
+                                        {:else}
+                                            <span class="promo-card-img placeholder" aria-hidden="true">
+                                                <Icon icon={localOfferIcon} />
+                                            </span>
+                                        {/if}
+                                        {#if kindClass(promo) === "is-product" && discountPct(promo) != null}
+                                            <span class="promo-discount-chip">-{discountPct(promo)}%</span>
+                                        {/if}
+                                    </span>
                                     <span class="promo-card-copy">
-                                        <span class="promo-kind">{kindLabel(promo)}</span>
+                                        <span class="promo-kind-row">
+                                            <span class="promo-kind">{kindLabel(promo)}</span>
+                                        </span>
                                         <strong>{promo.title}</strong>
                                         <small>{promo.message}</small>
-                                        {#if promo.oldPrice != null && promo.currentPrice != null}
-                                            <span class="promo-price">
-                                                <s>{promo.oldPrice}</s>
-                                                <em>{promo.currentPrice}</em>
-                                            </span>
-                                        {:else if promo.currentPrice != null}
-                                            <span class="promo-price">
-                                                <em>{promo.currentPrice}</em>
-                                            </span>
+                                        {#if kindClass(promo) === "is-product"}
+                                            {#if promo.oldPrice != null && promo.currentPrice != null}
+                                                <span class="promo-price">
+                                                    <s>{promo.oldPrice}</s>
+                                                    <em>{promo.currentPrice}</em>
+                                                </span>
+                                            {:else if promo.currentPrice != null}
+                                                <span class="promo-price">
+                                                    <em>{promo.currentPrice}</em>
+                                                </span>
+                                            {/if}
+                                        {:else}
+                                            <span class="promo-banner-hint">Anuncio general · no ligado a un producto</span>
                                         {/if}
                                     </span>
                                 </button>
@@ -141,7 +163,6 @@
         position: absolute;
         inset: 0;
         border: none;
-        /* Opaca fuerte el fondo mientras el drawer está abierto */
         background: color-mix(in srgb, black 78%, transparent);
         backdrop-filter: blur(6px);
         -webkit-backdrop-filter: blur(6px);
@@ -156,13 +177,11 @@
         max-height: 100dvh;
         display: flex;
         flex-direction: column;
-        /* Fondo 100% opaco: no deja ver el contenido de detrás */
         background: var(--md-sys-color-surface);
         color: var(--md-sys-color-on-surface);
         box-shadow: -20px 0 56px color-mix(in srgb, black 45%, transparent);
         outline: none;
         isolation: isolate;
-        /* Capa sólida extra por si el token surface fuera semitransparente */
         background-image: linear-gradient(
             var(--md-sys-color-surface),
             var(--md-sys-color-surface)
@@ -236,88 +255,170 @@
         width: 100%;
         display: flex;
         gap: 12px;
-        align-items: center;
+        align-items: stretch;
         text-align: left;
         border: 1px solid var(--md-sys-color-outline-variant);
-        border-radius: 16px;
-        padding: 10px;
+        border-radius: 18px;
+        padding: 12px;
         background: var(--md-sys-color-surface-container);
         color: inherit;
         font: inherit;
         cursor: pointer;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+        position: relative;
+        overflow: hidden;
     }
 
     .promo-card:hover {
-        border-color: color-mix(
-            in srgb,
-            var(--md-sys-color-primary) 40%,
-            var(--md-sys-color-outline-variant)
-        );
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px color-mix(in srgb, black 14%, transparent);
+    }
+
+    .promo-card.is-banner {
+        border-color: color-mix(in srgb, #ff3d81 35%, var(--md-sys-color-outline-variant));
+        background:
+            linear-gradient(
+                135deg,
+                color-mix(in srgb, #ff6b35 12%, var(--md-sys-color-surface-container)) 0%,
+                color-mix(in srgb, #ff3d81 10%, var(--md-sys-color-surface-container)) 100%
+            );
+    }
+
+    .promo-card.is-banner:hover {
+        border-color: color-mix(in srgb, #ff3d81 55%, var(--md-sys-color-outline-variant));
+    }
+
+    .promo-card.is-banner .promo-kind {
+        background: linear-gradient(135deg, #ff6b35, #ff3d81);
+        color: #fff;
+    }
+
+    .promo-card.is-banner .promo-card-media {
+        background: color-mix(in srgb, #ff3d81 14%, var(--md-sys-color-surface-container-high));
+    }
+
+    .promo-card.is-product {
+        border-color: color-mix(in srgb, var(--md-sys-color-primary) 28%, var(--md-sys-color-outline-variant));
+        background: var(--md-sys-color-surface-container);
+    }
+
+    .promo-card.is-product:hover {
+        border-color: color-mix(in srgb, var(--md-sys-color-primary) 50%, var(--md-sys-color-outline-variant));
+    }
+
+    .promo-card.is-product .promo-kind {
+        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        color: var(--md-sys-color-primary);
+    }
+
+    .promo-card-media {
+        position: relative;
+        flex-shrink: 0;
+        width: 64px;
+        height: 64px;
+        border-radius: 14px;
+        overflow: hidden;
         background: var(--md-sys-color-surface-container-high);
     }
 
     .promo-card-img {
-        width: 56px;
-        height: 56px;
-        border-radius: 12px;
+        width: 100%;
+        height: 100%;
         object-fit: cover;
-        flex-shrink: 0;
-        background: var(--md-sys-color-surface-container-high);
+        display: block;
     }
 
     .promo-card-img.placeholder {
         display: grid;
         place-items: center;
+        width: 100%;
+        height: 100%;
         color: var(--md-sys-color-primary);
+    }
+
+    .promo-discount-chip {
+        position: absolute;
+        left: 4px;
+        bottom: 4px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        background: var(--md-sys-color-error);
+        color: var(--md-sys-color-on-error);
+        box-shadow: 0 2px 6px color-mix(in srgb, black 25%, transparent);
     }
 
     .promo-card-copy {
         min-width: 0;
+        flex: 1;
         display: grid;
-        gap: 2px;
+        gap: 3px;
+        align-content: center;
     }
 
-    .promo-card-copy strong,
-    .promo-card-copy small {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .promo-kind-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .promo-kind {
-        font-size: 0.68rem;
-        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.66rem;
+        font-weight: 850;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--md-sys-color-primary);
-        opacity: 0.9;
+        letter-spacing: 0.05em;
+        width: fit-content;
     }
 
     .promo-card-copy strong {
-        font-weight: 800;
-        font-size: 0.95rem;
+        font-weight: 850;
+        font-size: 0.96rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--md-sys-color-on-surface);
     }
 
     .promo-card-copy small {
         font-size: 0.8rem;
         color: var(--md-sys-color-on-surface-variant);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .promo-price {
         display: flex;
         gap: 8px;
         align-items: baseline;
-        font-size: 0.85rem;
+        font-size: 0.88rem;
+        margin-top: 2px;
     }
 
     .promo-price s {
-        opacity: 0.65;
+        opacity: 0.6;
+        font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant);
     }
 
     .promo-price em {
         font-style: normal;
-        font-weight: 800;
+        font-weight: 900;
         color: var(--md-sys-color-primary);
+        font-size: 0.98rem;
+    }
+
+    .promo-banner-hint {
+        margin-top: 2px;
+        font-size: 0.72rem;
+        font-weight: 650;
+        color: color-mix(in srgb, #ff3d81 75%, var(--md-sys-color-on-surface-variant));
     }
 
     @media (max-width: 840px) {
