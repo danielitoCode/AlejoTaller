@@ -232,7 +232,6 @@
         height: 100%;
     }
 
-    /* Capa de detalle: móvil = pantalla completa; tablet/desktop = modal */
     .detail-layer {
         position: absolute;
         inset: 0;
@@ -268,7 +267,6 @@
         height: 100%;
     }
 
-    /* Móvil / vista reducida: lista ocultada, detalle a pantalla completa */
     @media (max-width: 840px) {
         .list-hidden-mobile {
             visibility: hidden;
@@ -280,7 +278,6 @@
         }
     }
 
-    /* Tablet y desktop: modal centrado, lista visible detrás */
     @media (min-width: 841px) {
         .detail-layer {
             align-items: center;
@@ -293,9 +290,9 @@
             display: block;
             position: absolute;
             inset: 0;
-            background: color-mix(in srgb, black 55%, transparent);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            background: color-mix(in srgb, black 88%, transparent);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 0;
         }
 
@@ -308,9 +305,37 @@
             max-height: calc(100dvh - 48px);
             border-radius: 28px;
             overflow: hidden;
+            isolation: isolate;
+            background: var(--md-sys-color-surface);
+            background-image: linear-gradient(
+                var(--md-sys-color-surface),
+                var(--md-sys-color-surface)
+            );
             box-shadow:
-                0 24px 64px color-mix(in srgb, black 35%, transparent),
-                0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
+                0 28px 72px color-mix(in srgb, black 50%, transparent),
+                0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
+        }
+
+        .detail-panel :global(.product-detail-screen),
+        .detail-panel :global(.detail-copy-card),
+        .detail-panel :global(.bottom-bar),
+        .detail-panel :global(.product-info-section),
+        .detail-panel :global(.description-section) {
+            background: var(--md-sys-color-surface) !important;
+            background-image: linear-gradient(
+                var(--md-sys-color-surface),
+                var(--md-sys-color-surface)
+            ) !important;
+        }
+
+        .detail-panel :global(.bottom-bar) {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)) !important;
+            background-image: linear-gradient(
+                var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)),
+                var(--md-sys-color-surface-container-low, var(--md-sys-color-surface))
+            ) !important;
         }
     }
 
