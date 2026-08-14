@@ -34,11 +34,18 @@
 </script>
 
 {#if variant === "nav"}
-    <button type="button" class="promo-nav-btn" on:click={openDrawer}>
-        <Icon icon={localOfferIcon} />
+    <button
+        type="button"
+        class="promo-nav-btn"
+        class:has-active={activeCount > 0}
+        on:click={openDrawer}
+    >
+        <span class="promo-nav-icon" aria-hidden="true">
+            <Icon icon={localOfferIcon} />
+        </span>
         <span class="promo-nav-copy">
             <strong>Promociones</strong>
-            <small>{activeCount > 0 ? `${activeCount} activas` : "Ver ofertas"}</small>
+            <small>{activeCount > 0 ? `${activeCount} activas · toca para ver` : "Ver ofertas"}</small>
         </span>
         {#if activeCount > 0}
             <span class="promo-nav-badge">{activeCount}</span>
@@ -54,6 +61,7 @@
             type="button"
             class="promo-float-btn"
             class:shake
+            class:has-active={activeCount > 0}
             aria-label="Abrir promociones"
             on:click={openDrawer}
         >
@@ -71,45 +79,79 @@
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 16px;
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, var(--md-sys-color-primary-container) 70%, transparent);
-        color: inherit;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: none;
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
         font: inherit;
         cursor: pointer;
         text-align: left;
+        box-shadow:
+            0 6px 16px color-mix(in srgb, var(--md-sys-color-primary) 45%, transparent),
+            0 2px 6px color-mix(in srgb, black 18%, transparent);
+        transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .promo-nav-btn:hover {
+        filter: brightness(1.06);
+        box-shadow:
+            0 10px 22px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent),
+            0 3px 8px color-mix(in srgb, black 20%, transparent);
+    }
+
+    .promo-nav-btn:active {
+        transform: scale(0.98);
+    }
+
+    .promo-nav-btn.has-active {
+        animation: promo-nav-pulse 2.4s ease-in-out infinite;
+    }
+
+    .promo-nav-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        background: color-mix(in srgb, var(--md-sys-color-on-primary) 18%, transparent);
+        color: var(--md-sys-color-on-primary);
     }
 
     .promo-nav-copy {
         flex: 1;
         min-width: 0;
         display: grid;
-        gap: 1px;
+        gap: 2px;
     }
 
     .promo-nav-copy strong {
-        font-size: 0.9rem;
-        font-weight: 800;
+        font-size: 0.95rem;
+        font-weight: 850;
+        letter-spacing: -0.01em;
+        color: var(--md-sys-color-on-primary);
     }
 
     .promo-nav-copy small {
         font-size: 0.75rem;
-        opacity: 0.85;
+        font-weight: 600;
+        color: color-mix(in srgb, var(--md-sys-color-on-primary) 82%, transparent);
     }
 
     .promo-nav-badge {
-        min-width: 22px;
-        height: 22px;
-        padding: 0 6px;
+        min-width: 26px;
+        height: 26px;
+        padding: 0 7px;
         border-radius: 999px;
         display: grid;
         place-items: center;
-        font-size: 0.72rem;
-        font-weight: 800;
-        background: var(--md-sys-color-primary);
-        color: var(--md-sys-color-on-primary);
+        font-size: 0.78rem;
+        font-weight: 850;
+        background: var(--md-sys-color-on-primary);
+        color: var(--md-sys-color-primary);
+        box-shadow: 0 2px 6px color-mix(in srgb, black 20%, transparent);
     }
 
     .promo-float {
@@ -141,39 +183,50 @@
     }
 
     .promo-float-btn {
-        width: 52px;
-        height: 52px;
-        border-radius: 16px;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
         border: none;
         display: grid;
         place-items: center;
         position: relative;
         cursor: pointer;
-        color: var(--md-sys-color-on-primary-container);
-        background: color-mix(in srgb, var(--md-sys-color-primary-container) 92%, white);
+        color: var(--md-sys-color-on-primary);
+        background: var(--md-sys-color-primary);
         box-shadow:
-            0 10px 24px color-mix(in srgb, black 16%, transparent),
-            0 0 0 1px color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
+            0 12px 28px color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent),
+            0 4px 12px color-mix(in srgb, black 22%, transparent);
+    }
+
+    .promo-float-btn.has-active {
+        animation: promo-nav-pulse 2.4s ease-in-out infinite;
     }
 
     .promo-float-btn.shake {
         animation: promo-shake 0.55s ease-in-out 0.4s 3;
     }
 
+    .promo-float-btn.shake.has-active {
+        animation:
+            promo-shake 0.55s ease-in-out 0.4s 3,
+            promo-nav-pulse 2.4s ease-in-out 2.2s infinite;
+    }
+
     .promo-float-badge {
         position: absolute;
         top: -4px;
         right: -4px;
-        min-width: 18px;
-        height: 18px;
+        min-width: 20px;
+        height: 20px;
         padding: 0 5px;
         border-radius: 999px;
-        font-size: 0.68rem;
-        font-weight: 800;
+        font-size: 0.7rem;
+        font-weight: 850;
         display: grid;
         place-items: center;
         background: var(--md-sys-color-error);
         color: var(--md-sys-color-on-error);
+        border: 2px solid var(--md-sys-color-surface);
     }
 
     @keyframes promo-tip-in {
@@ -206,9 +259,27 @@
         }
     }
 
+    @keyframes promo-nav-pulse {
+        0%,
+        100% {
+            box-shadow:
+                0 6px 16px color-mix(in srgb, var(--md-sys-color-primary) 45%, transparent),
+                0 2px 6px color-mix(in srgb, black 18%, transparent),
+                0 0 0 0 color-mix(in srgb, var(--md-sys-color-primary) 55%, transparent);
+        }
+        50% {
+            box-shadow:
+                0 8px 20px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent),
+                0 2px 6px color-mix(in srgb, black 18%, transparent),
+                0 0 0 8px color-mix(in srgb, var(--md-sys-color-primary) 0%, transparent);
+        }
+    }
+
     @media (prefers-reduced-motion: reduce) {
         .promo-float-btn.shake,
-        .promo-tip {
+        .promo-tip,
+        .promo-nav-btn.has-active,
+        .promo-float-btn.has-active {
             animation: none !important;
         }
     }
