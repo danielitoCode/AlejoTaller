@@ -87,14 +87,16 @@
 {/if}
 
 <style>
-    /* ─── NAV (rail inferior): tarjeta de oferta ─── */
+    /* ─── NAV (rail): tarjeta de oferta ─── */
     .promo-nav-btn {
         position: relative;
         width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
         display: flex;
         align-items: center;
-        gap: 14px;
-        padding: 14px 16px;
+        gap: 12px;
+        padding: 12px 14px;
         border-radius: 20px;
         border: none;
         overflow: hidden;
@@ -106,8 +108,8 @@
         background: linear-gradient(135deg, #ff6b35 0%, #f7c948 48%, #ff3d81 100%);
         background-size: 200% 200%;
         box-shadow:
-            0 10px 28px color-mix(in srgb, #ff3d81 38%, transparent),
-            0 4px 12px color-mix(in srgb, #ff6b35 35%, transparent),
+            0 8px 18px color-mix(in srgb, #ff3d81 32%, transparent),
+            0 2px 8px color-mix(in srgb, #ff6b35 28%, transparent),
             inset 0 1px 0 color-mix(in srgb, #fff 35%, transparent);
         transition: transform 0.15s ease, filter 0.2s ease;
     }
@@ -125,7 +127,6 @@
         transform: scale(0.98);
     }
 
-    /* Barrido de brillo */
     .promo-nav-shine {
         position: absolute;
         inset: 0;
@@ -150,8 +151,8 @@
 
     .promo-nav-icon-wrap {
         position: relative;
-        width: 52px;
-        height: 52px;
+        width: 48px;
+        height: 48px;
         flex-shrink: 0;
         display: grid;
         place-items: center;
@@ -166,21 +167,21 @@
     }
 
     .promo-nav-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 14px;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
         display: grid;
         place-items: center;
         background: color-mix(in srgb, #fff 22%, transparent);
         color: #fff;
-        font-size: 1.55rem;
+        font-size: 1.4rem;
         box-shadow: 0 4px 12px color-mix(in srgb, #000 18%, transparent);
         animation: promo-icon-bob 1.6s ease-in-out infinite;
     }
 
     .promo-nav-icon :global(svg) {
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
     }
 
     .promo-nav-copy {
@@ -218,21 +219,22 @@
     }
 
     .promo-nav-badge {
-        min-width: 30px;
-        height: 30px;
-        padding: 0 8px;
+        min-width: 28px;
+        height: 28px;
+        padding: 0 7px;
         border-radius: 999px;
         display: grid;
         place-items: center;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 900;
         background: #fff;
         color: #e91e63;
         box-shadow: 0 4px 12px color-mix(in srgb, #000 22%, transparent);
         animation: promo-badge-pop 2s ease-in-out infinite;
+        flex-shrink: 0;
     }
 
-    /* ─── FLOAT (móvil) ─── */
+    /* ─── FLOAT (móvil / tablet compacta) ─── */
     .promo-float {
         position: fixed;
         top: max(12px, env(safe-area-inset-top));
@@ -313,7 +315,6 @@
         box-shadow: 0 2px 8px color-mix(in srgb, #000 25%, transparent);
     }
 
-    /* ─── Keyframes ─── */
     @keyframes promo-gradient-shift {
         0%,
         100% {
@@ -351,7 +352,7 @@
             opacity: 0.85;
         }
         100% {
-            transform: scale(1.35);
+            transform: scale(1.2);
             opacity: 0;
         }
     }
