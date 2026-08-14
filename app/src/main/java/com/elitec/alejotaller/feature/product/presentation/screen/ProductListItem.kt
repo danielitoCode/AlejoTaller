@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
@@ -37,6 +36,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.elitec.alejotaller.R
 import com.elitec.alejotaller.feature.product.domain.entity.Product
+import com.elitec.alejotaller.feature.product.presentation.components.LikeHeartButton
 
 internal fun stockLabel(available: Int): String = when {
     available <= 0 -> "Agotado"
@@ -96,6 +96,8 @@ private fun StockBadge(
 fun ProductItem(
     onClick: () -> Unit,
     product: Product,
+    isLiked: Boolean = false,
+    onFavoriteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val available = product.availableStock()
@@ -129,6 +131,16 @@ fun ProductItem(
                     .align(Alignment.TopStart)
                     .padding(8.dp)
             )
+            LikeHeartButton(
+                isLiked = isLiked,
+                onToggle = onFavoriteClick,
+                size = 40.dp,
+                iconSize = 20.dp,
+                showBackground = true,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,16 +149,11 @@ fun ProductItem(
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    horizontalArrangement = Arrangement.End,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 5.dp, bottom = 5.dp, end = 10.dp, start = 10.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = "Favorite",
-                        tint = MaterialTheme.colorScheme.onBackground
-                    )
                     Text(
                         text = "$${String.format("%.2f", product.price)}",
                         style = MaterialTheme.typography.titleSmall,
