@@ -15,6 +15,11 @@
     import type {NavController} from "../../../../lib/navigation/NavController";
     import {BuyState, Currency, DeliveryType} from "../../../feature/sale/domain/entity/enums";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
+    import { promotionStore } from "../../../feature/notification/presentation/viewmodel/promotion.store";
+    import {
+        saleAmountFromItems,
+        snapshotSaleItemFromProduct,
+    } from "../../../feature/sale/domain/policy/SalePricingPolicy";
     import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
     import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
     import {toastStore} from "../viewmodel/toast.store";
@@ -60,7 +65,17 @@
     $: exchangeState = $exchangeStore;
     $: selectedCurrencyState = $selectedCurrencyStore
     $: items = $cartStore.items;
-    $: totalAmount = $cartStore.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    $: promos = $promotionStore.items;
+    $: saleLines = items.map((item) =>
+        snapshotSaleItemFromProduct(
+            item.product,
+            item.quantity,
+            promos,
+            Date.now(),
+            (usd) => convertProductAmount(usd, exchangeState)
+        )
+    );
+    $: totalAmount = saleAmountFromItems(saleLines);
     $: displayTotalAmount = formatMoney(totalAmount, $exchangeStore);
     $: needsAddress = selectedDeliveryType === DeliveryType.DELIVERY;
     $: missingDeliveryType = !selectedDeliveryType;
@@ -143,21 +158,28 @@
         }
 
         try {
+            // Recalcular snapshot en el momento exacto del submit (no reactivo viejo)
+            const linesNow = items.map((item) =>
+                snapshotSaleItemFromProduct(
+                    item.product,
+                    item.quantity,
+                    $promotionStore.items,
+                    Date.now(),
+                    (usd) => convertProductAmount(usd, exchangeState)
+                )
+            );
+            const amountNow = saleAmountFromItems(linesNow);
+
             const created = await saleStore.create({
                 id: crypto.randomUUID(),
                 date: new Date().toISOString(),
-                amount: totalAmount,
+                amount: amountNow,
                 currency: stringToCurrency(selectedCurrencyState),
                 verified: BuyState.UNVERIFIED,
                 userId: currentUser.$id,
                 deliveryType: selectedDeliveryType,
                 deliveryAddress: needsAddress ? toDeliveryAddress(address) : null,
-                products: items.map((item) => ({
-                    productId: item.product.id,
-                    productName: item.product.name,
-                    quantity: item.quantity,
-                    price: convertProductAmount(item.product.price, exchangeState)
-                }))
+                products: linesNow
             });
 
             cartStore.clear();
@@ -213,13 +235,16 @@
             </div>
             <CurrencySwitch />
             <div class="summary-list">
-                {#each items as item}
+                {#each saleLines as line (line.productId)}
                     <div class="summary-row">
                         <div>
-                            <strong>{item.product.name}</strong>
-                            <span>{item.quantity} x {formatMoney(item.product.price, $exchangeStore)}</span>
+                            <strong>{line.productName || line.productId}</strong>
+                            <span>{line.quantity} x {formatMoney(line.unitPrice ?? line.price ?? 0, $exchangeStore)}</span>
+                            {#if line.listUnitPrice != null && Number(line.listUnitPrice) > Number(line.unitPrice ?? line.price ?? 0)}
+                                <span class="list-hint">Lista {formatMoney(line.listUnitPrice, $exchangeStore)}</span>
+                            {/if}
                         </div>
-                        <b>{formatMoney(item.product.price * item.quantity, $exchangeStore)}</b>
+                        <b>{formatMoney((line.unitPrice ?? line.price ?? 0) * line.quantity, $exchangeStore)}</b>
                     </div>
                 {/each}
             </div>
@@ -285,31 +310,19 @@
                 </div>
 
                 <div class="delivery-grid">
-                    <Button
-                            variant="outlined"
-                            size="xl"
-                            iconType="left"
-                            onclick={selectPickup}
-                    >
+                    <Button variant="outlined" size="xl" iconType="left" onclick={selectPickup}>
                         <span style="padding: 12px 0">
                             <Icon icon={storefrontIcon} />
                              Recoger en tienda
                         </span>
                     </Button>
 
-                    <Button
-                            variant="outlined"
-                            size="xl"
-                            iconType="left"
-                            onclick={selectDelivery}
-                    >
+                    <Button variant="outlined" size="xl" iconType="left" onclick={selectDelivery}>
                         <span style="padding: 12px 0">
                               <Icon icon={localShippingIcon} />
                                 Entrega a domicilio
                         </span>
-
                     </Button>
-
                 </div>
 
                 {#if needsAddress}
@@ -328,7 +341,6 @@
                             </p>
                         </div>
                         <Button variant="tonal" size="s" iconType="left" onclick={() => (isAddressDialogOpen = true)}>
-
                             <Icon icon={editLocationIcon} />
                             {addressSummary ? "Editar direccion" : "Agregar direccion"}
                         </Button>
@@ -495,6 +507,12 @@
         display: grid;
         gap: 4px;
     }
+    .list-hint {
+        display: block;
+        font-size: 0.8rem;
+        text-decoration: line-through;
+        opacity: 0.7;
+    }
     .summary-row span,
     .method-copy span,
     .reserve-note p {
@@ -560,14 +578,6 @@
     .actions :global(button) {
         width: 100%;
     }
-    .actions :global(.submit-button.m3-container) {
-        width: 100%;
-        min-height: 58px;
-        padding-inline: 30px;
-        border-radius: 999px;
-        justify-content: center;
-        box-shadow: 0 14px 28px color-mix(in srgb, var(--md-sys-color-primary) 28%, transparent);
-    }
     .delivery-panel {
         display: grid;
         gap: 14px;
@@ -623,75 +633,6 @@
         gap: 12px;
         align-items: stretch;
     }
-    .delivery-option {
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline) 48%, transparent);
-        border-radius: 26px;
-        background: linear-gradient(
-            180deg,
-            color-mix(in srgb, var(--md-sys-color-surface-bright) 98%, transparent) 0%,
-            color-mix(in srgb, var(--md-sys-color-surface-container) 100%, transparent) 100%
-        );
-        padding: 16px;
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        align-items: center;
-        gap: 12px;
-        text-align: left;
-        cursor: pointer;
-        box-shadow:
-            inset 0 1px 0 color-mix(in srgb, white 10%, transparent),
-            0 14px 28px color-mix(in srgb, var(--md-sys-color-shadow) 11%, transparent);
-        transition: transform 140ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
-        min-height: 108px;
-    }
-    .delivery-option:hover {
-        transform: translateY(-1px);
-        box-shadow:
-            inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
-            0 18px 32px color-mix(in srgb, var(--md-sys-color-shadow) 16%, transparent);
-    }
-    .delivery-option.selected {
-        border-color: var(--md-sys-color-primary);
-        background: linear-gradient(
-            180deg,
-            color-mix(in srgb, var(--md-sys-color-primary-container) 92%, transparent) 0%,
-            color-mix(in srgb, var(--md-sys-color-secondary-container) 80%, transparent) 100%
-        );
-        box-shadow:
-            inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
-            0 18px 34px color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent);
-    }
-    .delivery-option__icon {
-        width: 46px;
-        height: 46px;
-        border-radius: 18px;
-        display: grid;
-        place-items: center;
-        color: white;
-        flex-shrink: 0;
-    }
-    .delivery-option__icon.pickup {
-        background: linear-gradient(135deg, color-mix(in srgb, var(--md-sys-color-secondary) 88%, black 10%), color-mix(in srgb, var(--md-sys-color-secondary-container) 84%, transparent));
-    }
-    .delivery-option__icon.delivery {
-        background: linear-gradient(135deg, color-mix(in srgb, var(--md-sys-color-primary) 90%, black 8%), color-mix(in srgb, var(--md-sys-color-tertiary) 72%, transparent));
-    }
-    .delivery-option__copy {
-        display: grid;
-        gap: 5px;
-    }
-    .delivery-option__copy strong {
-        font-size: 1rem;
-        line-height: 1.3;
-    }
-    .delivery-option span,
-    .field-hint {
-        color: var(--md-sys-color-on-surface-variant);
-    }
-    .delivery-option span {
-        font-size: 0.95rem;
-        line-height: 1.4;
-    }
     .address-preview {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
@@ -735,42 +676,10 @@
     .field-shell--full {
         grid-column: 1 / -1;
     }
-    .address-form :global(.field-shell .m3-container),
-    .address-form :global(.field-shell .m3-field),
-    .address-form :global(.field-shell input) {
-        width: 100%;
-    }
-    .address-form :global(.field-shell .m3-container) {
-        min-height: 60px;
-    }
-    .address-form :global(.field-shell input) {
-        font-size: 1.02rem;
-        line-height: 1.45;
-    }
-    .address-form :global(.field-shell label),
-    .address-form :global(.field-shell .label) {
-        font-size: 0.98rem;
-    }
     .field-hint {
+        color: var(--md-sys-color-on-surface-variant);
         font-size: 0.92rem;
         line-height: 1.45;
-    }
-    :global(dialog.m3-container) {
-        padding: 1.75rem;
-    }
-    :global(dialog.m3-container .headline) {
-        font-size: 1.55rem;
-        line-height: 1.2;
-        margin-bottom: 1.25rem;
-    }
-    :global(dialog.m3-container .buttons) {
-        gap: 0.75rem;
-        margin-top: 0.25rem;
-    }
-    :global(dialog.m3-container .buttons .m3-container) {
-        min-height: 52px;
-        padding-inline: 22px;
-        border-radius: 999px;
     }
     @media (max-width: 900px) {
         .layout {
@@ -785,15 +694,6 @@
         }
         .address-dialog {
             min-width: min(100%, 30rem);
-        }
-    }
-    @media (min-width: 901px) {
-        .payment-card {
-            gap: 10px;
-        }
-        .payment-card .section-title h2 {
-            font-size: 1.6rem;
-            line-height: 1.1;
         }
     }
 </style>
