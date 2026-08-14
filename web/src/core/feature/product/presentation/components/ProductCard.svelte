@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Icon } from "m3-svelte";
-    import FavoriteBrokenRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
+    import FavoriteOutlineRounded from "@ktibow/iconset-material-symbols/favorite-outline-rounded";
+    import FavoriteFilledRounded from "@ktibow/iconset-material-symbols/favorite-rounded";
     import Inventory2Rounded from "@ktibow/iconset-material-symbols/inventory-2-rounded";
     import WarningRounded from "@ktibow/iconset-material-symbols/warning-rounded";
     import BlockRounded from "@ktibow/iconset-material-symbols/block";
@@ -15,8 +16,26 @@
     export let salePrice: number | null = null;
     export let listPrice: number | null = null;
     export let promoBadge: boolean = false;
+    export let isLiked: boolean = false;
     export let onClick: () => void = () => {};
     export let onFavoriteClick: (event: Event) => void = () => {};
+
+    let burst = false;
+
+    function handleFavorite(e: Event) {
+        e.stopPropagation();
+        const wasLiked = isLiked;
+        onFavoriteClick(e);
+        if (!wasLiked) {
+            burst = false;
+            requestAnimationFrame(() => {
+                burst = true;
+                setTimeout(() => {
+                    burst = false;
+                }, 700);
+            });
+        }
+    }
 
     $: unitPrice = salePrice != null && Number.isFinite(salePrice) ? salePrice : product.price;
     $: showListStrike =
@@ -76,13 +95,22 @@
             <button
                 type="button"
                 class="favorite-btn"
-                aria-label="Favorito"
-                on:click={(e) => {
-                    e.stopPropagation();
-                    onFavoriteClick(e);
-                }}
+                class:liked={isLiked}
+                class:burst={burst}
+                aria-label={isLiked ? "Quitar de me gusta" : "Me gusta"}
+                aria-pressed={isLiked}
+                on:click={handleFavorite}
             >
-                <Icon icon={FavoriteBrokenRounded} />
+                <span class="heart-icon" aria-hidden="true">
+                    <Icon icon={isLiked ? FavoriteFilledRounded : FavoriteOutlineRounded} />
+                </span>
+                {#if burst}
+                    <span class="heart-burst" aria-hidden="true">
+                        {#each [0, 1, 2, 3, 4, 5] as i}
+                            <span class="burst-particle" style="--i: {i}"></span>
+                        {/each}
+                    </span>
+                {/if}
             </button>
         </div>
     </div>
@@ -174,7 +202,6 @@
         box-shadow: 0 1px 3px color-mix(in srgb, #000 22%, transparent);
     }
 
-    /* Fondo = color de estado; texto/icono con contraste */
     .stock-ok {
         background: #2e7d32;
         color: #fff;
@@ -193,6 +220,7 @@
     }
 
     .favorite-btn {
+        position: relative;
         width: 42px;
         height: 42px;
         border: none;
@@ -201,6 +229,77 @@
         place-items: center;
         cursor: pointer;
         background: color-mix(in srgb, var(--md-sys-color-surface) 88%, transparent);
+        color: var(--md-sys-color-on-surface);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .favorite-btn.liked {
+        color: #ff2d55;
+        background: color-mix(in srgb, #ff2d55 16%, var(--md-sys-color-surface));
+    }
+
+    .heart-icon {
+        display: grid;
+        place-items: center;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .favorite-btn.burst .heart-icon {
+        animation: ig-heart-pop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes ig-heart-pop {
+        0% { transform: scale(1); }
+        25% { transform: scale(0.75); }
+        55% { transform: scale(1.35); }
+        75% { transform: scale(0.95); }
+        100% { transform: scale(1); }
+    }
+
+    .heart-burst {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .burst-particle {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 6px;
+        height: 6px;
+        margin: -3px 0 0 -3px;
+        border-radius: 50%;
+        background: #ff2d55;
+        opacity: 0;
+        animation: ig-burst 0.65s ease-out forwards;
+        animation-delay: calc(var(--i) * 0.02s);
+        --angle: calc(var(--i) * 60deg);
+        transform: rotate(var(--angle)) translateY(0) scale(0.4);
+    }
+
+    .burst-particle:nth-child(odd) {
+        background: #ff7a9a;
+        width: 5px;
+        height: 5px;
+    }
+
+    .burst-particle:nth-child(3n) {
+        background: #ffb3c6;
+    }
+
+    @keyframes ig-burst {
+        0% {
+            opacity: 1;
+            transform: rotate(var(--angle)) translateY(0) scale(0.5);
+        }
+        70% {
+            opacity: 0.85;
+        }
+        100% {
+            opacity: 0;
+            transform: rotate(var(--angle)) translateY(-22px) scale(0.2);
+        }
     }
 
     .card-footer {
