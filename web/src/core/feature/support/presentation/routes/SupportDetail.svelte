@@ -35,13 +35,16 @@
     onMount(() => {
         if (!threadId) return;
         const stop = supportInboxStore.startRealtime();
-        Promise.all([
+        const tasks = [
             supportInboxStore.syncMine().catch(() => {}),
             supportInboxStore.loadMessages(threadId)
-        ]).catch((e) => {
-            logger.error(e?.message ?? e, e?.stack);
-            toastStore.error("No se pudo cargar la conversación");
-        });
+        ];
+        Promise.all(tasks)
+            .then(() => supportInboxStore.markUserRead(threadId))
+            .catch((e) => {
+                logger.error(e?.message ?? e, e?.stack);
+                toastStore.error("No se pudo cargar la conversación");
+            });
         return () => {
             stop();
             supportInboxStore.clearActive();
