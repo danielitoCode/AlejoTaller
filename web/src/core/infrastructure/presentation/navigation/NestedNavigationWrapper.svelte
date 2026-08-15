@@ -159,7 +159,7 @@
         if (window.location.hash !== nextHash) {
             window.location.hash = nextHash;
         }
-        voidMicrotask(() => {
+        queueMicrotask(() => {
             suppressHashSync = false;
         });
     }
@@ -259,7 +259,7 @@
             applyInternalHash();
         }
 
-        voidMicrotask(() => {
+        queueMicrotask(() => {
             suppressHashSync = false;
             hashSyncReady = true;
         });
@@ -591,7 +591,6 @@
     }
 
     .panel-promo {
-        /* Padding simétrico: evita que sombra/anillo se recorten con overflow del panel */
         padding: 8px 18px 14px;
         flex-shrink: 0;
         box-sizing: border-box;
@@ -603,7 +602,6 @@
         width: 100%;
         max-width: 100%;
         box-sizing: border-box;
-        /* Sombra contenida para no depender de overflow visible del panel */
         box-shadow:
             0 8px 20px color-mix(in srgb, #ff3d81 32%, transparent),
             0 2px 8px color-mix(in srgb, #ff6b35 28%, transparent),
