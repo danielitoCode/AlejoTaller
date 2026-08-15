@@ -16,6 +16,8 @@ export type SupportRealtimeUnsubscribe = () => void;
 export interface SupportRepository {
     /** Hilos del usuario actual (filtrados por userId). */
     listMyThreads(userId: string): Promise<SupportMessage[]>;
+    /** Hilo por id; null si no existe o sin permiso. */
+    getThread(id: string): Promise<SupportThread | null>;
     listMessages(threadId: string): Promise<SupportChatMessage[]>;
     createThread(payload: SupportThreadWritePayload, documentId?: string): Promise<SupportThread>;
     postMessage(payload: SupportChatMessageWritePayload, documentId?: string): Promise<SupportChatMessage>;
