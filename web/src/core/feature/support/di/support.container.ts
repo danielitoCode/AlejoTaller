@@ -3,6 +3,7 @@ import { SupportAppwriteRepository } from "../data/repository/support.appwrite.r
 import { CreateSupportThreadCaseUse } from "../domain/caseuse/CreateSupportThreadCaseUse";
 import { ListMySupportThreadsCaseUse } from "../domain/caseuse/ListMySupportThreadsCaseUse";
 import { ListSupportMessagesCaseUse } from "../domain/caseuse/ListSupportMessagesCaseUse";
+import { MarkThreadReadCaseUse } from "../domain/caseuse/MarkThreadReadCaseUse";
 import { PostSupportMessageCaseUse } from "../domain/caseuse/PostSupportMessageCaseUse";
 import { SubscribeSupportInboxCaseUse } from "../domain/caseuse/SubscribeSupportInboxCaseUse";
 
@@ -12,6 +13,7 @@ const listMine = new ListMySupportThreadsCaseUse(repo);
 const listMessages = new ListSupportMessagesCaseUse(repo);
 const createThread = new CreateSupportThreadCaseUse(repo);
 const postMessage = new PostSupportMessageCaseUse(repo);
+const markRead = new MarkThreadReadCaseUse(repo);
 const subscribe = new SubscribeSupportInboxCaseUse(repo);
 
 export const supportContainer = {
@@ -21,6 +23,7 @@ export const supportContainer = {
         listMessages: listMessages.execute.bind(listMessages),
         create: createThread.execute.bind(createThread),
         postMessage: postMessage.execute.bind(postMessage),
+        markRead: markRead.execute.bind(markRead),
         subscribe: subscribe.execute.bind(subscribe)
     }
 };
