@@ -82,8 +82,7 @@ function createStore() {
 
     /**
      * Marca el hilo como leído por el usuario (unreadUser = 0).
-     * No bloquea la UI ni muestra toast: es best-effort.
-     * Solo actualiza el store local si Appwrite confirma el update.
+     * Best-effort: solo actualiza local si Appwrite confirma.
      */
     async function markUserRead(threadId: string): Promise<void> {
         const id = threadId?.trim();
@@ -92,7 +91,6 @@ function createStore() {
             return;
         }
 
-        // Si ya está en 0, no llamar a la red
         let alreadyRead = false;
         const unsub = subscribe((s) => {
             const row = s.items.find((m) => m.id === id);
@@ -110,11 +108,30 @@ function createStore() {
                 )
             }));
         } catch (e) {
-            // Best-effort: no toast, no error de pantalla. Badge se corregirá en el próximo syncMine.
             logger.warn(
                 `[support] markUserRead falló id=${id}: ${normalizeError(e)}`
             );
         }
+    }
+
+    /** Actualización local del inbox tras enviar (preview + contadores). */
+    function applyLocalAfterUserPost(threadId: string, body: string, atIso: string) {
+        const preview = body.length > 180 ? `${body.slice(0, 177)}…` : body;
+        update((s) => ({
+            ...s,
+            items: s.items.map((m) =>
+                m.id === threadId
+                    ? {
+                          ...m,
+                          body: preview,
+                          createdAtIso: atIso,
+                          lastSenderRole: "user" as const,
+                          // El usuario acaba de hablar: sus no-leídos bajan a 0 localmente
+                          unreadUser: 0
+                      }
+                    : m
+            )
+        }));
     }
 
     async function createThread(input: {
@@ -133,7 +150,11 @@ function createStore() {
                 subject: input.subject,
                 body: input.body
             });
-            await syncMine();
+            try {
+                await syncMine();
+            } catch (e) {
+                logger.warn(`[support] syncMine post-create: ${normalizeError(e)}`);
+            }
             return result.thread.id;
         } catch (e) {
             update((s) => ({ ...s, error: normalizeError(e) }));
@@ -145,19 +166,44 @@ function createStore() {
 
     async function postUserReply(threadId: string, body: string): Promise<void> {
         const text = body.trim();
+        const id = threadId?.trim();
         if (!text) throw new Error("Escribe un mensaje");
+        if (!id) throw new Error("Consulta inválida");
+
         update((s) => ({ ...s, posting: true, error: null }));
         try {
             const user = await sessionStore.getCurrentUser();
-            await supportContainer.useCases.postMessage({
-                threadId,
+            const msg = await supportContainer.useCases.postMessage({
+                threadId: id,
                 senderRole: "user",
                 senderId: user.$id,
                 senderName: user.name || "Usuario",
                 body: text
             });
-            await loadMessages(threadId);
-            await syncMine();
+
+            // Optimistic: fila inbox + append mensaje local
+            applyLocalAfterUserPost(id, text, msg.createdAtIso || new Date().toISOString());
+            update((s) => ({
+                ...s,
+                messages:
+                    s.activeThreadId === id
+                        ? [...s.messages.filter((m) => m.id !== msg.id), msg]
+                        : s.messages
+            }));
+
+            // Refresh best-effort (no tumbar el envío si fallan)
+            try {
+                await loadMessages(id);
+            } catch (e) {
+                logger.warn(`[support] loadMessages post-reply: ${normalizeError(e)}`);
+            }
+            try {
+                await syncMine();
+            } catch (e) {
+                logger.warn(`[support] syncMine post-reply: ${normalizeError(e)}`);
+            }
+            // Usuario acaba de ver/enviar: marcar leído best-effort
+            void markUserRead(id);
         } catch (e) {
             update((s) => ({ ...s, error: normalizeError(e) }));
             throw e;
@@ -185,8 +231,14 @@ function createStore() {
                     activeId = s.activeThreadId;
                 });
                 u();
-                syncMine().catch(() => {});
-                if (activeId) loadMessages(activeId).catch(() => {});
+                syncMine().catch((e) => {
+                    logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
+                });
+                if (activeId) {
+                    loadMessages(activeId).catch((e) => {
+                        logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
+                    });
+                }
             }, 250);
         });
         return stopRealtime;
