@@ -6,6 +6,7 @@ import type {
     SupportReason
 } from "../../domain/entity/SupportMessage";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
+import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 
 type State = {
     items: SupportMessage[];
@@ -79,18 +80,40 @@ function createStore() {
         }
     }
 
-    /** Marca el hilo como leído por el usuario (unreadUser = 0). No bloquea UI. */
+    /**
+     * Marca el hilo como leído por el usuario (unreadUser = 0).
+     * No bloquea la UI ni muestra toast: es best-effort.
+     * Solo actualiza el store local si Appwrite confirma el update.
+     */
     async function markUserRead(threadId: string): Promise<void> {
+        const id = threadId?.trim();
+        if (!id) {
+            logger.warn("[support] markUserRead: threadId vacío");
+            return;
+        }
+
+        // Si ya está en 0, no llamar a la red
+        let alreadyRead = false;
+        const unsub = subscribe((s) => {
+            const row = s.items.find((m) => m.id === id);
+            alreadyRead = !row || (row.unreadUser ?? 0) === 0;
+        });
+        unsub();
+        if (alreadyRead) return;
+
         try {
-            await supportContainer.useCases.markRead(threadId, "user");
+            await supportContainer.useCases.markRead(id, "user");
             update((s) => ({
                 ...s,
                 items: s.items.map((m) =>
-                    m.id === threadId ? { ...m, unreadUser: 0 } : m
+                    m.id === id ? { ...m, unreadUser: 0 } : m
                 )
             }));
-        } catch {
-            // no bloquear UI si falla el update
+        } catch (e) {
+            // Best-effort: no toast, no error de pantalla. Badge se corregirá en el próximo syncMine.
+            logger.warn(
+                `[support] markUserRead falló id=${id}: ${normalizeError(e)}`
+            );
         }
     }
 
