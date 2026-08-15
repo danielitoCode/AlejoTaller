@@ -39,13 +39,20 @@ export function parseDeepLinkHash(hash: string): ParsedDeepLink | null {
     };
 }
 
+export function buildTopLevelHash(top: TopLevelPath, args?: Record<string, string | undefined | null>): string {
+    const params = new URLSearchParams();
+    Object.entries(args ?? {}).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+    });
+    const query = params.toString();
+    return `#/${top}${query ? `?${query}` : ""}`;
+}
+
 export function buildHomeHash(nested: NestedPath, args?: Record<string, string | undefined | null>): string {
     const params = new URLSearchParams();
-    if (args) {
-        for (const [key, value] of Object.entries(args)) {
-            if (value != null && value !== "") params.set(key, value);
-        }
-    }
-    const qs = params.toString();
-    return `#/${home.path}/${nested}${qs ? `?${qs}` : ""}`;
+    Object.entries(args ?? {}).forEach(([key, value]) => {
+        if (value) params.set(key, value);
+    });
+    const query = params.toString();
+    return `#/${home.path}/${nested}${query ? `?${query}` : ""}`;
 }
