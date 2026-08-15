@@ -1,6 +1,7 @@
 package com.elitec.alejotaller.feature.product.domain.caseuse
 
 import com.elitec.alejotaller.data.fakesRepositories.product.FakeProductRepository
+import com.elitec.alejotaller.feature.product.domain.caseUse.ReleaseSoftHoldCaseUse
 import com.elitec.alejotaller.feature.product.domain.entity.Product
 import com.elitec.shared.sale.feature.sale.domain.entity.BuyState
 import com.elitec.shared.sale.feature.sale.domain.entity.Currency
