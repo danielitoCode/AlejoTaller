@@ -1,9 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import { Button, Card, Icon, TextFieldOutlined, TextFieldOutlinedMultiline } from "m3-svelte";
-    import supportIcon from "@ktibow/iconset-material-symbols/support-agent-rounded";
+    import { Button, Card, TextFieldOutlined, TextFieldOutlinedMultiline } from "m3-svelte";
     import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
-    import { support } from "../navigation/nested.router";
     import type { NavController } from "../../../../lib/navigation/NavController";
     import ImagePicker from "../components/ImagePicker.svelte";
     import { toastStore } from "../viewmodel/toast.store";
@@ -137,12 +135,6 @@
         <p class="eyebrow">Perfil</p>
         <h1>Mi perfil</h1>
         <p class="support">Gestiona tu información personal y cómo apareces ante otros usuarios.</p>
-        <div class="support-cta">
-            <Button variant="filled" size="m" iconType="left" onclick={() => navController.navigate(support.path)}>
-                <Icon icon={supportIcon} />
-                Contactar soporte
-            </Button>
-        </div>
     </div>
 
     {#if loading}
@@ -402,15 +394,6 @@
 
     .hero .support {
         opacity: 0.8;
-    }
-
-    .support-cta {
-        margin-top: 14px;
-    }
-
-    .support-cta :global(button) {
-        border-radius: 999px;
-        font-weight: 700;
     }
 
     @media (max-width: 900px) {
