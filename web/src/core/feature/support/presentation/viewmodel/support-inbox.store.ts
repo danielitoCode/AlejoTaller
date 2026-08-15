@@ -79,6 +79,21 @@ function createStore() {
         }
     }
 
+    /** Marca el hilo como leído por el usuario (unreadUser = 0). No bloquea UI. */
+    async function markUserRead(threadId: string): Promise<void> {
+        try {
+            await supportContainer.useCases.markRead(threadId, "user");
+            update((s) => ({
+                ...s,
+                items: s.items.map((m) =>
+                    m.id === threadId ? { ...m, unreadUser: 0 } : m
+                )
+            }));
+        } catch {
+            // no bloquear UI si falla el update
+        }
+    }
+
     async function createThread(input: {
         reason: SupportReason;
         subject: string;
@@ -177,6 +192,7 @@ function createStore() {
         subscribe,
         syncMine,
         loadMessages,
+        markUserRead,
         createThread,
         postUserReply,
         clearActive,
