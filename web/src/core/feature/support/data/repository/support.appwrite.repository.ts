@@ -96,10 +96,15 @@ export class SupportAppwriteRepository implements SupportRepository {
             unreadUser: number;
         }>
     ): Promise<void> {
+        const threadId = id?.trim();
+        if (!threadId) {
+            throw new Error("threadId requerido para actualizar el hilo");
+        }
         try {
-            await this.databases.updateDocument(databaseId(), THREADS_COLLECTION, id, patch);
+            await this.databases.updateDocument(databaseId(), THREADS_COLLECTION, threadId, patch);
         } catch (e) {
-            console.warn(`${LOG} touchThread failed (\u00bfsin permiso Update?)`, e);
+            console.warn(`${LOG} touchThread failed id=${threadId}`, e);
+            throw e;
         }
     }
 
