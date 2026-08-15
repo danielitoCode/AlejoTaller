@@ -1,15 +1,29 @@
-export interface SupportMessageDTO {
-    // Compatible with Appwrite-like payloads (legacy) and custom APIs.
-    id?: string;
+export interface SupportThreadDTO {
     $id?: string;
-    createdAtIso?: string;
+    id?: string;
     $createdAt?: string;
-    created_at?: string;
-
-    from_name?: string;
-    from_email?: string;
+    $updatedAt?: string;
+    userId?: string;
+    userName?: string;
+    userEmail?: string;
     reason?: string;
-    status?: string;
     subject?: string;
+    status?: string;
+    lastMessageAt?: string;
+    lastPreview?: string;
+    lastSenderRole?: string;
+    unreadStaff?: number;
+    unreadUser?: number;
+}
+
+export interface SupportChatMessageDTO {
+    $id?: string;
+    id?: string;
+    $createdAt?: string;
+    threadId?: string;
+    senderRole?: string;
+    senderId?: string;
+    senderName?: string;
     body?: string;
+    createdAtIso?: string;
 }
