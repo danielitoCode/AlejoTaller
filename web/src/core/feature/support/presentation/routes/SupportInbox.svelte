@@ -12,7 +12,7 @@
     import addIcon from "@ktibow/iconset-material-symbols/add-rounded";
     import chatIcon from "@ktibow/iconset-material-symbols/chat-rounded";
     import sendIcon from "@ktibow/iconset-material-symbols/send-rounded";
-    import lockIcon from "@ktibow/iconset-material-symbols/lock-rounded";
+    import lockIcon from "@ktibow/iconset-material-symbols/lock-outline";
     import inboxIcon from "@ktibow/iconset-material-symbols/inbox-rounded";
     import closeIcon from "@ktibow/iconset-material-symbols/close-rounded";
 
