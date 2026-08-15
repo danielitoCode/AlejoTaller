@@ -1,233 +1,143 @@
-﻿<script lang="ts">
-    import { onMount } from "svelte";
+<script lang="ts">
+    import { onDestroy, onMount, tick } from "svelte";
     import type { NavBackStackEntry } from "../../../../../lib/navigation/NavBackStackEntry";
     import type { NavController } from "../../../../../lib/navigation/NavController";
-    import Icon from "../../../../infrastructure/presentation/components/Icon.svelte";
+    import { supportInboxStore } from "../viewmodel/support-inbox.store";
+    import type { SupportMessage } from "../../domain/entity/SupportMessage";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { logger } from "../../../../infrastructure/presentation/util/logger.service";
-    import { supportInboxStore } from "../viewmodel/support-inbox.store";
-    import type { SupportMessage, SupportStatus } from "../../domain/entity/SupportMessage";
-    import { ArrowLeft, Clock, Mail, MessageSquareText } from "lucide-svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry<{ id?: string }>;
 
-    const messageId = navBackStackEntry?.args?.id ?? "";
-    let loading = false;
-    let message: SupportMessage | null = null;
+    const threadId = navBackStackEntry?.args?.id ?? "";
+    let draft = "";
+    let threadEl: HTMLDivElement | null = null;
 
-    $: message = messageId ? $supportInboxStore.items.find((m) => m.id === messageId) ?? null : null;
+    $: thread = threadId
+        ? ($supportInboxStore.items.find((m) => m.id === threadId) as SupportMessage | undefined) ?? null
+        : null;
+    $: messages = $supportInboxStore.messages;
+    $: messagesLoading = $supportInboxStore.messagesLoading;
+    $: posting = $supportInboxStore.posting;
+    $: closed = thread?.status === "cerrado";
+
+    async function scrollBottom() {
+        await tick();
+        if (threadEl) threadEl.scrollTop = threadEl.scrollHeight;
+    }
+    $: if (messages.length) scrollBottom();
 
     onMount(() => {
-        if (!messageId) return;
-        if (message) return;
-        loading = true;
-        supportInboxStore
-            .syncAll()
-            .catch((e) => {
-                logger.error(e?.message ?? e, e?.stack);
-                toastStore.error("No se pudo cargar el mensaje.");
-            })
-            .finally(() => (loading = false));
+        if (!threadId) return;
+        const stop = supportInboxStore.startRealtime();
+        Promise.all([
+            supportInboxStore.syncMine().catch(() => {}),
+            supportInboxStore.loadMessages(threadId)
+        ]).catch((e) => {
+            logger.error(e?.message ?? e, e?.stack);
+            toastStore.error("No se pudo cargar la conversación");
+        });
+        return () => {
+            stop();
+            supportInboxStore.clearActive();
+        };
     });
+
+    onDestroy(() => supportInboxStore.clearActive());
 
     function back() {
         navController.popBackStack();
     }
 
-    async function setStatus(next: SupportStatus) {
-        if (!messageId) return;
+    async function send() {
+        if (!threadId || closed) return;
+        const text = draft.trim();
+        if (!text) return;
         try {
-            await supportInboxStore.setStatus(messageId, next);
-            toastStore.success("Estado actualizado", 1200);
+            await supportInboxStore.postUserReply(threadId, text);
+            draft = "";
         } catch (e: any) {
-            logger.error(e?.message ?? e, e?.stack);
-            toastStore.error("No se pudo actualizar el estado.");
+            toastStore.error(e?.message ?? "No se pudo enviar");
+        }
+    }
+
+    function onKey(e: KeyboardEvent) {
+        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            send();
         }
     }
 </script>
 
-<section class="mgmt-container">
-    <header class="mgmt-page-head">
-        <div class="mgmt-page-title">
-            <button class="mgmt-btn ghost" type="button" on:click={back}>
-                <Icon icon={ArrowLeft} size={18} ariaLabel="Volver" />
-                Volver
-            </button>
-            <div>
-                <h1 class="mgmt-h1">Detalle de mensaje</h1>
-                <p class="mgmt-muted">Soporte y comunicaciones</p>
-            </div>
+<section class="screen">
+    <header class="head">
+        <button class="back" type="button" on:click={back}>← Volver</button>
+        <div>
+            <h1>{thread?.subject || "Conversación"}</h1>
+            <p class="muted">{thread ? thread.status : "…"}</p>
         </div>
     </header>
 
-    {#if !messageId}
-        <div class="mgmt-card">
-            <p class="mgmt-muted">Falta el id del mensaje.</p>
-        </div>
-    {:else if loading}
-        <div class="mgmt-card">
-            <p class="mgmt-muted">Cargando...</p>
-        </div>
-    {:else if !message}
-        <div class="mgmt-card">
-            <p class="mgmt-muted">No se encontró el mensaje.</p>
-        </div>
+    {#if !threadId}
+        <p class="muted">Falta el id del hilo.</p>
     {:else}
-        <div class="detail-card">
-            <div class="detail-head">
-                <div class="detail-title">
-                    <div class="detail-ico">
-                        <Icon icon={MessageSquareText} size={18} ariaLabel="Mensaje" />
-                    </div>
-                    <div>
-                        <h2 class="detail-h2">{message.subject || "Sin asunto"}</h2>
-                        <div class="meta">
-                            <span class="meta-item">
-                                <Icon icon={Mail} size={14} ariaLabel="Email" />
-                                {message.fromEmail}
-                            </span>
-                            <span class="meta-item">
-                                <Icon icon={Clock} size={14} ariaLabel="Fecha" />
-                                {new Date(message.createdAtIso).toLocaleString()}
-                            </span>
+        <div class="chat" bind:this={threadEl}>
+            {#if messagesLoading && messages.length === 0}
+                <p class="muted center">Cargando mensajes…</p>
+            {:else if messages.length === 0}
+                <p class="muted center">Sin mensajes todavía.</p>
+            {:else}
+                {#each messages as msg (msg.id)}
+                    <div class="bubble-row" class:me={msg.senderRole === "user"} class:them={msg.senderRole === "staff"}>
+                        <div class="bubble">
+                            <div class="meta">
+                                <span>{msg.senderName || (msg.senderRole === "staff" ? "Soporte" : "Tú")}</span>
+                                <span>{new Date(msg.createdAtIso).toLocaleString()}</span>
+                            </div>
+                            <p>{msg.body}</p>
                         </div>
                     </div>
-                </div>
+                {/each}
+            {/if}
+        </div>
 
-                <div class="status-actions">
-                    <span class="pill {message.status}">{message.status}</span>
-                    <div class="btns">
-                        <button class="mgmt-btn sm" type="button" on:click={() => setStatus("nuevo")}>
-                            Nuevo
-                        </button>
-                        <button class="mgmt-btn sm ghost" type="button" on:click={() => setStatus("en_proceso")}>
-                            En proceso
-                        </button>
-                        <button class="mgmt-btn sm ghost" type="button" on:click={() => setStatus("resuelto")}>
-                            Resuelto
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="detail-body">
-                <p class="body">{message.body}</p>
-            </div>
+        <div class="composer">
+            {#if closed}
+                <p class="muted center">Este hilo está cerrado.</p>
+            {:else}
+                <textarea
+                    rows="3"
+                    placeholder="Escribe un mensaje… (Ctrl+Enter)"
+                    bind:value={draft}
+                    on:keydown={onKey}
+                    disabled={posting}
+                ></textarea>
+                <button class="send" type="button" disabled={posting || !draft.trim()} on:click={send}>
+                    {posting ? "Enviando…" : "Enviar"}
+                </button>
+            {/if}
         </div>
     {/if}
 </section>
 
 <style>
-    .detail-card {
-        border-radius: 22px;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        background: color-mix(in srgb, var(--md-sys-color-surface) 92%, transparent);
-        box-shadow: 0 18px 44px color-mix(in srgb, black 35%, transparent);
-        overflow: hidden;
-    }
-
-    .detail-head {
-        padding: 16px;
-        display: grid;
-        gap: 14px;
-        border-bottom: 1px solid var(--md-sys-color-outline-variant);
-    }
-
-    .detail-title {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 12px;
-        align-items: start;
-    }
-
-    .detail-ico {
-        width: 38px;
-        height: 38px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 32%, transparent);
-    }
-
-    .detail-h2 {
-        margin: 0;
-        font-size: 1.2rem;
-        letter-spacing: -0.01em;
-        font-weight: 950;
-    }
-
-    .meta {
-        margin-top: 6px;
-        display: inline-flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        color: color-mix(in srgb, var(--md-sys-color-on-background) 72%, transparent);
-        font-size: 0.88rem;
-    }
-
-    .meta-item {
-        display: inline-flex;
-        gap: 6px;
-        align-items: center;
-    }
-
-    .status-actions {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .btns {
-        display: inline-flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-
-    .mgmt-btn.sm {
-        padding: 8px 12px;
-        border-radius: 14px;
-        font-weight: 900;
-    }
-
-    .detail-body {
-        padding: 16px;
-    }
-
-    .body {
-        margin: 0;
-        white-space: pre-wrap;
-        line-height: 1.55;
-        color: color-mix(in srgb, var(--md-sys-color-on-background) 92%, transparent);
-    }
-
-    .pill {
-        font-size: 0.72rem;
-        font-weight: 900;
-        padding: 5px 10px;
-        border-radius: 999px;
-        border: 1px solid var(--md-sys-color-outline-variant);
-        background: color-mix(in srgb, var(--md-sys-color-surface-variant) 35%, transparent);
-    }
-
-    .pill.nuevo {
-        border-color: color-mix(in srgb, var(--md-sys-color-primary) 38%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, var(--md-sys-color-primary) 14%, transparent);
-    }
-
-    .pill.en_proceso {
-        border-color: color-mix(in srgb, #f59e0b 38%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, #f59e0b 14%, transparent);
-    }
-
-    .pill.resuelto {
-        border-color: color-mix(in srgb, #22c55e 35%, var(--md-sys-color-outline-variant));
-        background: color-mix(in srgb, #22c55e 12%, transparent);
-    }
+    .screen { padding: 12px 16px 24px; max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; min-height: min(70vh, 640px); }
+    .head { display: flex; gap: 12px; align-items: flex-start; }
+    .back { border: 0; background: transparent; color: inherit; cursor: pointer; font-weight: 650; padding: 6px 0; }
+    h1 { margin: 0; font-size: 1.15rem; }
+    .muted { margin: 0; opacity: 0.7; font-size: 0.88rem; }
+    .chat { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 16px; border: 1px solid var(--md-sys-color-outline-variant, #444); min-height: 240px; max-height: 48vh; }
+    .center { text-align: center; margin: auto; }
+    .bubble-row { display: flex; width: 100%; }
+    .bubble-row.me { justify-content: flex-end; }
+    .bubble-row.them { justify-content: flex-start; }
+    .bubble { max-width: 88%; border-radius: 14px; padding: 10px 12px; border: 1px solid var(--md-sys-color-outline-variant, #444); background: color-mix(in srgb, var(--md-sys-color-surface, #1c1b1f) 94%, transparent); }
+    .bubble-row.me .bubble { background: color-mix(in srgb, var(--md-sys-color-primary, #6750a4) 18%, transparent); }
+    .meta { display: flex; justify-content: space-between; gap: 10px; font-size: 0.7rem; opacity: 0.75; margin-bottom: 4px; }
+    .bubble p { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.4; }
+    .composer { display: grid; gap: 8px; }
+    textarea { width: 100%; border-radius: 12px; border: 1px solid var(--md-sys-color-outline-variant, #444); background: transparent; color: inherit; padding: 12px; font: inherit; resize: vertical; }
+    .send { justify-self: end; border-radius: 12px; border: 0; padding: 10px 16px; font-weight: 700; cursor: pointer; background: var(--md-sys-color-primary, #6750a4); color: var(--md-sys-color-on-primary, #fff); }
+    .send:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
-
-
-
