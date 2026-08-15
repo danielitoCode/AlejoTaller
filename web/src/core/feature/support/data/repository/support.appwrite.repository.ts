@@ -49,6 +49,22 @@ export class SupportAppwriteRepository implements SupportRepository {
             .sort((a, b) => b.createdAtIso.localeCompare(a.createdAtIso));
     }
 
+    async getThread(id: string): Promise<SupportThread | null> {
+        const threadId = id?.trim();
+        if (!threadId) return null;
+        try {
+            const doc = await this.databases.getDocument<SupportThreadDTO & Models.Document>(
+                databaseId(),
+                THREADS_COLLECTION,
+                threadId
+            );
+            return supportThreadFromDTO(doc);
+        } catch (e) {
+            console.warn(`${LOG} getThread failed id=${threadId}`, e);
+            return null;
+        }
+    }
+
     async listMessages(threadId: string): Promise<SupportChatMessage[]> {
         const res = await this.databases.listDocuments<SupportChatMessageDTO & Models.Document>(
             databaseId(),
@@ -100,8 +116,15 @@ export class SupportAppwriteRepository implements SupportRepository {
         if (!threadId) {
             throw new Error("threadId requerido para actualizar el hilo");
         }
+        // Evitar enviar undefined (Appwrite a veces rechaza atributos ausentes/undefined)
+        const clean: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(patch)) {
+            if (v !== undefined) clean[k] = v;
+        }
+        if (Object.keys(clean).length === 0) return;
+
         try {
-            await this.databases.updateDocument(databaseId(), THREADS_COLLECTION, threadId, patch);
+            await this.databases.updateDocument(databaseId(), THREADS_COLLECTION, threadId, clean);
         } catch (e) {
             console.warn(`${LOG} touchThread failed id=${threadId}`, e);
             throw e;
