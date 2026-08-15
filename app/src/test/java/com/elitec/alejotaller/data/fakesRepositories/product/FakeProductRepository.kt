@@ -35,12 +35,10 @@ class FakeProductRepository(
      * Stub mínimo para cumplir el contrato de ProductRepository.
      */
     override suspend fun applyLocalSnapshot(raw: Map<String, Any>): Product? {
-        val id = (raw["$id"] as? String)?.trim()
+        val id = (raw["\$id"] as? String)?.trim()
             ?: (raw["id"] as? String)?.trim()
             ?: return null
-        val current = byId[id] ?: return null
-        // En tests no hidratamos campos; devolvemos el producto ya conocido.
-        return current
+        return byId[id]
     }
 
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
