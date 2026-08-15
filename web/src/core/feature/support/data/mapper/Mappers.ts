@@ -1,7 +1,15 @@
-import type { SupportMessageDTO } from "../dto/SupportMessageDTO";
-import type { SupportMessage, SupportReason, SupportStatus } from "../../domain/entity/SupportMessage";
+import type { SupportChatMessageDTO, SupportThreadDTO } from "../dto/SupportMessageDTO";
+import type {
+    SupportChatMessage,
+    SupportMessage,
+    SupportReason,
+    SupportSenderRole,
+    SupportStatus,
+    SupportThread
+} from "../../domain/entity/SupportMessage";
+import { threadToInboxRow } from "../../domain/entity/SupportMessage";
 
-function asReason(value: unknown): SupportReason {
+export function asReason(value: unknown): SupportReason {
     const v = String(value ?? "").toLowerCase();
     if (v === "soporte") return "soporte";
     if (v === "pregunta_tecnica") return "pregunta_tecnica";
@@ -9,35 +17,72 @@ function asReason(value: unknown): SupportReason {
     return "otro";
 }
 
-function asStatus(value: unknown): SupportStatus {
+export function asStatus(value: unknown): SupportStatus {
     const v = String(value ?? "").toLowerCase();
     if (v === "en_proceso") return "en_proceso";
     if (v === "resuelto") return "resuelto";
+    if (v === "cerrado") return "cerrado";
     return "nuevo";
 }
 
-export function supportMessageFromDTO(dto: SupportMessageDTO): SupportMessage {
+export function asSenderRole(value: unknown): SupportSenderRole {
+    return String(value ?? "").toLowerCase() === "staff" ? "staff" : "user";
+}
+
+export function supportThreadFromDTO(dto: SupportThreadDTO): SupportThread {
+    const created = dto.$createdAt ?? new Date(0).toISOString();
     return {
-        id: dto.id ?? dto.$id ?? "",
-        createdAtIso: dto.createdAtIso ?? dto.$createdAt ?? dto.created_at ?? new Date(0).toISOString(),
-        fromName: dto.from_name ?? "",
-        fromEmail: dto.from_email ?? "",
+        id: dto.$id ?? dto.id ?? "",
+        userId: dto.userId ?? "",
+        userName: dto.userName ?? "",
+        userEmail: dto.userEmail ?? "",
         reason: asReason(dto.reason),
-        status: asStatus(dto.status),
         subject: dto.subject ?? "",
-        body: dto.body ?? ""
+        status: asStatus(dto.status),
+        lastMessageAt: dto.lastMessageAt ?? created,
+        lastPreview: dto.lastPreview ?? "",
+        lastSenderRole: asSenderRole(dto.lastSenderRole),
+        unreadStaff: Number(dto.unreadStaff ?? 0),
+        unreadUser: Number(dto.unreadUser ?? 0),
+        createdAtIso: created
     };
 }
 
-export type SupportMessageWriteDTO = Pick<SupportMessageDTO, "from_name" | "from_email" | "reason" | "status" | "subject" | "body">;
-
-export function supportMessageToDTO(message: Omit<SupportMessage, "id" | "createdAtIso">): SupportMessageWriteDTO {
+export function supportChatMessageFromDTO(dto: SupportChatMessageDTO): SupportChatMessage {
     return {
-        from_name: message.fromName,
-        from_email: message.fromEmail,
-        reason: message.reason,
-        status: message.status,
-        subject: message.subject,
-        body: message.body
+        id: dto.$id ?? dto.id ?? "",
+        threadId: dto.threadId ?? "",
+        senderRole: asSenderRole(dto.senderRole),
+        senderId: dto.senderId ?? "",
+        senderName: dto.senderName ?? "",
+        body: dto.body ?? "",
+        createdAtIso: dto.createdAtIso ?? dto.$createdAt ?? new Date(0).toISOString()
     };
 }
+
+export function threadDtoToInboxRow(dto: SupportThreadDTO): SupportMessage {
+    return threadToInboxRow(supportThreadFromDTO(dto));
+}
+
+export type SupportThreadWritePayload = {
+    userId: string;
+    userName: string;
+    userEmail: string;
+    reason: SupportReason;
+    subject: string;
+    status: SupportStatus;
+    lastMessageAt: string;
+    lastPreview: string;
+    lastSenderRole: SupportSenderRole;
+    unreadStaff: number;
+    unreadUser: number;
+};
+
+export type SupportChatMessageWritePayload = {
+    threadId: string;
+    senderRole: SupportSenderRole;
+    senderId: string;
+    senderName: string;
+    body: string;
+    createdAtIso: string;
+};

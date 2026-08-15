@@ -1,21 +1,26 @@
-import { SupportPulseRepository } from "../data/repository/support.pulse.repository";
-import { GetAllSupportMessagesCaseUse } from "../domain/caseuse/GetAllSupportMessagesCaseUse";
+import { databases } from "../../../infrastructure/di/appwrite.config";
+import { SupportAppwriteRepository } from "../data/repository/support.appwrite.repository";
+import { CreateSupportThreadCaseUse } from "../domain/caseuse/CreateSupportThreadCaseUse";
+import { ListMySupportThreadsCaseUse } from "../domain/caseuse/ListMySupportThreadsCaseUse";
+import { ListSupportMessagesCaseUse } from "../domain/caseuse/ListSupportMessagesCaseUse";
+import { PostSupportMessageCaseUse } from "../domain/caseuse/PostSupportMessageCaseUse";
 import { SubscribeSupportInboxCaseUse } from "../domain/caseuse/SubscribeSupportInboxCaseUse";
-import { UpdateSupportStatusCaseUse } from "../domain/caseuse/UpdateSupportStatusCaseUse";
 
-const repo = new SupportPulseRepository();
+const repo = new SupportAppwriteRepository(databases);
 
-const getAll = new GetAllSupportMessagesCaseUse(repo);
-const subscribeInbox = new SubscribeSupportInboxCaseUse(repo);
-const updateStatus = new UpdateSupportStatusCaseUse(repo);
+const listMine = new ListMySupportThreadsCaseUse(repo);
+const listMessages = new ListSupportMessagesCaseUse(repo);
+const createThread = new CreateSupportThreadCaseUse(repo);
+const postMessage = new PostSupportMessageCaseUse(repo);
+const subscribe = new SubscribeSupportInboxCaseUse(repo);
 
 export const supportContainer = {
     repositories: { net: repo },
     useCases: {
-        inbox: {
-            getAll: getAll.execute.bind(getAll),
-            subscribe: subscribeInbox.execute.bind(subscribeInbox),
-            updateStatus: updateStatus.execute.bind(updateStatus)
-        }
+        listMine: listMine.execute.bind(listMine),
+        listMessages: listMessages.execute.bind(listMessages),
+        create: createThread.execute.bind(createThread),
+        postMessage: postMessage.execute.bind(postMessage),
+        subscribe: subscribe.execute.bind(subscribe)
     }
 };

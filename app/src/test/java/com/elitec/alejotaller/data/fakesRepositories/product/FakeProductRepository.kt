@@ -30,6 +30,17 @@ class FakeProductRepository(
 
     override suspend fun sync(): Result<Unit> = syncResult
 
+    /**
+     * Realtime Appwrite: aplica documento post-mutación a memoria (sin Room en tests).
+     * Stub mínimo para cumplir el contrato de ProductRepository.
+     */
+    override suspend fun applyLocalSnapshot(raw: Map<String, Any>): Product? {
+        val id = (raw["\$id"] as? String)?.trim()
+            ?: (raw["id"] as? String)?.trim()
+            ?: return null
+        return byId[id]
+    }
+
     override suspend fun incrementReserved(productId: String, quantity: Int): Product? {
         incrementReservedCalls += productId to quantity
         if (productId in incrementFailureIds) return null
