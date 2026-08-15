@@ -6,10 +6,14 @@ export class MarkThreadReadCaseUse {
     constructor(private readonly repo: SupportRepository) {}
 
     async execute(threadId: string, forRole: SupportSenderRole): Promise<void> {
+        const id = threadId?.trim();
+        if (!id) {
+            throw new Error("threadId requerido para marcar como leído");
+        }
         if (forRole === "staff") {
-            await this.repo.touchThread(threadId, { unreadStaff: 0 });
+            await this.repo.touchThread(id, { unreadStaff: 0 });
         } else {
-            await this.repo.touchThread(threadId, { unreadUser: 0 });
+            await this.repo.touchThread(id, { unreadUser: 0 });
         }
     }
 }
