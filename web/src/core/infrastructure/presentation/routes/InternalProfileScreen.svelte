@@ -8,7 +8,7 @@
     import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
     import { type ProfileDraft, profileStore } from "../../../feature/auth/presentation/viewmodel/profile.store";
     import { authContainer } from "../../../feature/auth/di/auth.container";
-    import { User, Mail, Phone, ShieldCheck, Camera, Sparkles, CircleUserRound } from "lucide-svelte";
+    import { User, Mail, Phone, ShieldCheck, Sparkles, CircleUserRound } from "lucide-svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -215,34 +215,59 @@
 
             <main class="details-column">
                 <Card variant="filled">
-                    <div class="content-card">
+                    <div class="content-card contact-card">
                         <div class="section-heading">
-                            <div>
+                            <div class="section-title-wrap">
                                 <span class="section-kicker">Información personal</span>
-                                <h2>Datos de contacto</h2>
+                                <div class="section-title-line">
+                                    <span class="section-icon"><User size={17} /></span>
+                                    <h2>Datos de contacto</h2>
+                                </div>
                                 <p>Actualiza los datos que puedes modificar desde tu cuenta.</p>
                             </div>
                             <span class="section-index">01</span>
                         </div>
 
-                        <div class="field-grid">
-                            <div class="field-cell"><TextFieldOutlined label="Nombre completo" value={draft.name} oninput={handleNameInput} /></div>
-                            <div class="field-cell"><TextFieldOutlined label="Teléfono" value={draft.phone} oninput={handlePhoneInput} /></div>
+                        <div class="field-panel editable-panel">
+                            <div class="field-grid">
+                                <div class="field-cell">
+                                    <span class="field-label"><User size={14} /> Nombre completo</span>
+                                    <TextFieldOutlined label="Nombre completo" value={draft.name} oninput={handleNameInput} />
+                                </div>
+                                <div class="field-cell">
+                                    <span class="field-label"><Phone size={14} /> Teléfono</span>
+                                    <TextFieldOutlined label="Teléfono" value={draft.phone} oninput={handlePhoneInput} />
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                </Card>
 
-                        <div class="subsection-divider"></div>
-
-                        <div class="section-heading compact">
-                            <div>
+                <Card variant="filled">
+                    <div class="content-card account-card">
+                        <div class="section-heading">
+                            <div class="section-title-wrap">
                                 <span class="section-kicker">Cuenta</span>
-                                <h2>Datos de acceso</h2>
+                                <div class="section-title-line">
+                                    <span class="section-icon account-icon"><ShieldCheck size={17} /></span>
+                                    <h2>Datos de acceso</h2>
+                                </div>
+                                <p>Información vinculada a tu cuenta. Estos datos no pueden editarse aquí.</p>
                             </div>
                             <span class="readonly-label"><ShieldCheck size={13} /> Solo lectura</span>
                         </div>
 
-                        <div class="field-grid">
-                            <div class="field-cell"><TextFieldOutlined label="Correo electrónico" value={draft.email} disabled={true} /></div>
-                            <div class="field-cell"><TextFieldOutlined label="ID de cuenta" value={draft.userId} disabled={true} /></div>
+                        <div class="field-panel readonly-panel">
+                            <div class="field-grid">
+                                <div class="field-cell">
+                                    <span class="field-label readonly"><Mail size={14} /> Correo electrónico</span>
+                                    <TextFieldOutlined label="Correo electrónico" value={draft.email} disabled={true} />
+                                </div>
+                                <div class="field-cell">
+                                    <span class="field-label readonly"><ShieldCheck size={14} /> ID de cuenta</span>
+                                    <TextFieldOutlined label="ID de cuenta" value={draft.userId} disabled={true} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </Card>
@@ -345,18 +370,29 @@
     .profile-tip strong { color:var(--profile-on); font-size:.67rem; }
     .profile-tip span { color:var(--profile-on-variant); font-size:.61rem; line-height:1.4; }
 
-    .content-card { display:grid; gap:20px; padding:22px; }
+    .content-card { display:grid; gap:18px; padding:20px; }
+    .contact-card,.account-card { min-width:0; }
     .bio-content { gap:17px; }
-    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-    .section-heading > div { display:grid; gap:3px; min-width:0; }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+    .section-title-wrap { display:grid; gap:4px; min-width:0; }
+    .section-title-line { display:flex; align-items:center; gap:9px; min-width:0; }
+    .section-icon { flex:0 0 auto; width:31px; height:31px; display:grid; place-items:center; border-radius:10px; background:var(--profile-primary-container); color:var(--profile-on-primary-container); }
+    .section-icon.account-icon { background:color-mix(in srgb,var(--profile-secondary) 18%,var(--profile-primary-container)); color:var(--profile-primary); }
     .section-kicker { color:var(--profile-primary); font-size:.61rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
-    .section-heading h2 { margin:0; color:var(--profile-on); font-size:.95rem; line-height:1.2; font-weight:800; letter-spacing:-.015em; }
-    .section-heading p { margin:1px 0 0; color:var(--profile-on-variant); font-size:.68rem; line-height:1.4; }
+    .section-title-line h2 { margin:0; color:var(--profile-on); font-size:1rem; line-height:1.2; font-weight:800; letter-spacing:-.015em; }
+    .section-heading p { margin:1px 0 0 40px; color:var(--profile-on-variant); font-size:.68rem; line-height:1.4; max-width:58ch; }
     .section-index { flex:0 0 auto; min-width:28px; height:24px; display:grid; place-items:center; border-radius:8px; background:var(--profile-surface-highest); color:var(--profile-on-variant); font-size:.59rem; font-weight:800; }
-    .section-heading.compact { align-items:center; }
-    .readonly-label { flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; color:var(--profile-on-variant); font-size:.59rem; font-weight:700; padding:5px 7px; border-radius:999px; background:var(--profile-surface-highest); }
-    .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
-    .field-cell { display:flex; min-width:0; width:100%; }
+    .readonly-label { flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; color:var(--profile-on-variant); font-size:.59rem; font-weight:700; padding:5px 7px; border-radius:999px; background:var(--profile-surface-highest); white-space:nowrap; }
+
+    .field-panel { border:1px solid var(--profile-outline); border-radius:17px; padding:15px; background:var(--profile-surface-high); }
+    .editable-panel { background:color-mix(in srgb,var(--profile-primary-container) 18%,var(--profile-surface-high)); border-color:color-mix(in srgb,var(--profile-primary) 13%,var(--profile-outline)); }
+    .readonly-panel { background:color-mix(in srgb,var(--profile-surface-highest) 58%,var(--profile-surface)); }
+    .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+    .field-cell { display:grid; gap:7px; min-width:0; width:100%; }
+    .field-label { display:flex; align-items:center; gap:6px; color:var(--profile-on); font-size:.69rem; font-weight:750; padding-left:2px; }
+    .field-label :global(svg) { color:var(--profile-primary); flex:0 0 auto; }
+    .field-label.readonly { color:var(--profile-on-variant); }
+    .field-label.readonly :global(svg) { color:var(--profile-secondary); }
     .field-cell > :global(*) { flex:1 1 100%; width:100% !important; min-width:0 !important; max-width:100% !important; box-sizing:border-box; }
     .field-cell :global(.md-outlined-text-field) { width:100% !important; }
     .field-cell :global(.md-outlined-text-field[disabled]) { background:color-mix(in srgb,var(--profile-surface-high) 78%,transparent) !important; opacity:.82; }
@@ -388,7 +424,9 @@
         .header-copy h1 { font-size:1.32rem; }
         .identity-column { grid-template-columns:1fr; }
         .field-grid { grid-template-columns:1fr; }
-        .content-card { padding:18px; }
+        .content-card { padding:17px; }
+        .field-panel { padding:12px; }
+        .section-heading p { margin-left:0; }
         .actions-bar { position:relative; bottom:auto; flex-direction:column; align-items:stretch; padding:12px; }
         .actions-status { padding:0 2px 4px; }
         .actions { display:grid; grid-template-columns:1fr 1.35fr; }
@@ -399,7 +437,11 @@
         .identity-card { padding:17px; }
         .avatar-wrap { width:96px; height:96px; }
         .avatar-preview { border-radius:29px; font-size:2.6rem; }
+        .section-heading { gap:8px; }
+        .section-icon { width:28px; height:28px; }
+        .section-title-line h2 { font-size:.92rem; }
         .section-heading p { font-size:.64rem; }
+        .readonly-label { font-size:.55rem; }
         .actions { grid-template-columns:1fr; }
     }
 </style>
