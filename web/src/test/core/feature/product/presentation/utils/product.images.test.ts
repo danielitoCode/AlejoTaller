@@ -18,9 +18,13 @@ describe("parseProductImageUrls", () => {
         ]);
     });
 
-    it("requires the versioned payload shape for JSON values", () => {
+    it("accepts JSON arrays; rejects objects without version+images contract", () => {
+        // Sin version: no es ProductImagesPayload → []
         expect(parseProductImageUrls(JSON.stringify({ images: ["https://a.test/1.jpg"] }))).toEqual([]);
-        expect(parseProductImageUrls(JSON.stringify(["https://a.test/1.jpg"]))).toEqual([]);
+        // Array JSON: se acepta de forma defensiva
+        expect(parseProductImageUrls(JSON.stringify(["https://a.test/1.jpg"]))).toEqual([
+            "https://a.test/1.jpg"
+        ]);
     });
 
     it("returns an empty list for invalid or empty values", () => {

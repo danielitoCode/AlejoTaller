@@ -1,28 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { toDomain } from "../../../../../../core/feature/exchange/data/mapper/Mappers";
 
+/**
+ * Alineado con CupExchangeDTO (Directorio Cubano):
+ * tasas.USD.CUP / tasas.EUR.CUP
+ */
 describe("exchange mapper", () => {
-    it("maps direct currency fields from elTOQUE-like payloads", () => {
+    it("maps Directorio Cubano tasas payload (USD/EUR → CUP)", () => {
         const exchange = toDomain({
-            date: "2026-06-08T12:00:00.000Z",
-            USD: 320,
-            EUR: 345
+            ok: true,
+            fecha: "2026-06-08",
+            hora: "12:00",
+            actualizado: "2026-06-08T12:00:00.000Z",
+            tasas: {
+                USD: { CUP: 320, MLC: null, USD: 1 },
+                EUR: { CUP: 345, MLC: null, USD: null }
+            }
         });
 
         expect(exchange.usdReference).toBe(320);
         expect(exchange.euroReference).toBe(345);
-        expect(exchange.source).toBe("elTOQUE");
+        expect(exchange.source).toBe("DIRECTORIO_CUBANO");
     });
 
-    it("maps list payloads with moneda/tasa pairs", () => {
-        const exchange = toDomain({
-            tasas: [
-                { moneda: "USD", tasa: "315.50", fecha: "2026-06-08" },
-                { moneda: "EUR", tasa: 340 }
-            ]
-        });
-
-        expect(exchange.usdReference).toBe(315.5);
-        expect(exchange.euroReference).toBe(340);
+    it("throws when USD/CUP or EUR/CUP rates are missing", () => {
+        expect(() =>
+            toDomain({
+                ok: true,
+                fecha: "2026-06-08",
+                hora: "12:00",
+                actualizado: "2026-06-08T12:00:00.000Z",
+                tasas: {
+                    USD: { CUP: null, MLC: null, USD: 1 }
+                }
+            })
+        ).toThrow(/USD\/CUP y EUR\/CUP/);
     });
 });
