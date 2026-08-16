@@ -220,7 +220,7 @@
             <ul class="list">
                 {#each sorted as m (m.id)}
                     <li>
-                        <button class="thread-row" class:unread={(m.unreadUser ?? 0) > 0} type="button" on:click={() => open(m.id)}>
+                        <button class="thread-row" class:unread={(m.unreadUser ?? 0) > 0} type="button" onclick={() => open(m.id)}>
                             <div class="thread-icon" aria-hidden="true"><Icon icon={chatIcon} /></div>
                             <div class="thread-main">
                                 <div class="thread-top"><strong class="thread-subject">{#if (m.unreadUser ?? 0) > 0}<span class="dot" title="Sin leer"></span>{/if}{m.subject || "Sin asunto"}</strong><span class="pill {statusTone(m.status)}">{statusLabel(m.status)}</span></div>
