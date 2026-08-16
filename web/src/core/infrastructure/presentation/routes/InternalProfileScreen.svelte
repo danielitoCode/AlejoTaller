@@ -8,6 +8,7 @@
     import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
     import { type ProfileDraft, profileStore } from "../../../feature/auth/presentation/viewmodel/profile.store";
     import { authContainer } from "../../../feature/auth/di/auth.container";
+    import { User, Mail, Phone, ShieldCheck, Camera, Sparkles, CircleUserRound } from "lucide-svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -113,314 +114,292 @@
 
     function handleNameInput(event: InputEvent) {
         const target = event.target as HTMLInputElement | null;
-        if (!target) return;
-        updateField({ name: target.value });
+        if (target) updateField({ name: target.value });
     }
 
     function handlePhoneInput(event: InputEvent) {
         const target = event.target as HTMLInputElement | null;
-        if (!target) return;
-        updateField({ phone: target.value });
+        if (target) updateField({ phone: target.value });
     }
 
     function handleBioInput(event: InputEvent) {
         const target = event.target as HTMLTextAreaElement | null;
-        if (!target) return;
-        updateField({ bio: target.value });
+        if (target) updateField({ bio: target.value });
     }
 </script>
 
 <section class="screen profile-screen">
-    <div class="hero">
-        <p class="eyebrow">Perfil</p>
-        <h1>Mi perfil</h1>
-        <p class="support">Gestiona tu información personal y cómo apareces ante otros usuarios.</p>
-    </div>
-
     {#if loading}
-        <div class="loading-card">
-            <Card variant="filled">
-                <div class="card-shell">
-                    <p>Cargando perfil...</p>
-                </div>
-            </Card>
+        <div class="state-card">
+            <div class="state-icon"><CircleUserRound size={24} /></div>
+            <strong>Cargando tu perfil</strong>
+            <span>Estamos preparando tu información personal…</span>
+            <div class="spinner" aria-hidden="true"></div>
         </div>
     {:else}
-        <div class="main-content">
-            <div class="profile-layout">
-                <div class="avatar-card">
-                    <Card variant="filled">
-                        <div class="card-shell">
-                            <div class="card-title">
-                                <strong>Foto de perfil</strong>
-                                <span>Esta imagen será visible para otros usuarios.</span>
-                            </div>
+        <header class="profile-header">
+            <div class="header-copy">
+                <div class="eyebrow-row">
+                    <User size={16} />
+                    <span>Cuenta personal</span>
+                </div>
+                <h1>Mi perfil</h1>
+                <p>Gestiona tu información, tu foto y los datos con los que te identificas en la tienda.</p>
+            </div>
+            {#if hasChanges}
+                <div class="unsaved-badge">
+                    <span></span>
+                    Cambios sin guardar
+                </div>
+            {/if}
+        </header>
+
+        <div class="profile-grid">
+            <aside class="identity-column">
+                <Card variant="filled">
+                    <div class="identity-card">
+                        <div class="identity-glow" aria-hidden="true"></div>
+                        <div class="avatar-wrap">
                             <div class="avatar-preview">
                                 {#if draft.avatarUrl && !avatarError}
                                     {#if avatarLoading}
-                                        <div class="avatar-state loading">
-                                            <div class="avatar-spinner"></div>
-                                            <span>Cargando foto...</span>
-                                        </div>
+                                        <div class="avatar-loading"><div class="avatar-spinner"></div></div>
                                     {/if}
                                     <img
-                                            class:loaded={!avatarLoading}
-                                            src={draft.avatarUrl}
-                                            alt="Avatar de perfil"
-                                            on:load={() => { avatarLoading = false; avatarError = false; }}
-                                            on:error={() => { avatarLoading = false; avatarError = true; }}
+                                        class:loaded={!avatarLoading}
+                                        src={draft.avatarUrl}
+                                        alt="Avatar de perfil"
+                                        onload={() => { avatarLoading = false; avatarError = false; }}
+                                        onerror={() => { avatarLoading = false; avatarError = true; }}
                                     />
                                 {:else if draft.avatarUrl && avatarError}
-                                    <div class="avatar-state error">
-                                        <strong>Sin vista previa</strong>
-                                        <span>No se pudo cargar la imagen.</span>
-                                    </div>
+                                    <div class="avatar-fallback error"><CircleUserRound size={42} /></div>
                                 {:else}
-                                    <span>{draft.name?.slice(0, 1) || "A"}</span>
+                                    <span>{draft.name?.slice(0, 1).toUpperCase() || "A"}</span>
                                 {/if}
                             </div>
-                            <ImagePicker
-                                    label="Cambiar foto"
-                                    value={draft.avatarUrl}
-                                    on:change={(event) => updateField({ avatarUrl: event.detail.url })}
-                            />
+                            <div class="avatar-status" title="Perfil activo"></div>
                         </div>
-                    </Card>
-                </div>
 
-                <div class="form-card">
-                    <Card variant="filled">
-                        <div class="card-shell">
-                            <div class="card-title">
-                                <strong>Datos personales</strong>
-                                <span>Información visible y de contacto.</span>
+                        <div class="identity-copy">
+                            <strong>{draft.name || "Tu nombre"}</strong>
+                            <span>{draft.email}</span>
+                        </div>
+
+                        <div class="identity-divider"></div>
+
+                        <div class="identity-meta">
+                            <div class="meta-item">
+                                <span class="meta-icon"><ShieldCheck size={16} /></span>
+                                <div><strong>Cuenta verificada</strong><small>Información protegida</small></div>
                             </div>
-
-                            <div class="editable-section">
-                                <div class="section-label">Información editable</div>
-                                <div class="field-grid">
-                                    <div class="field-cell">
-                                        <TextFieldOutlined label="Nombre completo" value={draft.name} oninput={handleNameInput} />
-                                    </div>
-                                    <div class="field-cell">
-                                        <TextFieldOutlined label="Teléfono" value={draft.phone} oninput={handlePhoneInput} />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="divider"></div>
-
-                            <div class="readonly-section">
-                                <div class="section-label">Información de cuenta</div>
-                                <div class="field-grid">
-                                    <div class="field-cell">
-                                        <TextFieldOutlined label="Correo electrónico" value={draft.email} disabled={true} />
-                                    </div>
-                                    <div class="field-cell">
-                                        <TextFieldOutlined label="ID de cuenta" value={draft.userId} disabled={true} />
-                                    </div>
-                                </div>
+                            <div class="meta-item">
+                                <span class="meta-icon"><Mail size={16} /></span>
+                                <div><strong>Correo principal</strong><small>Usado para tu cuenta</small></div>
                             </div>
                         </div>
-                    </Card>
-                </div>
-            </div>
 
-            <div class="bio-card">
+                        <ImagePicker
+                            label="Foto de perfil"
+                            value={draft.avatarUrl}
+                            onchange={(event) => updateField({ avatarUrl: event.detail.url })}
+                        />
+                    </div>
+                </Card>
+
+                <div class="profile-tip">
+                    <div class="tip-icon"><Sparkles size={17} /></div>
+                    <div><strong>Mantén tu perfil actualizado</strong><span>Una información clara facilita la atención de soporte y la gestión de tus pedidos.</span></div>
+                </div>
+            </aside>
+
+            <main class="details-column">
+                <Card variant="filled">
+                    <div class="content-card">
+                        <div class="section-heading">
+                            <div>
+                                <span class="section-kicker">Información personal</span>
+                                <h2>Datos de contacto</h2>
+                                <p>Actualiza los datos que puedes modificar desde tu cuenta.</p>
+                            </div>
+                            <span class="section-index">01</span>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field-cell"><TextFieldOutlined label="Nombre completo" value={draft.name} oninput={handleNameInput} /></div>
+                            <div class="field-cell"><TextFieldOutlined label="Teléfono" value={draft.phone} oninput={handlePhoneInput} /></div>
+                        </div>
+
+                        <div class="subsection-divider"></div>
+
+                        <div class="section-heading compact">
+                            <div>
+                                <span class="section-kicker">Cuenta</span>
+                                <h2>Datos de acceso</h2>
+                            </div>
+                            <span class="readonly-label"><ShieldCheck size={13} /> Solo lectura</span>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field-cell"><TextFieldOutlined label="Correo electrónico" value={draft.email} disabled={true} /></div>
+                            <div class="field-cell"><TextFieldOutlined label="ID de cuenta" value={draft.userId} disabled={true} /></div>
+                        </div>
+                    </div>
+                </Card>
+
                 <Card variant="elevated">
-                    <div class="card-shell">
-                        <div class="card-title">
-                            <strong>Biografía</strong>
-                            <span>Cuéntanos brevemente sobre ti o tu negocio (visible para otros).</span>
+                    <div class="content-card bio-content">
+                        <div class="section-heading">
+                            <div>
+                                <span class="section-kicker">Sobre ti</span>
+                                <h2>Biografía</h2>
+                                <p>Un pequeño espacio para contar algo sobre ti o tu negocio.</p>
+                            </div>
+                            <span class="section-index">02</span>
                         </div>
                         <TextFieldOutlinedMultiline label="Biografía" rows={5} value={draft.bio} oninput={handleBioInput} />
                     </div>
                 </Card>
-            </div>
+            </main>
         </div>
 
-        <div class="actions-row">
-            <Button variant="outlined" size="m" onclick={handleReset} disabled={!hasChanges || saving}>
-                Descartar cambios
-            </Button>
-            <Button variant="filled" size="m" onclick={handleSave} disabled={!hasChanges || saving}>
-                {saving ? "Guardando cambios..." : "Guardar cambios"}
-            </Button>
-        </div>
+        <footer class="actions-bar">
+            <div class="actions-status">
+                {#if hasChanges}
+                    <span class="status-dot"></span>
+                    <div><strong>Tienes cambios pendientes</strong><small>Guarda para actualizar tu perfil.</small></div>
+                {:else}
+                    <span class="saved-icon"><ShieldCheck size={15} /></span>
+                    <div><strong>Perfil actualizado</strong><small>No hay cambios pendientes.</small></div>
+                {/if}
+            </div>
+            <div class="actions">
+                <Button variant="outlined" size="m" onclick={handleReset} disabled={!hasChanges || saving}>Descartar</Button>
+                <Button variant="filled" size="m" onclick={handleSave} disabled={!hasChanges || saving}>
+                    {saving ? "Guardando…" : "Guardar cambios"}
+                </Button>
+            </div>
+        </footer>
     {/if}
 </section>
 
 <style>
     .screen {
+        --profile-surface: var(--m3c-surface-container, var(--md-sys-color-surface-container));
+        --profile-surface-high: var(--m3c-surface-container-high, var(--md-sys-color-surface-container-high));
+        --profile-surface-highest: var(--m3c-surface-container-highest, var(--md-sys-color-surface-container-highest));
+        --profile-on: var(--m3c-on-surface, var(--md-sys-color-on-surface));
+        --profile-on-variant: var(--m3c-on-surface-variant, var(--md-sys-color-on-surface-variant));
+        --profile-primary: var(--m3c-primary, var(--md-sys-color-primary));
+        --profile-primary-container: var(--m3c-primary-container, var(--md-sys-color-primary-container));
+        --profile-on-primary-container: var(--m3c-on-primary-container, var(--md-sys-color-on-primary-container));
+        --profile-secondary: var(--m3c-secondary, var(--md-sys-color-secondary));
+        --profile-outline: var(--m3c-outline-variant, var(--md-sys-color-outline-variant));
         display: grid;
-        gap: 24px;
+        gap: 18px;
         align-content: start;
+        width: min(100%, 1080px);
+        margin: 0 auto;
+        padding: 12px 18px 38px;
         min-height: 100%;
-        padding-bottom: 80px;
-    }
-
-    .main-content {
-        display: grid;
-        gap: 24px;
-    }
-
-    .profile-layout {
-        display: grid;
-        grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
-        gap: 24px;
-        align-items: start;
-    }
-
-    .card-shell {
-        display: grid;
-        gap: 28px;
-        padding: 24px;
-    }
-
-    .card-title {
-        display: grid;
-        gap: 4px;
-    }
-
-    .editable-section,
-    .readonly-section {
-        display: grid;
-        gap: 12px;
-    }
-
-    .section-label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .field-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 20px;
-        width: 100%;
-    }
-
-    .field-cell {
-        display: flex;
-        width: 100%;
-        min-width: 0;
-    }
-
-    .field-cell > :global(*) {
-        flex: 1 1 100%;
-        width: 100% !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
         box-sizing: border-box;
     }
 
-    .field-cell :global(.md-outlined-text-field) {
-        width: 100% !important;
-    }
+    .profile-header { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; padding:4px 2px 2px; }
+    .header-copy { min-width:0; }
+    .eyebrow-row { display:flex; align-items:center; gap:6px; color:var(--profile-primary); margin-bottom:5px; }
+    .eyebrow-row span { font-size:.68rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .header-copy h1 { margin:0; color:var(--profile-on); font-size:1.5rem; line-height:1.1; font-weight:850; letter-spacing:-.035em; }
+    .header-copy p { margin:6px 0 0; max-width:62ch; color:var(--profile-on-variant); font-size:.8rem; line-height:1.45; }
+    .unsaved-badge { flex:0 0 auto; display:flex; align-items:center; gap:7px; padding:7px 10px; border-radius:999px; border:1px solid color-mix(in srgb,var(--profile-primary) 24%,var(--profile-outline)); background:color-mix(in srgb,var(--profile-primary-container) 55%,var(--profile-surface)); color:var(--profile-on-primary-container); font-size:.65rem; font-weight:750; }
+    .unsaved-badge span,.status-dot { width:7px; height:7px; border-radius:50%; background:var(--profile-primary); box-shadow:0 0 0 3px color-mix(in srgb,var(--profile-primary) 15%,transparent); }
 
-    .field-cell :global(.md-outlined-text-field[disabled]) {
-        background-color: color-mix(in srgb, var(--md-sys-color-surface-container) 80%, transparent) !important;
-        opacity: 0.9;
-    }
+    .profile-grid { display:grid; grid-template-columns:minmax(270px,.72fr) minmax(0,1.28fr); gap:16px; align-items:start; }
+    .identity-column,.details-column { display:grid; gap:16px; min-width:0; }
+    .identity-column :global(.md-card),.details-column :global(.md-card) { border:1px solid var(--profile-outline); border-radius:24px; overflow:hidden; }
 
-    .divider {
-        height: 1px;
-        background: color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-        margin: 8px 0;
-    }
+    .identity-card { position:relative; display:grid; gap:17px; padding:20px; overflow:hidden; background:radial-gradient(circle at 8% 0%,color-mix(in srgb,var(--profile-primary) 13%,transparent),transparent 36%); }
+    .identity-glow { position:absolute; width:180px; height:180px; right:-80px; top:-100px; border-radius:50%; background:color-mix(in srgb,var(--profile-secondary) 10%,transparent); filter:blur(24px); pointer-events:none; }
+    .avatar-wrap { position:relative; width:112px; height:112px; margin:2px auto 0; }
+    .avatar-preview { width:100%; height:100%; display:grid; place-items:center; border-radius:34px; overflow:hidden; background:linear-gradient(135deg,var(--profile-primary-container),color-mix(in srgb,var(--profile-secondary) 25%,var(--profile-primary-container))); color:var(--profile-on-primary-container); font-size:3rem; font-weight:850; box-shadow:0 12px 26px color-mix(in srgb,var(--profile-primary) 13%,transparent),inset 0 1px 0 color-mix(in srgb,white 24%,transparent); }
+    .avatar-preview img { width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .2s ease; }
+    .avatar-preview img.loaded { opacity:1; }
+    .avatar-loading { position:absolute; inset:0; display:grid; place-items:center; background:color-mix(in srgb,var(--profile-surface) 35%,transparent); z-index:2; }
+    .avatar-spinner { width:23px; height:23px; border-radius:50%; border:2px solid color-mix(in srgb,var(--profile-outline) 75%,transparent); border-top-color:var(--profile-primary); animation:spin .7s linear infinite; }
+    .avatar-fallback { width:100%; height:100%; display:grid; place-items:center; }
+    .avatar-status { position:absolute; right:-2px; bottom:3px; width:14px; height:14px; border-radius:50%; background:var(--profile-primary); border:4px solid var(--profile-surface); box-shadow:0 0 0 2px color-mix(in srgb,var(--profile-primary) 14%,transparent); }
+    .identity-copy { display:grid; gap:4px; text-align:center; }
+    .identity-copy strong { color:var(--profile-on); font-size:1.02rem; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .identity-copy span { color:var(--profile-on-variant); font-size:.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .identity-divider,.subsection-divider { height:1px; background:color-mix(in srgb,var(--profile-outline) 62%,transparent); }
+    .identity-meta { display:grid; gap:10px; }
+    .meta-item { display:flex; align-items:center; gap:9px; min-width:0; }
+    .meta-icon { flex:0 0 auto; width:31px; height:31px; display:grid; place-items:center; border-radius:10px; background:var(--profile-surface-highest); color:var(--profile-primary); }
+    .meta-item div { display:grid; gap:1px; min-width:0; }
+    .meta-item strong { color:var(--profile-on); font-size:.68rem; font-weight:750; }
+    .meta-item small { color:var(--profile-on-variant); font-size:.6rem; }
 
-    .avatar-preview {
-        width: min(200px, 100%);
-        aspect-ratio: 1 / 1;
-        border-radius: 32px;
-        overflow: hidden;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(135deg, var(--md-sys-color-primary-container), var(--md-sys-color-tertiary-container));
-        color: var(--md-sys-color-on-primary-container);
-        font-size: 3.5rem;
-        font-weight: 700;
-        position: relative;
-    }
+    .profile-tip { display:flex; align-items:flex-start; gap:10px; padding:13px 14px; border:1px solid color-mix(in srgb,var(--profile-primary) 16%,var(--profile-outline)); border-radius:17px; background:color-mix(in srgb,var(--profile-primary-container) 35%,var(--profile-surface)); }
+    .tip-icon { flex:0 0 auto; width:30px; height:30px; display:grid; place-items:center; border-radius:10px; background:var(--profile-primary-container); color:var(--profile-on-primary-container); }
+    .profile-tip div:last-child { display:grid; gap:2px; min-width:0; }
+    .profile-tip strong { color:var(--profile-on); font-size:.67rem; }
+    .profile-tip span { color:var(--profile-on-variant); font-size:.61rem; line-height:1.4; }
 
-    .avatar-preview img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
+    .content-card { display:grid; gap:20px; padding:22px; }
+    .bio-content { gap:17px; }
+    .section-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .section-heading > div { display:grid; gap:3px; min-width:0; }
+    .section-kicker { color:var(--profile-primary); font-size:.61rem; font-weight:850; letter-spacing:.09em; text-transform:uppercase; }
+    .section-heading h2 { margin:0; color:var(--profile-on); font-size:.95rem; line-height:1.2; font-weight:800; letter-spacing:-.015em; }
+    .section-heading p { margin:1px 0 0; color:var(--profile-on-variant); font-size:.68rem; line-height:1.4; }
+    .section-index { flex:0 0 auto; min-width:28px; height:24px; display:grid; place-items:center; border-radius:8px; background:var(--profile-surface-highest); color:var(--profile-on-variant); font-size:.59rem; font-weight:800; }
+    .section-heading.compact { align-items:center; }
+    .readonly-label { flex:0 0 auto; display:inline-flex; align-items:center; gap:4px; color:var(--profile-on-variant); font-size:.59rem; font-weight:700; padding:5px 7px; border-radius:999px; background:var(--profile-surface-highest); }
+    .field-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+    .field-cell { display:flex; min-width:0; width:100%; }
+    .field-cell > :global(*) { flex:1 1 100%; width:100% !important; min-width:0 !important; max-width:100% !important; box-sizing:border-box; }
+    .field-cell :global(.md-outlined-text-field) { width:100% !important; }
+    .field-cell :global(.md-outlined-text-field[disabled]) { background:color-mix(in srgb,var(--profile-surface-high) 78%,transparent) !important; opacity:.82; }
+    .bio-content :global(.md-outlined-text-field-multiline) { width:100% !important; }
 
-    .avatar-preview img.loaded {
-        opacity: 1;
-    }
+    .actions-bar { position:sticky; bottom:10px; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 12px 11px 15px; border:1px solid var(--profile-outline); border-radius:19px; background:color-mix(in srgb,var(--profile-surface-high) 91%,transparent); backdrop-filter:blur(18px); box-shadow:0 14px 34px color-mix(in srgb,black 10%,transparent); }
+    .actions-status { display:flex; align-items:center; gap:9px; min-width:0; }
+    .actions-status div { display:grid; gap:1px; min-width:0; }
+    .actions-status strong { color:var(--profile-on); font-size:.65rem; font-weight:750; }
+    .actions-status small { color:var(--profile-on-variant); font-size:.59rem; }
+    .saved-icon { flex:0 0 auto; width:25px; height:25px; display:grid; place-items:center; border-radius:8px; background:var(--profile-primary-container); color:var(--profile-on-primary-container); }
+    .actions { display:flex; align-items:center; gap:8px; }
 
-    .avatar-state {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        gap: 12px;
-        padding: 20px;
-        text-align: center;
-        background: rgba(0, 0, 0, 0.65);
-        color: white;
-    }
-
-    .bio-card :global(.md-outlined-text-field-multiline) {
-        width: 100% !important;
-    }
-
-    .actions-row {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        padding-top: 8px;
-    }
-
-    .hero .eyebrow {
-        margin: 0;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        opacity: 0.7;
-    }
-
-    .hero h1 {
-        margin: 4px 0;
-    }
-
-    .hero .support {
-        opacity: 0.8;
-    }
+    .state-card { min-height:210px; display:grid; justify-items:center; align-content:center; gap:8px; padding:28px; border:1px solid var(--profile-outline); border-radius:24px; background:var(--profile-surface); color:var(--profile-on-variant); text-align:center; }
+    .state-icon { width:48px; height:48px; display:grid; place-items:center; margin-bottom:3px; border-radius:15px; background:var(--profile-primary-container); color:var(--profile-on-primary-container); }
+    .state-card strong { color:var(--profile-on); font-size:.9rem; }
+    .state-card > span { font-size:.7rem; }
+    .spinner { width:20px; height:20px; margin-top:8px; border-radius:50%; border:2px solid var(--profile-outline); border-top-color:var(--profile-primary); animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
     @media (max-width: 900px) {
-        .profile-layout {
-            grid-template-columns: 1fr;
-        }
+        .profile-grid { grid-template-columns:1fr; }
+        .identity-column { grid-template-columns:minmax(250px,.7fr) minmax(0,1.3fr); align-items:start; }
+        .profile-tip { align-self:stretch; }
     }
-
-    @media (max-width: 720px) {
-        .field-grid {
-            grid-template-columns: 1fr;
-        }
-        .actions-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-        }
-        .actions-row :global(button) {
-            width: 100%;
-        }
+    @media (max-width: 680px) {
+        .screen { padding:10px 13px 30px; gap:14px; }
+        .profile-header { align-items:flex-start; flex-direction:column; gap:10px; }
+        .header-copy h1 { font-size:1.32rem; }
+        .identity-column { grid-template-columns:1fr; }
+        .field-grid { grid-template-columns:1fr; }
+        .content-card { padding:18px; }
+        .actions-bar { position:relative; bottom:auto; flex-direction:column; align-items:stretch; padding:12px; }
+        .actions-status { padding:0 2px 4px; }
+        .actions { display:grid; grid-template-columns:1fr 1.35fr; }
+        .actions :global(button) { width:100%; }
     }
-
-    @media (max-width: 480px) {
-        .card-shell {
-            padding: 20px;
-        }
-        .field-grid {
-            gap: 16px;
-        }
+    @media (max-width: 420px) {
+        .screen { padding-inline:10px; }
+        .identity-card { padding:17px; }
+        .avatar-wrap { width:96px; height:96px; }
+        .avatar-preview { border-radius:29px; font-size:2.6rem; }
+        .section-heading p { font-size:.64rem; }
+        .actions { grid-template-columns:1fr; }
     }
 </style>
