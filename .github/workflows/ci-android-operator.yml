@@ -1,0 +1,79 @@
+# CI — Android operador (:alejotallerscan)
+name: CI Android Operador
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "alejotallerscan/**"
+      - "shared-*/**"
+      - "mapper-processor/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/ci-android-operator.yml"
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "alejotallerscan/**"
+      - "shared-*/**"
+      - "mapper-processor/**"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/ci-android-operator.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-android-operator-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android-operator:
+    name: Operador tests + compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Placeholder local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Unit tests (:alejotallerscan)
+        run: ./gradlew :alejotallerscan:testDebugUnitTest --stacktrace
+
+      - name: Compile debug (:alejotallerscan)
+        run: ./gradlew :alejotallerscan:compileDebugKotlin --stacktrace
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-operator-test-report
+          path: alejotallerscan/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn

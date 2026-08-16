@@ -1,0 +1,122 @@
+# CI Gate principal — solo verde si Web + Android Cliente + Android Operador
+# pasaron para el mismo commit (o se omitieron por paths sin cambios relevantes).
+#
+# Se dispara cuando termina cualquiera de los tres CI parciales.
+# Comprueba el estado de los tres sobre el SHA del commit y falla si alguno falló.
+name: CI Gate
+
+on:
+  workflow_run:
+    workflows:
+      - "CI Web"
+      - "CI Android Cliente"
+      - "CI Android Operador"
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: ci-gate-${{ github.event.workflow_run.head_sha || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  gate:
+    name: All surfaces green
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion != ''
+    steps:
+      - name: Resolve commit SHA
+        id: sha
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+            echo "branch=${{ github.event.workflow_run.head_branch }}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Commit: ${{ github.event.workflow_run.head_sha || github.sha }}"
+
+      - name: Query latest runs for the three CI workflows on this SHA
+        id: status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ steps.sha.outputs.sha }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          check_wf() {
+            local name="$1"
+            local wid
+            wid=$(gh api "repos/$REPO/actions/workflows" --jq ".workflows[] | select(.name==\"$name\") | .id" 2>/dev/null || true)
+            if [ -z "$wid" ]; then
+              echo "missing"
+              return
+            fi
+            local conclusion
+            conclusion=$(gh api "repos/$REPO/actions/workflows/$wid/runs?head_sha=$TARGET_SHA&per_page=5" \
+              --jq '[.workflow_runs[] | select(.status=="completed")] | sort_by(.created_at) | reverse | .[0].conclusion // "none"' 2>/dev/null || echo "none")
+            echo "$conclusion"
+          }
+
+          WEB=$(check_wf "CI Web")
+          CLIENT=$(check_wf "CI Android Cliente")
+          OPERATOR=$(check_wf "CI Android Operador")
+
+          echo "web=$WEB" >> "$GITHUB_OUTPUT"
+          echo "client=$CLIENT" >> "$GITHUB_OUTPUT"
+          echo "operator=$OPERATOR" >> "$GITHUB_OUTPUT"
+
+          echo "=== CI status for $TARGET_SHA ==="
+          echo "Web:              $WEB"
+          echo "Android Cliente:  $CLIENT"
+          echo "Android Operador: $OPERATOR"
+
+      - name: Evaluate gate
+        env:
+          WEB: ${{ steps.status.outputs.web }}
+          CLIENT: ${{ steps.status.outputs.client }}
+          OPERATOR: ${{ steps.status.outputs.operator }}
+        run: |
+          set -euo pipefail
+
+          fail=0
+          evaluate() {
+            local label="$1"
+            local val="$2"
+            case "$val" in
+              success|skipped|none)
+                echo "✓ $label: $val"
+                ;;
+              failure|cancelled|timed_out)
+                echo "✗ $label: $val"
+                fail=1
+                ;;
+              *)
+                echo "✗ $label: estado inesperado ($val)"
+                fail=1
+                ;;
+            esac
+          }
+
+          evaluate "CI Web" "$WEB"
+          evaluate "CI Android Cliente" "$CLIENT"
+          evaluate "CI Android Operador" "$OPERATOR"
+
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::CI Gate ROJO — hay superficies en fallo"
+            exit 1
+          fi
+
+          if [ "$WEB" = "none" ] && [ "$CLIENT" = "none" ] && [ "$OPERATOR" = "none" ]; then
+            echo "::warning::Ningún CI parcial ha corrido aún para este SHA"
+          fi
+
+          echo "CI Gate VERDE — superficies relevantes OK"
