@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import {Button, Card, Icon} from "m3-svelte";
+    import { Button, Card, Icon } from "m3-svelte";
     import shoppingBagIcon from "@ktibow/iconset-material-symbols/inventory-2-rounded";
     import scheduleIcon from "@ktibow/iconset-material-symbols/schedule-rounded";
     import checkCircleIcon from "@ktibow/iconset-material-symbols/check-circle-rounded";
@@ -9,12 +9,12 @@
     import storeIcon from "@ktibow/iconset-material-symbols/store-rounded";
     import arrowOutwardIcon from "@ktibow/iconset-material-symbols/arrow-outward-rounded";
     import storefrontIcon from "@ktibow/iconset-material-symbols/storefront-rounded";
-    import type {NavBackStackEntry} from "../../../../lib/navigation/NavBackStackEntry";
-    import type {NavController} from "../../../../lib/navigation/NavController";
-    import {sessionStore} from "../../../feature/auth/presentation/viewmodel/session.store";
-    import {BuyState, DeliveryType, type Currency} from "../../../feature/sale/domain/entity/enums";
-    import {saleStore} from "../../../feature/sale/presentation/viewmodel/sale.store";
-    import {dashboard, reservationDetail} from "../navigation/nested.router";
+    import type { NavBackStackEntry } from "../../../../lib/navigation/NavBackStackEntry";
+    import type { NavController } from "../../../../lib/navigation/NavController";
+    import { sessionStore } from "../../../feature/auth/presentation/viewmodel/session.store";
+    import { BuyState, DeliveryType, type Currency } from "../../../feature/sale/domain/entity/enums";
+    import { saleStore } from "../../../feature/sale/presentation/viewmodel/sale.store";
+    import { dashboard, reservationDetail } from "../navigation/nested.router";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -36,184 +36,99 @@
 
     onMount(() => {
         void hydrateReservations();
-        const handleOnline = () => {
-            void hydrateReservations();
-        };
+        const handleOnline = () => void hydrateReservations();
         window.addEventListener("online", handleOnline);
-        return () => {
-            window.removeEventListener("online", handleOnline);
-        };
+        return () => window.removeEventListener("online", handleOnline);
     });
 
     function saleStatusMeta(state: BuyState) {
-        if (state === BuyState.VERIFIED) return { label: "Listo", icon: checkCircleIcon, tone: "ready" };
-        if (state === BuyState.DELETED) return { label: "Cancelada", icon: cancelIcon, tone: "cancelled" };
-        return { label: "Pendiente", icon: scheduleIcon, tone: "pending" };
+        if (state === BuyState.VERIFIED) return { label: "Aprobada", icon: checkCircleIcon, tone: "ready" };
+        if (state === BuyState.DELETED) return { label: "Rechazada", icon: cancelIcon, tone: "cancelled" };
+        return { label: "En revisión", icon: scheduleIcon, tone: "pending" };
     }
 
-    function deliveryMeta(deliveryType?: DeliveryType | null) {
-        if (deliveryType === DeliveryType.DELIVERY) {
-            return { label: "A domicilio", icon: localShippingIcon };
-        }
-        if (deliveryType === DeliveryType.PICKUP) {
-            return { label: "Recogida", icon: storeIcon };
-        }
+    function deliveryMeta(type?: DeliveryType | null) {
+        if (type === DeliveryType.DELIVERY) return { label: "A domicilio", icon: localShippingIcon };
+        if (type === DeliveryType.PICKUP) return { label: "Recogida en tienda", icon: storeIcon };
         return { label: "Entrega pendiente", icon: scheduleIcon };
     }
 
-    function itemsSummary(
-        products: Array<{ productName?: string | null; productId: string; quantity: number }>
-    ) {
+    function itemsSummary(products: Array<{ productName?: string | null; productId: string; quantity: number }>) {
         const totalUnits = products.reduce((sum, item) => sum + item.quantity, 0);
-        const names = products
-            .slice(0, 2)
-            .map((item) => item.productName?.trim() || item.productId)
-            .join(" · ");
-        const extra = products.length > 2 ? ` +${products.length - 2}` : "";
-
-        return {
-            totalUnits,
-            preview: names ? `${names}${extra}` : "Sin productos"
-        };
+        const names = products.slice(0, 2).map((item) => item.productName?.trim() || item.productId).join(" · ");
+        return { totalUnits, preview: names ? `${names}${products.length > 2 ? ` +${products.length - 2}` : ""}` : "Sin productos" };
     }
 
-    function formatSaleMoney(amount: number, currency?: Currency | string | null): string {
+    function formatSaleMoney(amount: number, currency?: Currency | string | null) {
         const code = (currency && String(currency)) || "USD";
         const value = Number.isFinite(amount) ? amount : 0;
         return `${value.toLocaleString("es-CU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${code}`;
     }
 
-    function formatSaleDate(raw: string): string {
+    function formatSaleDate(raw: string) {
         try {
-            return new Date(raw).toLocaleString("es-CU", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            });
-        } catch {
-            return String(raw);
-        }
+            return new Date(raw).toLocaleString("es-CU", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+        } catch { return String(raw); }
     }
 
-    $: items = $saleStore.items
-        .filter((sale) => !currentUserId || sale.userId === currentUserId)
-        .slice()
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-    $: pendingCount = items.filter((s) => s.verified === BuyState.UNVERIFIED).length;
-    $: readyCount = items.filter((s) => s.verified === BuyState.VERIFIED).length;
+    $: items = $saleStore.items.filter((sale) => !currentUserId || sale.userId === currentUserId).slice().sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    $: pendingCount = items.filter((sale) => sale.verified === BuyState.UNVERIFIED).length;
+    $: readyCount = items.filter((sale) => sale.verified === BuyState.VERIFIED).length;
+    $: cancelledCount = items.filter((sale) => sale.verified === BuyState.DELETED).length;
 </script>
 
 <section class="screen">
     <header class="hero anim-in">
         <div class="hero-copy">
-            <p class="eyebrow">Reservas</p>
+            <div class="eyebrow-row"><span class="eyebrow-icon"><Icon icon={shoppingBagIcon} /></span><span>Historial de compras</span></div>
             <h1>Mis reservas</h1>
-            <p class="support">Estado de tus pedidos, importes en la moneda elegida y acceso rápido al detalle.</p>
+            <p class="support">Consulta tus solicitudes de compra y sigue en un vistazo si la tienda las está revisando, aprobando o rechazando.</p>
         </div>
         {#if items.length}
-            <div class="hero-stats" aria-label="Resumen de reservas">
-                <div class="stat">
-                    <span class="stat-value">{items.length}</span>
-                    <span class="stat-label">Total</span>
-                </div>
-                <div class="stat pending">
-                    <span class="stat-value">{pendingCount}</span>
-                    <span class="stat-label">Pendientes</span>
-                </div>
-                <div class="stat ready">
-                    <span class="stat-value">{readyCount}</span>
-                    <span class="stat-label">Listos</span>
-                </div>
+            <div class="hero-summary" aria-label="Resumen de reservas">
+                <div class="summary-total"><strong>{items.length}</strong><span>reservas</span></div>
+                <div class="summary-divider"></div>
+                <div class="summary-state pending"><i></i><strong>{pendingCount}</strong><span>en revisión</span></div>
+                <div class="summary-state ready"><i></i><strong>{readyCount}</strong><span>aprobadas</span></div>
+                {#if cancelledCount}<div class="summary-state cancelled"><i></i><strong>{cancelledCount}</strong><span>rechazadas</span></div>{/if}
             </div>
         {/if}
     </header>
 
     {#if bootstrapping}
-        <Card variant="filled" class="empty-state anim-in">
-            <div class="skeleton-pulse"></div>
-            <h2>Cargando reservas…</h2>
-            <p>Sincronizando tus pedidos.</p>
-        </Card>
+        <Card variant="filled" class="empty-state anim-in"><div class="skeleton-pulse"></div><div><h2>Cargando reservas…</h2><p>Sincronizando tus solicitudes de compra.</p></div></Card>
     {:else if !items.length}
         <Card variant="outlined" class="empty-state anim-in">
-            <div class="empty-icon bounce-soft">
-                <Icon icon={shoppingBagIcon} />
-            </div>
-            <h2>Aún no tienes compras</h2>
-            <p>Aquí aparecerán tus pedidos cuando realices una reserva.</p>
-            <Button
-                class="action-btn primary-action"
-                variant="filled"
-                size="m"
-                iconType="left"
-                onclick={() => navController.navigate(dashboard.path)}
-            >
-                <Icon icon={storefrontIcon} />
-                Ver productos
-            </Button>
+            <div class="empty-icon"><Icon icon={shoppingBagIcon} /></div>
+            <div><h2>Aún no tienes reservas</h2><p>Aquí aparecerán tus solicitudes cuando realices una compra.</p></div>
+            <Button class="action-btn" variant="filled" size="m" onclick={() => navController.navigate(dashboard.path)}><Icon icon={storefrontIcon} />Ver productos</Button>
         </Card>
     {:else}
-        <div class="list">
+        <div class="list" aria-label="Lista de reservas">
             {#each items as sale, i (sale.id)}
                 {@const meta = saleStatusMeta(sale.verified)}
                 {@const delivery = deliveryMeta(sale.deliveryType)}
                 {@const summary = itemsSummary(sale.products)}
-                <button
-                    class="sale-card {meta.tone} anim-card"
-                    type="button"
-                    style={`--i: ${i}`}
-                    on:click={() => navController.navigate(reservationDetail.path, { id: sale.id })}
-                >
+                <button class="sale-card {meta.tone} anim-card" type="button" style={`--i:${i}`} aria-label={`Abrir reserva ${sale.id.slice(0, 8)}, estado ${meta.label}`} onclick={() => navController.navigate(reservationDetail.path, { id: sale.id })}>
+                    <span class="card-accent" aria-hidden="true"></span>
                     <div class="sale-copy">
                         <div class="card-head">
-                            <div class="title-block">
-                                <span class="card-kicker">Pedido</span>
-                                <strong class="order-id">#{sale.id.slice(0, 8)}</strong>
-                            </div>
-                            <div class="badge {meta.tone}">
-                                <Icon icon={meta.icon} />
-                                <span>{meta.label}</span>
-                            </div>
+                            <div class="title-block"><span class="card-kicker">Solicitud de compra</span><strong>#{sale.id.slice(0, 8)}</strong></div>
+                            <span class="status-badge {meta.tone}"><Icon icon={meta.icon} /><span>{meta.label}</span></span>
                         </div>
-
+                        <div class="card-divider"></div>
                         <div class="card-main">
-                            <div class="amount-block">
-                                <span class="amount-label">Total reservado</span>
-                                <strong class="amount-value">{formatSaleMoney(sale.amount, sale.currency)}</strong>
-                            </div>
-                            <div class="arrow-chip" aria-hidden="true">
-                                <Icon icon={arrowOutwardIcon} />
-                            </div>
+                            <div class="amount-block"><span>Total reservado</span><strong>{formatSaleMoney(sale.amount, sale.currency)}</strong></div>
+                            <span class="open-chip"><Icon icon={arrowOutwardIcon} /></span>
                         </div>
-
-                        <div class="pill-row">
-                            <span class="info-pill">
-                                <Icon icon={delivery.icon} />
-                                <span>{delivery.label}</span>
-                            </span>
-                            <span class="info-pill">
-                                <Icon icon={shoppingBagIcon} />
-                                <span>{summary.totalUnits} {summary.totalUnits === 1 ? "artículo" : "artículos"}</span>
-                            </span>
-                            {#if sale.currency}
-                                <span class="info-pill muted">
-                                    <span>{String(sale.currency)}</span>
-                                </span>
-                            {/if}
+                        <div class="detail-strip">
+                            <div class="detail-item"><span class="detail-icon"><Icon icon={delivery.icon} /></span><div><small>Entrega</small><strong>{delivery.label}</strong></div></div>
+                            <div class="detail-item"><span class="detail-icon"><Icon icon={shoppingBagIcon} /></span><div><small>Productos</small><strong>{summary.totalUnits} {summary.totalUnits === 1 ? "artículo" : "artículos"}</strong></div></div>
                         </div>
-
-                        <div class="meta-grid">
-                            <div class="meta-block">
-                                <span class="meta-label">Fecha</span>
-                                <span class="meta-value">{formatSaleDate(sale.date)}</span>
-                            </div>
-                            <div class="meta-block">
-                                <span class="meta-label">Productos</span>
-                                <span class="meta-value">{summary.preview}</span>
-                            </div>
+                        <div class="meta-row">
+                            <div><small>Fecha de solicitud</small><strong>{formatSaleDate(sale.date)}</strong></div>
+                            <div class="products-meta"><small>Resumen</small><strong>{summary.preview}</strong></div>
+                            {#if sale.currency}<span class="currency-badge">{String(sale.currency)}</span>{/if}
                         </div>
                     </div>
                 </button>
@@ -224,479 +139,35 @@
 
 <style>
     .screen {
-        display: grid;
-        gap: 1.25rem;
-        align-content: start;
-        padding-bottom: 1rem;
-        max-width: 960px;
-        margin-inline: auto;
-        width: 100%;
-    }
-
-    .eyebrow,
-    h1,
-    h2,
-    p {
-        margin: 0;
-    }
-
-    .eyebrow {
-        color: var(--md-sys-color-primary);
-        text-transform: uppercase;
-        font-size: 0.72rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-    }
-
-    .hero {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 1.25rem;
-        align-items: end;
-        padding: 1.25rem 1.35rem;
-        border-radius: 1.5rem;
-        background:
-            radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent), transparent 55%),
-            linear-gradient(165deg, var(--md-sys-color-surface-container-high) 0%, var(--md-sys-color-surface-container) 100%);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
-    }
-
-    .hero-copy {
-        flex: 1 1 16rem;
-        min-width: 0;
-    }
-
-    .hero h1 {
-        font-size: clamp(1.45rem, 3.5vw, 1.85rem);
-        letter-spacing: -0.03em;
-        margin-top: 0.2rem;
-    }
-
-    .support {
-        margin-top: 0.4rem;
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 0.92rem;
-        line-height: 1.45;
-        max-width: 36rem;
-    }
-
-    .hero-stats {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
-
-    .stat {
-        display: grid;
-        gap: 0.15rem;
-        min-width: 4.5rem;
-        padding: 0.65rem 0.85rem;
-        border-radius: 1rem;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 40%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
-        text-align: center;
-        transition: transform 0.2s ease;
-    }
-
-    .stat:hover {
-        transform: translateY(-2px);
-    }
-
-    .stat-value {
-        font-size: 1.15rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-    }
-
-    .stat-label {
-        font-size: 0.68rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .stat.pending .stat-value { color: #f0b429; }
-    .stat.ready .stat-value { color: #7fd98f; }
-
-    .list {
-        display: grid;
-        gap: 0.85rem;
-    }
-
-    .sale-card {
-        width: 100%;
-        border: 0;
-        border-radius: 1.35rem;
-        padding: 0;
-        background: transparent;
-        text-align: left;
-        cursor: pointer;
-        color: inherit;
-        transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease;
-    }
-
-    .sale-card.anim-card {
-        animation: card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-        animation-delay: calc(var(--i, 0) * 55ms);
-    }
-
-    .sale-card:hover {
-        transform: translateY(-3px);
-        filter: saturate(1.05);
-    }
-
-    .sale-card:active {
-        transform: translateY(-1px) scale(0.995);
-    }
-
-    .sale-card:focus-visible {
-        outline: 2px solid color-mix(in srgb, var(--md-sys-color-primary) 80%, white);
-        outline-offset: 3px;
-    }
-
-    .sale-copy {
-        display: grid;
-        gap: 1rem;
-        padding: 1.1rem 1.2rem 1.15rem;
-        border-radius: 1.35rem;
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
-        background:
-            radial-gradient(circle at 100% 0%, rgb(255 255 255 / 0.05), transparent 32%),
-            linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 96%, transparent), var(--md-sys-color-surface-container));
-        box-shadow: 0 14px 28px rgb(0 0 0 / 0.14);
-        position: relative;
-        overflow: hidden;
-        transition: box-shadow 0.22s ease, border-color 0.22s ease;
-    }
-
-    .sale-card:hover .sale-copy {
-        box-shadow: 0 20px 40px rgb(0 0 0 / 0.2);
-    }
-
-    .sale-copy::before {
-        content: "";
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 4px;
-        background: color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-    }
-
-    .sale-card.pending .sale-copy {
-        background:
-            radial-gradient(circle at 100% 0%, rgb(245 158 11 / 0.16), transparent 34%),
-            linear-gradient(145deg, color-mix(in srgb, #f59e0b 12%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
-        border-color: color-mix(in srgb, #f59e0b 22%, var(--md-sys-color-outline-variant));
-    }
-    .sale-card.pending .sale-copy::before {
-        background: linear-gradient(180deg, #f6ad2e, #d97706);
-    }
-
-    .sale-card.ready .sale-copy {
-        background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, #7fd98f 18%, transparent), transparent 34%),
-            linear-gradient(145deg, color-mix(in srgb, #7fd98f 12%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
-        border-color: color-mix(in srgb, #7fd98f 20%, var(--md-sys-color-outline-variant));
-    }
-    .sale-card.ready .sale-copy::before {
-        background: linear-gradient(180deg, #7fd98f, var(--md-sys-color-primary));
-    }
-
-    .sale-card.cancelled .sale-copy {
-        background:
-            radial-gradient(circle at 100% 0%, color-mix(in srgb, #ff8f8f 16%, transparent), transparent 34%),
-            linear-gradient(145deg, color-mix(in srgb, #ff8f8f 10%, var(--md-sys-color-surface-container-high)), var(--md-sys-color-surface-container));
-        border-color: color-mix(in srgb, #ff8f8f 20%, var(--md-sys-color-outline-variant));
-        opacity: 0.92;
-    }
-    .sale-card.cancelled .sale-copy::before {
-        background: linear-gradient(180deg, #ff8f8f, var(--md-sys-color-error));
-    }
-
-    .card-head,
-    .card-main {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .title-block,
-    .amount-block,
-    .meta-block {
-        display: grid;
-        gap: 0.2rem;
-        min-width: 0;
-    }
-
-    .card-kicker,
-    .amount-label,
-    .meta-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .order-id {
-        font-size: 1.12rem;
-        letter-spacing: -0.02em;
-        font-variant-numeric: tabular-nums;
-    }
-
-    .amount-value {
-        font-size: clamp(1.25rem, 2.4vw, 1.55rem);
-        letter-spacing: -0.03em;
-        font-variant-numeric: tabular-nums;
-        font-weight: 800;
-    }
-
-    .pill-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    .info-pill,
-    .arrow-chip,
-    .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        border-radius: 999px;
-    }
-
-    .info-pill {
-        padding: 0.4rem 0.75rem;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 42%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 42%, transparent);
-        font-size: 0.8rem;
-        font-weight: 700;
-        transition: transform 0.18s ease, background 0.18s ease;
-    }
-
-    .sale-card:hover .info-pill {
-        background: color-mix(in srgb, var(--md-sys-color-surface) 58%, transparent);
-    }
-
-    .info-pill.muted {
-        opacity: 0.85;
-        font-weight: 800;
-        letter-spacing: 0.04em;
-    }
-
-    .info-pill :global(svg) {
-        width: 15px;
-        height: 15px;
-        flex-shrink: 0;
-    }
-
-    .arrow-chip {
-        justify-content: center;
-        width: 2.5rem;
-        height: 2.5rem;
-        flex: 0 0 auto;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 50%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
-        transition:
-            transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-            background 0.2s ease,
-            border-color 0.2s ease,
-            box-shadow 0.2s ease;
-    }
-
-    .arrow-chip :global(svg) {
-        transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .sale-card:hover .arrow-chip {
-        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
-        border-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
-        box-shadow: 0 6px 16px color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
-        transform: scale(1.06);
-    }
-
-    .sale-card:hover .arrow-chip :global(svg) {
-        transform: translate(2px, -2px);
-    }
-
-    .meta-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0.65rem;
-    }
-
-    .meta-block {
-        padding: 0.7rem 0.85rem;
-        border-radius: 0.9rem;
-        background: color-mix(in srgb, var(--md-sys-color-surface) 32%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 32%, transparent);
-    }
-
-    .meta-value {
-        color: var(--md-sys-color-on-surface-variant);
-        font-size: 0.88rem;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .badge {
-        width: fit-content;
-        padding: 0.35rem 0.7rem;
-        font-size: 0.75rem;
-        font-weight: 800;
-        flex-shrink: 0;
-        transition: transform 0.18s ease;
-    }
-
-    .sale-card:hover .badge {
-        transform: scale(1.04);
-    }
-
-    .badge :global(svg) {
-        width: 15px;
-        height: 15px;
-    }
-
-    .badge.pending {
-        background: color-mix(in srgb, #f59e0b 18%, transparent);
-        color: #f0b429;
-        border: 1px solid color-mix(in srgb, #f59e0b 28%, transparent);
-    }
-    .badge.ready {
-        background: color-mix(in srgb, #7fd98f 18%, transparent);
-        color: #84d99a;
-        border: 1px solid color-mix(in srgb, #7fd98f 24%, transparent);
-    }
-    .badge.cancelled {
-        background: color-mix(in srgb, #ff8f8f 16%, transparent);
-        color: #ff9d9d;
-        border: 1px solid color-mix(in srgb, #ff8f8f 24%, transparent);
-    }
-
-    .empty-state {
-        text-align: center;
-        align-items: center;
-        gap: 0.65rem;
-        border-radius: 1.5rem;
-        padding: 1.5rem 1rem;
-    }
-
-    .empty-icon {
-        width: 3.5rem;
-        height: 3.5rem;
-        margin-inline: auto;
-        display: grid;
-        place-items: center;
-        border-radius: 1rem;
-        background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 80%, transparent);
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
-    .empty-icon :global(svg) {
-        width: 1.75rem;
-        height: 1.75rem;
-    }
-
-    .empty-state :global(.action-btn) {
-        transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.18s ease;
-    }
-
-    .empty-state :global(.action-btn:hover) {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px color-mix(in srgb, var(--md-sys-color-primary) 30%, transparent);
-    }
-
-    .empty-state :global(.action-btn:active) {
-        transform: scale(0.97);
-    }
-
-    .empty-state :global(.primary-action svg) {
-        transition: transform 0.2s ease;
-    }
-
-    .empty-state :global(.primary-action:hover svg) {
-        transform: scale(1.1);
-    }
-
-    .skeleton-pulse {
-        width: 2.5rem;
-        height: 2.5rem;
-        margin-inline: auto;
-        border-radius: 999px;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 25%, transparent);
-        animation: pulse 1.2s ease-in-out infinite;
-    }
-
-    .anim-in {
-        animation: fade-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-
-    .bounce-soft {
-        animation: bounce-soft 1.8s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 0.45; transform: scale(0.92); }
-        50% { opacity: 1; transform: scale(1); }
-    }
-
-    @keyframes fade-up {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes card-in {
-        from { opacity: 0; transform: translateY(12px) scale(0.98); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes bounce-soft {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-4px); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .anim-in,
-        .anim-card,
-        .bounce-soft,
-        .skeleton-pulse {
-            animation: none !important;
-        }
-
-        .sale-card,
-        .arrow-chip,
-        .stat,
-        .empty-state :global(.action-btn) {
-            transition: none !important;
-        }
-    }
-
-    @media (max-width: 640px) {
-        .hero {
-            padding: 1.1rem 1rem;
-        }
-
-        .card-head {
-            align-items: flex-start;
-        }
-
-        .meta-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .meta-value {
-            white-space: normal;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        .amount-value {
-            font-size: 1.2rem;
-        }
-    }
+        --surface: var(--m3c-surface-container, var(--md-sys-color-surface-container));
+        --surface-high: var(--m3c-surface-container-high, var(--md-sys-color-surface-container-high));
+        --surface-highest: var(--m3c-surface-container-highest, var(--md-sys-color-surface-container-highest));
+        --on: var(--m3c-on-surface, var(--md-sys-color-on-surface));
+        --on-variant: var(--m3c-on-surface-variant, var(--md-sys-color-on-surface-variant));
+        --primary: var(--m3c-primary, var(--md-sys-color-primary));
+        --primary-container: var(--m3c-primary-container, var(--md-sys-color-primary-container));
+        --on-primary-container: var(--m3c-on-primary-container, var(--md-sys-color-on-primary-container));
+        --outline: var(--m3c-outline-variant, var(--md-sys-color-outline-variant));
+        --success: #62b875; --warning: #e8a82f; --error: #d66b72;
+        display:grid; gap:1rem; align-content:start; width:min(100%,1080px); margin:0 auto; padding:10px 18px 38px; box-sizing:border-box; color:var(--on);
+    }
+    .hero { position:relative; display:flex; justify-content:space-between; align-items:stretch; gap:1.2rem; padding:1.2rem; border:1px solid color-mix(in srgb,var(--outline) 68%,transparent); border-radius:1.55rem; overflow:hidden; background:radial-gradient(90% 130% at 100% 0%,color-mix(in srgb,var(--primary) 14%,transparent),transparent 58%),linear-gradient(145deg,var(--surface-highest),var(--surface)); box-shadow:0 10px 30px rgb(0 0 0/.08); }
+    .hero::after { content:""; position:absolute; width:180px; height:180px; right:-90px; bottom:-105px; border-radius:50%; background:color-mix(in srgb,var(--primary) 9%,transparent); }
+    .hero-copy { position:relative; z-index:1; flex:1 1 25rem; min-width:0; }
+    .eyebrow-row { display:flex; align-items:center; gap:.45rem; color:var(--primary); margin-bottom:.42rem; font-size:.68rem; font-weight:850; letter-spacing:.1em; text-transform:uppercase; }
+    .eyebrow-icon { display:grid; place-items:center; width:24px; height:24px; border-radius:8px; background:var(--primary-container); color:var(--on-primary-container); }
+    .eyebrow-icon :global(svg){width:15px;height:15px}.hero h1{margin:0;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.08;letter-spacing:-.04em}.support{max-width:620px;margin:.45rem 0 0;color:var(--on-variant);font-size:.84rem;line-height:1.5}
+    .hero-summary{position:relative;z-index:1;display:flex;align-items:center;align-self:center;flex-wrap:wrap;gap:.5rem;min-width:min(100%,340px);padding:.6rem;border:1px solid color-mix(in srgb,var(--outline) 48%,transparent);border-radius:1.15rem;background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(12px)}
+    .summary-total,.summary-state{display:grid;gap:.05rem;align-content:center;min-width:58px}.summary-total{padding-inline:.35rem}.summary-total strong{font-size:1.35rem;line-height:1}.summary-total span,.summary-state span{color:var(--on-variant);font-size:.61rem;font-weight:700;white-space:nowrap}.summary-divider{width:1px;height:34px;background:var(--outline);opacity:.65}.summary-state{grid-template-columns:auto auto;column-gap:.35rem;padding:.4rem;border-radius:.75rem}.summary-state i{width:6px;height:6px;border-radius:50%;grid-row:1/span 2;align-self:center}.summary-state strong{font-size:.88rem}.summary-state.pending i{background:var(--warning)}.summary-state.ready i{background:var(--success)}.summary-state.cancelled i{background:var(--error)}
+    .list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem}.sale-card{position:relative;display:block;width:100%;min-width:0;padding:0;border:1px solid color-mix(in srgb,var(--outline) 58%,transparent);border-radius:1.35rem;overflow:hidden;color:var(--on);background:var(--surface);text-align:left;cursor:pointer;box-shadow:0 8px 20px rgb(0 0 0/.07);transition:transform .2s cubic-bezier(.22,1,.36,1),box-shadow .2s,border-color .2s}.sale-card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--primary) 28%,var(--outline));box-shadow:0 16px 34px rgb(0 0 0/.12)}.sale-card:active{transform:translateY(-1px) scale(.997)}.sale-card:focus-visible{outline:2px solid var(--primary);outline-offset:3px}.sale-card.anim-card{animation:card-in .42s cubic-bezier(.22,1,.36,1) both;animation-delay:calc(var(--i,0)*45ms)}
+    .card-accent{position:absolute;inset:0 auto 0 0;width:4px;background:var(--outline)}.pending .card-accent{background:var(--warning)}.ready .card-accent{background:var(--success)}.cancelled .card-accent{background:var(--error)}
+    .sale-copy{display:grid;gap:.85rem;min-width:0;padding:1.05rem 1.05rem 1rem 1.2rem;background:radial-gradient(85% 110% at 100% 0%,color-mix(in srgb,var(--primary) 6%,transparent),transparent 58%),var(--surface)}.pending .sale-copy{background:radial-gradient(85% 110% at 100% 0%,color-mix(in srgb,var(--warning) 11%,transparent),transparent 58%),var(--surface)}.ready .sale-copy{background:radial-gradient(85% 110% at 100% 0%,color-mix(in srgb,var(--success) 10%,transparent),transparent 58%),var(--surface)}.cancelled .sale-copy{background:radial-gradient(85% 110% at 100% 0%,color-mix(in srgb,var(--error) 9%,transparent),transparent 58%),var(--surface)}
+    .card-head,.card-main,.meta-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;min-width:0}.title-block{display:grid;gap:.15rem;min-width:0}.card-kicker,.amount-block>span,.detail-item small,.meta-row small{color:var(--on-variant);font-size:.62rem;font-weight:700;letter-spacing:.045em}.card-kicker{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;opacity:.8}.title-block strong{font-size:.98rem;line-height:1.1;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis}.status-badge{display:inline-flex;align-items:center;gap:.34rem;flex:0 0 auto;min-height:30px;padding:.28rem .62rem;border-radius:999px;font-size:.68rem;font-weight:800;border:1px solid transparent}.status-badge :global(svg){width:15px;height:15px}.status-badge.pending{color:var(--warning);background:color-mix(in srgb,var(--warning) 13%,var(--surface));border-color:color-mix(in srgb,var(--warning) 25%,transparent)}.status-badge.ready{color:var(--success);background:color-mix(in srgb,var(--success) 13%,var(--surface));border-color:color-mix(in srgb,var(--success) 25%,transparent)}.status-badge.cancelled{color:var(--error);background:color-mix(in srgb,var(--error) 12%,var(--surface));border-color:color-mix(in srgb,var(--error) 24%,transparent)}
+    .card-divider{height:1px;background:color-mix(in srgb,var(--outline) 55%,transparent)}.card-main{align-items:flex-end}.amount-block{display:grid;gap:.25rem;min-width:0}.amount-block>span{text-transform:uppercase;letter-spacing:.07em}.amount-block strong{font-size:clamp(1.35rem,2.8vw,1.7rem);line-height:1;letter-spacing:-.04em;font-weight:850;overflow-wrap:anywhere}.open-chip{display:grid;place-items:center;flex:0 0 auto;width:34px;height:34px;border-radius:50%;color:var(--on-primary-container);background:var(--primary-container);transition:transform .2s}.open-chip :global(svg){width:17px;height:17px}.sale-card:hover .open-chip{transform:translate(2px,-2px)}
+    .detail-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.detail-item{display:flex;align-items:center;gap:.55rem;min-width:0;padding:.62rem .68rem;border-radius:.9rem;background:color-mix(in srgb,var(--surface-high) 75%,transparent);border:1px solid color-mix(in srgb,var(--outline) 35%,transparent)}.detail-icon{display:grid;place-items:center;flex:0 0 auto;width:29px;height:29px;border-radius:9px;color:var(--primary);background:color-mix(in srgb,var(--primary-container) 70%,transparent)}.detail-icon :global(svg){width:16px;height:16px}.detail-item>div{display:grid;gap:.08rem;min-width:0}.detail-item strong{font-size:.7rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.meta-row{align-items:flex-end;gap:.75rem}.meta-row>div{display:grid;gap:.12rem;min-width:0;flex:1 1 0}.meta-row strong{color:var(--on-variant);font-size:.68rem;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.currency-badge{flex:0 0 auto;padding:.25rem .45rem;border-radius:.5rem;color:var(--on-variant);background:var(--surface-highest);font-size:.58rem;font-weight:800;letter-spacing:.05em}
+    .empty-state{display:grid;justify-items:center;gap:.7rem;padding:2.4rem 1.4rem;text-align:center;border-radius:1.4rem}.empty-state h2{margin:0;font-size:1rem}.empty-state p{margin:0;color:var(--on-variant);font-size:.8rem}.empty-icon{display:grid;place-items:center;width:56px;height:56px;border-radius:18px;color:var(--on-primary-container);background:var(--primary-container)}.empty-icon :global(svg){width:28px;height:28px}.action-btn{margin-top:.25rem}.skeleton-pulse{width:54px;height:54px;border-radius:18px;background:var(--surface-highest);animation:pulse 1.25s ease-in-out infinite}.anim-in{animation:fade-up .4s ease both}
+    @keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}@keyframes card-in{from{opacity:0;transform:translateY(12px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes pulse{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
+    @media(max-width:860px){.list{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.hero-summary{width:100%;min-width:0;box-sizing:border-box}}
+    @media(max-width:560px){.screen{padding:8px 12px 30px;gap:.8rem}.hero{padding:1rem;border-radius:1.3rem}.hero h1{font-size:1.45rem}.support{font-size:.78rem}.hero-summary{display:grid;grid-template-columns:auto 1px repeat(2,minmax(0,1fr));gap:.4rem}.summary-divider{height:30px}.summary-state{min-width:0}.summary-state span{white-space:normal}.status-badge{min-height:28px;padding-inline:.52rem}.status-badge span{display:none}.amount-block strong{font-size:1.3rem}.detail-strip{grid-template-columns:1fr}.meta-row{align-items:flex-start;flex-wrap:wrap}.products-meta{flex-basis:100%}}
+    @media(prefers-reduced-motion:reduce){.anim-in,.anim-card,.skeleton-pulse{animation:none!important}.sale-card,.open-chip{transition:none!important}}
 </style>
