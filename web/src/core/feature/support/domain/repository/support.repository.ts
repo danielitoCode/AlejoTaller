@@ -9,6 +9,8 @@ import type { SupportChatMessageWritePayload, SupportThreadWritePayload } from "
 export type SupportRealtimeEvent = {
     events: string[];
     target?: "threads" | "messages" | "unknown";
+    /** Documento Appwrite del evento (thread o message), si viene en el payload RT. */
+    payload?: Record<string, unknown> | null;
 };
 
 export type SupportRealtimeUnsubscribe = () => void;
