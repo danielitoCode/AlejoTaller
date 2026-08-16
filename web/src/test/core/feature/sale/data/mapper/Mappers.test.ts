@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { saleFromDTO, saleToDTO } from "../../../../../../core/feature/sale/data/mapper/Mappers";
-import { BuyState, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
+import { BuyState, Currency, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
 
 describe("sale mappers", () => {
     it("serialize the delivery address when the sale is a DeliveryType.DELIVERY", () => {
@@ -8,6 +8,7 @@ describe("sale mappers", () => {
             id: "sale-1",
             date: "2026-03-29",
             amount: 40,
+            currency: Currency.CUP,
             verified: BuyState.UNVERIFIED,
             userId: "user-1",
             deliveryType: DeliveryType.DELIVERY,
@@ -23,8 +24,9 @@ describe("sale mappers", () => {
             products: []
         });
 
-        expect(dto.delivery_address).toContain("\"province\":\"La Habana\"");
+        expect(dto.delivery_address).toContain('"province":"La Habana"');
         expect(dto.delivery_type).toBe(DeliveryType.DELIVERY);
+        expect(dto.currency).toBe("CUP");
     });
 
     it("refresh the delivery address from dto", () => {
@@ -38,6 +40,7 @@ describe("sale mappers", () => {
             $permissions: [],
             date: "2026-03-29",
             amount: 40,
+            currency: "CUP",
             buy_state: BuyState.UNVERIFIED,
             products: "[]",
             user_id: "user-1",
@@ -53,6 +56,7 @@ describe("sale mappers", () => {
             })
         });
 
+        expect(sale.currency).toBe(Currency.CUP);
         expect(sale.deliveryAddress?.municipality).toBe("Playa");
         expect(sale.deliveryAddress?.houseNumber).toBe("1204");
     });
