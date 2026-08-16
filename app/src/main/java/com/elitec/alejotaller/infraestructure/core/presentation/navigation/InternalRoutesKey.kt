@@ -29,5 +29,12 @@ sealed class InternalRoutesKey: NavKey {
     @Serializable
     object Settings: InternalRoutesKey()
 
+    /** Inbox de consultas de soporte (paridad web). */
+    @Serializable
+    object Support: InternalRoutesKey()
+
+    @Serializable
+    data class SupportDetail(val threadId: String): InternalRoutesKey()
+
     @Serializable object Logout: InternalRoutesKey()
 }

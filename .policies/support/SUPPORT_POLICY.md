@@ -2,7 +2,7 @@
 
 **Estado:** Aprobado para implementación  
 **Alcance:** dash (gobierno) + AlejoTaller web  
-**Android:** fuera DoD Core 1 (web+panel first)  
+**Android:** en implementación (paridad web: inbox, detail, RT, unread)  
 **Transporte:** Appwrite Database + Realtime
 
 Ver checklist: `.roadmap/Core1/SUPPORT_CORE1_CLOSURE.md`
