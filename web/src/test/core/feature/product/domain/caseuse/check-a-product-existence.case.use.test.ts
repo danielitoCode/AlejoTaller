@@ -130,7 +130,7 @@ describe("CheckAProductExistenceCaseUse", () => {
                 reserved: 0
             } as Product);
 
-        expect(useCase.execute(sale))
+        await expect(useCase.execute(sale))
             .rejects
             .toThrow(
                 "No hay disponibilidad en la tienda para el producto: Producto 2"
@@ -168,7 +168,7 @@ describe("CheckAProductExistenceCaseUse", () => {
             reserved: 0
         } as Product));
 
-        expect(useCase.execute(sale))
+        await expect(useCase.execute(sale))
             .resolves
             .toBeUndefined();
 
