@@ -119,12 +119,12 @@
 <div class="picker" bind:this={rootEl} aria-label={label}>
     <div class="picker-head">
         <span class="picker-label">{label}{required ? " *" : ""}</span>
-        <button class="picker-btn" type="button" onclick={() => (open = !open)} disabled={isDisabled}>
+        <button class="picker-btn" type="button" on:click={() => (open = !open)} disabled={isDisabled}>
             <div class="picker-btn-main">
                 {#if previewSrc && !previewError}
                     <div class="thumb-wrap" aria-hidden="true">
                         {#if previewLoading}<div class="thumb thumb-loading"><div class="thumb-spinner"></div></div>{/if}
-                        <img class="thumb" class:ready={!previewLoading} src={previewSrc} alt="" aria-hidden="true" onload={() => { previewLoading = false; previewError = false; }} onerror={() => { previewLoading = false; previewError = true; }} />
+                        <img class="thumb" class:ready={!previewLoading} src={previewSrc} alt="" aria-hidden="true" on:load={() => { previewLoading = false; previewError = false; }} on:error={() => { previewLoading = false; previewError = true; }} />
                     </div>
                 {:else if previewSrc && previewError}
                     <div class="thumb placeholder error" aria-hidden="true"><Icon icon={ImageIcon} size={18} /></div>
@@ -139,8 +139,8 @@
 
     {#if open}
         <div class="menu" role="menu" aria-label="Opciones de imagen">
-            <button class="menu-item" type="button" role="menuitem" onclick={openUrlFrame} disabled={isDisabled}><Icon icon={Globe} size={18} ariaLabel="Desde la web" />Desde la web</button>
-            <button class="menu-item" type="button" role="menuitem" onclick={pickLocal} disabled={isDisabled}><Icon icon={CloudUpload} size={18} ariaLabel="Desde tu dispositivo" />Desde tu dispositivo</button>
+            <button class="menu-item" type="button" role="menuitem" on:click={openUrlFrame} disabled={isDisabled}><Icon icon={Globe} size={18} ariaLabel="Desde la web" />Desde la web</button>
+            <button class="menu-item" type="button" role="menuitem" on:click={pickLocal} disabled={isDisabled}><Icon icon={CloudUpload} size={18} ariaLabel="Desde tu dispositivo" />Desde tu dispositivo</button>
         </div>
     {/if}
 
@@ -151,14 +151,14 @@
                 <div class="local-name">{localFile.name}</div>
                 <div class="local-sub mgmt-muted">{(localFile.size / 1024 / 1024).toFixed(2)} MB · {localFile.type || "image/*"}</div>
                 <div class="local-actions">
-                    <button class="mgmt-btn ghost" type="button" onclick={clearLocal} disabled={uploading}><Icon icon={X} size={18} ariaLabel="Quitar" />Quitar</button>
-                    <button class="mgmt-btn primary" type="button" onclick={uploadLocal} disabled={uploading}><Icon icon={Upload} size={18} ariaLabel="Subir" />{uploading ? "Subiendo…" : "Subir"}</button>
+                    <button class="mgmt-btn ghost" type="button" on:click={clearLocal} disabled={uploading}><Icon icon={X} size={18} ariaLabel="Quitar" />Quitar</button>
+                    <button class="mgmt-btn primary" type="button" on:click={uploadLocal} disabled={uploading}><Icon icon={Upload} size={18} ariaLabel="Subir" />{uploading ? "Subiendo…" : "Subir"}</button>
                 </div>
             </div>
         </div>
     {/if}
 
-    <input class="file" bind:this={fileInput} type="file" accept="image/*" onchange={handleFileChange} disabled={isDisabled} />
+    <input class="file" bind:this={fileInput} type="file" accept="image/*" on:change={handleFileChange} disabled={isDisabled} />
 </div>
 
 <FrameModal open={urlFrameOpen} title="Imagen desde la web" ariaLabel="Imagen desde la web" src={urlFrameOpen ? urlFrameSrc : ""} on:close={() => (urlFrameOpen = false)} on:frameMessage={handleFrameMessage} />
