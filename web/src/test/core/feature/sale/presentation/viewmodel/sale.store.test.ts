@@ -1,11 +1,21 @@
+/**
+ * saleStore — suscripción Appwrite Realtime (SALE_POLICY: cliente ve decisión del operador).
+ * Se mantiene RT mientras hay sesión autenticada (no solo UNVERIFIED).
+ */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { get } from "svelte/store";
-import { BuyState, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
+import { get, writable, type Writable } from "svelte/store";
+import { BuyState, Currency, DeliveryType } from "../../../../../../core/feature/sale/domain/entity/enums";
 import type { Sale } from "../../../../../../core/feature/sale/domain/entity/Sale";
+
+type SessionState = {
+    loading: boolean;
+    error: string | null;
+    lastAction: string | null;
+    isGuest: boolean;
+};
 
 const mocks = vi.hoisted(() => {
     const unsubscribeFn = vi.fn();
-
     return {
         unsubscribeFn,
         getByUser: vi.fn(),
@@ -13,14 +23,18 @@ const mocks = vi.hoisted(() => {
         updateVerified: vi.fn(),
         updateDeliveryType: vi.fn(),
         getCurrentUser: vi.fn(),
-        subscribeSaleVerification: vi.fn(() => unsubscribeFn),
-        unsubscribeSaleVerification: vi.fn(),
-        addAlert: vi.fn(),
-        loggerLog: vi.fn(),
-        loggerInfo: vi.fn(),
-        loggerWarn: vi.fn(),
-        loggerError: vi.fn()
+        startAppwriteSaleRealtime: vi.fn(() => unsubscribeFn),
+        stopAppwriteSaleRealtime: vi.fn(),
+        startStockRealtime: vi.fn(),
+        sessionState: null as unknown as Writable<SessionState>
     };
+});
+
+mocks.sessionState = writable<SessionState>({
+    loading: false,
+    error: null,
+    lastAction: null,
+    isGuest: false
 });
 
 vi.mock("../../../../../../core/feature/sale/di/sale.container", () => ({
@@ -34,35 +48,43 @@ vi.mock("../../../../../../core/feature/sale/di/sale.container", () => ({
             getAll: { execute: vi.fn() },
             create: { execute: mocks.createSale },
             updateVerified: { execute: mocks.updateVerified },
-            updateDeliveryType: { execute: mocks.updateDeliveryType }
+            updateDeliveryType: { execute: mocks.updateDeliveryType },
+            applyRealtimeSnapshot: { execute: vi.fn() }
         }
     }
 }));
 
-vi.mock("../../../../../../core/infrastructure/data/alset-pulse/pulse.realtime", () => ({
-    subscribeSaleVerification: mocks.subscribeSaleVerification,
-    unsubscribeSaleVerification: mocks.unsubscribeSaleVerification
+vi.mock("../../../../../../core/infrastructure/data/appwrite/appwrite-sale-realtime", () => ({
+    startAppwriteSaleRealtime: mocks.startAppwriteSaleRealtime,
+    stopAppwriteSaleRealtime: mocks.stopAppwriteSaleRealtime
 }));
 
-vi.mock("../../../../../../core/feature/auth/presentation/viewmodel/session.store", () => ({
-    sessionStore: {
-        getCurrentUser: mocks.getCurrentUser
+vi.mock("../../../../../../core/feature/auth/presentation/viewmodel/session.store", () => {
+    const store = mocks.sessionState;
+    return {
+        sessionStore: {
+            subscribe: (fn: (v: SessionState) => void) => store.subscribe(fn),
+            getCurrentUser: mocks.getCurrentUser
+        }
+    };
+});
+
+vi.mock("../../../../../../core/feature/product/presentation/viewmodel/product.store", () => ({
+    productStore: {
+        startStockRealtime: mocks.startStockRealtime
     }
 }));
 
 vi.mock("../../../../../../core/feature/sale/presentation/viewmodel/sale-alert.store", () => ({
-    saleAlertStore: {
-        addAlert: mocks.addAlert
-    }
+    saleAlertStore: { addAlert: vi.fn() }
 }));
 
-vi.mock("../../../../../../core/infrastructure/presentation/utils/logger.service", () => ({
-    logger: {
-        log: mocks.loggerLog,
-        info: mocks.loggerInfo,
-        warn: mocks.loggerWarn,
-        error: mocks.loggerError
-    }
+vi.mock("../../../../../../core/infrastructure/presentation/util/logger.service", () => ({
+    logger: { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+}));
+
+vi.mock("../../../../../../core/infrastructure/presentation/viewmodel/toast.store", () => ({
+    toastStore: { success: vi.fn(), error: vi.fn() }
 }));
 
 function buildSale(overrides: Partial<Sale> = {}): Sale {
@@ -70,6 +92,7 @@ function buildSale(overrides: Partial<Sale> = {}): Sale {
         id: "sale-1",
         date: "2026-03-29",
         amount: 120,
+        currency: Currency.CUP,
         verified: BuyState.UNVERIFIED,
         products: [],
         userId: "user-1",
@@ -83,7 +106,7 @@ async function loadSaleStore() {
     return module.saleStore;
 }
 
-describe("saleStore realtime subscription", () => {
+describe("saleStore Appwrite realtime (SALE_POLICY)", () => {
     beforeEach(() => {
         vi.resetModules();
         mocks.unsubscribeFn.mockReset();
@@ -92,19 +115,21 @@ describe("saleStore realtime subscription", () => {
         mocks.updateVerified.mockReset();
         mocks.updateDeliveryType.mockReset();
         mocks.getCurrentUser.mockReset();
-        mocks.subscribeSaleVerification.mockClear();
-        mocks.unsubscribeSaleVerification.mockClear();
-        mocks.addAlert.mockClear();
-        mocks.loggerLog.mockClear();
-        mocks.loggerInfo.mockClear();
-        mocks.loggerWarn.mockClear();
-        mocks.loggerError.mockClear();
+        mocks.startAppwriteSaleRealtime.mockClear();
+        mocks.stopAppwriteSaleRealtime.mockClear();
+        mocks.startStockRealtime.mockClear();
+        mocks.startAppwriteSaleRealtime.mockReturnValue(mocks.unsubscribeFn);
 
+        mocks.sessionState.set({
+            loading: false,
+            error: null,
+            lastAction: null,
+            isGuest: false
+        });
         mocks.getCurrentUser.mockResolvedValue({ $id: "user-1" });
-        mocks.subscribeSaleVerification.mockReturnValue(mocks.unsubscribeFn);
     });
 
-    it("subscribe hin when the current user have a pending sales", async () => {
+    it("subscribes to Appwrite sale RT when user is authenticated", async () => {
         mocks.getByUser.mockResolvedValue([
             buildSale(),
             buildSale({ id: "sale-2", verified: BuyState.VERIFIED })
@@ -114,12 +139,11 @@ describe("saleStore realtime subscription", () => {
         await saleStore.syncAll();
 
         expect(mocks.getByUser).toHaveBeenCalledWith("user-1");
-        expect(mocks.subscribeSaleVerification).toHaveBeenCalledTimes(1);
-        expect(mocks.subscribeSaleVerification).toHaveBeenCalledWith("user-1", expect.any(Function));
+        expect(mocks.startAppwriteSaleRealtime).toHaveBeenCalled();
         expect(get(saleStore.unverifiedCount)).toBe(1);
     });
 
-    it("don't subscribe if not have pending sales and end a subscription on verify the last", async () => {
+    it("keeps Appwrite RT after verifying last pending (session-based subscription)", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
         mocks.updateVerified.mockResolvedValue(buildSale({ verified: BuyState.VERIFIED }));
 
@@ -127,36 +151,33 @@ describe("saleStore realtime subscription", () => {
         await saleStore.syncAll();
         await saleStore.setVerified("sale-1", BuyState.VERIFIED);
 
-        expect(mocks.subscribeSaleVerification).toHaveBeenCalledTimes(1);
-        expect(mocks.unsubscribeFn).toHaveBeenCalledTimes(1);
-        expect(mocks.unsubscribeSaleVerification).toHaveBeenCalledTimes(1);
+        expect(mocks.startAppwriteSaleRealtime).toHaveBeenCalled();
         expect(get(saleStore.unverifiedCount)).toBe(0);
     });
 
-    it("reset the realtime subscription on clean the store", async () => {
+    it("stops Appwrite RT on reset", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
 
         const saleStore = await loadSaleStore();
         await saleStore.syncAll();
         saleStore.reset();
 
-        expect(mocks.unsubscribeFn).toHaveBeenCalledTimes(1);
-        expect(mocks.unsubscribeSaleVerification).toHaveBeenCalledTimes(1);
+        expect(mocks.stopAppwriteSaleRealtime).toHaveBeenCalled();
         expect(get(saleStore.hasData)).toBe(false);
     });
 
-    it("not open the canan if not auth user yet", async () => {
+    it("does not open RT channel when there is no authenticated user", async () => {
         mocks.getCurrentUser.mockResolvedValue(null);
 
         const saleStore = await loadSaleStore();
         await saleStore.syncAll();
 
         expect(mocks.getByUser).not.toHaveBeenCalled();
-        expect(mocks.subscribeSaleVerification).not.toHaveBeenCalled();
-        expect(mocks.unsubscribeSaleVerification).toHaveBeenCalledTimes(1);
+        expect(mocks.startAppwriteSaleRealtime).not.toHaveBeenCalled();
+        expect(mocks.stopAppwriteSaleRealtime).toHaveBeenCalled();
     });
 
-    it("keep the delivery flow is not touch the subscription", async () => {
+    it("updates delivery type without tearing down RT", async () => {
         mocks.getByUser.mockResolvedValue([buildSale()]);
         mocks.updateDeliveryType.mockResolvedValue(buildSale({ deliveryType: DeliveryType.PICKUP }));
 
