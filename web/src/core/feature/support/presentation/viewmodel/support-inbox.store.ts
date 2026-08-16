@@ -40,6 +40,8 @@ function createStore() {
     const { subscribe, update } = writable<State>(initial);
     let unsubRt: (() => void) | null = null;
     let syncTimer: number | null = null;
+    /** Ref-count: Inbox y Detail pueden montar RT a la vez sin cortar el canal al navegar entre ellas. */
+    let rtRefCount = 0;
 
     async function ensureUserId(): Promise<string> {
         const user = await sessionStore.getCurrentUser();
@@ -222,29 +224,55 @@ function createStore() {
     }
 
     function startRealtime(): () => void {
-        stopRealtime();
-        unsubRt = supportContainer.useCases.subscribe(() => {
-            if (syncTimer) window.clearTimeout(syncTimer);
-            syncTimer = window.setTimeout(() => {
-                let activeId: string | null = null;
-                const u = subscribe((s) => {
-                    activeId = s.activeThreadId;
-                });
-                u();
-                syncMine().catch((e) => {
-                    logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
-                });
-                if (activeId) {
-                    loadMessages(activeId).catch((e) => {
-                        logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
+        rtRefCount += 1;
+        if (rtRefCount === 1 && !unsubRt) {
+            unsubRt = supportContainer.useCases.subscribe((evt) => {
+                logger.info(
+                    `[support] RT → refresh target=${evt.target ?? "unknown"}`
+                );
+                if (syncTimer) window.clearTimeout(syncTimer);
+                syncTimer = window.setTimeout(() => {
+                    let activeId: string | null = null;
+                    const u = subscribe((s) => {
+                        activeId = s.activeThreadId;
                     });
-                }
-            }, 250);
-        });
-        return stopRealtime;
+                    u();
+                    syncMine().catch((e) => {
+                        logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
+                    });
+                    if (activeId) {
+                        loadMessages(activeId).catch((e) => {
+                            logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
+                        });
+                    }
+                }, 250);
+            });
+        }
+        return () => {
+            releaseRealtime();
+        };
     }
 
+    function releaseRealtime(): void {
+        rtRefCount = Math.max(0, rtRefCount - 1);
+        if (rtRefCount > 0) return;
+        if (syncTimer) {
+            window.clearTimeout(syncTimer);
+            syncTimer = null;
+        }
+        if (unsubRt) {
+            try {
+                unsubRt();
+            } catch {
+                /* ignore */
+            }
+            unsubRt = null;
+        }
+    }
+
+    /** Fuerza cierre del canal (p. ej. logout). */
     function stopRealtime(): void {
+        rtRefCount = 0;
         if (syncTimer) {
             window.clearTimeout(syncTimer);
             syncTimer = null;

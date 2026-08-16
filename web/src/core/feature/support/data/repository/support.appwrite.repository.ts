@@ -133,7 +133,7 @@ export class SupportAppwriteRepository implements SupportRepository {
 
     subscribe(handler: (event: SupportRealtimeEvent) => void): SupportRealtimeUnsubscribe {
         if (!ENV.appwriteEndpoint || !ENV.appwriteProjectId || !ENV.databaseId) {
-            console.warn(`${LOG} RT omitido`);
+            console.warn(`${LOG} RT omitido: Appwrite no configurado`);
             return () => {};
         }
         const db = databaseId();
@@ -154,15 +154,19 @@ export class SupportAppwriteRepository implements SupportRepository {
                 let target: SupportRealtimeEvent["target"] = "unknown";
                 if (joined.includes(THREADS_COLLECTION)) target = "threads";
                 else if (joined.includes(MESSAGES_COLLECTION)) target = "messages";
+                // Log para depurar: si no aparece al responder desde el panel → permisos RT / canal
+                console.info(`${LOG} RT event target=${target}`, events.slice(0, 3));
                 handler({ events, target });
             });
+            console.info(`${LOG} RT subscribed`, channels);
         } catch (e) {
-            console.warn(`${LOG} RT failed`, e);
+            console.warn(`${LOG} RT subscribe failed`, e);
             return () => {};
         }
         return () => {
             try {
                 unsub?.();
+                console.info(`${LOG} RT unsubscribed`);
             } catch {
                 /* ignore */
             }
