@@ -1,8 +1,8 @@
 # SUPPORT_POLICY — Mensajería soporte ↔ usuario (Core 1 closure)
 
-**Estado:** Aprobado para implementación  
+**Estado:** Web cliente integrado (cierre Core 1 web)  
 **Alcance:** dash (gobierno) + AlejoTaller web  
-**Android:** en implementación (paridad web: inbox, detail, RT, unread)  
+**Android:** sprint paralelo (paridad web: inbox, detail, RT, unread) — no bloquea web  
 **Transporte:** Appwrite Database + Realtime
 
 Ver checklist: `.roadmap/Core1/SUPPORT_CORE1_CLOSURE.md`

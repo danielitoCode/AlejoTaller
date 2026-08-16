@@ -1,6 +1,8 @@
 # Core 2 — Backlog
 
-Marcar al planificar sprints post–Core 1.
+Vista resumida. **Seguimiento operativo y tests:** [CHECKLIST_CORE2.md](./CHECKLIST_CORE2.md).
+
+Marcar al planificar sprints post–Core 1 (web/operador primero).
 
 ## Fase A — Movimientos formales
 
