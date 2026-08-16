@@ -3,8 +3,11 @@ import { supportContainer } from "../../di/support.container";
 import type {
     SupportChatMessage,
     SupportMessage,
-    SupportReason
+    SupportReason,
+    SupportSenderRole
 } from "../../domain/entity/SupportMessage";
+import type { SupportRealtimeEvent } from "../../domain/repository/support.repository";
+import { asSenderRole, asStatus } from "../../data/mapper/Mappers";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
 
@@ -223,30 +226,92 @@ function createStore() {
         }));
     }
 
+    /**
+     * Aplica al instante campos del hilo desde el payload RT (status, preview, unread…).
+     * Así un cambio de estado en el panel (p. ej. resuelto) se refleja sin esperar al refetch.
+     */
+    function applyThreadPayload(payload: Record<string, unknown> | null | undefined): void {
+        if (!payload) return;
+        const id = String(payload.$id ?? payload.id ?? "").trim();
+        if (!id) return;
+
+        const hasStatus = "status" in payload;
+        const hasPreview = "lastPreview" in payload;
+        const hasLastAt = "lastMessageAt" in payload;
+        const hasSender = "lastSenderRole" in payload;
+        const hasUnreadUser = "unreadUser" in payload;
+        if (!hasStatus && !hasPreview && !hasLastAt && !hasSender && !hasUnreadUser) {
+            return;
+        }
+
+        update((s) => ({
+            ...s,
+            items: s.items.map((m) => {
+                if (m.id !== id) return m;
+                const next: SupportMessage = { ...m };
+                if (hasStatus) {
+                    next.status = asStatus(payload.status);
+                }
+                if (hasPreview) {
+                    next.body = String(payload.lastPreview ?? m.body ?? "");
+                }
+                if (hasLastAt) {
+                    next.createdAtIso = String(
+                        payload.lastMessageAt ?? m.createdAtIso ?? ""
+                    );
+                }
+                if (hasSender) {
+                    next.lastSenderRole = asSenderRole(
+                        payload.lastSenderRole
+                    ) as SupportSenderRole;
+                }
+                if (hasUnreadUser) {
+                    const n = Number(payload.unreadUser);
+                    next.unreadUser = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
+                }
+                return next;
+            })
+        }));
+    }
+
+    function onRealtimeEvent(evt: SupportRealtimeEvent): void {
+        logger.info(
+            `[support] RT → target=${evt.target ?? "unknown"} status=${
+                evt.payload && "status" in evt.payload
+                    ? String(evt.payload.status)
+                    : "-"
+            }`
+        );
+
+        // Actualización inmediata de status / meta del hilo (no depende del debounce)
+        if (evt.target === "threads") {
+            applyThreadPayload(evt.payload);
+        }
+
+        if (syncTimer) window.clearTimeout(syncTimer);
+        syncTimer = window.setTimeout(() => {
+            let activeId: string | null = null;
+            const u = subscribe((s) => {
+                activeId = s.activeThreadId;
+            });
+            u();
+            // Refetch de lista siempre (status, badges, preview)
+            syncMine().catch((e) => {
+                logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
+            });
+            // Mensajes solo si hay hilo abierto y el evento es de messages o threads
+            if (activeId && (evt.target === "messages" || evt.target === "threads")) {
+                loadMessages(activeId).catch((e) => {
+                    logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
+                });
+            }
+        }, 250);
+    }
+
     function startRealtime(): () => void {
         rtRefCount += 1;
         if (rtRefCount === 1 && !unsubRt) {
-            unsubRt = supportContainer.useCases.subscribe((evt) => {
-                logger.info(
-                    `[support] RT → refresh target=${evt.target ?? "unknown"}`
-                );
-                if (syncTimer) window.clearTimeout(syncTimer);
-                syncTimer = window.setTimeout(() => {
-                    let activeId: string | null = null;
-                    const u = subscribe((s) => {
-                        activeId = s.activeThreadId;
-                    });
-                    u();
-                    syncMine().catch((e) => {
-                        logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
-                    });
-                    if (activeId) {
-                        loadMessages(activeId).catch((e) => {
-                            logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
-                        });
-                    }
-                }, 250);
-            });
+            unsubRt = supportContainer.useCases.subscribe(onRealtimeEvent);
         }
         return () => {
             releaseRealtime();
