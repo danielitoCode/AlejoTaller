@@ -1,6 +1,6 @@
 # Core 2 — Checklist de implementación
 
-**Estado:** no iniciado  
+**Estado:** fase 0 parcial (0.1–0.2)  
 **Última actualización:** 2026-08-16  
 **Enfoque de ejecución:** priorizar **web + Appwrite + operador** en este monorepo; Android cliente en sprints de paridad cuando la pieza web/operador esté estable.
 
@@ -33,10 +33,16 @@ No marcar “hecho” solo por diseño documentado.
 
 ## Fase 0 — Preparación (web-first)
 
-- [ ] **0.1** Confirmar en Appwrite project que `existence` / `reserved` de Core 1 siguen operativos  
-  - [ ] **Test / evidencia:** smoke manual o script: UNVERIFIED incrementa reserved; VERIFIED consume  
-- [ ] **0.2** Decidir IDs de collection `stock_movements` y roles (operador/admin write; cliente sin write)  
-  - [ ] **Test / evidencia:** nota en `APPWRITE_STOCK_MOVEMENTS.md` con IDs reales del proyecto  
+- [x] **0.1** Confirmar modelo + código Core 1 de `existence` / `reserved` operativos (capa app + tests)  
+  - [x] **Evidencia código:** `product.net.repository` usa `incrementDocumentAttribute` / `decrementDocumentAttribute` sobre `reserved` (max=existence / min=0); collection productos web = `product`  
+  - [x] **Evidencia tests (2026-08-16):** 20 tests soft-hold en verde — `RegisterNewSaleCaseUse.soft-hold`, `CheckAProductExistence`, `ReleaseSoftHoldCaseUse.atomic`, `product.offline-first.repository.atomic`  
+  - [x] **Evidencia schema doc:** `.roadmap/Core1/APPWRITE_CORE1_SCHEMA.md` — atributos `existence` + `reserved` en products  
+  - [x] **Evidencia operador:** `AppwriteOperatorStockRepository.applyDeltas` lee/escribe `existence` y `reserved`  
+  - [ ] **Smoke live Appwrite (manual):** UNVERIFIED incrementa reserved; VERIFIED consume — *requiere consola/proyecto; no ejecutado desde este entorno sin credenciales*  
+- [x] **0.2** Decidir IDs de collection `stock_movements` y roles (operador/admin write; cliente sin write)  
+  - [x] **Decisión:** collectionId canónico = `stock_movements`; mismo databaseId que Core 1; clientes sin write/read MVP  
+  - [x] **Evidencia:** actualizado `APPWRITE_STOCK_MOVEMENTS.md` (tabla IDs + permisos)  
+  - [ ] **Crear collection en consola** (pasa a A.1) — *aún no existe en código ni env*  
 - [ ] **0.3** Branch / convención de commits `feat(core2): …` y no mezclar con sprint Android support  
 
 ---
@@ -161,6 +167,7 @@ Tras cada fase A–C, en **web**:
 | Fecha | Fase / ítem | Commit / nota |
 |-------|-------------|----------------|
 | 2026-08-16 | Checklist creado | Ningún ítem de implementación marcado |
+| 2026-08-16 | 0.1 código+tests; 0.2 decisión IDs | Soft-hold 20 tests OK; collection pendiente consola |
 | | | |
 
 Al completar un bloque, añadir fila aquí y marcar casillas arriba.
