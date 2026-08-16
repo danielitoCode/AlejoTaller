@@ -154,9 +154,18 @@ export class SupportAppwriteRepository implements SupportRepository {
                 let target: SupportRealtimeEvent["target"] = "unknown";
                 if (joined.includes(THREADS_COLLECTION)) target = "threads";
                 else if (joined.includes(MESSAGES_COLLECTION)) target = "messages";
+                const raw = res?.payload;
+                const payload =
+                    raw && typeof raw === "object"
+                        ? (raw as Record<string, unknown>)
+                        : null;
                 // Log para depurar: si no aparece al responder desde el panel → permisos RT / canal
-                console.info(`${LOG} RT event target=${target}`, events.slice(0, 3));
-                handler({ events, target });
+                console.info(
+                    `${LOG} RT event target=${target}`,
+                    events.slice(0, 3),
+                    payload?.["status"] ?? payload?.["$id"] ?? ""
+                );
+                handler({ events, target, payload });
             });
             console.info(`${LOG} RT subscribed`, channels);
         } catch (e) {
