@@ -1,0 +1,119 @@
+# CI gate: corre en cada push a master y en PRs.
+# Objetivo: detectar roturas antes/justo al aterrizar en master.
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Android: unit tests + compile debug ─────────────────────────────
+  android:
+    name: Android unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      # BuildConfig usa default "" si falta la clave; CI no necesita secretos reales
+      - name: Placeholder local.properties (CI)
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+
+      - name: Unit tests (app)
+        run: ./gradlew :app:testDebugUnitTest --stacktrace
+
+      - name: Compile app debug (smoke)
+        run: ./gradlew :app:compileDebugKotlin --stacktrace
+
+      - name: Upload unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-unit-test-report
+          path: app/build/reports/tests/testDebugUnitTest/
+          if-no-files-found: warn
+
+  # ── Web: typecheck + unit tests ─────────────────────────────────────
+  web:
+    name: Web check + unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (svelte-check + tsc)
+        run: npm run check
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Upload web test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-test-failure
+          path: web/
+          if-no-files-found: ignore
+
+  # ── Resumen: falla el workflow si Android o Web fallan ──────────────
+  ci-ok:
+    name: CI gate
+    runs-on: ubuntu-latest
+    needs: [android, web]
+    if: always()
+    steps:
+      - name: Require green jobs
+        run: |
+          echo "android=${{ needs.android.result }}"
+          echo "web=${{ needs.web.result }}"
+          if [ "${{ needs.android.result }}" != "success" ] || [ "${{ needs.web.result }}" != "success" ]; then
+            echo "::error::CI gate failed (android=${{ needs.android.result }}, web=${{ needs.web.result }})"
+            exit 1
+          fi
+          echo "CI gate OK"

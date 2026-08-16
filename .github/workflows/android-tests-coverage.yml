@@ -1,6 +1,11 @@
 name: Android Unit Tests + Kover Coverage
 
 on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
   pull_request:
     branches:
       - main
