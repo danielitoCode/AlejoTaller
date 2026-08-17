@@ -57,9 +57,9 @@ Core 2 cerrado: NO
 - [x] Modelo financiero aceptado (factura de entrada + ingreso/COGS al VERIFIED) — 2026-08-13
 - [x] Reservas de taller **dentro** del MVP Core 2 — **SÍ**
 - [x] COGS = **último costo** (`last_unit_cost`) — no promedio
-- [ ] Revisar y **aceptar** POLICY_DELTAS en este repo (firma / PR review del equipo)
+- [x] Revisar y **aceptar** POLICY_DELTAS en este repo (firma / PR review del equipo)
 - [x] Soft-hold Core 1 operativo en código + tests unitarios web (evidencia 2026-08-16)
-- [ ] Smoke live Appwrite: UNVERIFIED → reserved↑; VERIFIED → consume (manual)
+- [x] Smoke live Appwrite: UNVERIFIED → reserved↑; VERIFIED → consume (manual)
 
 **Criterio de salida 2.0:** alcance firmado + políticas delta aceptadas en ambos repos.
 
