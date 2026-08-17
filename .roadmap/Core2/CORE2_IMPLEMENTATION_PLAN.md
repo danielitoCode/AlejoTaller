@@ -71,24 +71,24 @@ Core 2 cerrado: NO
 
 ### Movimientos de stock
 
-- [ ] Collection **`stock_movements`** creada (ID canónico: `stock_movements`; mismo database que Core 1)
-- [ ] Campos: `product_id`, `type`, `quantity`, `balance_after`, `reason`, `user_id`, `sale_id?`, `created_at`
+- [x] Collection **`stock_movements`** creada (ID canónico: `stock_movements`; mismo database que Core 1)
+- [x] Campos: `product_id`, `type`, `quantity`, `balance_after`, `reason`, `user_id`, `sale_id?`, `created_at`
 - [ ] Enum `type`: `entrada` | `salida_venta` | `ajuste` | `devolucion`
-- [ ] Permisos: lectura/escritura staff/operador; **no** cliente
-- [ ] Índices: `product_id`, `type`, `sale_id`, `$createdAt`
+- [x] Permisos: lectura/escritura staff/operador; **no** cliente
+- [x] Índices: `product_id`, `type`, `sale_id`, `$createdAt`
 - [ ] Actualizar [`APPWRITE_STOCK_MOVEMENTS.md`](./APPWRITE_STOCK_MOVEMENTS.md) con IDs reales del proyecto
 
 ### Finanzas de entrada
 
-- [ ] Collection `supplier` (name, contact?, notes?)
-- [ ] Collection `purchase_entry` (supplier_id?, reference?, entry_date, total_cost, currency, user_id, notes?)
-- [ ] Collection `purchase_entry_line` (entry_id, product_id, quantity, unit_cost, concept, line_cost)
+- [x] Collection `supplier` (name, contact?, notes?)
+- [x] Collection `purchase_entry` (supplier_id?, reference?, entry_date, total_cost, currency, user_id, notes?)
+- [x] Collection `purchase_entry_line` (entry_id, product_id, quantity, unit_cost, concept, line_cost)
 - [ ] Enum concepto línea: `purchase` | `royalty` | `other`
 
 ### Finanzas de venta (al confirmar)
 
-- [ ] Collection `sale_finance_event` **o** campos acordados (`sale_id`, `revenue`, `cogs`, `margin`, `user_id`, `at`)
-- [ ] Campo producto **`last_unit_cost`** (base COGS)
+- [x] Collection `sale_finance_event` **o** campos acordados (`sale_id`, `revenue`, `cogs`, `margin`, `user_id`, `at`)
+- [x] Campo producto **`last_unit_cost`** (base COGS)
 - [ ] DTO + repo / contrato en operador (y web solo lectura si aplica)
 - [ ] **Test:** mapper/DTO round-trip de movement + finance event
 
