@@ -8,7 +8,6 @@ import com.elitec.alejotaller.feature.notifications.di.notificationsFeatureModul
 import com.elitec.alejotaller.feature.product.di.productFeatureModule
 import com.elitec.alejotaller.feature.sale.di.saleFeatureModule
 import com.elitec.alejotaller.feature.settigns.di.settingsFeatureModule
-import com.elitec.alejotaller.feature.support.di.supportFeatureModule
 import com.elitec.alejotaller.infraestructure.di.infrastructureModule
 import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
@@ -32,7 +31,6 @@ class TallerAlejoApp : Application() {
                 notificationsFeatureModule,
                 productFeatureModule,
                 settingsFeatureModule,
-                supportFeatureModule,
                 saleFeatureModule,
                 exchangeFeatureModule,
             )
