@@ -114,6 +114,7 @@
     }));
     $: logoutLabel = isGuestSession ? "Salir" : "Cerrar sesion";
 
+    let stopSupportRt: (() => void) | null = null;
     let fabOpen = false;
     let suppressHashSync = false;
     let hashSyncReady = false;
@@ -128,6 +129,9 @@
     }
 
     function clearSessionBoundState({ clearCart = false }: { clearCart?: boolean } = {}) {
+        stopSupportRt?.();
+        stopSupportRt = null;
+        supportInboxStore.stopRealtime();
         saleStore.reset();
         saleAlertStore.clearAlerts();
         promotionStore.cleanup();
@@ -137,6 +141,16 @@
         authFlowStore.reset();
         if (clearCart) {
             cartStore.clear();
+        }
+    }
+
+    /** Badge Soporte: lista + RT global (unreadUser desde staff). */
+    function startSupportBadgePipeline() {
+        supportInboxStore.syncMine().catch(() => {
+            /* badge opcional; SupportInbox reintentará al abrir */
+        });
+        if (!stopSupportRt) {
+            stopSupportRt = supportInboxStore.startRealtime();
         }
     }
 
@@ -282,6 +296,14 @@
                 }
 
                 sessionStore.setAuthenticatedSession();
+                // Tras auth real: badge Soporte (evita race con isGuest en onMount)
+                startSupportBadgePipeline();
+                promotionStore.syncAll().catch(() => {
+                    toastStore.error("Error al sincronizar promociones");
+                });
+                saleStore.syncAll().catch(() => {
+                    toastStore.error("Error al sincronizar reservas");
+                });
                 if (shouldOfferAdminChoice(user)) {
                     const choice = getStoredAdminChoice();
                     if (choice === "admin") {
@@ -314,9 +336,7 @@
             saleStore.syncAll().catch(() => {
                 toastStore.error("Error al sincronizar reservas");
             });
-            supportInboxStore.syncMine().catch(() => {
-                /* badge optional; SupportInbox will retry on open */
-            });
+            startSupportBadgePipeline();
         }
     });
 
@@ -324,6 +344,9 @@
         window.removeEventListener("sale-verification-open", handleSaleVerificationOpen as EventListener);
         window.removeEventListener("hashchange", applyInternalHash);
         window.removeEventListener("request-guest-login", handleRequestLogin);
+        stopSupportRt?.();
+        stopSupportRt = null;
+        supportInboxStore.stopRealtime();
         clearSessionBoundState();
         logger.info("[InternalNavigation] disposed");
     });
