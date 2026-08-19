@@ -3,12 +3,12 @@ name: CI Web
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, Core2]
     paths:
       - "web/**"
       - ".github/workflows/ci-web.yml"
   pull_request:
-    branches: [master, main]
+    branches: [master, main, Core2]
     paths:
       - "web/**"
       - ".github/workflows/ci-web.yml"
