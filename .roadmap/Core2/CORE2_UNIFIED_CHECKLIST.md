@@ -4,7 +4,7 @@
 **Merge a `master`:** incremental cuando un bloque esté verde (tests + política + smoke manual tuyo).  
 **Regla de política:** no romper políticas de un core inferior salvo que un core superior las actualice de forma explícita y documentada.
 
-**Última actualización:** 2026-08-18  
+**Última actualización:** 2026-08-19  
 **Core 2 cerrado:** NO
 
 ### Cómo usamos este archivo
@@ -61,12 +61,12 @@
 | Dash | sí (entrada/ajuste/…) | sí | sí | lectura + opcional confirm |
 | Cliente web | **no** | **no** | **no** | **no** |
 
-- [ ] Repo/DTO stock_movements en **dash**
-- [ ] Repo/DTO stock_movements en **operador**
-- [ ] Repo/DTO purchase_entry (+ lines + supplier) en **dash**
-- [ ] Repo/DTO sale_finance_event en **operador** (+ dash lectura)
-- [ ] Constantes collection IDs alineadas (`stock_movements`, etc.)
-- [ ] **Test:** mapper/DTO round-trip movement + finance (+ purchase line)
+- [x] Repo/DTO stock_movements en **dash**
+- [x] Repo/DTO stock_movements en **operador**
+- [x] Repo/DTO purchase_entry (+ lines + supplier) en **dash**
+- [x] Repo/DTO sale_finance_event en **operador** (+ dash lectura)
+- [x] Constantes collection IDs alineadas (`stock_movements`, etc.)
+- [x] **Test:** mapper/DTO round-trip movement + finance (+ purchase line)
 
 **Criterio salida B1:** un test unitario crea/mapea documentos sin UI; permisos cliente no permiten write (check tuyo en Appwrite).
 
@@ -77,14 +77,14 @@
 **Repo:** AlejoTaller / `alejotallerscan`  
 **No tocar** soft-hold salvo regresión.
 
-- [ ] VERIFIED → `stock_movements` tipo `salida_venta` por línea (o agregado documentado)
-- [ ] `balance_after` = existence tras consume
-- [ ] `sale_id` + `user_id` operador
-- [ ] `sale_finance_event`: revenue, cogs (`last_unit_cost × qty`), margin
-- [ ] UNVERIFIED: **no** finance event
-- [ ] DELETED/reject: solo release reserved; **sin** salida_venta ni finance
-- [ ] Idempotencia: 2º confirm no duplica movement ni finance
-- [ ] **Test** unitario case-use
+- [x] VERIFIED → `stock_movements` tipo `salida_venta` por línea (o agregado documentado)
+- [x] `balance_after` = existence tras consume
+- [x] `sale_id` + `user_id` operador
+- [x] `sale_finance_event`: revenue, cogs (`last_unit_cost × qty`), margin
+- [x] UNVERIFIED: **no** finance event
+- [x] DELETED/reject: solo release reserved; **sin** salida_venta ni finance
+- [x] Idempotencia: 2º confirm no duplica movement ni finance
+- [x] **Test** unitario case-use
 - [ ] **Check tuyo:** smoke en Appwrite tras confirm en dispositivo/emulador
 
 **Criterio salida B2:** confirm deja qty + dinero; soft-hold sin regresión (tests web verdes).
@@ -160,9 +160,9 @@
 
 ```text
 B0 baseline          ✓
-B1 DTO/repo contrato   ← siguiente
-B2 Operador traza      ⎫ pueden solaparse tras B1
-B3 Dash entrada/UI     ⎭
+B1 DTO/repo contrato   ✓ (dash + operador net)
+B2 Operador traza      ✓ código (smoke tuyo pendiente)
+B3 Dash entrada/UI     ← siguiente
 B4 Reportes
 B5 Reservas
 B6 Cierre + merges
@@ -186,3 +186,4 @@ B6 Cierre + merges
 |-------|-------------|------|------|
 | 2026-08-18 | B0 schema Appwrite + baseline código | ambos | Confirmado por equipo: collections + permisos en cloud |
 | 2026-08-18 | Checklist unificado + rama `Core2` | ambos | Punto de partida organizado |
+| 2026-08-19 | B2 operador salida_venta + finance + tests | AlejoTaller | ApplyOperatorStockDecisionCaseUse |
