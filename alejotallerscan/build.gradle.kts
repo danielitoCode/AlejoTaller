@@ -163,6 +163,8 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("APPWRITE_DATABASE_ID")
     prop("CATEGORY_TABLE_ID")
     prop("PRODUCT_TABLE_ID")
+    prop("STOCK_MOVEMENTS_TABLE_ID")
+    prop("SALE_FINANCE_EVENT_TABLE_ID")
     prop("SALE_TABLE_ID")
     prop("APPWRITE_PROJECT_ID")
     prop("APPWRITE_PROJECT_ENDPOINT")
