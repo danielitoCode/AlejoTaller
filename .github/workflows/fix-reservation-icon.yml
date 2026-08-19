@@ -1,33 +1,12 @@
-name: Fix reservation icon
+# One-shot helper desactivado (el if sin comillas rompía el parseo YAML en Actions).
+name: Fix reservation icon (disabled)
 
 on:
-  push:
-    branches: [master]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  fix:
-    if: contains(github.event.head_commit.message, 'fix: reservation icon')
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Replace unsupported icon
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('web/src/core/infrastructure/presentation/routes/InternalReservationDetailScreen.svelte')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('    import shieldCheckIcon from "@ktibow/iconset-material-symbols/shield-check-rounded";\n', '')
-          s = s.replace('<Icon icon={shieldCheckIcon} />', '<Icon icon={checkCircleIcon} />')
-          p.write_text(s, encoding='utf-8')
-          PY
-      - name: Commit fix and remove helper workflow
-        run: |
-          rm -f .github/workflows/fix-reservation-icon.yml
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add web/src/core/infrastructure/presentation/routes/InternalReservationDetailScreen.svelte .github/workflows/fix-reservation-icon.yml
-          git commit -m 'fix: remove unsupported reservation icon'
-          git push
+      - name: Disabled
+        run: echo "Workflow desactivado; se puede eliminar este archivo."
