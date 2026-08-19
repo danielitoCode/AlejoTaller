@@ -110,7 +110,9 @@ class ApplyOperatorStockDecisionCaseUseTest {
     }
 
     private class FakeStockRepo(
-        private val state: Map<String, Triple<Int, Int, Double?>>
+        // Triple es invariante: mapOf(... to Triple(..., 5.0)) infiere Triple<Int,Int,Double>
+        // y no es asignable a Triple<Int,Int,Double?> → CompilationErrorException en CI
+        private val state: Map<String, Triple<Int, Int, Double>>
     ) : OperatorStockRepository {
         val lastExistence = mutableMapOf<String, Int>()
         val lastReserved = mutableMapOf<String, Int>()
