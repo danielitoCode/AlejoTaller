@@ -134,7 +134,11 @@ class ApplyOperatorStockDecisionCaseUseTest {
     private class FakeMovementRepo(
         existing: List<StockMovementRecord> = emptyList()
     ) : OperatorStockMovementRepository {
-        private val bySale = existing.groupBy { it.saleId.orEmpty() }.mapValues { it.value.toMutableList() }
+        // mapValues → Map inmutable; getOrPut requiere MutableMap
+        private val bySale = existing
+            .groupBy { it.saleId.orEmpty() }
+            .mapValues { it.value.toMutableList() }
+            .toMutableMap()
         val created = mutableListOf<StockMovementWrite>()
 
         override suspend fun listBySaleId(saleId: String): List<StockMovementRecord> =
