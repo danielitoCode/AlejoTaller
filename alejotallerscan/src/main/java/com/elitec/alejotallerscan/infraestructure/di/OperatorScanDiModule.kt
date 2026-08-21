@@ -14,6 +14,10 @@ import com.elitec.alejotallerscan.feature.product.data.repository.AppwriteOperat
 import com.elitec.alejotallerscan.feature.product.data.repository.AppwriteOperatorStockRepository
 import com.elitec.alejotallerscan.feature.product.data.repository.OperatorProductNameRepository
 import com.elitec.alejotallerscan.feature.product.domain.caseuse.ApplyOperatorStockDecisionCaseUse
+import com.elitec.alejotallerscan.feature.finance.data.repository.AppwriteOperatorSaleFinanceRepository
+import com.elitec.alejotallerscan.feature.finance.domain.repository.OperatorSaleFinanceRepository
+import com.elitec.alejotallerscan.feature.inventory.data.repository.AppwriteOperatorStockMovementRepository
+import com.elitec.alejotallerscan.feature.inventory.domain.repository.OperatorStockMovementRepository
 import com.elitec.alejotallerscan.feature.product.domain.caseuse.EnrichSaleProductsCaseUse
 import com.elitec.alejotallerscan.feature.product.domain.repository.OperatorStockRepository
 import com.elitec.alejotallerscan.feature.reservation.domain.caseuse.SearchReservationsCaseUse
@@ -101,6 +105,8 @@ val operatorScanDiModule = module {
     single<OperatorSaleRecordRepository> { RoomOperatorSaleRecordRepository(get()) }
     single<OperatorProductNameRepository> { AppwriteOperatorProductNameRepository(get()) }
     single<OperatorStockRepository> { AppwriteOperatorStockRepository(get()) }
+    single<OperatorStockMovementRepository> { AppwriteOperatorStockMovementRepository(get()) }
+    single<OperatorSaleFinanceRepository> { AppwriteOperatorSaleFinanceRepository(get()) }
     single<OperatorSyncNotificationService> { OperatorSaleSyncNotificationService(get()) }
 
     factory { AuthUserCaseUse(get()) }
@@ -115,7 +121,7 @@ val operatorScanDiModule = module {
     factory { RegisterOperatorSaleRecordCaseUse(get()) }
     factory { ObserveOperatorSaleRecordsCaseUse(get()) }
     factory { EnrichSaleProductsCaseUse(get()) }
-    factory { ApplyOperatorStockDecisionCaseUse(get()) }
+    factory { ApplyOperatorStockDecisionCaseUse(get(), get(), get(), get()) }
     factory { SyncPendingOperatorSalesCaseUse(get(), get(), get()) }
 
     viewModel { OperatorAuthViewModel(get(), get(), get(), get()) }

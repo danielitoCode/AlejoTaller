@@ -3,6 +3,7 @@ package com.elitec.alejotallerscan.feature.product.data.repository
 import android.util.Log
 import com.elitec.alejotallerscan.BuildConfig
 import com.elitec.alejotallerscan.feature.product.domain.repository.OperatorStockRepository
+import com.elitec.alejotallerscan.feature.product.domain.repository.OperatorStockSnapshot
 import io.appwrite.services.Databases
 
 class AppwriteOperatorStockRepository(
@@ -13,7 +14,7 @@ class AppwriteOperatorStockRepository(
         productId: String,
         existenceDelta: Int,
         reservedDelta: Int
-    ): Pair<Int, Int> {
+    ): OperatorStockSnapshot {
         val doc = databases.getDocument(
             databaseId = BuildConfig.APPWRITE_DATABASE_ID,
             collectionId = BuildConfig.PRODUCT_TABLE_ID,
@@ -21,6 +22,8 @@ class AppwriteOperatorStockRepository(
         )
         val currentExistence = ((doc.data["existence"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
         val currentReserved = ((doc.data["reserved"] as? Number)?.toInt() ?: 0).coerceAtLeast(0)
+        val lastUnitCost = (doc.data["last_unit_cost"] as? Number)?.toDouble()
+            ?: (doc.data["lastUnitCost"] as? Number)?.toDouble()
 
         val nextExistence = (currentExistence + existenceDelta).coerceAtLeast(0)
         val nextReserved = (currentReserved + reservedDelta).coerceAtLeast(0)
@@ -47,10 +50,14 @@ class AppwriteOperatorStockRepository(
             TAG,
             "event=operator_stock_updated productId=$productId " +
                 "existence=$currentExistence->$nextExistence " +
-                "reserved=$currentReserved->$nextReserved"
+                "reserved=$currentReserved->$nextReserved lastUnitCost=$lastUnitCost"
         )
 
-        return nextExistence to nextReserved
+        return OperatorStockSnapshot(
+            existenceAfter = nextExistence,
+            reservedAfter = nextReserved,
+            lastUnitCost = lastUnitCost
+        )
     }
 
     companion object {

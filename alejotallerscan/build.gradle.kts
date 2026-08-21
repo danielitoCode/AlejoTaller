@@ -76,6 +76,13 @@ android {
         compose = true
         buildConfig = true
     }
+
+    // Unit tests JVM: android.util.Log y stubs no lanzan (mismo criterio que :app)
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 room {
@@ -105,6 +112,7 @@ dependencies {
     implementation(libs.konnection.status)
     implementation(libs.compose.window.size)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -163,6 +171,8 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     prop("APPWRITE_DATABASE_ID")
     prop("CATEGORY_TABLE_ID")
     prop("PRODUCT_TABLE_ID")
+    prop("STOCK_MOVEMENTS_TABLE_ID")
+    prop("SALE_FINANCE_EVENT_TABLE_ID")
     prop("SALE_TABLE_ID")
     prop("APPWRITE_PROJECT_ID")
     prop("APPWRITE_PROJECT_ENDPOINT")

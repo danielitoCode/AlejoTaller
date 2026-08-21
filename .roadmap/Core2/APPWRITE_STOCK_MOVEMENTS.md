@@ -5,7 +5,7 @@
 | Recurso | ID propuesto | Estado |
 |---------|--------------|--------|
 | Database | el mismo `VITE_APPWRITE_DATABASE_ID` / `APPWRITE_DATABASE_ID` de Core 1 | ya en uso |
-| Collection | **`stock_movements`** | **pendiente crear en consola** |
+| Collection | **`stock_movements`** | **creada en consola** (2026-08-18, confirmado equipo) |
 | Document `$id` | generado por Appwrite (o `{saleId}_{productId}` si se fuerza idempotencia) | — |
 
 Convención alineada a colecciones ya usadas en web:
@@ -18,10 +18,13 @@ Convención alineada a colecciones ya usadas en web:
 | `promotions` | promociones |
 | `support_threads` / `support_messages` | soporte |
 | **`stock_movements`** | Core 2 (este documento) |
+| **`supplier`** | Core 2 finanzas entrada |
+| **`purchase_entry`** / **`purchase_entry_line`** | Core 2 factura entrada |
+| **`sale_finance_event`** | Core 2 ingreso/COGS al VERIFIED |
 
-Android/operador leen product/sale vía `BuildConfig.PRODUCT_TABLE_ID` / `SALE_TABLE_ID` (local.properties). Cuando exista la collection, añadir p. ej. `STOCK_MOVEMENTS_TABLE_ID=stock_movements` (o hardcode del ID canónico si se mantiene estable).
+Android/operador: añadir `STOCK_MOVEMENTS_TABLE_ID=stock_movements` (o hardcode del ID canónico) al cablear repos en bloque B1.
 
-### Roles / permisos (MVP)
+### Roles / permisos (MVP) — **aplicados en Appwrite**
 
 | Actor | create | read | update | delete |
 |-------|--------|------|--------|--------|
@@ -44,24 +47,26 @@ Android/operador leen product/sale vía `BuildConfig.PRODUCT_TABLE_ID` / `SALE_T
 | `reason` | String | sí | |
 | `user_id` | String | sí | operador o system |
 | `sale_id` | String | no | obligatorio en práctica para `salida_venta` |
+| `entry_id` | String | no | enlace a purchase_entry si aplica |
 
-Índices sugeridos: `product_id`, `type`, `sale_id`, `$createdAt`.
+Índices: `product_id`, `type`, `sale_id`, `$createdAt`.
 
 **Carga inicial:** no requiere backfill histórico; registrar desde el día de activación.
 
 ---
 
-## Verificación 0.2
+## Verificación 0.2 / 2.1 schema
 
 - [x] ID de collection **decidido**: `stock_movements`
-- [x] Roles **decididos**: solo operador/admin (+ future Function); clientes sin acceso
-- [ ] Collection **creada** en consola Appwrite del proyecto real
+- [x] Roles **decididos** y **aplicados**: solo operador/admin (+ future Function); clientes sin acceso
+- [x] Collection **creada** en consola Appwrite del proyecto real (2026-08-18)
+- [x] Colecciones hermanas: `supplier`, `purchase_entry`, `purchase_entry_line`, `sale_finance_event`, `last_unit_cost` en product
 - [ ] IDs reales del proyecto anotados aquí si difieren del canónico (pegar databaseId + collectionId)
 
-Cuando esté creada, completar:
+Cuando se anoten IDs reales:
 
 ```
 databaseId: <VITE_APPWRITE_DATABASE_ID>
 collectionId: stock_movements
-createdAt: YYYY-MM-DD
+createdAt: 2026-08-18
 ```
