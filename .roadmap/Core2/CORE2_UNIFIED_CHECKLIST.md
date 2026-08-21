@@ -1,10 +1,10 @@
 # Core 2 — Checklist unificado (cliente + backoffice + operador)
 
-**Rama de trabajo:** `Core2` en **AlejoTaller** y **dash_alejo_taller** (partir de `master` estable Core 1).  
+**Rama de trabajo:** `Core2` en **AlejoTaller** y **dash_alejo_taller**.  
 **Merge a `master`:** incremental cuando un bloque esté verde (tests + política + smoke manual tuyo).  
 **Regla de política:** no romper políticas de un core inferior salvo que un core superior las actualice de forma explícita y documentada.
 
-**Última actualización:** 2026-08-19  
+**Última actualización:** 2026-08-21 (merge PRs + B3.1)  
 **Core 2 cerrado:** NO
 
 ### Cómo usamos este archivo
@@ -25,157 +25,98 @@
 ## Bloque 0 — Baseline (hecho)
 
 - [x] Rama `Core2` creada desde `master` (AlejoTaller + dash)
-- [x] Soft-hold Core 1 en código + tests web (reserved atómico, available)
-- [x] Operador: VERIFIED consume existence+reserved; DELETED libera reserved (sin traza movement/finance aún)
-- [x] Dash: «Dar entrada» suma `existence` (sin movement formal aún)
-- [x] Appwrite collections existentes con permisos staff/operador (no cliente):
-  - [x] `stock_movements`
-  - [x] `supplier`
-  - [x] `purchase_entry`
-  - [x] `purchase_entry_line`
-  - [x] `sale_finance_event`
-  - [x] producto con `last_unit_cost`
-- [x] Políticas Core 2 documentadas (POLICY_DELTAS + FINANCE_MODEL) en ambos repos
-
-**Check manual tuyo (opcional anotar):** confirmar en consola Appwrite IDs/atributos reales si difieren del canónico.
+- [x] Soft-hold Core 1 en código + tests
+- [x] Operador: VERIFIED consume existence+reserved; DELETED libera reserved
+- [x] Dash: «Dar entrada» suma `existence` (formalizado con movement en B3.1)
+- [x] Appwrite collections + permisos staff/operador (no cliente)
+- [x] Políticas Core 2 documentadas (POLICY_DELTAS + FINANCE_MODEL)
 
 ---
 
-## Bloque 1 — Contrato dominio + DTO/repo (ambos repos, sin UI aún)
+## Bloque 1 — Contrato dominio + DTO/repo
 
-**Objetivo:** mismo lenguaje de dominio en operador, dash y (solo lectura si aplica) web.
-
-### 1.1 Tipos / entidades
-
-- [ ] Enum movement `type`: `entrada` | `salida_venta` | `ajuste` | `devolucion`
-- [ ] Enum línea compra `concept`: `purchase` | `royalty` | `other`
-- [ ] Entidad `StockMovement` (campos canónicos)
-- [ ] Entidad `PurchaseEntry` + `PurchaseEntryLine`
-- [ ] Entidad `SaleFinanceEvent`
-
-### 1.2 Repos Appwrite
-
-| Superficie | create movement | read movements | purchase_* | finance event |
-|------------|-----------------|----------------|------------|---------------|
-| Operador (`alejotallerscan`) | sí (salida_venta) | sí | no (salvo atajo) | sí al VERIFIED |
-| Dash | sí (entrada/ajuste/…) | sí | sí | lectura + opcional confirm |
-| Cliente web | **no** | **no** | **no** | **no** |
-
-- [x] Repo/DTO stock_movements en **dash**
-- [x] Repo/DTO stock_movements en **operador**
-- [x] Repo/DTO purchase_entry (+ lines + supplier) en **dash**
-- [x] Repo/DTO sale_finance_event en **operador** (+ dash lectura)
-- [x] Constantes collection IDs alineadas (`stock_movements`, etc.)
-- [x] **Test:** mapper/DTO round-trip movement + finance (+ purchase line)
-
-**Criterio salida B1:** un test unitario crea/mapea documentos sin UI; permisos cliente no permiten write (check tuyo en Appwrite).
+- [x] Enums / entidades movement, purchase, finance (dash + operador)
+- [x] Net repos stock_movements + finance en **operador**
+- [x] Net repos movements / purchase_* / finance en **dash**
+- [x] Constantes collection IDs alineadas
+- [x] Tests mapper/DTO round-trip
 
 ---
 
-## Bloque 2 — Operador: traza al confirmar (2.2)
+## Bloque 2 — Operador: traza al confirmar
 
-**Repo:** AlejoTaller / `alejotallerscan`  
-**No tocar** soft-hold salvo regresión.
-
-- [x] VERIFIED → `stock_movements` tipo `salida_venta` por línea (o agregado documentado)
-- [x] `balance_after` = existence tras consume
-- [x] `sale_id` + `user_id` operador
-- [x] `sale_finance_event`: revenue, cogs (`last_unit_cost × qty`), margin
-- [x] UNVERIFIED: **no** finance event
-- [x] DELETED/reject: solo release reserved; **sin** salida_venta ni finance
-- [x] Idempotencia: 2º confirm no duplica movement ni finance
-- [x] **Test** unitario case-use
-- [ ] **Check tuyo:** smoke en Appwrite tras confirm en dispositivo/emulador
-
-**Criterio salida B2:** confirm deja qty + dinero; soft-hold sin regresión (tests web verdes).
+- [x] VERIFIED → `salida_venta` + balance_after + sale_id + user_id
+- [x] `sale_finance_event`: revenue, cogs, margin
+- [x] UNVERIFIED / DELETED: sin finance ni salida_venta
+- [x] Idempotencia + tests unitarios
+- [ ] **Check tuyo:** smoke Appwrite tras confirm en dispositivo/emulador
 
 ---
 
-## Bloque 3 — Dash: entrada formal + movements (2.3)
-
-**Repo:** dash_alejo_taller
+## Bloque 3 — Dash: entrada formal + movements
 
 ### 3.1 Traza en entrada existente
 
-- [ ] «Dar entrada» (o sucesor) escribe `stock_movements` tipo `entrada` + `balance_after`
-- [ ] Opcional mínimo: `reason`, `user_id`
-- [ ] Si hay unit_cost en UI rápida: actualizar `last_unit_cost` cuando concepto compra
+- [x] «Dar entrada» escribe `stock_movements` tipo `entrada` + `balance_after`
+- [x] `reason` + `user_id`
+- [x] Test case-use RegisterStockEntry + movement
+- [ ] **Check tuyo:** doc `entrada` visible en Appwrite
 
-### 3.2 Factura de entrada (UX principal)
+### 3.2 Factura de entrada (UX principal) — **siguiente código**
 
 - [ ] Registrar entrada multi-producto (cabecera + líneas)
 - [ ] Proveedor (buscar/crear `supplier`)
 - [ ] `purchase_entry` + `purchase_entry_line` + `existence +=` + movement `entrada`
-- [ ] Totales coherentes (`line_cost`, `total_cost`)
+- [ ] Totales coherentes; actualizar `last_unit_cost` si compra
 - [ ] Roles: owner/admin (viewer no muta)
 
 ### 3.3 Ajuste / listados
 
-- [ ] Ajuste auditado (`ajuste`) con motivo; post-ajuste `existence >= reserved`
-- [ ] Listado `stock_movements` (filtros producto/tipo/fechas)
-- [ ] Listado/detalle facturas de entrada
-
-### 3.4 Tests
-
-- [ ] Test case-use entrada → movement + existence
-- [ ] Test invariante post-ajuste
-
-**Check tuyo:** entrada multi-línea visible en Appwrite; stock coherente.
-
-**Criterio salida B3:** factura o entrada formal deja traza stock + documento económico.
+- [ ] Ajuste auditado; listado movements; listado/detalle facturas
 
 ---
 
-## Bloque 4 — Reportes y cola (2.4, dash primario)
+## Bloque 4 — Reportes y cola
 
-- [ ] Cola ventas UNVERIFIED por antigüedad
-- [ ] Resumen periodo: ingresos (solo VERIFIED), COGS, margen, costo entradas
-- [ ] UNVERIFIED excluido de ingresos
-- [ ] (Cliente) sin UI de ingresos — solo available
-
-**Check tuyo:** números cuadran con 1 venta confirmada + 1 entrada.
+- [ ] Cola UNVERIFIED por antigüedad
+- [ ] Resumen ingresos/COGS/margen (solo VERIFIED)
 
 ---
 
-## Bloque 5 — Reservas de taller (2.5)
+## Bloque 5 — Reservas de taller
 
-- [ ] Collection `appointment`/`booking` en Appwrite (**check tuyo** crear si no existe)
-- [ ] Estados: solicitada → confirmada → realizada | cancelada
-- [ ] Dash: panel Reservas (no mezclar con Sale tienda)
-- [ ] (Opcional cliente web) solicitar cita + list mine + test
+- [ ] Collection + panel dash (no mezclar Sale tienda)
+- [ ] (Opcional) solicitud cliente web
 
 ---
 
-## Bloque 6 — Seguridad, CI, cierre (2.6)
+## Bloque 6 — Seguridad, CI, cierre
 
-- [ ] Auditoría permisos: cliente no escribe movements/finance/purchase
-- [ ] CI verde en PR de `Core2` (web + dash check/test/build)
-- [ ] Smoke cruzado: entrada (dash) → pedido (cliente) → confirm (operador) → `salida_venta` + finance
-- [ ] Regresión soft-hold + support web PASS
+- [ ] Auditoría permisos cliente no escribe movements/finance/purchase
+- [x] CI verde en Core2 (operador unit + dash quality)
+- [x] PRs Core2 → master: [AlejoTaller #11](https://github.com/danielitoCode/AlejoTaller/pull/11) · [dash #1](https://github.com/danielitoCode/dash_alejo_taller/pull/1)
+- [ ] Merge a master (tú)
+- [ ] Smoke cruzado entrada → pedido → confirm → salida_venta + finance
 - [ ] STATUS ambos repos: Core 2 cerrado + fecha
 
 ---
 
-## Orden de ejecución (coherente, sin huecos)
+## Orden de ejecución
 
 ```text
-B0 baseline          ✓
-B1 DTO/repo contrato   ✓ (dash + operador net)
-B2 Operador traza      ✓ código (smoke tuyo pendiente)
-B3 Dash entrada/UI     ← siguiente
-B4 Reportes
-B5 Reservas
-B6 Cierre + merges
+B0 ✓ → B1 ✓ → B2 ✓ código → B3.1 ✓ → merge PRs + smoke (tú)
+  → B3.2 factura multi-línea ← siguiente código
+  → B4 → B5 → B6
 ```
 
 ### Política de merge a `master`
 
 | Merge OK cuando | Ejemplo |
 |-----------------|---------|
-| B1 + tests mapper | contratos sin cambiar runtime crítico |
-| B2 + tests + smoke tuyo | operador escribe movement/finance |
-| B3 parcial (solo traza en Dar entrada) | mejora auditabilidad sin factura completa |
-| B3 factura completa | panel listo |
+| B1 + tests mapper | contratos |
+| B2 + tests (+ smoke tuyo) | operador movement/finance |
+| B3.1 traza Dar entrada | auditabilidad sin factura completa |
+| B3.2 factura completa | panel listo |
 | Nunca | half-finished write path sin test |
 
 ---
@@ -184,6 +125,10 @@ B6 Cierre + merges
 
 | Fecha | Bloque/ítem | Repo | Nota |
 |-------|-------------|------|------|
-| 2026-08-18 | B0 schema Appwrite + baseline código | ambos | Confirmado por equipo: collections + permisos en cloud |
-| 2026-08-18 | Checklist unificado + rama `Core2` | ambos | Punto de partida organizado |
-| 2026-08-19 | B2 operador salida_venta + finance + tests | AlejoTaller | ApplyOperatorStockDecisionCaseUse |
+| 2026-08-18 | B0 schema + baseline | ambos | Collections + permisos cloud |
+| 2026-08-18 | Checklist unificado + Core2 | ambos | |
+| 2026-08-19 | B1 net repos + tests | ambos | |
+| 2026-08-19 | B2 operador salida_venta + finance | AlejoTaller | ApplyOperatorStockDecisionCaseUse |
+| 2026-08-21 | B3.1 Dar entrada → entrada | dash | RegisterStockEntryCaseUse |
+| 2026-08-21 | CI Core2 verde | ambos | operador 9ef3378 · dash a78b7c4 |
+| 2026-08-21 | PRs merge | ambos | #11 AlejoTaller · #1 dash |
