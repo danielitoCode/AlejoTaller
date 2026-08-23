@@ -1,0 +1,18 @@
+# .dev.vars — Local development secrets (DO NOT COMMIT)
+# Copy this file to .dev.vars and fill in your actual values.
+# For Cloudflare Workers production, set these via: wrangler secret put <NAME>
+
+# ─── Appwrite ──────────────────────────────────────────────────────────────
+APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=your-project-id-here
+APPWRITE_API_KEY=your-server-api-key-here
+APPWRITE_DATABASE_ID=your-database-id-here
+
+# ─── MCP Auth (Phase 1 — simple customer ID header) ───────────────────────
+# TODO: Replace with Appwrite JWT verification in production.
+# In Phase 1 the MCP host passes X-Customer-Id header.
+# MCP_AUTH_SECRET is used to sign/verify that header in a shared-secret model.
+MCP_AUTH_SECRET=change-me-in-production
+
+# ─── Runtime ───────────────────────────────────────────────────────────────
+ENVIRONMENT=development

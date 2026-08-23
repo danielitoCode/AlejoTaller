@@ -1,0 +1,30 @@
+{
+  "name": "alejotaller-customer-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AlejoTaller Customer MCP Server — secure AI interface for customer operations",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "dev:http": "tsx src/index.ts --http",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.3",
+    "node-appwrite": "^16.0.0",
+    "zod": "^3.25.67"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.4",
+    "typescript": "~5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.22.0"
+  }
+}

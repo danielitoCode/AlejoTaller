@@ -1,0 +1,24 @@
+/**
+ * AlejoTaller Customer MCP — Cloudflare Workers configuration
+ *
+ * Deploy as a Remote MCP Server using Streamable HTTP transport.
+ * Run locally with: wrangler dev
+ * Deploy with:      wrangler deploy
+ */
+{
+  "name": "alejotaller-customer-mcp",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  // Secrets — set via `wrangler secret put <NAME>` for production
+  // or add to .dev.vars for local development
+  "vars": {
+    "ENVIRONMENT": "development"
+  },
+
+  // Observability (optional)
+  "observability": {
+    "enabled": true
+  }
+}
