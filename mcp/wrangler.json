@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "alejotaller-mcp",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-08-01",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "ENVIRONMENT": "development"
+  },
+  "observability": {
+    "enabled": true
+  }
+}
