@@ -7,10 +7,7 @@
     "nodejs_compat"
   ],
   "vars": {
-    "ENVIRONMENT": "development",
-    "APPWRITE_ENDPOINT": "https://cloud.appwrite.io/v1",
-    "APPWRITE_PROJECT_ID": "68f990d4002b6960ecf9",
-    "APPWRITE_DATABASE_ID": "6941cf370039241b346f"
+    "ENVIRONMENT": "development"
   },
   "observability": {
     "enabled": true
