@@ -27,17 +27,59 @@ export interface Env {
   ENVIRONMENT?: string;
 }
 
+const CORS_HEADERS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers":
+    "Content-Type, Accept, Mcp-Session-Id, Last-Event-ID, X-Customer-Id, X-Customer-Name, X-Customer-Email, Authorization",
+  "Access-Control-Expose-Headers": "Mcp-Session-Id",
+};
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      ...CORS_HEADERS,
+    },
+  });
+}
+
+function healthPayload(env: Env) {
+  const hasSecrets = Boolean(
+    env.APPWRITE_ENDPOINT &&
+      env.APPWRITE_PROJECT_ID &&
+      env.APPWRITE_API_KEY &&
+      env.APPWRITE_DATABASE_ID
+  );
+  return {
+    status: hasSecrets ? "ok" : "degraded",
+    worker: "alejotaller-mcp",
+    version: "0.1.0",
+    scope: "b2c-customer",
+    transport: "streamable-http",
+    environment: env.ENVIRONMENT ?? "unknown",
+    appwriteConfigured: hasSecrets,
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: "GET /health",
+      mcp: "POST / (Streamable HTTP MCP)",
+    },
+  };
+}
+
 export default {
   async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
-    // Handling CORS
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/\/$/, "") || "/";
+
     if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, X-Customer-Id, X-Customer-Name, X-Customer-Email",
-        },
-      });
+      return new Response(null, { status: 204, headers: CORS_HEADERS });
+    }
+
+    // §1 Health — no Appwrite round-trip; only checks secret bindings present
+    if (request.method === "GET" && (path === "/health" || path === "/")) {
+      return jsonResponse(healthPayload(env));
     }
 
     try {
@@ -60,7 +102,6 @@ export default {
         supportService: new SupportService(supportRepo),
       };
 
-      // Extract headers for Auth context resolution
       const headersRecord: Record<string, string> = {};
       request.headers.forEach((val, key) => {
         headersRecord[key.toLowerCase()] = val;
@@ -70,23 +111,23 @@ export default {
         return resolveAuthContext(headersRecord);
       });
 
-      // Streamable HTTP transport over Web Standards
       const transport = new WebStandardStreamableHTTPServerTransport();
       await server.connect(transport);
 
-      return await transport.handleRequest(request);
+      const mcpResponse = await transport.handleRequest(request);
+      // Ensure CORS on MCP responses
+      const headers = new Headers(mcpResponse.headers);
+      for (const [k, v] of Object.entries(CORS_HEADERS)) {
+        if (!headers.has(k)) headers.set(k, v);
+      }
+      return new Response(mcpResponse.body, {
+        status: mcpResponse.status,
+        statusText: mcpResponse.statusText,
+        headers,
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      return new Response(
-        JSON.stringify({ error: message, status: "error" }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-        }
-      );
+      return jsonResponse({ error: message, status: "error", worker: "alejotaller-mcp" }, 500);
     }
   },
 };
