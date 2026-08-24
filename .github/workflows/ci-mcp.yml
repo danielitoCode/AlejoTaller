@@ -1,0 +1,57 @@
+# CI — Customer MCP Server (typecheck + unit tests)
+name: CI MCP
+
+on:
+  push:
+    branches: [master, main, Core2]
+    paths:
+      - "mcp/**"
+      - ".github/workflows/ci-mcp.yml"
+      - ".github/workflows/ci-gate.yml"
+  pull_request:
+    branches: [master, main, Core2]
+    paths:
+      - "mcp/**"
+      - ".github/workflows/ci-mcp.yml"
+      - ".github/workflows/ci-gate.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ci-mcp-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mcp:
+    name: MCP typecheck + tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mcp/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          if npm ci; then
+            echo "npm ci OK"
+          else
+            echo "::warning::package-lock.json out of sync — using npm install"
+            npm install
+          fi
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
