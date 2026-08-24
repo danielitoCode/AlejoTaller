@@ -43,11 +43,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if npm ci; then
+          set -e
+          if npm ci --no-fund --no-audit; then
             echo "npm ci OK"
           else
-            echo "::warning::package-lock.json out of sync — using npm install"
-            npm install
+            echo "::warning::package-lock out of sync or peer conflict — falling back to npm install"
+            rm -rf node_modules
+            npm install --no-fund --no-audit
           fi
 
       - name: Typecheck
