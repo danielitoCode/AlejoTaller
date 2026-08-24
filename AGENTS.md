@@ -25,6 +25,17 @@ Local (Room DAO) ← → Remote (Appwrite)
 - Identifies pending (local-only), pushes with retries
 - Merges results to maintain consistency
 
+### MCP Cliente (agente B2C)
+
+- **Carpeta:** [`mcp/`](./mcp/) — Worker `alejotaller-mcp`
+- **URL:** `https://alejotaller-mcp.daniel-imbert96.workers.dev`
+- **Dominio de referencia:** `web/src/core/feature/**` (TypeScript case uses)
+- **Patrón MCP:** `tool → service → repository → Appwrite net` (sin Dexie/offline)
+- **Fase 0:** [mcp/docs/PHASE0.md](./mcp/docs/PHASE0.md) · Matriz: [mcp/docs/TOOL_MATRIX.md](./mcp/docs/TOOL_MATRIX.md)
+- **Contrato datos:** [mcp/docs/DATA_CONTRACT.md](./mcp/docs/DATA_CONTRACT.md)
+- **Roadmap:** [mcp/docs/IMPLEMENTATION_ROADMAP.md](./mcp/docs/IMPLEMENTATION_ROADMAP.md)
+- Soft-hold en MCP debe espejar `RegisterNewSaleCaseUse` / `CancelUnverifiedSaleCaseUse` y `ProductNetRepository.incrementReserved|decrementReserved`
+
 ## Critical Workflows
 
 ### Build & Run Android
@@ -44,6 +55,16 @@ cd web
 pnpm install && pnpm dev
 ```
 **Database**: Dexie (IndexedDB) for offline storage; mirrors Android Room schema
+
+### Build & Run MCP
+```bash
+cd mcp
+npm install
+cp .dev.vars.example .dev.vars   # Appwrite secrets
+npm run dev                      # local worker
+npm test
+npm run deploy                   # Cloudflare Workers
+```
 
 ### DI Registration Pattern
 All modules load in `TallerAlejoApp.onCreate()`:
@@ -103,6 +124,7 @@ feature/{feature}/
 - **Client SDK** initialized in `infrastructureDiModule`: `Client().setEndpoint(...).setProject(...)`
 - **Collections**: Products, Categories, Sales, Promotions (schema in `app/schemas/`)
 - **Credentials**: Injected from `BuildConfig` (from `local.properties`)
+- **MCP server SDK**: same database; collections listed in `mcp/src/infrastructure/appwrite/config.ts`
 
 ### Pusher Real-Time
 - **Channels**: One per user (`sales__{userId}`); monitors incoming/updated sales
@@ -119,17 +141,22 @@ feature/{feature}/
 - **Same 3-layer pattern** in TypeScript (SvelteKit + Vite)
 - **Dexie + Appwrite** mirroring Android stack
 - **Shared sync logic** (resolvePendingLocals also in `web/src/core/feature/...`)
+- **B2C reference for MCP tools** (RegisterNewSale, soft-hold atomic APIs)
 
 ## Key Files for Navigation
 
 | Concept | File(s) |
 |---------|---------|
-| Offline-First Logic | `feature/sale/data/repository/SaleOfflineFirstRepository.kt` (resolvePendingLocals, pushWithRetry, mergeSyncResult) |
+| Offline-First Logic | `feature/sale/data/repository/SaleOfflineFirstRepository.kt` |
+| Soft-hold web | `web/src/core/feature/sale/domain/caseuse/RegisterNewSaleCaseUse.ts` |
+| Soft-hold product net | `web/src/core/feature/product/data/repository/product.net.repository.ts` |
+| MCP tools / policy | `mcp/src/mcp/tools/`, `mcp/src/policies/tool-policy.ts` |
+| MCP data contract | `mcp/docs/DATA_CONTRACT.md` |
 | DI Setup | `infraestructure/di/infrastructureDiModule.kt`, `feature/{feature}/di/{feature}FeatureModule.kt` |
 | Room Schema | `feature/{feature}/data/dto/*.kt`, `feature/{feature}/data/dao/*.kt` |
-| Sync Tests | `src/test/java/.../SaleSyncReconciliationTest.kt`, `src/androidTest/...` |
-| Real-Time | `infraestructure/core/data/realtime/RealTimeManagerImpl.kt`, `feature/sale/domain/realtime/RealtimeSyncGateway.kt` |
-| State Management | `feature/{feature}/presentation/viewmodel/*.kt` (always MutableStateFlow) |
+| Sync Tests | `src/test/java/.../SaleSyncReconciliationTest.kt` |
+| Real-Time | `infraestructure/core/data/realtime/RealTimeManagerImpl.kt` |
+| State Management | `feature/{feature}/presentation/viewmodel/*.kt` |
 | Compose UI Root | `infraestructure/core/presentation/navigation/InternalNavigationWrapper.kt` |
 
 ## Debugging Tips
@@ -139,9 +166,9 @@ feature/{feature}/
 3. **Real-time events not received**: Verify Pusher cluster, subscription scope in `RealtimeSyncViewModel.updateSubscriptionScope()`
 4. **Tests failing**: Run with `isReturnDefaultValues = true` (already set in `testOptions`); use Koin test runner for Android tests
 5. **Build/sync credential issues**: Add valid `APPWRITE_PROJECT_ID`, `APPWRITE_PROJECT_ENDPOINT`, `PUSHER_API_KEY`, `PUSHER_CLUSTER` to `local.properties`
+6. **MCP**: `curl …/health`; secrets via `wrangler secret`; soft-hold gaps tracked in `mcp/docs/IMPLEMENTATION_ROADMAP.md`
 
 ## MVP Roadmap Context
 
-**Current status**: Core architecture solid; sales feature complete with offline-first sync; products/categories basic; hardening in progress.  
-**Critical path**: Complete CRUD for products/categories → bidirectional sync for all features → robust error messaging → test coverage.
-
+**Current status**: Core 1–2 cerrados; MCP cliente en Fase 0 (contrato listo), Fase 1 = reserved atómico en Worker.  
+**Critical path MCP**: product net increment/decrement → create/cancel order = web → auth JWT → smoke agente.
