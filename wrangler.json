@@ -1,15 +1,16 @@
 {
   "$schema": "mcp/node_modules/wrangler/config-schema.json",
-  "name": "alejotaller-customer-mcp",
+  "name": "alejotaller-mcp",
   "main": "mcp/src/worker.ts",
   "compatibility_date": "2025-08-01",
   "compatibility_flags": [
     "nodejs_compat"
   ],
   "vars": {
-    "ENVIRONMENT": "development"
+    "ENVIRONMENT": "production"
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "_comment": "PROXY: mismo Worker que mcp/wrangler.json. Deploy canónico: cd mcp && npm run deploy"
 }

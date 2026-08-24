@@ -1,140 +1,116 @@
 # AlejoTaller Customer MCP Server
 
-Servidor **Model Context Protocol (MCP)** dedicado para el área de clientes de **AlejoTaller**, desarrollado con **TypeScript + Node.js + @modelcontextprotocol/sdk**.
+Servidor **Model Context Protocol (MCP)** para **clientes B2C** de AlejoTaller  
+(TypeScript + `@modelcontextprotocol/sdk` + Appwrite Server SDK).
 
-Diseñado para ejecutarse localmente durante desarrollo (vía stdio o HTTP) y desplegarse como **Remote MCP Server en Cloudflare Workers mediante Streamable HTTP**.
+| Ítem | Valor |
+|------|--------|
+| **Carpeta canónica** | `AlejoTaller/mcp/` |
+| **Worker name** | `alejotaller-mcp` |
+| **Config deploy** | `mcp/wrangler.json` |
+| **URL prod** | `https://alejotaller-mcp.daniel-imbert96.workers.dev` |
+| **Alcance** | Solo B2C — [docs/SCOPE_B2C.md](docs/SCOPE_B2C.md) |
+
+**No** es back-office, **no** es operador, **no** escribe `stock_movements` / `purchase_*` / `sale_finance_event`.
 
 ---
 
-## 1. Arquitectura y Principio de Diseño
-
-El MCP actúa como la **capa de interacción entre Agentes de IA y el backend de AlejoTaller**.
+## 1. Arquitectura
 
 ```text
-                        CLIENTE IA / AGENTE
-                             │
-                             │ MCP (Stdio / Streamable HTTP)
-                             ▼
-                 ┌───────────────────────┐
-                 │ AlejoTaller MCP Server│
-                 │                       │
-                 │ Tools                 │
-                 │ Resources             │
-                 │ Prompts               │
-                 └───────────┬───────────┘
-                             │
-                       Authentication Context
-                             │
-                       Authorization Policy
-                             │
-                             ▼
-                          Services
-                             │
-                        Repositories
-                             │
-                             ▼
-                      Appwrite Backend
+Agente IA (p. ej. Mistral Medium)
+    → MCP (stdio local | Streamable HTTP en Workers)
+        → Auth context + policies (cliente)
+            → Services → Repositories → Appwrite
 ```
 
-### Separación de Responsabilidades:
-1. **MCP Tool**: Expone la interfaz estructurada y anotada para la IA. No contiene lógica de negocio ni llamadas directas a la BD.
-2. **Auth & Policies**: Determina la identidad del cliente autenticado y si la acción requiere confirmación previa.
-3. **Services**: Aplican reglas de negocio (ej. verificar propiedad de un pedido o ticket).
-4. **Repositories**: Encapsulan el acceso a Appwrite mediante `node-appwrite` (Server SDK con API Key).
-5. **Appwrite**: Fuente de verdad persistente.
+1. **Tools** — interfaz para la IA (sin lógica de BD directa).  
+2. **Auth & policies** — identidad del cliente; confirmación en mutaciones sensibles.  
+3. **Services** — ownership de pedidos/tickets.  
+4. **Repositories** — `node-appwrite` con API key de servidor.  
+5. **Appwrite** — fuente de verdad.
 
 ---
 
-## 2. Herramientas MCP Disponibles (Tools)
+## 2. Tools
 
-> Para ver la especificación completa en formato **JSON Schema (Draft-07)** de cada función, consulta [docs/TOOLS_SPEC.md](docs/TOOLS_SPEC.md).
+Especificación: [docs/TOOLS_SPEC.md](docs/TOOLS_SPEC.md).
 
 ### Sistema
-- `ping_customer_mcp`: Health check del servidor.
-- `get_server_info`: Resumen de capacidades y políticas.
+- `ping_customer_mcp`, `get_server_info`
 
-### Perfil de Cliente
-- `get_my_profile`: Obtiene la información del perfil del cliente autenticado.
-- `update_my_profile`: Actualiza nombre, teléfono o foto del cliente.
+### Perfil
+- `get_my_profile`, `update_my_profile`
 
-### Pedidos / Ventas
-- `get_my_orders`: Lista las ventas/pedidos del cliente (`UNVERIFIED`, `VERIFIED`, `DELETED`).
-- `get_order`: Consulta los detalles de un pedido específico por ID (verifica propiedad).
-- `cancel_order`: Cancela un pedido pendiente (`requiresConfirmation: true`).
-- `create_order`: Crea un nuevo pedido (`requiresConfirmation: true`).
+### Pedidos
+- `get_my_orders`, `get_order`
+- `create_order` / `cancel_order` (`requiresConfirmation: true`; soft-hold)
 
-### Productos y Catálogo
-- `list_products`: Lista productos disponibles con stock vendible calculado.
-- `get_product`: Consulta detalles de un producto por ID.
-- `list_categories`: Lista categorías activas.
-- `get_category`: Información de una categoría.
-- `list_active_promotions`: Muestra las promociones vigentes.
+### Catálogo
+- `list_products`, `get_product`, `list_categories`, `get_category`, `list_active_promotions`
 
-### Soporte y Tickets
-- `get_my_support_threads`: Lista los tickets de soporte del cliente.
-- `get_support_thread`: Obtiene un ticket específico.
-- `get_thread_messages`: Historial de mensajes de un ticket.
-- `create_support_thread`: Crea una nueva consulta de soporte.
-- `post_support_message`: Responde dentro de un ticket.
+### Soporte
+- `get_my_support_threads`, `get_support_thread`, `get_thread_messages`
+- `create_support_thread`, `post_support_message`
 
 ---
 
-## 3. Instalación y Ejecución Local
+## 3. Local
 
 ```bash
 cd mcp
 npm install
+cp .dev.vars.example .dev.vars   # rellenar; no commitear
+npm run dev                      # stdio
+# npm run dev:http
+npm test
 ```
 
-### Configuración de Variables de Entorno:
-Copia `.dev.vars.example` a `.dev.vars` y llena con tus credenciales de Appwrite:
+Inspector:
 
-```env
-APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-APPWRITE_PROJECT_ID=tu_project_id
-APPWRITE_API_KEY=tu_api_key
-APPWRITE_DATABASE_ID=tu_database_id
-```
-
-### Ejecutar Localmente con MCP Inspector:
-```bash
-npm run dev
-```
-
-O conectar directamente MCP Inspector:
 ```bash
 npx @modelcontextprotocol/inspector tsx src/index.ts
 ```
 
-### Ejecutar Tests:
-```bash
-npm test
-```
+### Variables (local = mismos nombres que secretos CF)
+
+| Variable | Uso |
+|----------|-----|
+| `APPWRITE_ENDPOINT` | URL API Appwrite |
+| `APPWRITE_PROJECT_ID` | Project ID |
+| `APPWRITE_API_KEY` | API key servidor (scopes mínimos) |
+| `APPWRITE_DATABASE_ID` | Database ID |
+| `MCP_AUTH_SECRET` | Opcional Fase 1 |
+| `ENVIRONMENT` | `development` / `production` |
 
 ---
 
-## 4. Despliegue en Cloudflare Workers
+## 4. Cloudflare Workers
 
-El servidor soporta **Streamable HTTP** mediante Web Standards nativos.
+**Deploy canónico (preferido):**
 
-### Configurar secretos en Cloudflare:
 ```bash
+cd mcp
 npx wrangler secret put APPWRITE_ENDPOINT
 npx wrangler secret put APPWRITE_PROJECT_ID
 npx wrangler secret put APPWRITE_API_KEY
 npx wrangler secret put APPWRITE_DATABASE_ID
-```
-
-### Desplegar:
-```bash
 npm run deploy
 ```
 
+El `wrangler.json` de la **raíz del monorepo** usa el **mismo** `name: alejotaller-mcp` y apunta a `mcp/src/worker.ts` para evitar un segundo Worker. No desplegar dos configs con nombres distintos.
+
 ---
 
-## 5. Estrategia de Autenticación e Identidad
+## 5. Auth
 
-En la **Fase 1 (Local / Dev)**, la identidad del cliente se resuelve desde la cabecera `X-Customer-Id` o desde las meta-propiedades del MCP context (`customerId`). **La IA jamás recibe ni especifica un `customerId` como argumento de las herramientas de usuario.**
+**Fase 1:** identidad por `X-Customer-Id` (y opcionales name/email) desde el **MCP host**.  
+La IA **no** pasa `customerId` como argumento de tools de usuario.
 
-### Transición a Producción:
-En producción, el MCP Host enviará un token JWT obtenido tras autenticarse en Appwrite, el cual será validado server-side en `src/auth/resolver.ts`.
+**Producción (siguiente):** JWT Appwrite validado en `src/auth/resolver.ts`.
+
+---
+
+## 6. Checklist de cierre
+
+[docs/CHECKLIST_CLOSE.md](docs/CHECKLIST_CLOSE.md)
