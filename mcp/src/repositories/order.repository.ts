@@ -1,41 +1,32 @@
 import type {
   Order,
-  CreateOrderInput,
+  CreateOrderPersistInput,
   OrderStatus,
 } from "../domain/order.js";
 
 /**
- * Repository interface — Order
- *
- * Maps to the `sale` Appwrite collection.
- * Soft-hold application lives in OrderService (Fase 2), using IProductRepository
- * atomic reserved ops from Fase 1.
+ * Repository interface — Order (`sale` collection).
+ * Soft-hold coordination lives in OrderService + IProductRepository.
  */
 export interface IOrderRepository {
-  /** List all orders belonging to a specific user */
   listByUser(userId: string): Promise<Order[]>;
 
-  /** Get a single order by its Appwrite document ID */
   getById(orderId: string): Promise<Order | null>;
 
   /**
-   * Persist a new UNVERIFIED sale document.
-   * Does not apply soft-hold by itself — OrderService coordinates hold + flag.
+   * Persist UNVERIFIED sale with enriched lines and amount.
+   * stock_hold_applied starts false; service sets true after hold.
    */
-  create(userId: string, input: CreateOrderInput): Promise<Order>;
+  create(userId: string, input: CreateOrderPersistInput): Promise<Order>;
 
-  /**
-   * Update buy_state (e.g. UNVERIFIED → DELETED for client cancel).
-   * Client MCP must never set VERIFIED.
-   */
+  /** Client may only set DELETED (never VERIFIED). */
   updateVerified(orderId: string, status: OrderStatus): Promise<Order>;
 
-  /** Mark stock_hold_applied after successful reserved increments */
   updateStockHoldApplied(orderId: string, value: boolean): Promise<Order>;
 
   /**
-   * Cancel an UNVERIFIED order (sets status → DELETED).
-   * Soft-hold release is coordinated by OrderService (Fase 2).
+   * Sets buy_state DELETED if currently UNVERIFIED.
+   * Does not release reserved — OrderService does.
    */
   cancel(orderId: string): Promise<Order>;
 }

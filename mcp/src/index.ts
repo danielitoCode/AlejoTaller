@@ -21,41 +21,36 @@ import { resolveAuthContextFromMeta } from "./auth/resolver.js";
 async function main() {
   console.error("Iniciando AlejoTaller Customer MCP Server (Modo local Stdio)...");
 
-  // Load configuration from process.env
   let config;
   try {
     config = loadAppwriteConfig(process.env as Record<string, string | undefined>);
   } catch (err: unknown) {
     console.error("Advertencia de configuracion Appwrite:", err instanceof Error ? err.message : err);
-    console.error("Utilizando clientes en modo degraded/mock de respaldo para ejecucion basica.");
   }
 
-  let services;
-  if (config) {
-    const clients = createAppwriteClients(config);
-    const userRepo = new AppwriteUserRepository(clients.users);
-    const orderRepo = new AppwriteOrderRepository(clients.databases, clients.databaseId);
-    const productRepo = new AppwriteProductRepository(clients.databases, clients.databaseId);
-    const categoryRepo = new AppwriteCategoryRepository(clients.databases, clients.databaseId);
-    const promotionRepo = new AppwritePromotionRepository(clients.databases, clients.databaseId);
-    const supportRepo = new AppwriteSupportRepository(clients.databases, clients.databaseId);
-
-    services = {
-      customerService: new CustomerService(userRepo),
-      orderService: new OrderService(orderRepo),
-      productService: new ProductService(productRepo),
-      categoryService: new CategoryService(categoryRepo),
-      promotionService: new PromotionService(promotionRepo),
-      supportService: new SupportService(supportRepo),
-    };
-  } else {
-    // Basic degraded service mock setup to allow MCP Inspector to connect without env
+  if (!config) {
     throw new Error("Se requiere configuracion Appwrite para iniciar el servidor.");
   }
 
-  const server = createCustomerMcpServer(services, (extra: any) => {
-    // Extract customer context from tool call meta if present
-    const meta = extra?.meta;
+  const clients = createAppwriteClients(config);
+  const userRepo = new AppwriteUserRepository(clients.users);
+  const orderRepo = new AppwriteOrderRepository(clients.databases, clients.databaseId);
+  const productRepo = new AppwriteProductRepository(clients.databases, clients.databaseId);
+  const categoryRepo = new AppwriteCategoryRepository(clients.databases, clients.databaseId);
+  const promotionRepo = new AppwritePromotionRepository(clients.databases, clients.databaseId);
+  const supportRepo = new AppwriteSupportRepository(clients.databases, clients.databaseId);
+
+  const services = {
+    customerService: new CustomerService(userRepo),
+    orderService: new OrderService(orderRepo, productRepo),
+    productService: new ProductService(productRepo),
+    categoryService: new CategoryService(categoryRepo),
+    promotionService: new PromotionService(promotionRepo),
+    supportService: new SupportService(supportRepo),
+  };
+
+  const server = createCustomerMcpServer(services, (extra: unknown) => {
+    const meta = (extra as { meta?: unknown })?.meta;
     return resolveAuthContextFromMeta(meta);
   });
 

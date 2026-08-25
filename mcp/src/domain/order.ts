@@ -2,13 +2,10 @@
  * Domain — Order (Sale)
  *
  * An "Order" maps to the `sale` collection in Appwrite.
- * AlejoTaller uses a soft-hold stock model:
+ * Soft-hold stock model (Core 1):
  *   - UNVERIFIED: order placed, stock reserved (reserved++)
- *   - VERIFIED:   order confirmed, stock actually decremented
+ *   - VERIFIED:   order confirmed by operator (MCP never sets this)
  *   - DELETED:    order cancelled, soft-hold released (reserved--)
- *
- * There is no separate "reservation" collection — an UNVERIFIED order
- * is the closest concept to a pending reservation.
  */
 
 export type OrderStatus = "UNVERIFIED" | "VERIFIED" | "DELETED";
@@ -20,10 +17,15 @@ export interface OrderItem {
   productId: string;
   productName: string | null;
   quantity: number;
-  /** Effective unit price (list price, discounted, or 0 for GIFT) */
+  /** Effective unit price (list price at order time for B2C) */
   unitPrice: number | null;
   /** List price at time of order (audit trail) */
   listUnitPrice: number | null;
+  /**
+   * Alias used in Appwrite JSON (`price`) — same as unitPrice.
+   * Kept optional for read compatibility with web SaleItemDTO.
+   */
+  price?: number | null;
 }
 
 export interface DeliveryAddress {
@@ -52,9 +54,11 @@ export interface Order {
   stockHoldApplied: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Present when hold partially failed but sale document exists */
+  softHoldError?: string;
 }
 
-/** Input for creating a new order */
+/** Input from MCP tool / agent */
 export interface CreateOrderInput {
   items: Array<{
     productId: string;
@@ -65,7 +69,15 @@ export interface CreateOrderInput {
   deliveryAddress?: DeliveryAddress;
 }
 
-/** Human-readable label for order status */
+/** Payload already resolved by OrderService (prices, names, amount) */
+export interface CreateOrderPersistInput {
+  items: OrderItem[];
+  totalAmount: number;
+  currency: Currency;
+  deliveryType: DeliveryType;
+  deliveryAddress?: DeliveryAddress;
+}
+
 export function orderStatusLabel(status: OrderStatus): string {
   switch (status) {
     case "UNVERIFIED":

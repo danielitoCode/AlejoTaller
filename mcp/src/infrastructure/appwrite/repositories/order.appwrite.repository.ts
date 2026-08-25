@@ -4,7 +4,7 @@ import type {
   Order,
   OrderItem,
   DeliveryAddress,
-  CreateOrderInput,
+  CreateOrderPersistInput,
   OrderStatus,
   OrderType,
   Currency,
@@ -13,9 +13,7 @@ import type {
 import { COLLECTIONS } from "../config.js";
 
 /**
- * Appwrite implementation of IOrderRepository.
- * Collection schema: date, amount, buy_state, currency, products (JSON),
- * user_id, delivery_type, delivery_address (JSON), sale_type, stock_hold_applied
+ * Appwrite `sale` collection — field names aligned with web SaleDTO.
  */
 export class AppwriteOrderRepository implements IOrderRepository {
   constructor(
@@ -51,21 +49,23 @@ export class AppwriteOrderRepository implements IOrderRepository {
     }
   }
 
-  async create(userId: string, input: CreateOrderInput): Promise<Order> {
-    const items: OrderItem[] = input.items.map((i) => ({
-      productId: i.productId,
-      productName: null,
-      quantity: i.quantity,
-      unitPrice: null,
-      listUnitPrice: null,
-    }));
+  async create(userId: string, input: CreateOrderPersistInput): Promise<Order> {
+    const productsJson = JSON.stringify(
+      input.items.map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        quantity: i.quantity,
+        price: i.unitPrice ?? i.price ?? 0,
+        listUnitPrice: i.listUnitPrice ?? i.unitPrice ?? null,
+      }))
+    );
 
     const payload: Record<string, unknown> = {
       date: new Date().toISOString(),
-      amount: 0,
+      amount: input.totalAmount,
       buy_state: "UNVERIFIED",
       currency: input.currency,
-      products: JSON.stringify(items),
+      products: productsJson,
       user_id: userId,
       delivery_type: input.deliveryType,
       delivery_address: input.deliveryAddress
@@ -134,13 +134,17 @@ export class AppwriteOrderRepository implements IOrderRepository {
     let items: OrderItem[] = [];
     try {
       const parsed = JSON.parse(doc.products ?? "[]") as unknown[];
-      items = (parsed as RawSaleItem[]).map((i) => ({
-        productId: i.productId ?? "",
-        productName: i.productName ?? null,
-        quantity: i.quantity ?? 0,
-        unitPrice: i.unitPrice ?? i.price ?? null,
-        listUnitPrice: i.listUnitPrice ?? null,
-      }));
+      items = (parsed as RawSaleItem[]).map((i) => {
+        const unit = i.unitPrice ?? i.price ?? null;
+        return {
+          productId: i.productId ?? "",
+          productName: i.productName ?? null,
+          quantity: i.quantity ?? 0,
+          unitPrice: unit,
+          listUnitPrice: i.listUnitPrice ?? null,
+          price: unit,
+        };
+      });
     } catch {
       items = [];
     }

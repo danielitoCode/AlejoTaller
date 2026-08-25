@@ -77,7 +77,6 @@ export default {
       return new Response(null, { status: 204, headers: CORS_HEADERS });
     }
 
-    // §1 Health — no Appwrite round-trip; only checks secret bindings present
     if (request.method === "GET" && (path === "/health" || path === "/")) {
       return jsonResponse(healthPayload(env));
     }
@@ -95,7 +94,7 @@ export default {
 
       const services = {
         customerService: new CustomerService(userRepo),
-        orderService: new OrderService(orderRepo),
+        orderService: new OrderService(orderRepo, productRepo),
         productService: new ProductService(productRepo),
         categoryService: new CategoryService(categoryRepo),
         promotionService: new PromotionService(promotionRepo),
@@ -115,7 +114,6 @@ export default {
       await server.connect(transport);
 
       const mcpResponse = await transport.handleRequest(request);
-      // Ensure CORS on MCP responses
       const headers = new Headers(mcpResponse.headers);
       for (const [k, v] of Object.entries(CORS_HEADERS)) {
         if (!headers.has(k)) headers.set(k, v);
