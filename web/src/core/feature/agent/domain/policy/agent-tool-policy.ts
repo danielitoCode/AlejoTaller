@@ -15,8 +15,23 @@ export const GUEST_ALLOWED_MCP_TOOLS = [
 
 export type GuestAllowedMcpTool = (typeof GUEST_ALLOWED_MCP_TOOLS)[number];
 
+/** Tools that must not run until the UI confirms (Fase 2 domain / Fase 3 UI). */
+export const MCP_WRITE_TOOLS_REQUIRING_CONFIRMATION = [
+  "create_order",
+  "cancel_order",
+] as const;
+
+export type McpWriteToolRequiringConfirmation =
+  (typeof MCP_WRITE_TOOLS_REQUIRING_CONFIRMATION)[number];
+
 export function isMcpToolAllowedForGuest(toolName: string): boolean {
   return (GUEST_ALLOWED_MCP_TOOLS as readonly string[]).includes(toolName);
+}
+
+export function isMcpWriteToolRequiringConfirmation(toolName: string): boolean {
+  return (MCP_WRITE_TOOLS_REQUIRING_CONFIRMATION as readonly string[]).includes(
+    toolName
+  );
 }
 
 export function assertMcpToolAllowed(
@@ -27,6 +42,18 @@ export function assertMcpToolAllowed(
   if (!isMcpToolAllowedForGuest(toolName)) {
     throw new Error(
       `Tool "${toolName}" no está disponible para invitados. Inicia sesión para usar esta función.`
+    );
+  }
+}
+
+export function assertMcpWriteConfirmed(
+  toolName: string,
+  userConfirmed: boolean
+): void {
+  if (!isMcpWriteToolRequiringConfirmation(toolName)) return;
+  if (!userConfirmed) {
+    throw new Error(
+      `Tool "${toolName}" requiere confirmación explícita del usuario antes de ejecutarse.`
     );
   }
 }
