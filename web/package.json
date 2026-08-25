@@ -13,8 +13,7 @@
     "test:unit:watch": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
     "test:ui": "vitest --config vitest.config.ts --ui",
-    "smoke:agent": "node scripts/smoke-agent-mistral.mjs",
-    "smoke:agent:strict": "AGENT_SMOKE_STRICT=1 node scripts/smoke-agent-mistral.mjs"
+    "smoke:agent": "node scripts/smoke-agent-mistral.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/google-sans-flex": "^5.2.1",
@@ -34,7 +33,6 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
-    "@mistralai/mistralai": "^1.10.0",
     "appwrite": "^22.4.0",
     "dexie": "^4.3.0",
     "lucide-svelte": "^0.577.0",

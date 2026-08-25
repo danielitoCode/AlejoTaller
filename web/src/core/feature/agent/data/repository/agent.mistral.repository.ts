@@ -1,4 +1,3 @@
-import { Mistral } from "@mistralai/mistralai";
 import type {
   AgentConnectionResult,
   AgentMessage,
@@ -12,6 +11,8 @@ export interface MistralAgentConfig {
   /** Used for connection probe — e.g. mistral-medium-latest */
   modelId: string;
 }
+
+const MISTRAL_API_BASE = "https://api.mistral.ai/v1";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -39,14 +40,21 @@ function extractTextContent(content: unknown): string {
 }
 
 /**
- * Mistral Agents via official TypeScript SDK (`@mistralai/mistralai`).
- * Fase 1: connection probe + agent completion (no MCP tools yet).
+ * Cliente Mistral por HTTP (fetch) — **sin** paquete `@mistralai/mistralai`
+ * (versiones 2.2.2–2.2.4 fueron parte de la campaña Mini Shai-Hulud; evitamos el SDK npm).
+ *
+ * - Probe: GET /v1/models/{model_id}
+ * - Chat:  POST /v1/agents/completions
  */
 export class AgentMistralRepository implements AgentRepository {
-  private readonly client: Mistral;
+  constructor(private readonly config: MistralAgentConfig) {}
 
-  constructor(private readonly config: MistralAgentConfig) {
-    this.client = new Mistral({ apiKey: config.apiKey });
+  private headers(): HeadersInit {
+    return {
+      Authorization: `Bearer ${this.config.apiKey}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
   }
 
   async checkConnection(): Promise<AgentConnectionResult> {
@@ -54,26 +62,37 @@ export class AgentMistralRepository implements AgentRepository {
       return {
         status: "unconfigured",
         modelId: null,
-        message: "Falta VITE_MISTRAL_API_KEY",
+        message: "Falta VITE_MISTRAL_API_KEY / MISTRAL_API_KEY",
       };
     }
     if (!this.config.agentId?.trim()) {
       return {
         status: "unconfigured",
         modelId: null,
-        message: "Falta VITE_MISTRAL_AGENT_ID",
+        message: "Falta VITE_MISTRAL_AGENT_ID / MISTRAL_AGENT_ID",
       };
     }
 
     const modelId = this.config.modelId?.trim() || "mistral-medium-latest";
 
     try {
-      // Probe: retrieve model metadata (GET /v1/models/{model_id})
-      await this.client.models.retrieve({ modelId });
+      const res = await fetch(`${MISTRAL_API_BASE}/models/${encodeURIComponent(modelId)}`, {
+        method: "GET",
+        headers: this.headers(),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        return {
+          status: "error",
+          modelId,
+          message: `Mistral models HTTP ${res.status}: ${body.slice(0, 180)}`,
+        };
+      }
+      const data = (await res.json()) as { id?: string };
       return {
         status: "ok",
-        modelId,
-        message: `Conectado a Mistral (model=${modelId}, agent=${this.config.agentId})`,
+        modelId: data.id ?? modelId,
+        message: `Conectado a Mistral (model=${data.id ?? modelId}, agent=${this.config.agentId})`,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -96,7 +115,6 @@ export class AgentMistralRepository implements AgentRepository {
     }
 
     const messages: Array<{ role: string; content: string }> = [];
-
     if (history?.length) {
       for (const h of history) {
         if (h.role === "user" || h.role === "assistant" || h.role === "system") {
@@ -106,17 +124,29 @@ export class AgentMistralRepository implements AgentRepository {
     }
     messages.push({ role: "user", content: userText });
 
-    const response = await this.client.agents.complete({
-      agentId: this.config.agentId,
-      messages: messages as never,
+    const res = await fetch(`${MISTRAL_API_BASE}/agents/completions`, {
+      method: "POST",
+      headers: this.headers(),
+      body: JSON.stringify({
+        agent_id: this.config.agentId,
+        messages,
+      }),
     });
 
-    const choice = response.choices?.[0];
-    const rawContent = choice?.message?.content;
-    const text = extractTextContent(rawContent).trim() || "(sin respuesta)";
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      throw new Error(`Mistral agents HTTP ${res.status}: ${body.slice(0, 240)}`);
+    }
+
+    const data = (await res.json()) as {
+      id?: string;
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content;
+    const text = extractTextContent(raw).trim() || "(sin respuesta)";
 
     return {
-      providerId: response.id ?? null,
+      providerId: data.id ?? null,
       message: {
         id: newId(),
         role: "assistant",

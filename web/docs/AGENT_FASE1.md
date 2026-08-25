@@ -1,58 +1,37 @@
 # Agent Fase 1 — Mistral (Web)
 
-SDK oficial: `@mistralai/mistralai`
+## Seguridad (importante)
 
-## Variables de entorno
+**No usamos** el paquete npm `@mistralai/mistralai`.
 
-En `web/.env` o `web/.env.local` (no commit):
+En mayo 2026, versiones **2.2.2–2.2.4** fueron publicadas en una campaña de supply-chain (Mini Shai-Hulud).  
+El cliente web habla con `https://api.mistral.ai/v1` solo con **`fetch`** (igual filosofía que Android).
 
-```env
-VITE_MISTRAL_API_KEY=...
-VITE_MISTRAL_AGENT_ID=ag_...
-VITE_MISTRAL_MODEL_ID=mistral-medium-latest
-```
-
-También acepta sin prefijo Vite (scripts Node):
-
-```env
-MISTRAL_API_KEY=...
-MISTRAL_AGENT_ID=...
-MISTRAL_MODEL_ID=mistral-medium-latest
-```
-
-## Install
+Si llegaste a instalar el SDK:
 
 ```bash
 cd web
+rm -rf node_modules package-lock.json
+npm cache clean --force
 npm install
 ```
 
-## Smoke (SDK)
+Y **rota** desde otro equipo limpio: Mistral API key, tokens npm/GitHub, Appwrite keys, etc.
+
+## Env
+
+```env
+VITE_MISTRAL_API_KEY=...
+VITE_MISTRAL_AGENT_ID=...
+VITE_MISTRAL_MODEL_ID=mistral-medium-latest
+```
+
+## Smoke
 
 ```bash
 cd web
 npm run smoke:agent
 ```
 
-Pasos del script:
-
-1. `client.models.retrieve({ modelId })` — conexión API + key
-2. `client.agents.complete({ agentId, messages })` — agent id válido
-
-Vitest live (opcional):
-
-```bash
-# PowerShell
-$env:AGENT_SMOKE_LIVE="1"; npm test -- src/test/core/feature/agent/smoke/agent-mistral.live.test.ts
-```
-
-## Data layer app
-
-```ts
-import { agentContainer } from "./core/feature/agent/di/agent.container";
-
-const conn = await agentContainer.useCases.checkConnection();
-const reply = await agentContainer.useCases.sendMessage("Hola");
-```
-
-`agent.container` lee `ENV` (`VITE_MISTRAL_*`).
+1. `GET /v1/models/{model_id}`  
+2. `POST /v1/agents/completions`

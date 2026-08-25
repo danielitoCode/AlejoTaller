@@ -1,11 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { Mistral } from "@mistralai/mistralai";
 
-/**
- * Live smoke — solo con AGENT_SMOKE_LIVE=1 y keys en env.
- * No corre en CI por defecto.
- */
+/** Live smoke HTTP — AGENT_SMOKE_LIVE=1 + keys en env. Sin SDK npm. */
 const LIVE = process.env.AGENT_SMOKE_LIVE === "1";
+const BASE = "https://api.mistral.ai/v1";
 
 function pick(...keys: string[]): string {
   for (const k of keys) {
@@ -15,41 +12,42 @@ function pick(...keys: string[]): string {
   return "";
 }
 
-describe.runIf(LIVE)("Mistral SDK live smoke (Fase 1)", () => {
+describe.runIf(LIVE)("Mistral HTTP live smoke (Fase 1)", () => {
   const apiKey = pick("MISTRAL_API_KEY", "VITE_MISTRAL_API_KEY");
   const agentId = pick("MISTRAL_AGENT_ID", "VITE_MISTRAL_AGENT_ID");
   const modelId =
     pick("MISTRAL_MODEL_ID", "VITE_MISTRAL_MODEL_ID") ||
     "mistral-medium-latest";
 
-  it("models.retrieve + agents.complete", async () => {
-    expect(apiKey, "MISTRAL_API_KEY / VITE_MISTRAL_API_KEY").toBeTruthy();
-    expect(agentId, "MISTRAL_AGENT_ID / VITE_MISTRAL_AGENT_ID").toBeTruthy();
+  it("GET models + POST agents/completions", async () => {
+    expect(apiKey).toBeTruthy();
+    expect(agentId).toBeTruthy();
 
-    const client = new Mistral({ apiKey });
+    const headers = {
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
 
-    const model = await client.models.retrieve({ modelId });
-    expect(model?.id || modelId).toBeTruthy();
+    const modelRes = await fetch(
+      `${BASE}/models/${encodeURIComponent(modelId)}`,
+      { headers }
+    );
+    expect(modelRes.ok).toBe(true);
 
-    const result = await client.agents.complete({
-      agentId,
-      messages: [
-        {
-          role: "user",
-          content: "Responde solo con la palabra PONG.",
-        },
-      ],
-      responseFormat: { type: "text" },
+    const agentRes = await fetch(`${BASE}/agents/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        agent_id: agentId,
+        messages: [{ role: "user", content: "Responde solo con la palabra PONG." }],
+      }),
     });
-
-    const raw = result.choices?.[0]?.message?.content;
-    const text =
-      typeof raw === "string"
-        ? raw
-        : Array.isArray(raw)
-          ? raw.map((p) => (typeof p === "string" ? p : "")).join("")
-          : String(raw ?? "");
-
-    expect(text.trim().length).toBeGreaterThan(0);
+    expect(agentRes.ok).toBe(true);
+    const data = (await agentRes.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const text = data.choices?.[0]?.message?.content?.trim() ?? "";
+    expect(text.length).toBeGreaterThan(0);
   }, 60_000);
 });

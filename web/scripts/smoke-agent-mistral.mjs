@@ -1,26 +1,21 @@
 #!/usr/bin/env node
 /**
- * Smoke Fase 1 — Mistral official SDK (`@mistralai/mistralai`).
+ * Smoke Fase 1 — Mistral API por HTTP (sin SDK npm).
  *
- * Env (cualquiera de estos nombres):
+ * Env:
  *   MISTRAL_API_KEY | VITE_MISTRAL_API_KEY
  *   MISTRAL_AGENT_ID | VITE_MISTRAL_AGENT_ID
- *   MISTRAL_MODEL_ID | VITE_MISTRAL_MODEL_ID  (default mistral-medium-latest)
+ *   MISTRAL_MODEL_ID | VITE_MISTRAL_MODEL_ID
  *
- * Carga opcional de web/.env y web/.env.local (sin sobrescribir process.env).
- *
- * Usage:
  *   cd web && npm run smoke:agent
- *
- * Exit 0 = ok | 1 = fail | 2 = no configurado (salvo AGENT_SMOKE_STRICT=1)
  */
 
 import { readFileSync, existsSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Mistral } from "@mistralai/mistralai";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const BASE = "https://api.mistral.ai/v1";
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return;
@@ -38,9 +33,7 @@ function loadEnvFile(filePath) {
     ) {
       val = val.slice(1, -1);
     }
-    if (key && process.env[key] === undefined) {
-      process.env[key] = val;
-    }
+    if (key && process.env[key] === undefined) process.env[key] = val;
   }
 }
 
@@ -71,79 +64,74 @@ function ok(msg) {
 }
 
 async function main() {
-  console.log("[smoke-agent] Mistral SDK smoke (Fase 1)");
-  console.log(`[smoke-agent] modelId=${modelId} agentId=${agentId ? agentId.slice(0, 12) + "…" : "(empty)"}`);
+  console.log("[smoke-agent] Mistral HTTP smoke (sin SDK npm)");
+  console.log(
+    `[smoke-agent] modelId=${modelId} agentId=${agentId ? agentId.slice(0, 12) + "…" : "(empty)"}`
+  );
 
   if (!apiKey) {
-    fail(
-      "Falta MISTRAL_API_KEY o VITE_MISTRAL_API_KEY (env o web/.env)",
-      strict ? 1 : 2
-    );
+    fail("Falta MISTRAL_API_KEY o VITE_MISTRAL_API_KEY", strict ? 1 : 2);
   }
   if (!agentId) {
-    fail(
-      "Falta MISTRAL_AGENT_ID o VITE_MISTRAL_AGENT_ID (env o web/.env)",
-      strict ? 1 : 2
-    );
+    fail("Falta MISTRAL_AGENT_ID o VITE_MISTRAL_AGENT_ID", strict ? 1 : 2);
   }
 
-  const client = new Mistral({ apiKey });
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
 
-  // 1) Connection probe — models.retrieve (GET /v1/models/{model_id})
-  console.log(`[smoke-agent] models.retrieve(${modelId})…`);
-  try {
-    const model = await client.models.retrieve({ modelId });
-    const id = model?.id ?? modelId;
-    ok(`models.retrieve → ${id}`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    fail(`models.retrieve: ${msg.slice(0, 300)}`);
-  }
-
-  // 2) Agent completion — agents.complete
-  console.log("[smoke-agent] agents.complete (ping corto)…");
-  try {
-    const result = await client.agents.complete({
-      agentId,
-      messages: [
-        {
-          role: "user",
-          content:
-            "Responde solo con la palabra PONG (una palabra, sin explicación).",
-        },
-      ],
-      responseFormat: { type: "text" },
+  console.log(`[smoke-agent] GET /models/${modelId}…`);
+  {
+    const res = await fetch(`${BASE}/models/${encodeURIComponent(modelId)}`, {
+      method: "GET",
+      headers,
     });
+    const body = await res.text();
+    if (!res.ok) fail(`models: HTTP ${res.status} ${body.slice(0, 200)}`);
+    let id = modelId;
+    try {
+      id = JSON.parse(body)?.id ?? modelId;
+    } catch {
+      /* ignore */
+    }
+    ok(`models → ${id}`);
+  }
 
-    const raw = result?.choices?.[0]?.message?.content;
+  console.log("[smoke-agent] POST /agents/completions…");
+  {
+    const res = await fetch(`${BASE}/agents/completions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        agent_id: agentId,
+        messages: [
+          {
+            role: "user",
+            content:
+              "Responde solo con la palabra PONG (una palabra, sin explicación).",
+          },
+        ],
+      }),
+    });
+    const body = await res.text();
+    if (!res.ok) fail(`agents: HTTP ${res.status} ${body.slice(0, 300)}`);
     let text = "";
-    if (typeof raw === "string") text = raw;
-    else if (Array.isArray(raw)) {
-      text = raw
-        .map((p) =>
-          typeof p === "string"
-            ? p
-            : p && typeof p === "object" && "text" in p
-              ? String(p.text)
-              : ""
-        )
-        .join("");
-    } else if (raw != null) text = String(raw);
-
+    try {
+      const data = JSON.parse(body);
+      const raw = data?.choices?.[0]?.message?.content;
+      text = typeof raw === "string" ? raw : String(raw ?? "");
+    } catch {
+      text = body;
+    }
     text = text.trim();
-    if (!text) fail("agents.complete devolvió contenido vacío");
-
-    ok(`agents.complete → "${text.slice(0, 120)}${text.length > 120 ? "…" : ""}"`);
-    console.log(`[smoke-agent] providerId=${result?.id ?? "n/a"}`);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    fail(`agents.complete: ${msg.slice(0, 400)}`);
+    if (!text) fail("agents: respuesta vacía");
+    ok(`agents → "${text.slice(0, 120)}${text.length > 120 ? "…" : ""}"`);
   }
 
   console.log("[smoke-agent] Fase 1 smoke PASSED");
   process.exit(0);
 }
 
-main().catch((err) => {
-  fail(err instanceof Error ? err.message : String(err));
-});
+main().catch((e) => fail(e instanceof Error ? e.message : String(e)));
