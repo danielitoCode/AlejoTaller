@@ -36,4 +36,6 @@ export const ENV = {
     mistralApiKey: import.meta.env.VITE_MISTRAL_API_KEY,
     mistralAgentId: import.meta.env.VITE_MISTRAL_AGENT_ID,
     mistralModelId: import.meta.env.VITE_MISTRAL_MODEL_ID,
+    // MCP customer worker (Fase 2)
+    mcpBaseUrl: import.meta.env.VITE_MCP_BASE_URL,
 }
