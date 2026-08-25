@@ -18,6 +18,14 @@ import { SupportService } from "./services/support.service.js";
 import { createCustomerMcpServer } from "./mcp/server.js";
 import { resolveAuthContextFromMeta } from "./auth/resolver.js";
 
+function asMetaRecord(value: unknown): Record<string, unknown> | undefined {
+  if (value == null) return undefined;
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+  return undefined;
+}
+
 async function main() {
   console.error("Iniciando AlejoTaller Customer MCP Server (Modo local Stdio)...");
 
@@ -50,8 +58,8 @@ async function main() {
   };
 
   const server = createCustomerMcpServer(services, (extra: unknown) => {
-    const meta = (extra as { meta?: unknown })?.meta;
-    return resolveAuthContextFromMeta(meta);
+    const rawMeta = (extra as { meta?: unknown } | null)?.meta;
+    return resolveAuthContextFromMeta(asMetaRecord(rawMeta));
   });
 
   const transport = new StdioServerTransport();
