@@ -8,10 +8,8 @@ plugins {
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.androidx.room)
     alias(libs.plugins.jetbrains.kotlinx.kover)
-    // alias(libs.plugins.kotzilla)
 }
 
-// Leer local.properties
 val localProperties = Properties().apply {
     val localPropertiesFile = rootProject.file("local.properties")
     if (localPropertiesFile.exists()) {
@@ -26,7 +24,6 @@ val versionPatch = 0
 val appVersionName = "$versionMajor.$versionMinor.$versionPatch"
 val appVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
 
-
 android {
     namespace = "com.elitec.alejotaller"
     compileSdk = 36
@@ -37,14 +34,12 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
-        // Mejor compatibilidad y menor riesgo en previews.
         vectorDrawables {
             useSupportLibrary = true
         }
         testInstrumentationRunner = "com.elitec.alejotaller.KoinTestRunner"
     }
 
-    // Evita conflictos con Ktor, Koin y otras libs.
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -79,7 +74,7 @@ android {
     testOptions {
         unitTests {
             isReturnDefaultValues = true
-            isIncludeAndroidResources = true // Permite acceso a recursos desde unit test
+            isIncludeAndroidResources = true
         }
     }
 }
@@ -88,7 +83,6 @@ dependencies {
     implementation(project(":shared-core"))
     implementation(project(":shared-sale"))
     implementation(project(":shared-data"))
-    // implementation(libs.kotzilla.sdk)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -99,7 +93,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.material3)
     testImplementation(libs.junit)
-    // Unit Test
     testImplementation(libs.mock.test)
     testImplementation(libs.turbine.test)
     testImplementation(libs.kotlinx.coroutines.test)
@@ -110,7 +103,6 @@ dependencies {
     androidTestImplementation(libs.koin.test)
     androidTestImplementation(libs.koin.test.junit4)
     androidTestImplementation(libs.koin.test.junit4)
-    // testImplementation(libs.roboelectric.test)
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -118,61 +110,40 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-    // Toast
     implementation(libs.multiplatform.toast)
-    // HttpClient
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.client.android)
-    //implementation(libs.ktor.client.okhttp)
-    implementation(libs.ktor.serialization.kotlinx.json) { //Esto es para evitar conflictos con el R8
+    implementation(libs.ktor.serialization.kotlinx.json) {
         exclude(group = "com.fasterxml.jackson.core")
         exclude(group = "com.fasterxml.jackson.dataformat", module = "jackson-dataformat-xml")
     }
     implementation(libs.ktor.client.logs)
     implementation(libs.ktor.client.websocket)
     implementation(libs.ktor.client.test)
-    // Lotties
     implementation(libs.lotties.compose)
-    // Icons
     implementation(libs.androidx.icons.extended)
-    // Di
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.androidx.compose.navigation)
 
-    // Google Identity
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
-    // Permission
     implementation(libs.compose.permission)
-    // DataStore Preferences
     implementation(libs.androidx.datastore.preferences)
-    // Shimmer effect
     implementation(libs.shimer.compose)
-    //ConnectionStatus
     implementation(libs.konnection.status)
-    // Nav3
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.material3.adaptive.navigation3)
     implementation(libs.kotlinx.serialization.core)
-    // Real time
-    // implementation(libs.okhttp)
-    // implementation(libs.okio)
     implementation(libs.pusher.java.client)
-    /*implementation(libs.courier.android) {
-        exclude(group = "androidx.test.ext", module = "junit")
-    }*/
-    // Network Images
     implementation(libs.coil.compose)
     implementation(libs.coil.okhttp)
     implementation(libs.coil.compose.svg)
-    // Blur effect
     implementation(libs.compose.blurEffect.core)
     implementation(libs.compose.blurEffect.materials)
-    // Persistence
     implementation(libs.sdk.for1.android) {
         exclude(group = "androidx.browser", module = "browser")
     }
@@ -180,14 +151,9 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.room.paging)
     ksp(libs.room.compiler)
-    // Datetime
     implementation(libs.kotlinx.datetime)
-    // QR
     implementation(libs.compose.qr)
-    // Size class integration
     implementation(libs.compose.window.size)
-    //implementation(libs.window.size.compose)
-    // Browser
     implementation(libs.androidx.browser)
     ksp(project(":mapper-processor"))
 
@@ -274,4 +240,8 @@ fun com.android.build.api.dsl.BuildType.injectLocalProperties() {
     // posthog
     prop("POSTHOG_TOKEN")
     prop("POSTHOG_HOST")
+    // Mistral Agent (Fase 1) — keys only in local.properties, never commit
+    prop("MISTRAL_API_KEY")
+    prop("MISTRAL_AGENT_ID")
+    prop("MISTRAL_MODEL_ID")
 }
