@@ -16,7 +16,10 @@ import { PromotionService } from "./services/promotion.service.js";
 import { SupportService } from "./services/support.service.js";
 
 import { createCustomerMcpServer } from "./mcp/server.js";
-import { resolveAuthContextFromMeta } from "./auth/resolver.js";
+import {
+  parseAuthMode,
+  resolveAuthContextFromMeta,
+} from "./auth/resolver.js";
 
 function asMetaRecord(value: unknown): Record<string, unknown> | undefined {
   if (value == null) return undefined;
@@ -26,14 +29,19 @@ function asMetaRecord(value: unknown): Record<string, unknown> | undefined {
   return undefined;
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.error("Iniciando AlejoTaller Customer MCP Server (Modo local Stdio)...");
 
   let config;
   try {
-    config = loadAppwriteConfig(process.env as Record<string, string | undefined>);
+    config = loadAppwriteConfig(
+      process.env as Record<string, string | undefined>
+    );
   } catch (err: unknown) {
-    console.error("Advertencia de configuracion Appwrite:", err instanceof Error ? err.message : err);
+    console.error(
+      "Advertencia de configuracion Appwrite:",
+      err instanceof Error ? err.message : err
+    );
   }
 
   if (!config) {
@@ -42,11 +50,26 @@ async function main() {
 
   const clients = createAppwriteClients(config);
   const userRepo = new AppwriteUserRepository(clients.users);
-  const orderRepo = new AppwriteOrderRepository(clients.databases, clients.databaseId);
-  const productRepo = new AppwriteProductRepository(clients.databases, clients.databaseId);
-  const categoryRepo = new AppwriteCategoryRepository(clients.databases, clients.databaseId);
-  const promotionRepo = new AppwritePromotionRepository(clients.databases, clients.databaseId);
-  const supportRepo = new AppwriteSupportRepository(clients.databases, clients.databaseId);
+  const orderRepo = new AppwriteOrderRepository(
+    clients.databases,
+    clients.databaseId
+  );
+  const productRepo = new AppwriteProductRepository(
+    clients.databases,
+    clients.databaseId
+  );
+  const categoryRepo = new AppwriteCategoryRepository(
+    clients.databases,
+    clients.databaseId
+  );
+  const promotionRepo = new AppwritePromotionRepository(
+    clients.databases,
+    clients.databaseId
+  );
+  const supportRepo = new AppwriteSupportRepository(
+    clients.databases,
+    clients.databaseId
+  );
 
   const services = {
     customerService: new CustomerService(userRepo),
@@ -57,9 +80,14 @@ async function main() {
     supportService: new SupportService(supportRepo),
   };
 
-  const server = createCustomerMcpServer(services, (extra: unknown) => {
+  const authMode = parseAuthMode(process.env["MCP_AUTH_MODE"]);
+
+  const server = createCustomerMcpServer(services, async (extra: unknown) => {
     const rawMeta = (extra as { meta?: unknown } | null)?.meta;
-    return resolveAuthContextFromMeta(asMetaRecord(rawMeta));
+    return resolveAuthContextFromMeta(asMetaRecord(rawMeta), {
+      mode: authMode,
+      appwriteConfig: config,
+    });
   });
 
   const transport = new StdioServerTransport();
@@ -67,7 +95,7 @@ async function main() {
   console.error("Servidor MCP de AlejoTaller listo y conectado via stdio.");
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error("Error fatal en el servidor MCP:", err);
   process.exit(1);
 });

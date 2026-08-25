@@ -57,9 +57,13 @@ export function registerSystemTools(server: McpServer): void {
             "Panel back-office",
           ],
           securityPolicy: {
-            authMode: "Header X-Customer-Id / MCP Context (JWT planned)",
+            authModes: ["jwt", "jwt_or_header", "header"],
+            preferredAuth: "Authorization: Bearer <appwrite-jwt>",
+            legacyAuth: "X-Customer-Id (+ optional name/email)",
             confirmationRequiredTools,
             writeTools,
+            cors: "MCP_CORS_ORIGINS allowlist (no * recommended in prod with credentials)",
+            rateLimit: "MCP_RATE_LIMIT_RPM per client IP (default 60/min)",
           },
           transport: "streamable-http",
         });

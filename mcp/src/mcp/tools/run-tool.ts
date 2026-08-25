@@ -3,12 +3,13 @@ import { AuthenticationError } from "../../auth/context.js";
 import { getToolPolicy } from "../../policies/tool-policy.js";
 import { mapToolError, type ToolResult } from "./result.js";
 
-export type AuthResolver = (extra: unknown) => McpAuthContext;
+/** Auth may be sync or async (JWT verification hits Appwrite). */
+export type AuthResolver = (
+  extra: unknown
+) => McpAuthContext | Promise<McpAuthContext>;
 
 /**
  * Execute a tool handler with policy + safe error mapping.
- * - requiresAuth: resolve identity before running
- * - always catch and map errors (no stack leakage)
  */
 export async function runTool(
   toolName: string,
@@ -27,7 +28,7 @@ export async function runTool(
           `Tool ${toolName} requires auth but no resolver is configured`
         );
       }
-      auth = getAuthContext(extra);
+      auth = await Promise.resolve(getAuthContext(extra));
     }
 
     return await handler(auth);
@@ -37,7 +38,7 @@ export async function runTool(
 }
 
 /**
- * Convenience for authenticated tools — auth is guaranteed non-null.
+ * Authenticated tools — auth is guaranteed non-null inside handler.
  */
 export async function runAuthedTool(
   toolName: string,
