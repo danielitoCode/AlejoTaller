@@ -1,4 +1,4 @@
-import { type Databases, Query } from "node-appwrite";
+import { type Databases, Query, type Models } from "node-appwrite";
 import type { IProductRepository } from "../../../repositories/product.repository.js";
 import type { Product } from "../../../domain/product.js";
 import { COLLECTIONS } from "../config.js";
@@ -21,22 +21,27 @@ export class AppwriteProductRepository implements IProductRepository {
     const pageSize = 100;
 
     while (true) {
-      const res = await this.databases.listDocuments(
-        this.databaseId,
-        COLLECTIONS.product,
-        [
-          Query.orderDesc("$createdAt"),
-          Query.limit(pageSize),
-          ...(cursor ? [Query.cursorAfter(cursor)] : []),
-        ]
-      );
-      documents.push(
-        ...res.documents.map((d) =>
-          this.toProduct(d as unknown as AppwriteProductDoc)
-        )
-      );
+      const queries = [
+        Query.orderDesc("$createdAt"),
+        Query.limit(pageSize),
+        ...(cursor ? [Query.cursorAfter(cursor)] : []),
+      ];
+
+      const res: Models.DocumentList<Models.Document> =
+        await this.databases.listDocuments(
+          this.databaseId,
+          COLLECTIONS.product,
+          queries
+        );
+
+      for (const doc of res.documents) {
+        documents.push(this.toProduct(doc as unknown as AppwriteProductDoc));
+      }
+
       if (res.documents.length < pageSize) break;
-      cursor = res.documents.at(-1)?.$id ?? null;
+
+      const last = res.documents[res.documents.length - 1];
+      cursor = last?.$id ?? null;
       if (!cursor) break;
     }
 
@@ -61,13 +66,15 @@ export class AppwriteProductRepository implements IProductRepository {
   }
 
   async listByCategory(categoryId: string): Promise<Product[]> {
-    const res = await this.databases.listDocuments(
-      this.databaseId,
-      COLLECTIONS.product,
-      [Query.equal("category_id", categoryId), Query.limit(100)]
-    );
-    return res.documents.map((d) =>
-      this.toProduct(d as unknown as AppwriteProductDoc)
+    const res: Models.DocumentList<Models.Document> =
+      await this.databases.listDocuments(
+        this.databaseId,
+        COLLECTIONS.product,
+        [Query.equal("category_id", categoryId), Query.limit(100)]
+      );
+
+    return res.documents.map((doc: Models.Document) =>
+      this.toProduct(doc as unknown as AppwriteProductDoc)
     );
   }
 
@@ -141,8 +148,7 @@ export class AppwriteProductRepository implements IProductRepository {
         quantity,
         maxReserved
       );
-    } catch (positionalErr) {
-      // Fallback: object params (newer SDKs)
+    } catch {
       return await db.incrementDocumentAttribute({
         databaseId: this.databaseId,
         collectionId: COLLECTIONS.product,
