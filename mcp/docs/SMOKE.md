@@ -12,7 +12,18 @@
 ```bash
 cd mcp
 npm run smoke:health
-# o:
+```
+
+Opcional URL:
+
+```bash
+# Windows PowerShell
+$env:MCP_SMOKE_URL="https://alejotaller-mcp.daniel-imbert96.workers.dev"; npm run smoke:health
+
+# Windows CMD
+set MCP_SMOKE_URL=https://alejotaller-mcp.daniel-imbert96.workers.dev&& npm run smoke:health
+
+# Unix
 MCP_SMOKE_URL=https://alejotaller-mcp.daniel-imbert96.workers.dev npm run smoke:health
 ```
 
@@ -22,14 +33,17 @@ Espera JSON con `status: ok|degraded`, `worker: alejotaller-mcp`, `scope: b2c-cu
 
 ```bash
 npm test
-# incluye test/smoke/tool-registry.smoke.test.ts (18 tools + policies)
 ```
 
-### A3. Live health en vitest (opcional)
+Incluye `test/smoke/tool-registry.smoke.test.ts` (18 tools + policies).
+
+### A3. Live health en vitest
 
 ```bash
-MCP_SMOKE_LIVE=1 npm test -- test/smoke/health.smoke.test.ts
+npm run test:smoke-live
 ```
+
+(Cross-platform: no uses `MCP_SMOKE_LIVE=1` delante en CMD de Windows.)
 
 ---
 
