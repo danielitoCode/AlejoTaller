@@ -5,6 +5,7 @@ Servidor **Model Context Protocol (MCP)** para **clientes B2C** de AlejoTaller
 
 | Ítem | Valor |
 |------|--------|
+| **Estado** | **Cerrado** (2026-08-25) — tools activas y verificadas |
 | **Carpeta canónica** | `AlejoTaller/mcp/` |
 | **Worker name** | `alejotaller-mcp` |
 | **Config deploy** | `mcp/wrangler.json` |
@@ -67,7 +68,7 @@ npm install
 cp .dev.vars.example .dev.vars   # no commit
 npm run typecheck
 npm test
-npm run smoke:health             # GET /health prod
+npm run smoke:health
 ```
 
 CI: `.github/workflows/ci-mcp.yml` → typecheck + tests + smoke health.
@@ -85,6 +86,6 @@ npm run smoke:health
 
 ## Roadmap
 
-Fases **0–6** implementadas en código. Cierre formal (**Fase 7**) tras smoke agente en [SMOKE.md](docs/SMOKE.md).
+Fases **0–7** cerradas. Superficie cliente B2C vía agente lista en prod.
 
 Detalle: [IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md)
