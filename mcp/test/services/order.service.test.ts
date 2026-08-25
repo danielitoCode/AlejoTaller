@@ -30,7 +30,9 @@ describe("OrderService Authorization", () => {
       return orderId === "ord-100" ? mockOrderUserA : null;
     }),
     create: vi.fn(),
-    cancel: vi.fn().mockImplementation(async (orderId) => ({
+    updateVerified: vi.fn(),
+    updateStockHoldApplied: vi.fn(),
+    cancel: vi.fn().mockImplementation(async () => ({
       ...mockOrderUserA,
       status: "DELETED",
     })),

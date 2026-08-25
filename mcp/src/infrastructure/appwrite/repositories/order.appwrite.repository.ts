@@ -14,12 +14,8 @@ import { COLLECTIONS } from "../config.js";
 
 /**
  * Appwrite implementation of IOrderRepository.
- * Maps between the `sale` collection schema and the Order domain entity.
- *
- * Collection schema (Appwrite field names):
- *   date, amount, buy_state, currency, products (JSON string),
- *   user_id, delivery_type, delivery_address (JSON string),
- *   sale_type, stock_hold_applied
+ * Collection schema: date, amount, buy_state, currency, products (JSON),
+ * user_id, delivery_type, delivery_address (JSON), sale_type, stock_hold_applied
  */
 export class AppwriteOrderRepository implements IOrderRepository {
   constructor(
@@ -37,7 +33,9 @@ export class AppwriteOrderRepository implements IOrderRepository {
         Query.limit(100),
       ]
     );
-    return res.documents.map((d) => this.toOrder(d as unknown as AppwriteSaleDoc));
+    return res.documents.map((d) =>
+      this.toOrder(d as unknown as AppwriteSaleDoc)
+    );
   }
 
   async getById(orderId: string): Promise<Order | null> {
@@ -54,8 +52,6 @@ export class AppwriteOrderRepository implements IOrderRepository {
   }
 
   async create(userId: string, input: CreateOrderInput): Promise<Order> {
-    // TODO (Phase 2): Validate stock availability before creating.
-    // TODO (Phase 2): Apply soft-hold (incrementReserved) atomically.
     const items: OrderItem[] = input.items.map((i) => ({
       productId: i.productId,
       productName: null,
@@ -66,7 +62,7 @@ export class AppwriteOrderRepository implements IOrderRepository {
 
     const payload: Record<string, unknown> = {
       date: new Date().toISOString(),
-      amount: 0, // TODO: compute from product prices in Phase 2
+      amount: 0,
       buy_state: "UNVERIFIED",
       currency: input.currency,
       products: JSON.stringify(items),
@@ -89,6 +85,37 @@ export class AppwriteOrderRepository implements IOrderRepository {
     return this.toOrder(doc as unknown as AppwriteSaleDoc);
   }
 
+  async updateVerified(orderId: string, status: OrderStatus): Promise<Order> {
+    if (status === "VERIFIED") {
+      throw new Error(
+        "MCP B2C no puede marcar pedidos como VERIFIED (solo operador/staff)"
+      );
+    }
+
+    const doc = await this.databases.updateDocument(
+      this.databaseId,
+      COLLECTIONS.sale,
+      orderId,
+      { buy_state: status }
+    );
+
+    return this.toOrder(doc as unknown as AppwriteSaleDoc);
+  }
+
+  async updateStockHoldApplied(
+    orderId: string,
+    value: boolean
+  ): Promise<Order> {
+    const doc = await this.databases.updateDocument(
+      this.databaseId,
+      COLLECTIONS.sale,
+      orderId,
+      { stock_hold_applied: value }
+    );
+
+    return this.toOrder(doc as unknown as AppwriteSaleDoc);
+  }
+
   async cancel(orderId: string): Promise<Order> {
     const existing = await this.getById(orderId);
     if (!existing) {
@@ -100,19 +127,8 @@ export class AppwriteOrderRepository implements IOrderRepository {
       );
     }
 
-    const doc = await this.databases.updateDocument(
-      this.databaseId,
-      COLLECTIONS.sale,
-      orderId,
-      { buy_state: "DELETED" }
-    );
-
-    // TODO (Phase 2): Release soft-hold (decrementReserved) for each item.
-
-    return this.toOrder(doc as unknown as AppwriteSaleDoc);
+    return this.updateVerified(orderId, "DELETED");
   }
-
-  // ─── Mapping ────────────────────────────────────────────────────────────
 
   private toOrder(doc: AppwriteSaleDoc): Order {
     let items: OrderItem[] = [];
@@ -155,8 +171,6 @@ export class AppwriteOrderRepository implements IOrderRepository {
     };
   }
 }
-
-// ─── Internal DTO types ──────────────────────────────────────────────────────
 
 interface AppwriteSaleDoc {
   $id: string;
