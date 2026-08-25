@@ -5,6 +5,10 @@ import { CallMcpToolCaseUse } from "../domain/caseuse/CallMcpToolCaseUse";
 import { CheckAgentConnectionCaseUse } from "../domain/caseuse/CheckAgentConnectionCaseUse";
 import { CheckMcpHealthCaseUse } from "../domain/caseuse/CheckMcpHealthCaseUse";
 import { ListMcpToolsCaseUse } from "../domain/caseuse/ListMcpToolsCaseUse";
+import {
+  RunAgentTurnCaseUse,
+  type RunAgentTurnInput,
+} from "../domain/caseuse/RunAgentTurnCaseUse";
 import { SendAgentMessageCaseUse } from "../domain/caseuse/SendAgentMessageCaseUse";
 import type { AgentRepository } from "../domain/repository/agent.repository";
 import type { McpGateway } from "../domain/repository/mcp.gateway";
@@ -35,6 +39,7 @@ const sendMessage = new SendAgentMessageCaseUse(agentRepo);
 const checkMcpHealth = new CheckMcpHealthCaseUse(mcpGateway);
 const listMcpTools = new ListMcpToolsCaseUse(mcpGateway);
 const callMcpTool = new CallMcpToolCaseUse(mcpGateway);
+const runAgentTurn = new RunAgentTurnCaseUse(agentRepo, callMcpTool);
 
 export const agentContainer = {
   repositories: {
@@ -47,6 +52,7 @@ export const agentContainer = {
       text: string,
       history?: Parameters<SendAgentMessageCaseUse["execute"]>[0]["history"]
     ) => sendMessage.execute({ text, history }),
+    runAgentTurn: (input: RunAgentTurnInput) => runAgentTurn.execute(input),
     checkMcpHealth: () => checkMcpHealth.execute(),
     listMcpTools: (auth?: McpAuthContext | null) => listMcpTools.execute(auth),
     callMcpTool: (input: {
