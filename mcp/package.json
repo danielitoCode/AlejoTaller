@@ -14,6 +14,7 @@
     "test:watch": "vitest",
     "test:smoke-live": "node scripts/run-smoke-live.mjs",
     "smoke:health": "node scripts/smoke-health.mjs",
+    "inspect": "npx --yes @modelcontextprotocol/inspector@latest npx --yes tsx src/index.ts",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

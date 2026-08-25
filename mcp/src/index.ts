@@ -1,4 +1,5 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { loadDevVars } from "./infrastructure/load-dev-vars.js";
 import { loadAppwriteConfig } from "./infrastructure/appwrite/config.js";
 import { createAppwriteClients } from "./infrastructure/appwrite/client.js";
 import { AppwriteUserRepository } from "./infrastructure/appwrite/repositories/user.appwrite.repository.js";
@@ -30,6 +31,16 @@ function asMetaRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 async function main(): Promise<void> {
+  // Inspector spawns this process without shell env — load local secrets first.
+  const loaded = loadDevVars();
+  if (loaded) {
+    console.error(`[mcp] Loaded local env from ${loaded}`);
+  } else {
+    console.error(
+      "[mcp] No .dev.vars/.env found in cwd — using process.env only"
+    );
+  }
+
   console.error("Iniciando AlejoTaller Customer MCP Server (Modo local Stdio)...");
 
   let config;
@@ -45,7 +56,12 @@ async function main(): Promise<void> {
   }
 
   if (!config) {
-    throw new Error("Se requiere configuracion Appwrite para iniciar el servidor.");
+    throw new Error(
+      "Se requiere configuracion Appwrite para iniciar el servidor. " +
+        "Crea mcp/.dev.vars (copia de .dev.vars.example) con APPWRITE_ENDPOINT, " +
+        "APPWRITE_PROJECT_ID, APPWRITE_API_KEY, APPWRITE_DATABASE_ID. " +
+        "El Inspector debe arrancarse con cwd = carpeta mcp/."
+    );
   }
 
   const clients = createAppwriteClients(config);
