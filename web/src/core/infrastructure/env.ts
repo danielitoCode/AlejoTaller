@@ -32,4 +32,8 @@ export const ENV = {
     elToqueApiKey: import.meta.env.VITE_EL_TOQUE_API_KEY,
     elToqueApiUrl: import.meta.env.VITE_EL_TOQUE_API_URL,
     directorioCubanoApiUrl: import.meta.env.VITE_DIRECTORIOCUBO_API_URL,
+    // Agent — Mistral Medium (Fase 1). Do not commit real keys.
+    mistralApiKey: import.meta.env.VITE_MISTRAL_API_KEY,
+    mistralAgentId: import.meta.env.VITE_MISTRAL_AGENT_ID,
+    mistralModelId: import.meta.env.VITE_MISTRAL_MODEL_ID,
 }

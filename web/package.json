@@ -32,6 +32,7 @@
     "vitest": "^4.1.0"
   },
   "dependencies": {
+    "@mistralai/mistralai": "^1.10.0",
     "appwrite": "^22.4.0",
     "dexie": "^4.3.0",
     "lucide-svelte": "^0.577.0",
