@@ -1,52 +1,46 @@
 # Checklist cierre MCP Cliente
 
 **Última actualización:** 2026-08-25  
-**Worker:** `alejotaller-mcp`  
-**Fase 0:** ✅ · **Fase 1:** ✅  
-**Siguiente:** Fase 2 (OrderService soft-hold)
+**Worker:** `alejotaller-mcp` → `https://alejotaller-mcp.daniel-imbert96.workers.dev`  
+**Fases 0–6 código:** ✅  
+**Cierre formal:** pendiente firma smoke agente (sección B de [SMOKE.md](./SMOKE.md))
 
-- [PHASE0.md](./PHASE0.md) · [TOOL_MATRIX.md](./TOOL_MATRIX.md) · [DATA_CONTRACT.md](./DATA_CONTRACT.md) · [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md)
+Docs: [PHASE0](./PHASE0.md) · [TOOL_MATRIX](./TOOL_MATRIX.md) · [DATA_CONTRACT](./DATA_CONTRACT.md) · [IMPLEMENTATION_ROADMAP](./IMPLEMENTATION_ROADMAP.md) · [SMOKE](./SMOKE.md)
 
 ---
 
-## 0. Baseline ✓
+## Fases
 
-- [x] Carpeta, worker, secretos, SCOPE B2C, matriz tools, DATA_CONTRACT, health prod
+| Fase | Contenido | Estado |
+|------|-----------|--------|
+| 0 | Contrato / baseline | ✅ |
+| 1 | Product reserved atómico | ✅ |
+| 2 | OrderService soft-hold | ✅ |
+| 3 | Tools result/policy/Zod | ✅ |
+| 4 | JWT / rate-limit / CORS | ✅ |
+| 5 | CI + registry smoke + health script | ✅ |
+| 6 | Guía smoke agente + checklist formal | ✅ código; ⏳ firma manual |
+| 7 | Marca **MCP cliente cerrado** | tras smoke B + deploy verificado |
 
-## 1. Transporte ✓
+---
 
-- [x] Health, Streamable HTTP, CI MCP definido
+## Criterio “MCP cerrado”
 
-## Fase 1 — Datos net ✓
+| Criterio | OK |
+|----------|-----|
+| Deploy estable en workers.dev | [ ] `npm run smoke:health` |
+| `tools/list` / policies 18 tools | [x] registry smoke |
+| Lecturas con identidad correcta | [x] |
+| Mutaciones con confirmación + ownership | [x] |
+| Soft-hold respetado create/cancel | [x] |
+| Auth Fase 1 header + JWT modes | [x] |
+| Tests + smoke health CI | [x] |
+| Docs enlazadas monorepo | [x] |
+| Smoke conversacional agente (B) | [ ] |
 
-- [x] `incrementReserved` / `decrementReserved` / `refreshFromRemote`
-- [x] Order primitives: `updateVerified`, `updateStockHoldApplied`
-- [x] Tests domain + reserved mocks
+---
 
-## 2. Auth — pendiente (Fase 4)
+## Nota de alcance
 
-- [ ] JWT prod, deny sin identidad, rate limit, CORS
-
-## 3. Tools
-
-### 3.4 Pedidos (Fase 2 — en curso)
-- [ ] `create_order` ≈ RegisterNewSaleCaseUse
-- [ ] `cancel_order` ≈ CancelUnverified + ReleaseSoftHold
-- [ ] Lecturas ownership (ya en service)
-
-### Resto
-- [ ] Smoke sistema / perfil / catálogo / soporte
-
-## 4. Policies
-
-- [x] Matriz en código + docs
-- [ ] Audit errores seguros
-
-## 5–7
-
-- [ ] Tests soft-hold service, CI verde, agente, cierre formal
-
-```text
-Hecho:  Fase 0 → Fase 1
-Siguiente: Fase 2 — OrderService.createOrder / cancelOrder con soft-hold
-```
+**No** es Core 3. Es habilitación de superficie **cliente B2C** vía agente.  
+Staff / operador / finance / movements fuera de alcance.

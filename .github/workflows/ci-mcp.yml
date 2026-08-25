@@ -1,4 +1,4 @@
-# CI — Customer MCP Server (typecheck + unit tests)
+# CI — Customer MCP Server (typecheck + unit tests + health smoke)
 name: CI MCP
 
 on:
@@ -57,3 +57,27 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+  smoke-health:
+    name: MCP smoke health (prod worker)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: mcp
+    defaults:
+      run:
+        working-directory: mcp
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Smoke GET /health
+        env:
+          MCP_SMOKE_URL: https://alejotaller-mcp.daniel-imbert96.workers.dev
+          MCP_SMOKE_TIMEOUT_MS: "20000"
+        run: node scripts/smoke-health.mjs
+        # If deploy lags behind master, this can fail until wrangler deploy runs.
+        # workflow_dispatch allows re-run after deploy.

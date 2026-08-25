@@ -11,32 +11,29 @@ Servidor **Model Context Protocol (MCP)** para **clientes B2C** de AlejoTaller
 | **URL prod** | `https://alejotaller-mcp.daniel-imbert96.workers.dev` |
 | **Health** | `GET /health` |
 | **Alcance** | Solo B2C — [docs/SCOPE_B2C.md](docs/SCOPE_B2C.md) |
-| **Transporte** | [docs/TRANSPORT.md](docs/TRANSPORT.md) |
-| **Fase 0** | ✅ [docs/PHASE0.md](docs/PHASE0.md) |
+| **Smoke** | [docs/SMOKE.md](docs/SMOKE.md) |
+| **Cierre** | [docs/CHECKLIST_CLOSE.md](docs/CHECKLIST_CLOSE.md) |
 
-**No** es back-office, **no** es operador, **no** escribe `stock_movements` / `purchase_*` / `sale_finance_event`.
+**No** es back-office, **no** es operador, **no** escribe `stock_movements` / finance.
 
-Dominio de referencia: **`web/src/core/feature/**`** (mismas reglas; MCP = solo capa net + tools).
+Dominio de referencia: **`web/src/core/feature/**`**.
 
 ---
 
-## 1. Arquitectura
+## Arquitectura
 
 ```text
-Agente IA (p. ej. Mistral Medium)
-    → MCP (Streamable HTTP en Workers)
-        → Auth context + policies (cliente)
-            → Services (= case uses web)
-                → Repositories → Appwrite (net)
+Agente IA → MCP (Workers Streamable HTTP)
+  → Auth (JWT | header) + policy + rate-limit + CORS
+    → Services (= case uses web)
+      → Repositories → Appwrite net (soft-hold atómico)
 ```
 
 ---
 
-## 2. Tools (18)
+## Tools (18)
 
-Matriz completa: [docs/TOOL_MATRIX.md](docs/TOOL_MATRIX.md)  
-Schemas: [docs/TOOLS_SPEC.md](docs/TOOLS_SPEC.md)  
-Contrato Appwrite: [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
+[TOOL_MATRIX.md](docs/TOOL_MATRIX.md) · [DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
 
 | Grupo | Tools |
 |-------|--------|
@@ -44,50 +41,50 @@ Contrato Appwrite: [docs/DATA_CONTRACT.md](docs/DATA_CONTRACT.md)
 | Catálogo | `list_products`, `get_product`, `list_categories`, `get_category`, `list_active_promotions` |
 | Perfil | `get_my_profile`, `update_my_profile` |
 | Pedidos | `get_my_orders`, `get_order`, `create_order`*, `cancel_order`* |
-| Soporte | `get_my_support_threads`, `get_support_thread`, `get_thread_messages`, `create_support_thread`, `post_support_message` |
+| Soporte | threads + messages |
 
 \*`requiresConfirmation` + auth.
 
 ---
 
-## 3. Auth
+## Auth (Fase 4)
 
-**Fase 1 (actual):** header `X-Customer-Id` desde el host MCP.  
-**Prod (planificado):** JWT Appwrite — ver roadmap Fase 4.
+| Modo (`MCP_AUTH_MODE`) | Uso |
+|------------------------|-----|
+| `jwt` | `Authorization: Bearer <appwrite-jwt>` (recomendado prod) |
+| `jwt_or_header` | JWT o `X-Customer-Id` (default migración) |
+| `header` | Solo `X-Customer-Id` (host confiable) |
 
-Nunca pasar `userId` como argumento de tool del usuario.
+También: `MCP_CORS_ORIGINS`, `MCP_RATE_LIMIT_RPM`.
 
 ---
 
-## 4. Local
+## Local / CI
 
 ```bash
 cd mcp
 npm install
-cp .dev.vars.example .dev.vars
-npm run dev
+cp .dev.vars.example .dev.vars   # no commit
+npm run typecheck
 npm test
+npm run smoke:health             # GET /health prod
 ```
+
+CI: `.github/workflows/ci-mcp.yml` → typecheck + tests + smoke health.
 
 ---
 
-## 5. Cloudflare
+## Deploy
 
 ```bash
-cd mcp
-npm run deploy
-curl -sS https://alejotaller-mcp.daniel-imbert96.workers.dev/health
+cd mcp && npm run deploy
+npm run smoke:health
 ```
 
 ---
 
-## 6. Roadmap e implementación
+## Roadmap
 
-| Fase | Estado |
-|------|--------|
-| 0 Contrato / baseline | ✅ |
-| 1 Product reserved atómico | ← siguiente |
-| 2 create/cancel = web | pendiente |
-| 3–7 Tools hardening, auth, tests, agente, cierre | [IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md) |
+Fases **0–6** implementadas en código. Cierre formal (**Fase 7**) tras smoke agente en [SMOKE.md](docs/SMOKE.md).
 
-Checklist: [docs/CHECKLIST_CLOSE.md](docs/CHECKLIST_CLOSE.md)
+Detalle: [IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md)

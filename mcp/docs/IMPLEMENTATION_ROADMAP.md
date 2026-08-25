@@ -1,31 +1,32 @@
 # Roadmap de implementación MCP Cliente
 
-**Fases 0–3:** ✅  
-**Fase 4:** ✅ 2026-08-25 — JWT / rate-limit / CORS  
-**Siguiente:** Fase 5–6 (CI smoke + agente) → cierre formal
+| Fase | Estado | Fecha |
+|------|--------|-------|
+| 0 Contrato | ✅ | 2026-08-24 |
+| 1 Product reserved | ✅ | 2026-08-25 |
+| 2 Order soft-hold | ✅ | 2026-08-25 |
+| 3 Tools audit | ✅ | 2026-08-25 |
+| 4 JWT / CORS / RL | ✅ | 2026-08-25 |
+| 5 CI + smoke health | ✅ | 2026-08-25 |
+| 6 Smoke agente (guía) | ✅ docs | 2026-08-25 |
+| 7 Cierre formal | ⏳ firma B | — |
 
 ---
 
-## Fase 4 — Seguridad borde ✅
+## Fase 5 — Tests y CI ✅
 
-- [x] `verifyAppwriteJwt` vía `Account.get()` + `Client.setJWT`
-- [x] Auth modes: `header` | `jwt` | `jwt_or_header` (`MCP_AUTH_MODE`)
-- [x] CORS allowlist (`MCP_CORS_ORIGINS`, reject browser origin no listado)
-- [x] Rate limit por IP (`MCP_RATE_LIMIT_RPM`, default 60/min)
-- [x] AuthResolver async (JWT network call)
-- [x] Tests: cors, rate-limit, resolver header paths
+- [x] `ci-mcp.yml`: typecheck + unit tests
+- [x] Job / step `smoke:health` contra workers.dev
+- [x] `test/smoke/tool-registry.smoke.test.ts` (18 tools)
+- [x] Script `scripts/smoke-health.mjs`
 
-**Env (CF secrets / vars):**
+## Fase 6 — Agente ✅ (guía)
 
-| Variable | Uso |
-|----------|-----|
-| `MCP_AUTH_MODE` | `jwt` recomendado prod; `jwt_or_header` migración |
-| `MCP_CORS_ORIGINS` | `https://host-agente,...` (evitar `*` con credenciales) |
-| `MCP_RATE_LIMIT_RPM` | default 60 |
+- [x] [SMOKE.md](./SMOKE.md) escenarios conversacionales
+- [ ] Ejecución manual + firma en checklist
 
----
+## Fase 7 — Cierre
 
-## Fase 5–7
-
-- [ ] CI estable + smoke agente
-- [ ] Marca **MCP cliente cerrado**
+- [ ] `smoke:health` post-deploy OK
+- [ ] Smoke B firmado
+- [ ] Actualizar CHECKLIST → **MCP cliente cerrado**

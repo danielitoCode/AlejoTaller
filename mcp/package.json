@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:smoke-live": "MCP_SMOKE_LIVE=1 vitest run test/smoke/health.smoke.test.ts",
+    "smoke:health": "node scripts/smoke-health.mjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
