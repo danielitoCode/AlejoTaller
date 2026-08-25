@@ -1,7 +1,6 @@
 package com.elitec.alejotaller
 
 import android.app.Application
-import com.elitec.alejotaller.feature.agent.di.agentFeatureModule
 import com.elitec.alejotaller.feature.auth.di.authFeatureDiModule
 import com.elitec.alejotaller.feature.category.di.categoryFeatureModule
 import com.elitec.alejotaller.feature.exchange.di.exchangeFeatureModule
@@ -34,7 +33,7 @@ class TallerAlejoApp : Application() {
                 settingsFeatureModule,
                 saleFeatureModule,
                 exchangeFeatureModule,
-                agentFeatureModule,
+                // agentFeatureModule — diferido: Fase 1 agent prioriza web; Android se adapta después
             )
         }
         val config = PostHogAndroidConfig(

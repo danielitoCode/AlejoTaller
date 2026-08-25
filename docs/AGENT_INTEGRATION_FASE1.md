@@ -1,18 +1,13 @@
-# Integración Agente — Fase 1 (cerrada en código)
+# Integración Agente — Fase 1
 
-## Decisiones
+## Prioridad
 
-| Tema | Valor |
-|------|--------|
-| Web | `@mistralai/mistralai` |
-| Android | HTTP Ktor → `api.mistral.ai` |
-| Android secrets | `local.properties` → `BuildConfig` |
-| MCP auth | Abierto (cores futuros) |
-| Guest | Solo tools catálogo (policy lista) |
+1. **Web primero** (SDK `@mistralai/mistralai`) — activa.
+2. **Android después** (tú adaptas; código esqueleto puede existir bajo `app/.../feature/agent` pero **no** está registrado en Koin hasta que lo actives).
 
-## Config local
+## Web (activa)
 
-### Web (`web/.env`)
+Env `web/.env`:
 
 ```env
 VITE_MISTRAL_API_KEY=
@@ -24,22 +19,14 @@ VITE_MISTRAL_MODEL_ID=mistral-medium-latest
 cd web && npm install && npm test
 ```
 
-### Android (`local.properties` en raíz Gradle)
+Feature: `web/src/core/feature/agent/`
 
-```properties
-MISTRAL_API_KEY=
-MISTRAL_AGENT_ID=
-MISTRAL_MODEL_ID=mistral-medium-latest
-```
+## Android (diferido)
 
-## Capas
+- `agentFeatureModule` **no** se carga en `TallerAlejoApp`.
+- BuildConfig: `MISTRAL_API_KEY`, `MISTRAL_AGENT_ID`, `MISTRAL_MODEL_ID` listos en `local.properties` cuando retomes.
+- CI Android: `cancel-in-progress: false` para no matar jobs por pushes seguidos.
 
-- **Web:** `web/src/core/feature/agent/`
-- **Android:** `app/.../feature/agent/` + `agentFeatureModule` en Koin
+## Guest tools (Fase 2)
 
-## Smoke manual data-layer
-
-1. `checkConnection` → status OK  
-2. `sendMessage("Hola")` → texto assistant  
-
-Sin UI todavía (Fase 3).
+Solo catálogo/sistema — ver `agent-tool-policy` en web.

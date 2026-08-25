@@ -6,9 +6,13 @@ import com.elitec.alejotaller.feature.agent.domain.entity.AgentRole
 import com.elitec.alejotaller.feature.agent.domain.repository.AgentRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
+import org.junit.Assert.fail
 import org.junit.Test
 
+/**
+ * Unit tests for domain case use only (no HTTP / BuildConfig).
+ * Full agent Android wiring is deferred; web takes priority for Fase 1–2.
+ */
 class SendAgentMessageCaseUseTest {
 
     private val repo = object : AgentRepository {
@@ -32,14 +36,17 @@ class SendAgentMessageCaseUseTest {
 
     @Test
     fun rejectsBlankText() = runTest {
-        assertThrows(IllegalArgumentException::class.java) {
-            kotlinx.coroutines.runBlocking { useCase("  ") }
+        try {
+            useCase("  ")
+            fail("Expected IllegalArgumentException")
+        } catch (_: IllegalArgumentException) {
+            // expected
         }
     }
 
     @Test
     fun delegatesToRepository() = runTest {
-        val reply = useCase("¿Qué productos hay?")
+        val reply = useCase("Que productos hay?")
         assertEquals("Hola", reply.message.content)
     }
 }

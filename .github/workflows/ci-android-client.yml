@@ -32,7 +32,8 @@ on:
 
 concurrency:
   group: ci-android-client-${{ github.ref }}
-  cancel-in-progress: true
+  # false: pushes rápidos ya no cancelan el job a mitad (mensaje «operación cancelada»)
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -41,7 +42,7 @@ jobs:
   android-client:
     name: Cliente tests + compile
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -62,7 +63,12 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Placeholder local.properties
-        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          # Agent keys opcionales (vacías en CI; BuildConfig las inyecta como "")
+          echo "MISTRAL_API_KEY=" >> local.properties
+          echo "MISTRAL_AGENT_ID=" >> local.properties
+          echo "MISTRAL_MODEL_ID=mistral-medium-latest" >> local.properties
 
       - name: Unit tests (:app)
         run: ./gradlew :app:testDebugUnitTest --stacktrace
