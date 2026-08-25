@@ -11,9 +11,15 @@ describe("checkRateLimit", () => {
 
   it("allows under limit", () => {
     const cfg = { maxRequests: 3, windowMs: 60_000 };
-    expect(checkRateLimit("k1", cfg).allowed).toBe(true);
-    expect(checkRateLimit("k1", cfg).allowed).toBe(true);
-    expect(checkRateLimit("k1", cfg).remaining).toBe(1);
+
+    const first = checkRateLimit("k1", cfg);
+    expect(first.allowed).toBe(true);
+    expect(first.remaining).toBe(2);
+
+    // 2nd call still under limit: max=3, used=2 → remaining=1
+    const second = checkRateLimit("k1", cfg);
+    expect(second.allowed).toBe(true);
+    expect(second.remaining).toBe(1);
   });
 
   it("blocks when exceeded", () => {
