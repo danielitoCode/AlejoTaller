@@ -3,139 +3,98 @@ import { z } from "zod";
 import type { OrderService } from "../../services/order.service.js";
 import type { McpAuthContext } from "../../auth/context.js";
 import type { Currency, DeliveryType } from "../../domain/order.js";
+import {
+  okJson,
+  confirmationHint,
+  runAuthedTool,
+  type AuthResolver,
+} from "./barrel.js";
+
+const deliveryAddressSchema = z.object({
+  province: z.string().min(1),
+  municipality: z.string().min(1),
+  mainStreet: z.string().min(1),
+  betweenStreets: z.string().nullable().optional(),
+  phone: z.string().min(1),
+  houseNumber: z.string().min(1),
+  referenceName: z.string().nullable().optional(),
+});
+
+const createOrderSchema = {
+  currency: z.enum(["CUP", "USD", "MLC"]).describe("Moneda de pago"),
+  deliveryType: z
+    .enum(["PICKUP", "DELIVERY"])
+    .describe("Tipo de entrega: PICKUP (recoger) o DELIVERY (envío)"),
+  items: z
+    .array(
+      z.object({
+        productId: z.string().min(1).describe("ID del producto"),
+        quantity: z.number().int().positive().describe("Cantidad deseada"),
+      })
+    )
+    .min(1)
+    .describe("Lista de productos y cantidades"),
+  deliveryAddress: deliveryAddressSchema
+    .optional()
+    .describe("Dirección de entrega (requerida si deliveryType es DELIVERY)"),
+};
 
 /**
- * Order tools — Manage customer orders (pedidos/ventas/reservas).
+ * Order tools — pedidos con soft-hold y ownership B2C.
  */
 export function registerOrderTools(
   server: McpServer,
   orderService: OrderService,
-  getAuthContext: (extra: unknown) => McpAuthContext
+  getAuthContext: AuthResolver
 ): void {
-  // ─── get_my_orders ──────────────────────────────────────────────────────
   server.tool(
     "get_my_orders",
-    "Obtiene la lista de pedidos u órdenes del cliente autenticado actual (tanto pendientes como confirmados o cancelados).",
+    "Obtiene la lista de pedidos del cliente autenticado (pendientes, confirmados o cancelados).",
     {},
-    async (_args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
+    async (_args, extra) =>
+      runAuthedTool("get_my_orders", "Obtener pedidos", extra, getAuthContext, async (auth) => {
         const orders = await orderService.getMyOrders(auth);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(orders, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al obtener pedidos: ${message}` }],
-        };
-      }
-    }
+        return okJson(orders);
+      })
   );
 
-  // ─── get_order ──────────────────────────────────────────────────────────
   server.tool(
     "get_order",
-    "Obtiene los detalles de un pedido específico por su ID. Solo permite ver pedidos del cliente autenticado.",
+    "Obtiene los detalles de un pedido por ID. Solo pedidos del cliente autenticado.",
     {
-      orderId: z.string().describe("Identificador único del pedido (ID de venta)"),
+      orderId: z.string().min(1).describe("Identificador único del pedido (ID de venta)"),
     },
-    async (args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
+    async (args, extra) =>
+      runAuthedTool("get_order", "Consultar pedido", extra, getAuthContext, async (auth) => {
         const order = await orderService.getOrder(auth, args.orderId);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(order, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al consultar el pedido: ${message}` }],
-        };
-      }
-    }
+        return okJson(order);
+      })
   );
 
-  // ─── cancel_order ───────────────────────────────────────────────────────
   server.tool(
     "cancel_order",
-    "Cancela un pedido pendiente (UNVERIFIED) del cliente. Esta acción requiere confirmación previa por parte del usuario.",
+    "Cancela un pedido pendiente (UNVERIFIED) del cliente y libera el soft-hold." +
+      confirmationHint("cancel_order"),
     {
-      orderId: z.string().describe("ID del pedido a cancelar"),
+      orderId: z.string().min(1).describe("ID del pedido a cancelar"),
     },
-    async (args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
+    async (args, extra) =>
+      runAuthedTool("cancel_order", "Cancelar pedido", extra, getAuthContext, async (auth) => {
         const cancelled = await orderService.cancelOrder(auth, args.orderId);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                {
-                  message: `El pedido ${args.orderId} ha sido cancelado con éxito.`,
-                  order: cancelled,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al cancelar el pedido: ${message}` }],
-        };
-      }
-    }
+        return okJson({
+          message: `El pedido ${args.orderId} ha sido cancelado con éxito.`,
+          order: cancelled,
+        });
+      })
   );
 
-  // ─── create_order ───────────────────────────────────────────────────────
   server.tool(
     "create_order",
-    "Crea un nuevo pedido de productos para el cliente autenticado. Esta acción requiere confirmación previa.",
-    {
-      currency: z.enum(["CUP", "USD", "MLC"]).describe("Moneda de pago"),
-      deliveryType: z.enum(["PICKUP", "DELIVERY"]).describe("Tipo de entrega: PICKUP (recoger) o DELIVERY (envío)"),
-      items: z
-        .array(
-          z.object({
-            productId: z.string().describe("ID del producto"),
-            quantity: z.number().int().positive().describe("Cantidad deseada"),
-          })
-        )
-        .min(1)
-        .describe("Lista de productos y cantidades"),
-      deliveryAddress: z
-        .object({
-          province: z.string(),
-          municipality: z.string(),
-          mainStreet: z.string(),
-          betweenStreets: z.string().nullable().optional(),
-          phone: z.string(),
-          houseNumber: z.string(),
-          referenceName: z.string().nullable().optional(),
-        })
-        .optional()
-        .describe("Dirección de entrega (requerida si deliveryType es DELIVERY)"),
-    },
-    async (args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
+    "Crea un pedido UNVERIFIED con soft-hold de stock para el cliente autenticado." +
+      confirmationHint("create_order"),
+    createOrderSchema,
+    async (args, extra) =>
+      runAuthedTool("create_order", "Crear pedido", extra, getAuthContext, async (auth: McpAuthContext) => {
         const order = await orderService.createOrder(auth, {
           currency: args.currency as Currency,
           deliveryType: args.deliveryType as DeliveryType,
@@ -153,28 +112,10 @@ export function registerOrderTools(
             : undefined,
         });
 
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                {
-                  message: "Pedido creado correctamente (pendiente de confirmación)",
-                  order,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al crear el pedido: ${message}` }],
-        };
-      }
-    }
+        return okJson({
+          message: "Pedido creado correctamente (pendiente de confirmación del taller).",
+          order,
+        });
+      })
   );
 }

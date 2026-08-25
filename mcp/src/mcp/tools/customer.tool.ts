@@ -1,80 +1,56 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { CustomerService } from "../../services/customer.service.js";
-import type { McpAuthContext } from "../../auth/context.js";
+import { okJson, runAuthedTool, type AuthResolver } from "./barrel.js";
 
 /**
- * Customer tools — Profile management.
+ * Customer tools — perfil B2C.
  */
 export function registerCustomerTools(
   server: McpServer,
   customerService: CustomerService,
-  getAuthContext: (extra: unknown) => McpAuthContext
+  getAuthContext: AuthResolver
 ): void {
-  // ─── get_my_profile ─────────────────────────────────────────────────────
   server.tool(
     "get_my_profile",
-    "Obtiene la información del perfil del cliente autenticado actual (nombre, email, teléfono, etc.). No requiere parámetros.",
+    "Obtiene el perfil del cliente autenticado (nombre, email, teléfono, etc.).",
     {},
-    async (_args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
+    async (_args, extra) =>
+      runAuthedTool("get_my_profile", "Obtener perfil", extra, getAuthContext, async (auth) => {
         const profile = await customerService.getMyProfile(auth);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(profile, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al obtener el perfil: ${message}` }],
-        };
-      }
-    }
+        return okJson(profile);
+      })
   );
 
-  // ─── update_my_profile ──────────────────────────────────────────────────
   server.tool(
     "update_my_profile",
-    "Actualiza la información permitida del perfil del cliente (nombre, teléfono, URL de foto).",
+    "Actualiza datos permitidos del perfil (nombre, teléfono, URL de foto).",
     {
-      name: z.string().optional().describe("Nuevo nombre del cliente"),
-      phone: z.string().optional().describe("Nuevo número de teléfono"),
-      photoUrl: z.string().url().optional().describe("URL de la foto de perfil"),
+      name: z.string().min(1).optional().describe("Nuevo nombre del cliente"),
+      phone: z.string().min(1).optional().describe("Nuevo número de teléfono"),
+      photoUrl: z
+        .string()
+        .url()
+        .optional()
+        .describe("URL de la foto de perfil"),
     },
-    async (args, extra) => {
-      try {
-        const auth = getAuthContext(extra);
-        const updated = await customerService.updateMyProfile(auth, args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                {
-                  message: "Perfil actualizado correctamente",
-                  profile: updated,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [
-            { type: "text", text: `Error al actualizar el perfil: ${message}` },
-          ],
-        };
-      }
-    }
+    async (args, extra) =>
+      runAuthedTool(
+        "update_my_profile",
+        "Actualizar perfil",
+        extra,
+        getAuthContext,
+        async (auth) => {
+          const updated = await customerService.updateMyProfile(auth, {
+            name: args.name,
+            phone: args.phone,
+            photoUrl: args.photoUrl,
+          });
+          return okJson({
+            message: "Perfil actualizado correctamente",
+            profile: updated,
+          });
+        }
+      )
   );
 }

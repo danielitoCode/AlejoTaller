@@ -1,36 +1,22 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { PromotionService } from "../../services/promotion.service.js";
+import { okJson, runTool } from "./barrel.js";
 
 /**
- * Promotion tools — Active promotions catalog.
+ * Promotion tools — catálogo público de promociones activas.
  */
 export function registerPromotionTools(
   server: McpServer,
   promotionService: PromotionService
 ): void {
-  // ─── list_active_promotions ──────────────────────────────────────────────
   server.tool(
     "list_active_promotions",
-    "Obtiene la lista de promociones y ofertas vigentes de AlejoTaller (descuentos en productos y avisos especiales).",
+    "Lista promociones y ofertas vigentes de AlejoTaller.",
     {},
-    async (_args, _extra) => {
-      try {
+    async (_args, extra) =>
+      runTool("list_active_promotions", "Listar promociones", extra, null, async () => {
         const promotions = await promotionService.listActivePromotions();
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(promotions, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al listar promociones: ${message}` }],
-        };
-      }
-    }
+        return okJson(promotions);
+      })
   );
 }

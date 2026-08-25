@@ -5,7 +5,7 @@ import type { ProductService } from "../../services/product.service.js";
 import type { CategoryService } from "../../services/category.service.js";
 import type { PromotionService } from "../../services/promotion.service.js";
 import type { SupportService } from "../../services/support.service.js";
-import type { McpAuthContext } from "../../auth/context.js";
+import type { AuthResolver } from "./barrel.js";
 
 import { registerSystemTools } from "./system.tool.js";
 import { registerCustomerTools } from "./customer.tool.js";
@@ -26,7 +26,7 @@ export interface ServicesContainer {
 export function registerAllTools(
   server: McpServer,
   services: ServicesContainer,
-  getAuthContext: (extra: unknown) => McpAuthContext
+  getAuthContext: AuthResolver
 ): void {
   registerSystemTools(server);
   registerCustomerTools(server, services.customerService, getAuthContext);

@@ -2,140 +2,75 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { ProductService } from "../../services/product.service.js";
 import type { CategoryService } from "../../services/category.service.js";
+import { okJson, failText, runTool } from "./barrel.js";
 
 /**
- * Product & Category tools — Explore catalog.
+ * Product & Category tools — catálogo público (sin auth).
  */
 export function registerProductTools(
   server: McpServer,
   productService: ProductService,
   categoryService: CategoryService
 ): void {
-  // ─── list_products ──────────────────────────────────────────────────────
   server.tool(
     "list_products",
-    "Consulta el catálogo de productos disponibles en AlejoTaller (precios, disponibilidad, fotos y categoría).",
+    "Consulta el catálogo de productos (precio, disponibilidad = existence − reserved, categoría).",
     {
       categoryId: z
         .string()
+        .min(1)
         .optional()
-        .describe("Filtrar productos opcionalmente por ID de categoría"),
+        .describe("Filtrar productos por ID de categoría"),
     },
-    async (args, _extra) => {
-      try {
+    async (args, extra) =>
+      runTool("list_products", "Listar productos", extra, null, async () => {
         const products = args.categoryId
           ? await productService.listByCategory(args.categoryId)
           : await productService.listProducts();
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(products, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al listar productos: ${message}` }],
-        };
-      }
-    }
+        return okJson(products);
+      })
   );
 
-  // ─── get_product ────────────────────────────────────────────────────────
   server.tool(
     "get_product",
-    "Obtiene los detalles completos de un producto específico por su ID.",
+    "Obtiene los detalles de un producto por su ID.",
     {
-      productId: z.string().describe("ID único del producto"),
+      productId: z.string().min(1).describe("ID único del producto"),
     },
-    async (args, _extra) => {
-      try {
+    async (args, extra) =>
+      runTool("get_product", "Obtener producto", extra, null, async () => {
         const product = await productService.getProduct(args.productId);
         if (!product) {
-          return {
-            isError: true,
-            content: [{ type: "text", text: `Producto no encontrado: ${args.productId}` }],
-          };
+          return failText(`Producto no encontrado: ${args.productId}`);
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(product, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al obtener producto: ${message}` }],
-        };
-      }
-    }
+        return okJson(product);
+      })
   );
 
-  // ─── list_categories ────────────────────────────────────────────────────
   server.tool(
     "list_categories",
-    "Obtiene la lista de categorías activas de productos y servicios de AlejoTaller.",
+    "Lista las categorías activas de productos y servicios de AlejoTaller.",
     {},
-    async (_args, _extra) => {
-      try {
+    async (_args, extra) =>
+      runTool("list_categories", "Listar categorías", extra, null, async () => {
         const categories = await categoryService.listCategories();
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(categories, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al listar categorías: ${message}` }],
-        };
-      }
-    }
+        return okJson(categories);
+      })
   );
 
-  // ─── get_category ───────────────────────────────────────────────────────
   server.tool(
     "get_category",
-    "Obtiene la información de una categoría específica por su ID.",
+    "Obtiene una categoría por su ID.",
     {
-      categoryId: z.string().describe("ID de la categoría"),
+      categoryId: z.string().min(1).describe("ID de la categoría"),
     },
-    async (args, _extra) => {
-      try {
+    async (args, extra) =>
+      runTool("get_category", "Obtener categoría", extra, null, async () => {
         const category = await categoryService.getCategory(args.categoryId);
         if (!category) {
-          return {
-            isError: true,
-            content: [{ type: "text", text: `Categoría no encontrada: ${args.categoryId}` }],
-          };
+          return failText(`Categoría no encontrada: ${args.categoryId}`);
         }
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(category, null, 2),
-            },
-          ],
-        };
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : String(err);
-        return {
-          isError: true,
-          content: [{ type: "text", text: `Error al obtener categoría: ${message}` }],
-        };
-      }
-    }
+        return okJson(category);
+      })
   );
 }
