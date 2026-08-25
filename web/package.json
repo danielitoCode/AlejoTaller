@@ -12,7 +12,9 @@
     "test:unit": "vitest run --config vitest.config.ts",
     "test:unit:watch": "vitest --config vitest.config.ts",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
-    "test:ui": "vitest --config vitest.config.ts --ui"
+    "test:ui": "vitest --config vitest.config.ts --ui",
+    "smoke:agent": "node scripts/smoke-agent-mistral.mjs",
+    "smoke:agent:strict": "AGENT_SMOKE_STRICT=1 node scripts/smoke-agent-mistral.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/google-sans-flex": "^5.2.1",
