@@ -78,7 +78,7 @@
         <p class="hint">Las acciones que modifican datos (crear/cancelar pedido) pedirán confirmación.</p>
       </div>
     {:else}
-      {#each bubbles as b (b.id)}
+      {#each bubbles as b (b.id)
         <article
           class="bubble"
           class:user={b.role === "user"}
@@ -140,11 +140,14 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    max-height: 100%;
     min-height: 0;
     max-width: 720px;
     margin: 0 auto;
-    padding: 12px 16px 16px;
-    gap: 12px;
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
+    gap: 10px;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .head {
@@ -370,15 +373,19 @@
     gap: 10px;
     align-items: flex-end;
     flex-shrink: 0;
-    padding-top: 6px;
+    flex-grow: 0;
+    padding: 8px 0 4px;
+    margin: 0;
     border-top: 1px solid color-mix(in srgb, var(--m3c-outline-variant, #c4c8be) 55%, transparent);
+    background: inherit;
+    z-index: 1;
   }
 
   .composer textarea {
     flex: 1;
     resize: none;
-    min-height: 52px;
-    max-height: 140px;
+    min-height: 48px;
+    max-height: 120px;
     padding: 12px 14px;
     border-radius: 14px;
     border: 1px solid var(--m3c-outline-variant, #c4c8be);
@@ -387,6 +394,7 @@
     font: inherit;
     font-size: 0.95rem;
     line-height: 1.4;
+    box-sizing: border-box;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
