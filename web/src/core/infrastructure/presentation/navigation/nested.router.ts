@@ -11,3 +11,4 @@ export const supportDetail = { path: "support-detail" };
 export const sales = { path: "sales" };
 export const salesDetail = { path: "sales-detail" };
 export const productDetail = { path: "product-detail" };
+export const agent = { path: "agent" };
