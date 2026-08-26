@@ -25,7 +25,7 @@
     if (listEl) listEl.scrollTop = listEl.scrollHeight;
   }
 
-  $: if (bubbles.length) scrollToBottom();
+  $: if (bubbles.length || sending) scrollToBottom();
 
   onMount(() => {
     void navController;
@@ -54,7 +54,9 @@
 <section class="agent-chat" aria-label="Asistente AlejoTaller">
   <header class="head">
     <div class="title-row">
-      <Icon icon={smartToyIcon} />
+      <span class="avatar" aria-hidden="true">
+        <Icon icon={smartToyIcon} />
+      </span>
       <div>
         <h1>Asistente</h1>
         <p class="sub">Catálogo, pedidos y ayuda · confirmación en escrituras</p>
@@ -67,8 +69,11 @@
   </header>
 
   <div class="messages" bind:this={listEl} role="log" aria-live="polite">
-    {#if bubbles.length === 0}
+    {#if bubbles.length === 0 && !sending}
       <div class="empty">
+        <span class="empty-icon" aria-hidden="true">
+          <Icon icon={smartToyIcon} />
+        </span>
         <p>Pregunta por productos, categorías o el estado de un pedido.</p>
         <p class="hint">Las acciones que modifican datos (crear/cancelar pedido) pedirán confirmación.</p>
       </div>
@@ -89,7 +94,12 @@
       {/each}
     {/if}
     {#if sending && !confirming}
-      <div class="typing" aria-hidden="true">Escribiendo…</div>
+      <div class="typing" aria-live="polite" aria-label="El asistente está escribiendo">
+        <span class="typing-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span class="typing-label">Escribiendo…</span>
+      </div>
     {/if}
   </div>
 
@@ -134,7 +144,7 @@
     max-width: 720px;
     margin: 0 auto;
     padding: 12px 16px 16px;
-    gap: 10px;
+    gap: 12px;
   }
 
   .head {
@@ -143,22 +153,37 @@
     justify-content: space-between;
     gap: 12px;
     flex-shrink: 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--m3c-outline-variant, #c4c8be) 55%, transparent);
   }
 
   .title-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+  }
+
+  .avatar {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--m3c-primary-container, #c8e6c9);
+    color: var(--m3c-on-primary-container, #102015);
+    flex-shrink: 0;
   }
 
   .title-row h1 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
   }
 
   .sub {
     margin: 2px 0 0;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     color: var(--m3c-on-surface-variant, #44483e);
   }
 
@@ -169,27 +194,64 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding: 8px 4px;
+    padding: 8px 6px 8px 2px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--m3c-outline-variant, #c4c8be) 80%, transparent) transparent;
+  }
+
+  .messages::-webkit-scrollbar {
+    width: 8px;
+  }
+  .messages::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+  .messages::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--m3c-outline-variant, #c4c8be) 70%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .messages::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--m3c-on-surface-variant, #44483e) 45%, transparent);
+    background-clip: padding-box;
+    border: 2px solid transparent;
   }
 
   .empty {
     margin: auto;
     text-align: center;
     color: var(--m3c-on-surface-variant, #44483e);
-    padding: 24px;
+    padding: 28px 20px;
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+  }
+
+  .empty-icon {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--m3c-primary-container, #c8e6c9) 70%, transparent);
+    color: var(--m3c-on-primary-container, #102015);
+    margin-bottom: 6px;
   }
 
   .empty .hint {
     font-size: 0.85rem;
     opacity: 0.85;
+    max-width: 320px;
   }
 
   .bubble {
     max-width: min(92%, 520px);
-    padding: 10px 14px;
-    border-radius: 14px;
+    padding: 11px 14px;
+    border-radius: 16px;
     font-size: 0.95rem;
-    line-height: 1.45;
+    line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -231,9 +293,55 @@
 
   .typing {
     align-self: flex-start;
-    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    background: var(--m3c-surface-container, #edf1eb);
     color: var(--m3c-on-surface-variant, #44483e);
-    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+
+  .typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .typing-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--m3c-primary, #388e3c);
+    opacity: 0.45;
+    animation: typing-bounce 1.2s ease-in-out infinite;
+  }
+
+  .typing-dots span:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+
+  .typing-dots span:nth-child(3) {
+    animation-delay: 0.36s;
+  }
+
+  @keyframes typing-bounce {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.35;
+    }
+    30% {
+      transform: translateY(-5px);
+      opacity: 1;
+    }
+  }
+
+  .typing-label {
+    font-weight: 500;
   }
 
   .error-bar {
@@ -262,25 +370,33 @@
     gap: 10px;
     align-items: flex-end;
     flex-shrink: 0;
-    padding-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--m3c-outline-variant, #c4c8be) 55%, transparent);
   }
 
   .composer textarea {
     flex: 1;
     resize: none;
-    min-height: 48px;
-    max-height: 120px;
+    min-height: 52px;
+    max-height: 140px;
     padding: 12px 14px;
-    border-radius: 12px;
+    border-radius: 14px;
     border: 1px solid var(--m3c-outline-variant, #c4c8be);
     background: var(--m3c-surface, #fff);
     color: var(--m3c-on-surface, #1a1c19);
     font: inherit;
     font-size: 0.95rem;
+    line-height: 1.4;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .composer textarea:focus {
-    outline: 2px solid var(--m3c-primary, #388e3c);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--m3c-primary, #388e3c);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--m3c-primary, #388e3c) 22%, transparent);
+  }
+
+  .composer textarea:disabled {
+    opacity: 0.7;
   }
 </style>
