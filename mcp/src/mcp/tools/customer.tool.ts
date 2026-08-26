@@ -13,7 +13,10 @@ export function registerCustomerTools(
 ): void {
   server.tool(
     "get_my_profile",
-    "Obtiene el perfil del cliente autenticado (nombre, email, teléfono, etc.).",
+    [
+      "Obtiene el perfil del cliente autenticado en AlejoTaller (nombre, email, teléfono, foto, etc.).",
+      "Úsala cuando el usuario diga: mi perfil, mis datos, quién soy, mi cuenta, mi teléfono, mi email.",
+    ].join("\n"),
     {},
     async (_args, extra) =>
       runAuthedTool("get_my_profile", "Obtener perfil", extra, getAuthContext, async (auth) => {
@@ -24,7 +27,10 @@ export function registerCustomerTools(
 
   server.tool(
     "update_my_profile",
-    "Actualiza datos permitidos del perfil (nombre, teléfono, URL de foto).",
+    [
+      "Actualiza datos permitidos del perfil en AlejoTaller (nombre, teléfono, URL de foto).",
+      "Úsala cuando el usuario pida cambiar su nombre, teléfono o foto de perfil.",
+    ].join("\n"),
     {
       name: z.string().min(1).optional().describe("Nuevo nombre del cliente"),
       phone: z.string().min(1).optional().describe("Nuevo número de teléfono"),

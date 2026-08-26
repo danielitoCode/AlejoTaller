@@ -49,7 +49,17 @@ export function registerOrderTools(
 ): void {
   server.tool(
     "get_my_orders",
-    "Obtiene la lista de pedidos del cliente autenticado (pendientes, confirmados o cancelados).",
+    [
+      "Obtiene EXCLUSIVAMENTE los pedidos/reservas/compras del cliente autenticado dentro de AlejoTaller",
+      "(pendientes UNVERIFIED, confirmados o cancelados).",
+      "",
+      "Úsala cuando el usuario pregunte por:",
+      "- mis pedidos / mis compras / mis órdenes",
+      "- mis reservas (en AlejoTaller = pedidos, NO vuelos ni hoteles)",
+      "- qué he comprado / pedidos pendientes / estado de mi pedido",
+      "",
+      "NO representa reservas de vuelos, hoteles, restaurantes, transporte ni servicios externos.",
+    ].join("\n"),
     {},
     async (_args, extra) =>
       runAuthedTool("get_my_orders", "Obtener pedidos", extra, getAuthContext, async (auth) => {
@@ -60,7 +70,11 @@ export function registerOrderTools(
 
   server.tool(
     "get_order",
-    "Obtiene los detalles de un pedido por ID. Solo pedidos del cliente autenticado.",
+    [
+      "Obtiene los detalles de UN pedido/reserva de AlejoTaller por ID.",
+      "Solo pedidos del cliente autenticado.",
+      "Úsala cuando el usuario dé un ID concreto de pedido o quiera el detalle de una reserva/compra en el taller.",
+    ].join("\n"),
     {
       orderId: z.string().min(1).describe("Identificador único del pedido (ID de venta)"),
     },
@@ -73,8 +87,10 @@ export function registerOrderTools(
 
   server.tool(
     "cancel_order",
-    "Cancela un pedido pendiente (UNVERIFIED) del cliente y libera el soft-hold." +
-      confirmationHint("cancel_order"),
+    [
+      "Cancela un pedido/reserva pendiente (UNVERIFIED) del cliente en AlejoTaller y libera el soft-hold de stock.",
+      "Úsala cuando el usuario pida cancelar un pedido o una reserva del taller.",
+    ].join("\n") + confirmationHint("cancel_order"),
     {
       orderId: z.string().min(1).describe("ID del pedido a cancelar"),
     },
@@ -90,8 +106,11 @@ export function registerOrderTools(
 
   server.tool(
     "create_order",
-    "Crea un pedido UNVERIFIED con soft-hold de stock para el cliente autenticado." +
-      confirmationHint("create_order"),
+    [
+      "Crea un pedido/reserva UNVERIFIED con soft-hold de stock para el cliente en AlejoTaller.",
+      "Úsala cuando el usuario quiera comprar, reservar o pedir productos del taller.",
+      "No es para reservas de vuelos, hoteles ni servicios externos.",
+    ].join("\n") + confirmationHint("create_order"),
     createOrderSchema,
     async (args, extra) =>
       runAuthedTool("create_order", "Crear pedido", extra, getAuthContext, async (auth: McpAuthContext) => {

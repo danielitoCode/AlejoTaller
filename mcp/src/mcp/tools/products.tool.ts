@@ -14,7 +14,10 @@ export function registerProductTools(
 ): void {
   server.tool(
     "list_products",
-    "Consulta el catálogo de productos (precio, disponibilidad = existence − reserved, categoría).",
+    [
+      "Consulta el catálogo de productos de AlejoTaller (precio, disponibilidad = existence − reserved, categoría).",
+      "Úsala cuando el usuario pregunte por productos, artículos, catálogo, qué venden, precios o disponibilidad.",
+    ].join("\n"),
     {
       categoryId: z
         .string()
@@ -33,7 +36,10 @@ export function registerProductTools(
 
   server.tool(
     "get_product",
-    "Obtiene los detalles de un producto por su ID.",
+    [
+      "Obtiene los detalles de un producto de AlejoTaller por su ID.",
+      "Úsala cuando el usuario pida el detalle de un artículo concreto del catálogo.",
+    ].join("\n"),
     {
       productId: z.string().min(1).describe("ID único del producto"),
     },
@@ -49,7 +55,10 @@ export function registerProductTools(
 
   server.tool(
     "list_categories",
-    "Lista las categorías activas de productos y servicios de AlejoTaller.",
+    [
+      "Lista las categorías activas de productos y servicios de AlejoTaller.",
+      "Úsala cuando el usuario pregunte por categorías, rubros o tipos de productos.",
+    ].join("\n"),
     {},
     async (_args, extra) =>
       runTool("list_categories", "Listar categorías", extra, null, async () => {
@@ -60,7 +69,7 @@ export function registerProductTools(
 
   server.tool(
     "get_category",
-    "Obtiene una categoría por su ID.",
+    "Obtiene una categoría de AlejoTaller por su ID.",
     {
       categoryId: z.string().min(1).describe("ID de la categoría"),
     },

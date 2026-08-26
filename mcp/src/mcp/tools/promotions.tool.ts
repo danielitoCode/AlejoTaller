@@ -11,7 +11,10 @@ export function registerPromotionTools(
 ): void {
   server.tool(
     "list_active_promotions",
-    "Lista promociones y ofertas vigentes de AlejoTaller.",
+    [
+      "Lista promociones y ofertas vigentes exclusivamente de AlejoTaller.",
+      "Úsala cuando el usuario pregunte por promociones, ofertas, descuentos o especiales del taller.",
+    ].join("\n"),
     {},
     async (_args, extra) =>
       runTool("list_active_promotions", "Listar promociones", extra, null, async () => {

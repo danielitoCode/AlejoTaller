@@ -4,6 +4,7 @@ import type {
   AgentReply,
 } from "../../domain/entity/AgentMessage";
 import type { AgentRepository } from "../../domain/repository/agent.repository";
+import { ALEJOTALLER_AGENT_SYSTEM_POLICY } from "../../domain/policy/agent-system-policy";
 
 export interface MistralAgentConfig {
   apiKey: string;
@@ -45,6 +46,9 @@ function extractTextContent(content: unknown): string {
  *
  * - Probe: GET /v1/models/{model_id}
  * - Chat:  POST /v1/agents/completions
+ *
+ * En cada turno se inyecta ALEJOTALLER_AGENT_SYSTEM_POLICY como mensaje system
+ * para acotar el dominio (tool-first + sin reservas externas).
  */
 export class AgentMistralRepository implements AgentRepository {
   constructor(private readonly config: MistralAgentConfig) {}
@@ -114,10 +118,20 @@ export class AgentMistralRepository implements AgentRepository {
       );
     }
 
-    const messages: Array<{ role: string; content: string }> = [];
+    const messages: Array<{ role: string; content: string }> = [
+      { role: "system", content: ALEJOTALLER_AGENT_SYSTEM_POLICY },
+    ];
+
     if (history?.length) {
       for (const h of history) {
         if (h.role === "user" || h.role === "assistant" || h.role === "system") {
+          // Avoid duplicating our domain policy if already present in history
+          if (
+            h.role === "system" &&
+            h.content.includes("asistente virtual oficial de AlejoTaller")
+          ) {
+            continue;
+          }
           messages.push({ role: h.role, content: h.content });
         }
       }

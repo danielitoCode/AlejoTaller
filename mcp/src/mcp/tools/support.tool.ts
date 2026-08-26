@@ -14,7 +14,10 @@ export function registerSupportTools(
 ): void {
   server.tool(
     "get_my_support_threads",
-    "Lista los tickets de soporte del cliente autenticado.",
+    [
+      "Lista los tickets de soporte del cliente autenticado en AlejoTaller.",
+      "Úsala cuando el usuario pregunte por: mis tickets, mi soporte, mis consultas, estado de mi reclamación.",
+    ].join("\n"),
     {},
     async (_args, extra) =>
       runAuthedTool(
@@ -31,7 +34,7 @@ export function registerSupportTools(
 
   server.tool(
     "get_support_thread",
-    "Obtiene un ticket de soporte por ID (solo propios).",
+    "Obtiene un ticket de soporte de AlejoTaller por ID (solo propios).",
     {
       threadId: z.string().min(1).describe("ID del hilo de soporte"),
     },
@@ -50,7 +53,7 @@ export function registerSupportTools(
 
   server.tool(
     "get_thread_messages",
-    "Historial de mensajes de un ticket propio.",
+    "Historial de mensajes de un ticket propio en AlejoTaller.",
     {
       threadId: z.string().min(1).describe("ID del hilo de soporte"),
     },
@@ -69,7 +72,10 @@ export function registerSupportTools(
 
   server.tool(
     "create_support_thread",
-    "Abre un nuevo ticket de soporte con el equipo de AlejoTaller.",
+    [
+      "Abre un nuevo ticket de soporte con el equipo de AlejoTaller.",
+      "Úsala cuando el usuario pida ayuda, reporte un problema, o quiera contactar soporte del taller.",
+    ].join("\n"),
     {
       reason: z
         .enum(["soporte", "pregunta_tecnica", "facturacion", "otro"])
@@ -99,7 +105,7 @@ export function registerSupportTools(
 
   server.tool(
     "post_support_message",
-    "Envía un mensaje en un ticket de soporte existente (propio).",
+    "Envía un mensaje en un ticket de soporte existente (propio) de AlejoTaller.",
     {
       threadId: z.string().min(1).describe("ID del hilo de soporte"),
       body: z.string().min(1).describe("Contenido del mensaje"),
