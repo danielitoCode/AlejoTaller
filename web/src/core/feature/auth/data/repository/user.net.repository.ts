@@ -51,6 +51,7 @@ export class UserNetRepositoryImpl implements UserNetRepository {
         await this.account.updatePrefs({
             photo_url: user.photo_url as string,
             photoUrl: user.photo_url as string,
+            avatarUrl: user.photo_url as string,
             sub: user.sub as string,
             name: user.name as string,
             role: user.role as string,
@@ -66,12 +67,27 @@ export class UserNetRepositoryImpl implements UserNetRepository {
         await this.account.updatePassword(newPassword, oldPassword);
     }
 
-    async updatePhotoUrl(newPhotoUrl: string): Promise<void> {
+    /**
+     * Appwrite `updatePrefs` replaces the whole prefs object — always merge.
+     */
+    private async mergePrefs(partial: Record<string, unknown>): Promise<void> {
+        const current = await this.account.get();
+        const existing =
+            current.prefs && typeof current.prefs === "object"
+                ? { ...(current.prefs as Record<string, unknown>) }
+                : {};
         await this.account.updatePrefs({
+            ...existing,
+            ...partial,
+        });
+    }
+
+    async updatePhotoUrl(newPhotoUrl: string): Promise<void> {
+        await this.mergePrefs({
             photo_url: newPhotoUrl,
             photoUrl: newPhotoUrl,
-            avatarUrl: newPhotoUrl
-        })
+            avatarUrl: newPhotoUrl,
+        });
     }
 
     async linkGoogle(sub: string, photoUrl: string, name: string): Promise<void> {
@@ -92,19 +108,23 @@ export class UserNetRepositoryImpl implements UserNetRepository {
             prefs.photoUrl = photoUrl;
             prefs.avatarUrl = photoUrl;
         }
-        await this.account.updatePrefs(prefs);
+        const existing =
+            current.prefs && typeof current.prefs === "object"
+                ? { ...(current.prefs as Record<string, unknown>) }
+                : {};
+        await this.account.updatePrefs({ ...existing, ...prefs });
     }
 
     async updatePhone(newPhone: string): Promise<void> {
-        await this.account.updatePrefs({
+        await this.mergePrefs({
             phone: newPhone
-        })
+        });
     }
 
     async updateRole(newRole: string): Promise<void> {
-        await this.account.updatePrefs({
+        await this.mergePrefs({
             role: newRole
-        })
+        });
     }
 
     async deleteUser(user: Partial<UserDTO>) {
