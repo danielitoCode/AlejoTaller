@@ -78,7 +78,7 @@
         <p class="hint">Las acciones que modifican datos (crear/cancelar pedido) pedirán confirmación.</p>
       </div>
     {:else}
-      {#each bubbles as b (b.id)
+      {#each bubbles as b (b.id)}
         <article
           class="bubble"
           class:user={b.role === "user"}
