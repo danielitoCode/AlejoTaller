@@ -79,7 +79,25 @@
 
     const internalNavController = rememberNavController(dashboard.path);
     const userId = navBackStackEntry?.args?.id ?? "usuario";
+    const APP_VERSION = (import.meta as any).env?.VITE_APP_VERSION ?? "0.3.0";
     let currentUser: Promise<any> | null = null;
+    let resolvedUser: { name?: string; prefs?: Record<string, unknown> } | null = null;
+
+    function resolveAvatarUrl(user: any): string {
+        if (!user?.prefs) return "";
+        const pr = user.prefs as Record<string, unknown>;
+        for (const k of ["avatarUrl", "photo_url", "photoUrl", "avatar"]) {
+            if (typeof pr[k] === "string" && (pr[k] as string).trim()) return (pr[k] as string).trim();
+        }
+        return "";
+    }
+
+    function userInitials(name: string | undefined): string {
+        const n = (name || "U").trim();
+        const parts = n.split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return n.slice(0, 2).toUpperCase();
+    }
 
     const items = [
         { label: "Productos", path: dashboard.path, icon: storefrontIcon, badge: 0 },
@@ -296,10 +314,12 @@
                     if (!hasProductDeeplink) {
                         internalNavController.resetTo(dashboard.path);
                     }
+                    resolvedUser = { name: "Visitante" };
                     return { name: "Visitante", email: "" };
                 }
 
                 sessionStore.setAuthenticatedSession();
+                resolvedUser = user;
                 // Tras auth real: badge Soporte (evita race con isGuest en onMount)
                 startSupportBadgePipeline();
                 promotionStore.syncAll().catch(() => {
@@ -320,6 +340,7 @@
             })
             .catch(() => {
                 forceVisitorMode();
+                resolvedUser = { name: "Visitante" };
                 if (import.meta.env.DEV) {
                     logNavAuthCheck(false, true, "force-visitor-no-session");
                 }
@@ -375,22 +396,10 @@
         <div class="panel-card">
             <header class="panel-head">
                 <div class="brand">
-                    <img src="/alejoicon_clean.svg" alt="Logo" class="brand-logo" />
+                    <img src="/alejoicon_clean.svg" alt="Logo AlejoTaller" class="brand-logo" />
                     <div class="brand-meta">
                         <h2>Taller Alejo</h2>
-                        {#if isGuestSession}
-                            <p class="user-line">Visitante</p>
-                            <p class="role-line">Invitado</p>
-                        {:else}
-                            {#await currentUser ?? Promise.resolve({ name: "Usuario" })}
-                                <p class="user-line">Cargando cuenta...</p>
-                            {:then user}
-                                <p class="user-line">{user.name || "Usuario"}</p>
-                                <p class="role-line">Cliente</p>
-                            {:catch error}
-                                <p class="user-line">{error.message}</p>
-                            {/await}
-                        {/if}
+                        <p class="app-version">v{APP_VERSION}</p>
                     </div>
                 </div>
             </header>
@@ -415,17 +424,52 @@
                 </NavigationRail>
             </div>
             <div class="panel-footer">
+                <div class="user-chip">
+                    {#if isGuestSession}
+                        <span class="user-avatar guest" aria-hidden="true">
+                            <Icon icon={personIcon} />
+                        </span>
+                        <div class="user-chip-meta">
+                            <p class="user-chip-name">Invitado</p>
+                        </div>
+                    {:else}
+                        {#await currentUser ?? Promise.resolve({ name: "Usuario" })}
+                            <span class="user-avatar placeholder" aria-hidden="true">…</span>
+                            <div class="user-chip-meta">
+                                <p class="user-chip-name">Cargando…</p>
+                            </div>
+                        {:then user}
+                            {@const avatar = resolveAvatarUrl(user)}
+                            {#if avatar}
+                                <img class="user-avatar" src={avatar} alt="" />
+                            {:else}
+                                <span class="user-avatar initials" aria-hidden="true">{userInitials(user.name)}</span>
+                            {/if}
+                            <div class="user-chip-meta">
+                                <p class="user-chip-name">{user.name || "Usuario"}</p>
+                                <p class="user-chip-role">Cliente</p>
+                            </div>
+                        {:catch}
+                            <span class="user-avatar guest" aria-hidden="true">
+                                <Icon icon={personIcon} />
+                            </span>
+                            <div class="user-chip-meta">
+                                <p class="user-chip-name">Usuario</p>
+                            </div>
+                        {/await}
+                    {/if}
+                </div>
                 {#if isGuestSession}
-                    <Button variant="filled" size="m" iconType="left" onclick={handleRequestLogin}>
+                    <Button class="login-btn" variant="filled" size="m" iconType="left" onclick={handleRequestLogin}>
                         <Icon icon={loginIcon} />
                         Iniciar sesión
                     </Button>
-                    <Button variant="tonal" size="m" iconType="left" onclick={logout}>
+                    <Button class="logout-btn" variant="tonal" size="m" iconType="left" onclick={logout}>
                         <Icon icon={logoutIcon} />
                         {logoutLabel}
                     </Button>
                 {:else}
-                    <Button variant="tonal" size="m" iconType="left" onclick={logout}>
+                    <Button class="logout-btn" variant="tonal" size="m" iconType="left" onclick={logout}>
                         <Icon icon={logoutIcon} />
                         {logoutLabel}
                     </Button>
@@ -538,51 +582,405 @@
 </section>
 
 <style>
-.nested-shell{height:100dvh;display:grid;grid-template-columns:320px minmax(0,1fr);overflow:hidden;background:var(--md-sys-color-background)}
-.panel-shell{height:100%;padding:16px 0 16px 16px;min-width:0}
-.panel-card{height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;border-radius:32px;overflow:hidden;border:1px solid color-mix(in srgb,var(--md-sys-color-outline-variant) 75%,transparent);background:linear-gradient(180deg,color-mix(in srgb,var(--md-sys-color-surface-container) 92%,transparent),var(--md-sys-color-surface-container-low));box-shadow:0 10px 28px rgba(0,0,0,.08),0 30px 80px rgba(0,0,0,.1)}
-.panel-head{padding:22px 18px 10px;background:linear-gradient(180deg,color-mix(in srgb,var(--md-sys-color-surface-container-high) 85%,transparent),transparent);border-bottom:1px solid color-mix(in srgb,var(--md-sys-color-outline-variant) 50%,transparent)}
-.panel-promo{padding:8px 18px 14px;flex-shrink:0}
-.brand{display:flex;align-items:center;gap:14px}
-.brand-logo{width:46px;height:46px;padding:6px;border-radius:14px;background:var(--md-sys-color-surface-container-highest);box-shadow:0 6px 16px rgba(0,0,0,.1)}
-.brand-meta h2{margin:0;font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
-.brand-meta p{margin:0;font-size:.85rem;color:var(--md-sys-color-on-surface-variant)}
-.brand-meta .user-line{font-size:.85rem;font-weight:600;color:var(--md-sys-color-on-surface)}
-.brand-meta .role-line{font-size:.75rem;opacity:.85;margin-top:1px}
-.rail-wrap{min-height:0;overflow:hidden;padding:10px 6px;position:relative}
-.rail-wrap :global(.m3-container){width:100%}
-.rail-wrap :global(.rail){width:100%;height:100%;padding:8px 0 18px;gap:18px;background:transparent}
-.rail-wrap :global(.item){border-radius:14px;transition:background .2s ease,transform .15s ease}
-.rail-wrap :global(.item:hover){background:var(--md-sys-color-surface-container-highest);transform:translateX(2px)}
-.rail-wrap :global(.item.active){background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container);font-weight:700}
-.rail-item-wrap{position:relative;overflow:visible}
-.rail-badge{position:absolute;top:8px;right:14px;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#d92d20;color:var(--md-sys-color-on-error);font-size:.74rem;font-weight:800;pointer-events:none;border:2px solid var(--md-sys-color-surface-container);z-index:5}
-.panel-footer{padding:14px 16px 18px;display:grid;gap:10px;border-top:1px solid color-mix(in srgb,var(--md-sys-color-outline-variant) 60%,transparent);background:color-mix(in srgb,var(--md-sys-color-surface-container-high) 70%,transparent)}
-.panel-footer :global(button){width:100%;border-radius:14px;font-weight:700}
-.content{min-height:0;min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden}
-.route-stage{min-height:0;height:100%;display:grid;overflow:hidden}
-.route-stage>:global(*){min-height:0;height:100%;max-height:100%}
-.route-stage.route-stage-scroll{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
-.top-mobile{display:none}
-.fab-layer,.promo-float-host{display:none}
-@media(max-width:840px){
-.nested-shell{grid-template-columns:1fr}
-.expanded-only{display:none}
-.content{padding:8px 8px max(96px,calc(env(safe-area-inset-bottom)+12px))}
-.top-mobile{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
-.compact-only,.promo-float-host{display:block}
-.fab-layer{display:block;position:fixed;inset:0;pointer-events:none;z-index:1000}
-.fab-scrim{position:fixed;inset:0;border:0;background:color-mix(in srgb,var(--md-sys-color-scrim) 54%,transparent);pointer-events:auto;z-index:1000}
-.fab-stack{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(24px,calc(env(safe-area-inset-bottom)+24px));display:grid;justify-items:end;gap:14px;pointer-events:none;z-index:1001}
-.fab-menu{display:grid;gap:12px;pointer-events:auto;z-index:1002}
-.fab-item-row{display:flex;align-items:center;gap:10px}
-.fab-mini{position:relative;width:40px;height:40px;border:none;border-radius:999px;display:grid;place-items:center;cursor:pointer;background:var(--md-sys-color-primary-container);color:var(--md-sys-color-on-primary-container)}
-.fab-mini.active{background:var(--md-sys-color-primary);color:var(--md-sys-color-on-primary)}
-.logout-mini{background:var(--md-sys-color-error-container);color:var(--md-sys-color-on-error-container)}
-.mini-badge,.main-badge{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#d92d20;color:var(--md-sys-color-on-error);font-size:.72rem;font-weight:800;border:2px solid var(--md-sys-color-surface);z-index:5}
-.fab-main-wrap{position:relative;pointer-events:auto;z-index:1003}
+.nested-shell {
+    height: 100dvh;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+    overflow: hidden;
+    background: var(--md-sys-color-background);
 }
-.rail-wrap :global(.rail::-webkit-scrollbar),.route-stage::-webkit-scrollbar{width:10px}
-.rail-wrap :global(.rail::-webkit-scrollbar-thumb),.route-stage::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--md-sys-color-outline) 30%,transparent);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
-.rail-wrap :global(.rail::-webkit-scrollbar-track),.route-stage::-webkit-scrollbar-track{background:transparent}
+
+.panel-shell {
+    height: 100%;
+    padding: 14px 0 14px 14px;
+    min-width: 0;
+}
+
+.panel-card {
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    border-radius: 28px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
+    background: color-mix(in srgb, var(--md-sys-color-surface-container) 88%, transparent);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* —— Brand (logo + title + version) —— */
+.panel-head {
+    padding: 20px 18px 12px;
+    border-bottom: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.brand-logo {
+    width: 52px;
+    height: 52px;
+    padding: 7px;
+    border-radius: 16px;
+    background: var(--md-sys-color-surface-container-highest);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.brand-meta h2 {
+    margin: 0;
+    font-size: 1.28rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--md-sys-color-on-surface);
+}
+
+.brand-meta .app-version {
+    margin: 4px 0 0;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.85;
+}
+
+.panel-promo {
+    padding: 10px 16px 8px;
+    flex-shrink: 0;
+}
+
+/* —— Rail: no square gray, clear active —— */
+.rail-wrap {
+    min-height: 0;
+    overflow: hidden;
+    padding: 6px 10px 10px;
+    position: relative;
+}
+
+.rail-wrap :global(.m3-container) {
+    width: 100%;
+}
+
+.rail-wrap :global(.rail) {
+    width: 100%;
+    height: 100%;
+    padding: 4px 0 12px;
+    gap: 4px;
+    background: transparent !important;
+}
+
+.rail-wrap :global(.item) {
+    border-radius: 14px;
+    background: transparent !important;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.15s ease;
+    margin: 0 2px;
+}
+
+.rail-wrap :global(.item:hover) {
+    background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent) !important;
+    transform: none;
+}
+
+.rail-wrap :global(.item.active) {
+    background: color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent) !important;
+    color: var(--md-sys-color-primary) !important;
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 0 var(--md-sys-color-primary);
+}
+
+.rail-wrap :global(.item.active .icon),
+.rail-wrap :global(.item.active svg) {
+    color: var(--md-sys-color-primary);
+}
+
+.rail-item-wrap {
+    position: relative;
+    overflow: visible;
+}
+
+.rail-badge {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #d92d20;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    pointer-events: none;
+    border: 2px solid color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent);
+    z-index: 5;
+}
+
+/* —— Footer: user chip + logout —— */
+.panel-footer {
+    padding: 12px 14px 16px;
+    display: grid;
+    gap: 12px;
+    border-top: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 45%, transparent);
+    background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 55%, transparent);
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 4px;
+    min-width: 0;
+}
+
+.user-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+
+.user-avatar.guest,
+.user-avatar.placeholder {
+    background: color-mix(in srgb, var(--md-sys-color-surface-container-highest) 90%, transparent);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.user-avatar.initials {
+    letter-spacing: 0.02em;
+}
+
+.user-chip-meta {
+    min-width: 0;
+    flex: 1;
+}
+
+.user-chip-name {
+    margin: 0;
+    font-size: 0.92rem;
+    font-weight: 650;
+    color: var(--md-sys-color-on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-chip-role {
+    margin: 2px 0 0;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.9;
+}
+
+.panel-footer :global(button) {
+    width: 100%;
+    border-radius: 14px;
+    font-weight: 650;
+}
+
+.panel-footer :global(.logout-btn.m3-container),
+.panel-footer :global(button.logout-btn) {
+    --_pad: 14px 18px;
+    padding: 14px 18px !important;
+    min-height: 48px;
+    background: color-mix(in srgb, var(--md-sys-color-error) 14%, transparent) !important;
+    color: var(--md-sys-color-error) !important;
+    border: 1px solid color-mix(in srgb, var(--md-sys-color-error) 35%, transparent) !important;
+}
+
+.panel-footer :global(.logout-btn:hover),
+.panel-footer :global(button.logout-btn:hover) {
+    background: color-mix(in srgb, var(--md-sys-color-error) 22%, transparent) !important;
+}
+
+.panel-footer :global(.login-btn) {
+    min-height: 48px;
+    padding: 14px 18px !important;
+}
+
+.content {
+    min-height: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+}
+
+.route-stage {
+    min-height: 0;
+    height: 100%;
+    display: grid;
+    overflow: hidden;
+}
+
+.route-stage > :global(*) {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+}
+
+.route-stage.route-stage-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+}
+
+.top-mobile {
+    display: none;
+}
+
+.fab-layer,
+.promo-float-host {
+    display: none;
+}
+
+@media (max-width: 840px) {
+    .nested-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .expanded-only {
+        display: none;
+    }
+
+    .content {
+        padding: 8px 8px max(96px, calc(env(safe-area-inset-bottom) + 12px));
+    }
+
+    .top-mobile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+
+    .compact-only,
+    .promo-float-host {
+        display: block;
+    }
+
+    .fab-layer {
+        display: block;
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1000;
+    }
+
+    .fab-scrim {
+        position: fixed;
+        inset: 0;
+        border: 0;
+        background: color-mix(in srgb, var(--md-sys-color-scrim) 54%, transparent);
+        pointer-events: auto;
+        z-index: 1000;
+    }
+
+    .fab-stack {
+        position: fixed;
+        right: max(16px, env(safe-area-inset-right));
+        bottom: max(24px, calc(env(safe-area-inset-bottom) + 24px));
+        display: grid;
+        justify-items: end;
+        gap: 14px;
+        pointer-events: none;
+        z-index: 1001;
+    }
+
+    .fab-menu {
+        display: grid;
+        gap: 12px;
+        pointer-events: auto;
+        z-index: 1002;
+    }
+
+    .fab-item-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .fab-mini {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        background: var(--md-sys-color-primary-container);
+        color: var(--md-sys-color-on-primary-container);
+    }
+
+    .fab-mini.active {
+        background: var(--md-sys-color-primary);
+        color: var(--md-sys-color-on-primary);
+    }
+
+    .logout-mini {
+        background: var(--md-sys-color-error-container);
+        color: var(--md-sys-color-on-error-container);
+    }
+
+    .mini-badge,
+    .main-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #d92d20;
+        color: var(--md-sys-color-on-error);
+        font-size: 0.72rem;
+        font-weight: 800;
+        border: 2px solid var(--md-sys-color-surface);
+        z-index: 5;
+    }
+
+    .fab-main-wrap {
+        position: relative;
+        pointer-events: auto;
+        z-index: 1003;
+    }
+}
+
+.rail-wrap :global(.rail::-webkit-scrollbar),
+.route-stage::-webkit-scrollbar {
+    width: 8px;
+}
+
+.rail-wrap :global(.rail::-webkit-scrollbar-thumb),
+.route-stage::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--md-sys-color-outline) 28%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+.rail-wrap :global(.rail::-webkit-scrollbar-track),
+.route-stage::-webkit-scrollbar-track {
+    background: transparent;
+}
 </style>
