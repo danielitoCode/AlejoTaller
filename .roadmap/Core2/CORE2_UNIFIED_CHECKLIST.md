@@ -1,6 +1,6 @@
 # Core 2 — Checklist unificado (cliente + backoffice + operador)
 
-**Última actualización:** 2026-08-24  
+**Última actualización:** 2026-08-27  
 **Core 2 cerrado (ecosistema):** **SÍ** (dash mergeado a master PR #12; operador B2 en código)
 
 ### Fórmulas congeladas
@@ -29,16 +29,22 @@
 - [x] Sin finance en UNVERIFIED; sin salida en DELETED
 - [x] Idempotencia + tests unitarios
 - [x] Paridad equivalente smokeada desde backoffice
-- [ ] Smoke dispositivo operador (opcional)
+- [ ] Smoke dispositivo operador (opcional, post-cierre)
 
 ## Bloque 3–5 — Dash (superficie primaria) ✓
 
 Implementado y mergeado en **dash_alejo_taller** (PR #12 → master):
 
 - [x] Factura multi-línea + movements `entrada` + `last_unit_cost`
-- [x] Ajuste + listados Inventario
+- [x] Listados Inventario (movimientos / facturas de entrada)
 - [x] Cola UNVERIFIED + KPIs finance + paridad confirm panel
-- [x] Reservas taller (`workshop_reservation`)
+- [x] Reservas taller (`workshop_reservation`) en dash
+
+**Fuera del cierre (futuro):**
+
+- [ ] **Ajuste de inventario (UI)** — política y enum `ajuste`; UI no implementada
+- [ ] Devolución formal (UI)
+- [ ] Reserva taller desde cliente web (E2E B2C)
 
 ## Bloque 6 — CI, permisos, cierre ✓
 
@@ -58,3 +64,4 @@ B0 ✓ → B1 ✓ → B2 ✓ (operador) → B3–B5 ✓ (dash) → B6 ✓
 |-------|------|
 | 2026-08-21 | B2 operador + B3.1 dash |
 | 2026-08-24 | B3–B5 dash + B6 merge master dash |
+| 2026-08-27 | Higiene: ajuste inventario = futura implementación |

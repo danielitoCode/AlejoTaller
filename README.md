@@ -21,7 +21,7 @@
 | Nucleo | Estado | Contenido clave |
 |--------|--------|-----------------|
 | **Core 1** | **Cerrado** (2026-08-12) | Soft-hold, ventas UNVERIFIED→VERIFIED/DELETED, coherencia cliente/operador/dash |
-| **Core 2** | **Cerrado** (2026-08-24) | Traza `salida_venta` + finance al VERIFIED (operador); factura entrada, movements, COGS y reservas en **dash** |
+| **Core 2** | **Cerrado** (2026-08-24) | Traza `salida_venta` + finance al VERIFIED (operador); factura entrada, movements `entrada`, COGS y reservas taller en **dash** |
 | **MCP Cliente** | **Fase 0 cerrada** (2026-08-24) | Superficie agente B2C; soft-hold en Worker pendiente Fase 1+ — [mcp/](./mcp/) |
 
 Contrato de stock:
@@ -34,6 +34,12 @@ DELETED    → reserved -= qty
 ```
 
 COGS al VERIFIED: `last_unit_cost × qty` (no promedio).
+
+### Core 2 — qué incrementó
+
+- Operador: al confirmar venta escribe `salida_venta` + evento financiero
+- Dash: factura de entrada multi-línea, listados de movimientos/facturas, cola UNVERIFIED + KPIs, reservas taller, permisos
+- **No incluido:** UI de **ajuste de inventario** (futura implementación); devolución formal UI; reserva taller desde cliente web
 
 Roadmap Core 2: [`.roadmap/Core2/`](./.roadmap/Core2/) · Checklist: [`.roadmap/Core2/CORE2_UNIFIED_CHECKLIST.md`](./.roadmap/Core2/CORE2_UNIFIED_CHECKLIST.md)  
 Back-office: [dash_alejo_taller](https://github.com/danielitoCode/dash_alejo_taller)
@@ -124,7 +130,7 @@ MCP: `tool → service → repository → Appwrite` (solo net).
 | MVP / Core 1 | Compra, reserva, verificacion, soft-hold | Cerrado |
 | Core 2 | Traza stock/finance, factura (dash), COGS, reservas taller (dash) | Cerrado |
 | MCP Cliente | Superficie agente B2C | Fase 0 ✅ · Fase 1 soft-hold en curso |
-| Posterior | Seguridad functions, analitica, E2E | Abierto |
+| Posterior | Ajuste inventario UI, reserva taller web, seguridad functions, analitica, E2E | Abierto |
 
 Detalle: [`.roadmap/`](./.roadmap/) · MCP: [`mcp/docs/IMPLEMENTATION_ROADMAP.md`](./mcp/docs/IMPLEMENTATION_ROADMAP.md)
 

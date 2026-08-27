@@ -1,6 +1,7 @@
 # Core 2 — Deltas de política (respecto a Core 1)
 
 **Fecha:** 2026-08-13 (origen dash) · espejo AlejoTaller 2026-08-16  
+**Higiene:** 2026-08-27 (ajuste inventario = futura implementación UI)  
 **Canónico ecosistema:** `AlejoTaller/.policies/warehouse`, `AlejoTaller/.policies/sale`  
 **Origen:** `dash_alejo_taller/.roadmap/Core2/POLICY_DELTAS_CORE2.md`
 
@@ -19,12 +20,12 @@
 
 ### 1. `stock_movements` (traza)
 
-| type | Efecto en `existence` | Quién |
-|------|----------------------|--------|
-| `entrada` | `+= quantity` | staff (dash / operador admin) |
-| `salida_venta` | `-= quantity` | al VERIFIED (operador **primario** en AlejoTaller) |
-| `ajuste` | ± según dirección | staff; post-ajuste `existence ≥ reserved` |
-| `devolucion` | `+= quantity` | staff; solo post-VERIFIED |
+| type | Efecto en `existence` | Quién | Estado Core 2 |
+|------|----------------------|--------|---------------|
+| `entrada` | `+= quantity` | staff (dash) | **Activo** |
+| `salida_venta` | `-= quantity` | al VERIFIED (operador **primario** en AlejoTaller) | **Activo** |
+| `ajuste` | ± según dirección | staff; post-ajuste `existence ≥ reserved` | **Política + schema; UI futura** |
+| `devolucion` | `+= quantity` | staff; solo post-VERIFIED | **Política; UI futura** |
 
 Campos mínimos: `product_id`, `type`, `quantity` (>0), `balance_after`, `reason`, `user_id`, `sale_id?`, `created_at`.
 
@@ -32,29 +33,32 @@ Campos mínimos: `product_id`, `type`, `quantity` (>0), `balance_after`, `reason
 
 - Solo sobre venta **VERIFIED** (o línea ya consumida).  
 - `existence += qty` + movimiento `devolucion` + motivo obligatorio.  
-- **No** reabrir el soft-hold de esa venta.
+- **No** reabrir el soft-hold de esa venta.  
+- **UI:** implementación futura.
 
 ### 3. Ajuste de inventario
 
 - Motivo + `user_id` obligatorios.  
 - Validación: tras el ajuste, `existence >= reserved`.  
-- Preferible escribir siempre fila en `stock_movements`.
+- Preferible escribir siempre fila en `stock_movements`.  
+- **UI:** **no disponible** en Core 2 — **implementación futura**.
 
 ### 4. Reservas de taller (MVP Core 2)
 
-- Dominio **aparte** de `Sale` (p. ej. collection `appointment` / `booking`).  
+- Dominio **aparte** de `Sale` (p. ej. collection `workshop_reservation`).  
 - Estados típicos: solicitada → confirmada → realizada / cancelada.  
 - **No** listar pedidos de tienda en el menú Reservas.  
 - Stock de piezas en cita: **fuera** del MVP mínimo.  
-- **Incluidas en el núcleo** (decisión 2026-08-13).
+- **Dash:** gobierno implementado. **Cliente web (solicitud E2E):** futura implementación.
 
 ## Competencias por superficie (Core 2)
 
 | Acción | Cliente (web/Android) | Operador (`alejotallerscan`) | Dash |
 |--------|------------------------|------------------------------|------|
 | Soft-hold al pedir | Sí | No | No |
-| Confirm/reject + `salida_venta` | No | **Primario** | Secundario |
-| Entrada / ajuste / devolución | No | Sí (si se expone) | **Sí** |
+| Confirm/reject + `salida_venta` | No | **Primario** | Secundario / paridad |
+| Entrada (factura) | No | Según exposición | **Sí** |
+| Ajuste inventario | No | — | **Futuro** |
 | Ver movimientos | No | Lectura | **Sí** |
 | Agenda reservas taller | Solicitar (futuro/web) | Operar | **Gobernar** |
 
@@ -72,5 +76,6 @@ Campos mínimos: `product_id`, `type`, `quantity` (>0), `balance_after`, `reason
 
 ## 6. Reservas de taller (MVP Core 2)
 
-- Incluidas en el núcleo (decisión 2026-08-13).
+- Incluidas en el núcleo (decisión 2026-08-13) a nivel dash.
 - Collection separada de `Sale`; menú Reservas ≠ Ventas pendientes.
+- Solicitud desde cliente web: fuera del cierre Core 2.
