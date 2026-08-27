@@ -24,6 +24,7 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 - [ ] **AT** Verificar (consola o doc): rol cliente **sin** create/update en `supplier`
 - [ ] **AT** Sin UI ni case use de supplier en web/app/mcp
 
+**DASH B1 (panel):** smoke UI OK 2026-08-27 — subvista Proveedores + alta desde factura de entrada.  
 **DEP:** implementación CRUD es **DASH B1**. AT solo guarda permisos/frontera.
 
 ---
@@ -33,6 +34,7 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 - [ ] **AT** Confirmar que operador/web **no** listan `purchase_entry`
 - [ ] **AT** (opcional) Test o nota: lectura `last_unit_cost` en flujo COGS intacta
 
+**DASH B2 (panel):** smoke UI OK 2026-08-27 — listado Compras → detalle.  
 **DEP:** listados y detalle son **DASH B2**.
 
 ---
@@ -75,7 +77,7 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 
 ```text
 B0 BOTH
- → DASH B1 → DASH B2 → (DASH B3 opcional) → DASH B4
+ → DASH B1 ✓ smoke UI → DASH B2 ✓ smoke UI → (DASH B3 opcional) → DASH B4
  → AT B4 smoke (DEP: datos de prueba en dash)
  → B5 AT → B6 ambos
 ```
@@ -83,3 +85,4 @@ B0 BOTH
 | Fecha | Nota |
 |-------|------|
 | 2026-08-27 | Apertura rama `Core3` + checklist espejo |
+| 2026-08-27 | DASH B1+B2 smoke UI verificados (panel) |

@@ -8,11 +8,19 @@
 | Bloque AT | Estado |
 |-----------|--------|
 | B0 | pendiente |
-| B1 (solo permisos frontera) | pendiente |
-| B2 (solo verificación) | pendiente |
+| B1 (solo permisos frontera) | pendiente (DASH B1 smoke UI OK) |
+| B2 (solo verificación) | pendiente (DASH B2 smoke UI OK) |
 | B3 (smoke post-dash) | pendiente |
 | B4 smoke cruzado | pendiente |
 | B5 | pendiente |
 | B6 merge | no |
+
+### Referencia panel (`dash_alejo_taller` / `Core3`)
+
+Smoke UI 2026-08-27:
+
+- Subvista **Proveedores**
+- Alta proveedor desde **factura de entrada**
+- Subvista **Compras**: listado → click → detalle
 
 Panel: `dash_alejo_taller` rama `Core3`.
