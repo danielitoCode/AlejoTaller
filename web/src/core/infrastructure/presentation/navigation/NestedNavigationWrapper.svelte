@@ -18,7 +18,7 @@
     import {profileStore} from "../../../feature/auth/presentation/viewmodel/profile.store";
     import {authContainer} from "../../../feature/auth/di/auth.container";
     import {cartStore} from "../../../feature/sale/presentation/viewmodel/cart.store";
-    import {isGuestSession as checkGuest} from "../../../feature/auth/presentation/util/gest-session";
+    import {isAnonymousAppwriteUser} from "../../../feature/auth/presentation/util/gest-session";
     import InternalHomeScreen from "../routes/InternalHomeScreen.svelte";
     import ProductScreen from "../../../feature/product/presentation/screens/ProductScreen.svelte";
     import InternalBuyScreen from "../routes/InternalBuyScreen.svelte";
@@ -26,9 +26,6 @@
     import SupportInbox from "../../../feature/support/presentation/routes/SupportInbox.svelte";
     import AgentChat from "../../../feature/agent/presentation/routes/AgentChat.svelte";
     import InternalReservationScreen from "../routes/InternalReservationScreen.svelte";
-    import InternalReservationDetailScreen from "../routes/InternalReservationDetailScreen.svelte";
-    import InternalBuyConfirmScreen from "../routes/InternalBuyConfirmScreen.svelte";
-    import ProductDetailScreen from "../../../feature/product/presentation/screens/ProductDetailScreen.svelte";
 
     export let navController: NavController;
     export let navBackStackEntry: NavBackStackEntry;
@@ -42,7 +39,8 @@
     $: session = $sessionStore;
     $: profileDraft = $profileStore;
     $: cart = $cartStore;
-    $: isGuestSession = checkGuest(resolvedUser ?? session?.user);
+    // Prefer session flag; fall back to Appwrite anonymous/guest detection
+    $: isGuestSession = session?.isGuest === true || isAnonymousAppwriteUser(resolvedUser);
 
     function resolveAvatarUrl(user: any): string {
         if (!user) return "";
@@ -57,14 +55,14 @@
     $: navAvatarUrl = isGuestSession ? "" : (profileDraft.avatarUrl?.trim() || resolveAvatarUrl(resolvedUser) || "");
     $: navDisplayName = isGuestSession
         ? "Invitado"
-        : (profileDraft.name?.trim() || resolvedUser?.name || session?.user?.name || "Usuario");
+        : (profileDraft.name?.trim() || resolvedUser?.name || "Usuario");
     $: navRoleLabel = isGuestSession
         ? ""
         : (typeof resolvedUser?.prefs?.role === "string"
             ? resolvedUser.prefs.role
             : (Array.isArray((resolvedUser as any)?.labels) && (resolvedUser as any).labels[0]
                 ? (resolvedUser as any).labels[0]
-                : (profileDraft as any)?.role || ""));
+                : ""));
     $: logoutLabel = isGuestSession ? "Salir" : "Cerrar sesión";
 
     const navItems = [
@@ -76,57 +74,79 @@
         { path: "/agent", label: "Asistente", icon: smartToyIcon, badge: 0 },
     ];
 
-    $: cartCount = cart?.items?.reduce((n: number, i: any) => n + (i.quantity || 0), 0) || 0;
+    $: cartCount = Array.isArray(cart?.items)
+        ? cart.items.reduce((n: number, i: any) => n + (Number(i?.quantity) || 0), 0)
+        : 0;
     $: itemsWithBadge = navItems.map((item) =>
         item.path === "/cart" ? { ...item, badge: cartCount } : item
     );
 
     function isItemActive(path: string): boolean {
         if (!currentPath) return false;
-        if (path === "/home") return currentPath === "/home" || currentPath === "/" || currentPath === "home";
-        return currentPath === path || currentPath.startsWith(path + "/") || currentPath.includes(path.replace("/", ""));
+        const p = String(currentPath);
+        if (path === "/home") return p === "/home" || p === "/" || p === "home";
+        const key = path.replace(/^\//, "");
+        return p === path || p.startsWith(path + "/") || p.includes(key);
     }
 
     const routeUsesStageScroll = (path: string) => {
         if (!path) return true;
-        if (path.includes("agent")) return false;
-        return true;
+        return !String(path).includes("agent");
     };
 
     function go(path: string) {
         fabOpen = false;
         currentPath = path;
-        try { navController.navigate(path); } catch (e) { console.error(e); }
-    }
-
-    async function logout() {
         try {
-            await authContainer.useCases.sessions.close();
-            sessionStore.clear();
-            profileStore.reset({ userId: "", email: "", name: "", phone: "", bio: "", avatarUrl: "" });
-            navController.navigate("/login");
+            navController.navigate(path);
         } catch (e) {
             console.error(e);
         }
     }
 
+    async function logout() {
+        try {
+            if (!isGuestSession) {
+                await authContainer.useCases.sessions.close();
+            }
+            sessionStore.reset();
+            profileStore.reset({ userId: "", email: "", name: "", phone: "", bio: "", avatarUrl: "" });
+            navController.navigate("/login");
+        } catch (e) {
+            console.error(e);
+            sessionStore.reset();
+            navController.navigate("/login");
+        }
+    }
+
     async function hydrateUser() {
         try {
+            if (session?.isGuest) {
+                resolvedUser = null;
+                return;
+            }
             const user = await sessionStore.getCurrentUser();
             resolvedUser = user;
-            if (user && !checkGuest(user)) profileStore.hydrateFromUser(user);
+            if (user && !isAnonymousAppwriteUser(user)) {
+                profileStore.hydrateFromUser(user);
+            }
         } catch {
-            resolvedUser = session?.user ?? null;
+            resolvedUser = null;
         }
     }
 
     onMount(() => {
-        const route = (navBackStackEntry as any)?.destination?.route ?? (navBackStackEntry as any)?.route ?? "/home";
+        const route =
+            (navBackStackEntry as any)?.destination?.route ??
+            (navBackStackEntry as any)?.route ??
+            "/home";
         currentPath = route;
         void hydrateUser();
     });
 
-    onDestroy(() => { fabOpen = false; });
+    onDestroy(() => {
+        fabOpen = false;
+    });
 </script>
 
 <div class="nested-shell">
@@ -141,7 +161,12 @@
         <nav class="rail">
             {#each itemsWithBadge as item (item.path)}
                 <div class="rail-item-wrap" class:is-active={isItemActive(item.path)}>
-                    <NavigationRailItem icon={item.icon} label={item.label} selected={isItemActive(item.path)} onclick={() => go(item.path)} />
+                    <NavigationRailItem
+                        icon={item.icon}
+                        label={item.label}
+                        selected={isItemActive(item.path)}
+                        onclick={() => go(item.path)}
+                    />
                     {#if item.badge > 0}<span class="rail-badge">{item.badge}</span>{/if}
                 </div>
             {/each}
@@ -172,20 +197,25 @@
     </aside>
 
     <div class="content">
-        <div class="route-stage" class:route-stage-scroll={routeUsesStageScroll(currentPath)} in:fade={{ duration: 180 }} out:fade={{ duration: 120 }}>
+        <div
+            class="route-stage"
+            class:route-stage-scroll={routeUsesStageScroll(currentPath)}
+            in:fade={{ duration: 180 }}
+            out:fade={{ duration: 120 }}
+        >
             {#if currentPath === "/home" || currentPath === "/" || currentPath === "home"}
                 <InternalHomeScreen {navController} {navBackStackEntry} />
-            {:else if currentPath.includes("product")}
+            {:else if String(currentPath).includes("product")}
                 <ProductScreen {navController} {navBackStackEntry} />
-            {:else if currentPath.includes("cart") || currentPath.includes("buy")}
+            {:else if String(currentPath).includes("cart") || String(currentPath).includes("buy")}
                 <InternalBuyScreen {navController} {navBackStackEntry} />
-            {:else if currentPath.includes("profile")}
+            {:else if String(currentPath).includes("profile")}
                 <InternalProfileScreen {navController} {navBackStackEntry} />
-            {:else if currentPath.includes("support")}
+            {:else if String(currentPath).includes("support")}
                 <SupportInbox {navController} {navBackStackEntry} />
-            {:else if currentPath.includes("agent")}
+            {:else if String(currentPath).includes("agent")}
                 <AgentChat {navController} />
-            {:else if currentPath.includes("reservation")}
+            {:else if String(currentPath).includes("reservation")}
                 <InternalReservationScreen {navController} {navBackStackEntry} />
             {:else}
                 <InternalHomeScreen {navController} {navBackStackEntry} />
@@ -204,11 +234,18 @@
                         <span class="brand-version">v{APP_VERSION}</span>
                     </div>
                 </div>
-                <button type="button" class="drawer-close" onclick={() => (fabOpen = false)} aria-label="Cerrar"><Icon icon={closeIcon} /></button>
+                <button type="button" class="drawer-close" onclick={() => (fabOpen = false)} aria-label="Cerrar">
+                    <Icon icon={closeIcon} />
+                </button>
             </header>
             <nav class="drawer-rail">
                 {#each itemsWithBadge as item (item.path)}
-                    <button type="button" class="drawer-item" class:is-active={isItemActive(item.path)} onclick={() => go(item.path)}>
+                    <button
+                        type="button"
+                        class="drawer-item"
+                        class:is-active={isItemActive(item.path)}
+                        onclick={() => go(item.path)}
+                    >
                         <Icon icon={item.icon} /><span>{item.label}</span>
                         {#if item.badge > 0}<span class="drawer-badge">{item.badge}</span>{/if}
                     </button>
@@ -221,18 +258,32 @@
                         <div class="user-chip-meta"><p class="user-chip-name">Invitado</p></div>
                     {:else if navAvatarUrl}
                         <img class="user-avatar" src={navAvatarUrl} alt="" />
-                        <div class="user-chip-meta"><p class="user-chip-name">{navDisplayName}</p>{#if navRoleLabel}<p class="user-chip-role">{navRoleLabel}</p>{/if}</div>
+                        <div class="user-chip-meta">
+                            <p class="user-chip-name">{navDisplayName}</p>
+                            {#if navRoleLabel}<p class="user-chip-role">{navRoleLabel}</p>{/if}
+                        </div>
                     {:else}
                         <div class="user-avatar">{navDisplayName?.slice(0, 1).toUpperCase() || "U"}</div>
-                        <div class="user-chip-meta"><p class="user-chip-name">{navDisplayName}</p>{#if navRoleLabel}<p class="user-chip-role">{navRoleLabel}</p>{/if}</div>
+                        <div class="user-chip-meta">
+                            <p class="user-chip-name">{navDisplayName}</p>
+                            {#if navRoleLabel}<p class="user-chip-role">{navRoleLabel}</p>{/if}
+                        </div>
                     {/if}
                 </div>
-                <button type="button" class="logout-native" onclick={logout}><Icon icon={logoutIcon} /><span>{logoutLabel}</span></button>
+                <button type="button" class="logout-native" onclick={logout}>
+                    <Icon icon={logoutIcon} /><span>{logoutLabel}</span>
+                </button>
             </div>
         </aside>
     {/if}
 
-    <button type="button" class="hamburger-fab" aria-label={fabOpen ? "Cerrar menú" : "Abrir menú"} aria-expanded={fabOpen} onclick={() => (fabOpen = !fabOpen)}>
+    <button
+        type="button"
+        class="hamburger-fab"
+        aria-label={fabOpen ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={fabOpen}
+        onclick={() => (fabOpen = !fabOpen)}
+    >
         <Icon icon={fabOpen ? closeIcon : menuIcon} />
     </button>
 </div>
