@@ -1,6 +1,6 @@
 # Core 3 — Checklist (AlejoTaller · espejo)
 
-**Última actualización:** 2026-08-27  
+**Última actualización:** 2026-08-28  
 **Rama:** `Core3`  
 **Orden canónico:** mismo que [dash CORE3_UNIFIED_CHECKLIST](https://github.com/danielitoCode/dash_alejo_taller/blob/Core3/.roadmap/Core3/CORE3_UNIFIED_CHECKLIST.md)
 
@@ -10,12 +10,14 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 
 ## B0 — Baseline y política
 
-- [ ] **BOTH** Core 2 en `master` verificado (operador salida_venta + finance)
-- [ ] **BOTH** Política de compras Core 3 leída/aceptada (origen dash README Core3)
+- [x] **BOTH** Core 2 en `master` verificado (operador salida_venta + finance)
+- [x] **BOTH** Política de compras Core 3 leída/aceptada (origen dash README Core3)
 - [ ] **AT** Carpeta `.roadmap/Core3/` completa (este checklist + README + STATUS)
 - [ ] **AT** Si aplica: nota en `.policies/warehouse` o doc enlace “entradas solo panel”
 
 **DEP hacia dash:** gaps de schema los cierra el panel; AT no crea collections.
+
+**2026-08-28:** Confirmado “casi cerrado” (política, audit schema, tipado `contact` hechos en dash). Restan consola Appwrite + espejo AT. Se inicia **B4**.
 
 ---
 
@@ -55,6 +57,8 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 
 **DEP:** conviene tener al menos una factura de prueba creada en **DASH B2**.
 
+**2026-08-28:** B4 iniciado. Ejecutar smokes según `SMOKE_B4.md` del panel.
+
 ---
 
 ## B5 — Cierre espejo AT
@@ -86,3 +90,4 @@ B0 BOTH
 |-------|------|
 | 2026-08-27 | Apertura rama `Core3` + checklist espejo |
 | 2026-08-27 | DASH B1+B2 smoke UI verificados (panel) |
+| 2026-08-28 | B0 casi cerrado confirmado. Inicio B4 |
