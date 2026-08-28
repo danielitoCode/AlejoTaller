@@ -1,1 +1,69 @@
-PLACEHOLDER
+@import '@fontsource-variable/google-sans-flex';
+@import 'm3-svelte/etc/styles.css';
+@import 'm3-svelte/etc/recommended-styles.css';
+
+:root {
+  color-scheme: light dark;
+  --m3-font: 'Google Sans Flex', system-ui, sans-serif;
+
+  /* Brand — green kept soft; dark primary is mint, not neon */
+  --m3c-primary: light-dark(#2e7d32, #86c989);
+  --m3c-on-primary: light-dark(#ffffff, #0a1c0e);
+  --m3c-primary-container: light-dark(#c8e6c9, #1a3d2a);
+  --m3c-on-primary-container: light-dark(#0d2818, #b8e6c8);
+  --m3c-secondary: light-dark(#388e3c, #a8d4aa);
+  --m3c-on-secondary: light-dark(#ffffff, #0e2214);
+
+  /*
+   * Elevation ladder — larger, even steps so panels / inputs / frames
+   * separate elegantly without harsh pure-black or pure-white jumps.
+   * Dark: ~8–12 luminance units between adjacent levels.
+   * Light: soft green-gray containers against pure white surface cards.
+   */
+  --m3c-background: light-dark(#eef2ec, #080a08);
+  --m3c-on-background: light-dark(#121512, #ecefe9);
+  --m3c-surface: light-dark(#ffffff, #111411);
+  --m3c-on-surface: light-dark(#121512, #ecefe9);
+  --m3c-on-surface-variant: light-dark(#3a4339, #b8c0b6);
+
+  --m3c-surface-container-lowest: light-dark(#f8faf6, #0c0e0c);
+  --m3c-surface-container-low: light-dark(#f1f5ef, #161916);
+  --m3c-surface-container: light-dark(#e6ebe3, #1e221e);
+  --m3c-surface-container-high: light-dark(#d9e1d6, #2a302a);
+  --m3c-surface-container-highest: light-dark(#ccd6c8, #3a4239);
+
+  /* Borders readable on both themes (was too close to surfaces in dark) */
+  --m3c-outline: light-dark(#6a7468, #9aa39a);
+  --m3c-outline-variant: light-dark(#b4beb0, #4a5348);
+
+  --m3c-error: light-dark(#ba1a1a, #ffb4ab);
+  --m3c-on-error: light-dark(#ffffff, #690005);
+
+  --shadow-soft: light-dark(
+    0 14px 36px rgb(18 36 22 / 0.09),
+    0 20px 48px rgb(0 0 0 / 0.55)
+  );
+
+  /* Bridge md-sys ↔ m3c (WelcomeUpdateScreen + m3-svelte) */
+  --md-sys-color-primary: var(--m3c-primary);
+  --md-sys-color-on-primary: var(--m3c-on-primary);
+  --md-sys-color-primary-container: var(--m3c-primary-container);
+  --md-sys-color-on-primary-container: var(--m3c-on-primary-container);
+  --md-sys-color-secondary: var(--m3c-secondary);
+  --md-sys-color-on-secondary: var(--m3c-on-secondary);
+  --md-sys-color-background: var(--m3c-background);
+  --md-sys-color-on-background: var(--m3c-on-background);
+  --md-sys-color-surface: var(--m3c-surface);
+  --md-sys-color-on-surface: var(--m3c-on-surface);
+  --md-sys-color-on-surface-variant: var(--m3c-on-surface-variant);
+  --md-sys-color-surface-variant: var(--m3c-surface-container);
+  --md-sys-color-surface-container-lowest: var(--m3c-surface-container-lowest);
+  --md-sys-color-surface-container-low: var(--m3c-surface-container-low);
+  --md-sys-color-surface-container: var(--m3c-surface-container);
+  --md-sys-color-surface-container-high: var(--m3c-surface-container-high);
+  --md-sys-color-surface-container-highest: var(--m3c-surface-container-highest);
+  --md-sys-color-outline: var(--m3c-outline);
+  --md-sys-color-outline-variant: var(--m3c-outline-variant);
+  --md-sys-color-error: var(--m3c-error);
+  --md-sys-color-on-error: var(--m3c-on-error);
+}
