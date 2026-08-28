@@ -25,7 +25,7 @@
         shouldOfferAdminChoice
     } from "../util/admin-redirect";
     import { sessionStore } from "../viewmodel/session.store";
-    import { Package, Truck, Headphones, ShieldCheck, ArrowRight, Eye, X } from "lucide-svelte";
+    import { Package, Truck, Headphones, ShieldCheck, ArrowRight, Eye, X, Star } from "lucide-svelte";
 
     export let navController: NavController;
 
@@ -405,9 +405,20 @@
 
     const trustItems = [
         { icon: Package, label: "Miles de productos" },
-        { icon: Truck, label: "Envíos rápidos y seguros" },
-        { icon: Headphones, label: "Soporte especializado" },
-        { icon: ShieldCheck, label: "Pagos 100% seguros" }
+        { icon: Truck, label: "Envíos rápidos\ny seguros" },
+        { icon: Headphones, label: "Soporte\nespecializado" },
+        { icon: ShieldCheck, label: "Pagos 100%\nseguros" }
+    ];
+
+    const stageImages = [
+        {
+            src: "https://commons.wikimedia.org/wiki/Special:FilePath/Electronic_components_(8370189100).jpg",
+            className: "stage-main"
+        },
+        {
+            src: "https://commons.wikimedia.org/wiki/Special:FilePath/Liion-18650-AA-battery.jpg",
+            className: "stage-side"
+        }
     ];
 </script>
 
@@ -418,77 +429,168 @@
 />
 
 <div class="wu-root" aria-label="Bienvenida y acceso">
-    <div class="wu-shell">
-        <section class="wu-hero">
-            <header class="wu-brand">
-                <img src="/alejoicon_clean.svg" alt="" class="wu-logo" />
-                <div>
-                    <strong>Taller Alejo</strong>
-                    <span>Electrónica & Tecnología</span>
+    <div class="wu-frame">
+        <div class="wu-shell">
+            <section class="wu-hero">
+                <header class="wu-brand">
+                    <div class="wu-logo-wrap">
+                        <img src="/alejoicon_clean.svg" alt="" class="wu-logo" />
+                    </div>
+                    <div class="wu-brand-text">
+                        <strong>Taller Alejo</strong>
+                        <span>Electrónica & Tecnología</span>
+                    </div>
+                </header>
+
+                <p class="wu-badge"><span class="wu-badge-dot"></span> Tu tienda de confianza</p>
+
+                <h1 class="wu-title">
+                    Componentes electrónicos<br />
+                    para <em>tus ideas</em>.
+                </h1>
+
+                <p class="wu-lead">
+                    Descubre miles de productos de electrónica, baterías, BMS, herramientas y más.
+                    Calidad, precio y soporte en un solo lugar.
+                </p>
+
+                <ul class="wu-trust" role="list">
+                    {#each trustItems as t}
+                        <li>
+                            <span class="wu-trust-icon"><svelte:component this={t.icon} size={20} /></span>
+                            <span class="wu-trust-label">{t.label}</span>
+                        </li>
+                    {/each}
+                </ul>
+
+                <div class="wu-stage" aria-hidden="true">
+                    <div class="wu-stage-glow"></div>
+                    <div class="wu-stage-plate">
+                        <img class="wu-shot stage-main" src={stageImages[0].src} alt="" />
+                        <img class="wu-shot stage-side" src={stageImages[1].src} alt="" />
+                    </div>
                 </div>
-            </header>
-            <p class="wu-badge">Tu tienda de confianza</p>
-            <h1 class="wu-title">Componentes electrónicos<br />para <em>tus ideas</em>.</h1>
-            <p class="wu-lead">
-                Descubre miles de productos de electrónica, baterías, BMS, herramientas y más. Calidad,
-                precio y soporte en un solo lugar.
-            </p>
-            <ul class="wu-trust" role="list">
-                {#each trustItems as t}
-                    <li>
-                        <span class="wu-trust-icon"><svelte:component this={t.icon} size={18} /></span>
-                        <span>{t.label}</span>
-                    </li>
-                {/each}
-            </ul>
-            <div class="wu-showcase" aria-hidden="true">
-                <img
-                    class="wu-shot"
-                    src="https://commons.wikimedia.org/wiki/Special:FilePath/Electronic_components_(8370189100).jpg"
-                    alt=""
-                />
-            </div>
-            <p class="wu-social-proof">Más de 2,500 clientes satisfechos</p>
-        </section>
 
-        <aside class="wu-auth-panel desktop-auth">
-            {#if authMode === "login"}
-                <h2>Bienvenido de nuevo 👋</h2>
-                <p class="wu-auth-sub">Inicia sesión para continuar</p>
-            {:else}
-                <h2>Crea tu cuenta</h2>
-                <p class="wu-auth-sub">Regístrate para comprar y reservar</p>
-            {/if}
-            <div class="wu-fields">
-                {#if authMode === "register"}
-                    <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submitRegister} />
-                {/if}
-                <TextFieldOutlined label="Correo electrónico" bind:value={email} type="email" leadingIcon={MailOutlineRounded} enter={authMode === "login" ? signIn : submitRegister} />
-                <TextFieldOutlined label="Contraseña" bind:value={password} type={showPassword ? "text" : "password"} leadingIcon={LockOutline} trailing={{ icon: showPassword ? VisibilityOffRounded : VisibilityRounded, onclick: () => (showPassword = !showPassword), "aria-label": "Toggle password", title: "Toggle" }} enter={authMode === "login" ? signIn : submitRegister} />
-                {#if authMode === "register"}
-                    <TextFieldOutlined label="Confirmar contraseña" bind:value={confirmPassword} type={showConfirmPassword ? "text" : "password"} leadingIcon={LockOutline} trailing={{ icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded, onclick: () => (showConfirmPassword = !showConfirmPassword), "aria-label": "Toggle", title: "Toggle" }} enter={submitRegister} />
-                {/if}
-            </div>
-            {#if authMode === "login"}
-                <label class="wu-remember"><input type="checkbox" bind:checked={rememberMe} /> Recordarme</label>
-            {/if}
-            {#if error}<p class="wu-error">{error}</p>{/if}
-            {#if authMode === "login"}
-                <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}><span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span></Button>
-                <div class="wu-or"><span>o continúa con</span></div>
-                <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}><span class="wu-btn-inner"><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span></Button>
-                <p class="wu-switch">¿No tienes cuenta? <button type="button" class="wu-link" on:click={() => switchMode("register")}>Crear cuenta</button></p>
-            {:else}
-                <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}><span class="wu-btn-inner">Registrarse</span></Button>
-                <p class="wu-switch">¿Ya tienes cuenta? <button type="button" class="wu-link" on:click={() => switchMode("login")}>Inicia sesión</button></p>
-            {/if}
-            <button type="button" class="wu-guest" disabled={loading} on:click={continueAsGuest}><Eye size={16} /> Explorar como visitante</button>
-        </aside>
+                <div class="wu-social-proof">
+                    <div class="wu-avatars" aria-hidden="true">
+                        <span class="av a1"></span>
+                        <span class="av a2"></span>
+                        <span class="av a3"></span>
+                    </div>
+                    <div class="wu-social-meta">
+                        <span class="wu-stars" aria-hidden="true">
+                            <Star size={12} /><Star size={12} /><Star size={12} /><Star size={12} /><Star size={12} />
+                        </span>
+                        <span>Más de 2,500 clientes satisfechos</span>
+                    </div>
+                </div>
+            </section>
 
-        <div class="mobile-cta">
-            <Button variant="filled" size="m" onclick={() => openMobileAuth("login")}><span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span></Button>
-            <p class="wu-switch">¿No tienes cuenta? <button type="button" class="wu-link" on:click={() => openMobileAuth("register")}>Crear cuenta</button></p>
-            <button type="button" class="wu-guest" disabled={loading} on:click={continueAsGuest}><Eye size={16} /> Explorar como visitante</button>
+            <aside class="wu-auth-panel desktop-auth">
+                {#if authMode === "login"}
+                    <h2>Bienvenido de nuevo 👋</h2>
+                    <p class="wu-auth-sub">Inicia sesión para continuar</p>
+                {:else}
+                    <h2>Crea tu cuenta</h2>
+                    <p class="wu-auth-sub">Regístrate para comprar y reservar</p>
+                {/if}
+
+                <div class="wu-fields">
+                    {#if authMode === "register"}
+                        <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submitRegister} />
+                    {/if}
+                    <TextFieldOutlined
+                        label="Correo electrónico"
+                        bind:value={email}
+                        type="email"
+                        leadingIcon={MailOutlineRounded}
+                        enter={authMode === "login" ? signIn : submitRegister}
+                    />
+                    <TextFieldOutlined
+                        label="Contraseña"
+                        bind:value={password}
+                        type={showPassword ? "text" : "password"}
+                        leadingIcon={LockOutline}
+                        trailing={{
+                            icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
+                            onclick: () => (showPassword = !showPassword),
+                            "aria-label": "Toggle password",
+                            title: "Toggle"
+                        }}
+                        enter={authMode === "login" ? signIn : submitRegister}
+                    />
+                    {#if authMode === "register"}
+                        <TextFieldOutlined
+                            label="Confirmar contraseña"
+                            bind:value={confirmPassword}
+                            type={showConfirmPassword ? "text" : "password"}
+                            leadingIcon={LockOutline}
+                            trailing={{
+                                icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
+                                onclick: () => (showConfirmPassword = !showConfirmPassword),
+                                "aria-label": "Toggle",
+                                title: "Toggle"
+                            }}
+                            enter={submitRegister}
+                        />
+                    {/if}
+                </div>
+
+                {#if authMode === "login"}
+                    <div class="wu-row-between">
+                        <label class="wu-remember"><input type="checkbox" bind:checked={rememberMe} /> Recordarme</label>
+                    </div>
+                {/if}
+
+                {#if error}<p class="wu-error">{error}</p>{/if}
+
+                {#if authMode === "login"}
+                    <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}>
+                        <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
+                    </Button>
+                    <div class="wu-or"><span>o continúa con</span></div>
+                    <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}>
+                        <span class="wu-btn-inner"
+                            ><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span
+                        >
+                    </Button>
+                    <p class="wu-switch">
+                        ¿No tienes cuenta?
+                        <button type="button" class="wu-link" on:click={() => switchMode("register")}
+                            >Crear cuenta</button
+                        >
+                    </p>
+                {:else}
+                    <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}>
+                        <span class="wu-btn-inner">Registrarse</span>
+                    </Button>
+                    <p class="wu-switch">
+                        ¿Ya tienes cuenta?
+                        <button type="button" class="wu-link" on:click={() => switchMode("login")}
+                            >Inicia sesión</button
+                        >
+                    </p>
+                {/if}
+
+                <button type="button" class="wu-guest" disabled={loading} on:click={continueAsGuest}>
+                    <Eye size={16} /> Explorar como visitante
+                </button>
+            </aside>
+
+            <div class="mobile-cta">
+                <Button variant="filled" size="m" onclick={() => openMobileAuth("login")}>
+                    <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
+                </Button>
+                <p class="wu-switch">
+                    ¿No tienes cuenta?
+                    <button type="button" class="wu-link" on:click={() => openMobileAuth("register")}
+                        >Crear cuenta</button
+                    >
+                </p>
+                <button type="button" class="wu-guest" disabled={loading} on:click={continueAsGuest}>
+                    <Eye size={16} /> Explorar como visitante
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -499,28 +601,76 @@
         <div class="wu-dialog-panel">
             <header class="wu-dialog-head">
                 <h2 id="wu-dialog-title">{authMode === "login" ? "Bienvenido de nuevo 👋" : "Crear cuenta"}</h2>
-                <button type="button" class="wu-dialog-close" aria-label="Cerrar" on:click={closeMobileDialog}><X size={20} /></button>
+                <button type="button" class="wu-dialog-close" aria-label="Cerrar" on:click={closeMobileDialog}
+                    ><X size={20} /></button
+                >
             </header>
-            <p class="wu-auth-sub">{authMode === "login" ? "Inicia sesión para continuar" : "Regístrate para comprar y reservar"}</p>
+            <p class="wu-auth-sub">
+                {authMode === "login" ? "Inicia sesión para continuar" : "Regístrate para comprar y reservar"}
+            </p>
             <div class="wu-fields">
                 {#if authMode === "register"}
                     <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submitRegister} />
                 {/if}
-                <TextFieldOutlined label="Correo electrónico" bind:value={email} type="email" leadingIcon={MailOutlineRounded} enter={authMode === "login" ? signIn : submitRegister} />
-                <TextFieldOutlined label="Contraseña" bind:value={password} type={showPassword ? "text" : "password"} leadingIcon={LockOutline} trailing={{ icon: showPassword ? VisibilityOffRounded : VisibilityRounded, onclick: () => (showPassword = !showPassword), "aria-label": "Toggle", title: "Toggle" }} enter={authMode === "login" ? signIn : submitRegister} />
+                <TextFieldOutlined
+                    label="Correo electrónico"
+                    bind:value={email}
+                    type="email"
+                    leadingIcon={MailOutlineRounded}
+                    enter={authMode === "login" ? signIn : submitRegister}
+                />
+                <TextFieldOutlined
+                    label="Contraseña"
+                    bind:value={password}
+                    type={showPassword ? "text" : "password"}
+                    leadingIcon={LockOutline}
+                    trailing={{
+                        icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
+                        onclick: () => (showPassword = !showPassword),
+                        "aria-label": "Toggle",
+                        title: "Toggle"
+                    }}
+                    enter={authMode === "login" ? signIn : submitRegister}
+                />
                 {#if authMode === "register"}
-                    <TextFieldOutlined label="Confirmar contraseña" bind:value={confirmPassword} type={showConfirmPassword ? "text" : "password"} leadingIcon={LockOutline} trailing={{ icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded, onclick: () => (showConfirmPassword = !showConfirmPassword), "aria-label": "Toggle", title: "Toggle" }} enter={submitRegister} />
+                    <TextFieldOutlined
+                        label="Confirmar contraseña"
+                        bind:value={confirmPassword}
+                        type={showConfirmPassword ? "text" : "password"}
+                        leadingIcon={LockOutline}
+                        trailing={{
+                            icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
+                            onclick: () => (showConfirmPassword = !showConfirmPassword),
+                            "aria-label": "Toggle",
+                            title: "Toggle"
+                        }}
+                        enter={submitRegister}
+                    />
                 {/if}
             </div>
             {#if error}<p class="wu-error">{error}</p>{/if}
             {#if authMode === "login"}
-                <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}><span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span></Button>
+                <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}>
+                    <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
+                </Button>
                 <div class="wu-or"><span>o continúa con</span></div>
-                <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}><span class="wu-btn-inner"><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span></Button>
-                <p class="wu-switch">¿No tienes cuenta? <button type="button" class="wu-link" on:click={() => switchMode("register")}>Crear cuenta</button></p>
+                <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}>
+                    <span class="wu-btn-inner"
+                        ><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span
+                    >
+                </Button>
+                <p class="wu-switch">
+                    ¿No tienes cuenta?
+                    <button type="button" class="wu-link" on:click={() => switchMode("register")}>Crear cuenta</button>
+                </p>
             {:else}
-                <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}><span class="wu-btn-inner">Registrarse</span></Button>
-                <p class="wu-switch">¿Ya tienes cuenta? <button type="button" class="wu-link" on:click={() => switchMode("login")}>Inicia sesión</button></p>
+                <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}>
+                    <span class="wu-btn-inner">Registrarse</span>
+                </Button>
+                <p class="wu-switch">
+                    ¿Ya tienes cuenta?
+                    <button type="button" class="wu-link" on:click={() => switchMode("login")}>Inicia sesión</button>
+                </p>
             {/if}
         </div>
     </div>
@@ -530,8 +680,22 @@
     <AdminRoleChoiceCard busy={loading} on:stayClient={continueAsClient} on:goAdmin={continueToAdmin} />
 {/if}
 
-<FrameModal open={googleFrameOpen} title="Continuar con Google" ariaLabel="Autenticación con Google" src={googleFrameOpen ? googleAuthSrc : ""} on:close={closeGoogleFrame} on:frameMessage={(event) => handleGoogleFrameMessage(event.detail.data)} />
-<FrameModal open={registerFrameOpen} title="Crear cuenta con Google" ariaLabel="Registro con Google" src={registerFrameOpen ? googleRegisterSrc : ""} on:close={closeRegisterFrame} on:frameMessage={(event) => handleRegisterFrameMessage(event.detail.data)} />
+<FrameModal
+    open={googleFrameOpen}
+    title="Continuar con Google"
+    ariaLabel="Autenticación con Google"
+    src={googleFrameOpen ? googleAuthSrc : ""}
+    on:close={closeGoogleFrame}
+    on:frameMessage={(event) => handleGoogleFrameMessage(event.detail.data)}
+/>
+<FrameModal
+    open={registerFrameOpen}
+    title="Crear cuenta con Google"
+    ariaLabel="Registro con Google"
+    src={registerFrameOpen ? googleRegisterSrc : ""}
+    on:close={closeRegisterFrame}
+    on:frameMessage={(event) => handleRegisterFrameMessage(event.detail.data)}
+/>
 
 {#if linkOpen}
     <div class="wu-dialog">
@@ -539,11 +703,22 @@
         <div class="wu-dialog-panel">
             <h3>Confirma tu contraseña</h3>
             <p class="wu-auth-sub">Esta cuenta ya existe. Usa tu password actual para vincular Google.</p>
-            <TextFieldOutlined label="Contraseña actual" bind:value={linkPassword} type="password" leadingIcon={LockOutline} enter={linkGoogleAccount} />
+            <TextFieldOutlined
+                label="Contraseña actual"
+                bind:value={linkPassword}
+                type="password"
+                leadingIcon={LockOutline}
+                enter={linkGoogleAccount}
+            />
             {#if linkError}<p class="wu-error">{linkError}</p>{/if}
             <div class="wu-link-actions">
                 <Button variant="text" size="m" onclick={() => (linkOpen = false)}>Cancelar</Button>
-                <Button variant="filled" size="m" disabled={loading || !linkPassword.trim()} onclick={linkGoogleAccount}>Vincular y entrar</Button>
+                <Button
+                    variant="filled"
+                    size="m"
+                    disabled={loading || !linkPassword.trim()}
+                    onclick={linkGoogleAccount}>Vincular y entrar</Button
+                >
             </div>
         </div>
     </div>
@@ -551,76 +726,505 @@
 
 <style>
     .wu-root {
-        min-height: 100dvh; width: 100%; box-sizing: border-box;
-        padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+        min-height: 100dvh;
+        width: 100%;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
         background:
-            radial-gradient(ellipse at 20% 30%, color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent), transparent 50%),
-            radial-gradient(ellipse at 80% 70%, color-mix(in srgb, #0d3d2a 40%, transparent), transparent 45%),
-            var(--md-sys-color-background);
-        color: var(--md-sys-color-on-background);
+            radial-gradient(ellipse 80% 60% at 18% 28%, rgba(34, 197, 94, 0.16), transparent 55%),
+            radial-gradient(ellipse 70% 50% at 88% 78%, rgba(16, 185, 129, 0.1), transparent 50%),
+            linear-gradient(165deg, #0a0f0c 0%, #0d1210 40%, #0a0e0c 100%);
+        color: #e8eee9;
     }
-    .wu-shell { width: min(1120px, 100%); margin: 0 auto; display: grid; gap: 24px; align-items: stretch; }
-    .wu-hero { display: grid; gap: 14px; align-content: start; }
-    .wu-brand { display: flex; align-items: center; gap: 12px; }
-    .wu-logo { width: 44px; height: 44px; object-fit: contain; }
-    .wu-brand strong { display: block; font-size: 1.05rem; font-weight: 800; }
-    .wu-brand span { font-size: 0.78rem; color: var(--md-sys-color-on-surface-variant); }
+
+    .wu-frame {
+        width: min(1180px, 100%);
+        border-radius: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background:
+            radial-gradient(ellipse 55% 45% at 22% 35%, rgba(34, 197, 94, 0.12), transparent 60%),
+            linear-gradient(145deg, rgba(18, 24, 20, 0.95) 0%, rgba(12, 16, 14, 0.98) 100%);
+        box-shadow:
+            0 0 0 1px rgba(34, 197, 94, 0.04),
+            0 32px 80px rgba(0, 0, 0, 0.55),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+    }
+
+    .wu-shell {
+        display: grid;
+        gap: 20px;
+        padding: 22px 18px 24px;
+    }
+
+    .wu-hero {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+    }
+
+    .wu-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .wu-logo-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(145deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.08));
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.15);
+    }
+    .wu-logo {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+    }
+    .wu-brand-text strong {
+        display: block;
+        font-size: 1.05rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+    .wu-brand-text span {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: rgba(134, 239, 172, 0.75);
+    }
+
     .wu-badge {
-        margin: 8px 0 0; display: inline-flex; width: fit-content; padding: 4px 12px; border-radius: 999px;
-        font-size: 0.75rem; font-weight: 700;
-        background: color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent);
-        color: var(--md-sys-color-primary);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 28%, transparent);
+        margin: 4px 0 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+        padding: 5px 12px 5px 10px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #86efac;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.28);
     }
-    .wu-title { margin: 0; font-size: clamp(1.75rem, 5vw, 2.75rem); font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; }
-    .wu-title em { font-style: normal; color: var(--md-sys-color-primary); }
-    .wu-lead { margin: 0; max-width: 34rem; font-size: 0.95rem; line-height: 1.5; color: var(--md-sys-color-on-surface-variant); }
-    .wu-trust { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
-    .wu-trust li { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 600; color: var(--md-sys-color-on-surface-variant); }
+    .wu-badge-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 10px #22c55e;
+    }
+
+    .wu-title {
+        margin: 0;
+        font-size: clamp(1.85rem, 4.8vw, 2.85rem);
+        font-weight: 850;
+        letter-spacing: -0.035em;
+        line-height: 1.08;
+        color: #f4f7f5;
+    }
+    .wu-title em {
+        font-style: normal;
+        background: linear-gradient(90deg, #4ade80, #22c55e 60%, #86efac);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+
+    .wu-lead {
+        margin: 0;
+        max-width: 32rem;
+        font-size: 0.92rem;
+        line-height: 1.55;
+        color: rgba(200, 214, 205, 0.78);
+    }
+
+    .wu-trust {
+        list-style: none;
+        margin: 6px 0 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 16px;
+    }
+    .wu-trust li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
     .wu-trust-icon {
-        width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
-        color: var(--md-sys-color-primary); background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        color: #4ade80;
+        background: rgba(34, 197, 94, 0.1);
+        border: 1px solid rgba(34, 197, 94, 0.22);
     }
-    .wu-showcase { margin-top: 8px; border-radius: 20px; overflow: hidden; max-height: 180px; box-shadow: 0 20px 48px rgba(0,0,0,.35); }
-    .wu-shot { width: 100%; height: 180px; object-fit: cover; display: block; }
-    .wu-social-proof { margin: 4px 0 0; font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant); }
-    .wu-auth-panel, .wu-dialog-panel {
-        display: grid; gap: 12px; padding: 22px 20px; border-radius: 20px;
-        background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, transparent);
-        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
-        box-shadow: 0 24px 48px rgba(0,0,0,.28);
+    .wu-trust-label {
+        font-size: 0.78rem;
+        font-weight: 650;
+        line-height: 1.25;
+        white-space: pre-line;
+        color: rgba(210, 222, 214, 0.88);
     }
-    .wu-auth-panel h2, .wu-dialog-head h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
-    .wu-auth-sub { margin: 0; font-size: 0.88rem; color: var(--md-sys-color-on-surface-variant); }
-    .wu-fields { display: grid; gap: 10px; }
-    .wu-fields :global(.m3-container) { width: 100%; height: 52px; }
-    .wu-remember { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
-    .wu-error { margin: 0; color: var(--md-sys-color-error); font-size: 0.88rem; text-align: center; }
-    .wu-btn-inner { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 0; font-weight: 700; }
-    .wu-auth-panel :global(.m3-container), .wu-dialog-panel :global(.m3-container), .mobile-cta :global(.m3-container) { width: 100%; }
-    .wu-or { display: flex; align-items: center; gap: 10px; color: var(--md-sys-color-on-surface-variant); font-size: 0.78rem; }
-    .wu-or::before, .wu-or::after { content: ""; flex: 1; height: 1px; background: var(--md-sys-color-outline-variant); }
-    .g-icon { width: 18px; height: 18px; object-fit: contain; }
-    .wu-switch { margin: 0; text-align: center; font-size: 0.88rem; color: var(--md-sys-color-on-surface-variant); }
-    .wu-link { border: 0; background: none; color: var(--md-sys-color-primary); font: inherit; font-weight: 750; cursor: pointer; padding: 0; }
-    .wu-guest { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; background: transparent; color: var(--md-sys-color-on-surface-variant); font: inherit; font-size: 0.88rem; font-weight: 650; cursor: pointer; padding: 8px; }
-    .wu-guest:hover { color: var(--md-sys-color-primary); }
-    .mobile-cta { display: grid; gap: 12px; padding: 8px 0 0; }
-    .desktop-auth { display: none; }
-    .wu-dialog { position: fixed; inset: 0; z-index: 1100; display: grid; place-items: end center; }
-    .wu-dialog-scrim { position: absolute; inset: 0; border: 0; background: color-mix(in srgb, black 50%, transparent); backdrop-filter: blur(6px); }
-    .wu-dialog-panel { position: relative; z-index: 1; width: 100%; max-height: 92dvh; overflow: auto; border-radius: 24px 24px 0 0; padding-bottom: max(20px, env(safe-area-inset-bottom)); }
-    .wu-dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-    .wu-dialog-close { width: 40px; height: 40px; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent); color: inherit; display: grid; place-items: center; cursor: pointer; }
-    .wu-link-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+
+    .wu-stage {
+        position: relative;
+        margin-top: 8px;
+        min-height: 160px;
+    }
+    .wu-stage-glow {
+        position: absolute;
+        inset: 20% 10% -10%;
+        background: radial-gradient(ellipse at 50% 70%, rgba(34, 197, 94, 0.28), transparent 65%);
+        filter: blur(28px);
+        pointer-events: none;
+    }
+    .wu-stage-plate {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1.4fr 0.85fr;
+        gap: 10px;
+        padding: 10px;
+        border-radius: 22px;
+        background: linear-gradient(160deg, rgba(30, 41, 34, 0.9), rgba(15, 20, 17, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        box-shadow:
+            0 24px 48px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .wu-shot {
+        width: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 14px;
+    }
+    .stage-main {
+        height: 150px;
+    }
+    .stage-side {
+        height: 150px;
+        object-position: center;
+    }
+
+    .wu-social-proof {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 4px;
+    }
+    .wu-avatars {
+        display: flex;
+        align-items: center;
+    }
+    .av {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid #0d1210;
+        margin-left: -8px;
+        background: linear-gradient(135deg, #4ade80, #166534);
+    }
+    .av:first-child {
+        margin-left: 0;
+    }
+    .a2 {
+        background: linear-gradient(135deg, #86efac, #15803d);
+    }
+    .a3 {
+        background: linear-gradient(135deg, #22c55e, #14532d);
+    }
+    .wu-social-meta {
+        display: grid;
+        gap: 2px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: rgba(200, 214, 205, 0.75);
+    }
+    .wu-stars {
+        display: inline-flex;
+        gap: 2px;
+        color: #facc15;
+    }
+
+    .wu-auth-panel,
+    .wu-dialog-panel {
+        display: grid;
+        gap: 12px;
+        padding: 24px 22px;
+        border-radius: 22px;
+        background: linear-gradient(165deg, rgba(28, 36, 31, 0.92), rgba(18, 24, 20, 0.96));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow:
+            0 20px 50px rgba(0, 0, 0, 0.4),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(16px);
+    }
+    .wu-auth-panel h2,
+    .wu-dialog-head h2 {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: #f4f7f5;
+    }
+    .wu-auth-sub {
+        margin: -4px 0 4px;
+        font-size: 0.88rem;
+        color: rgba(180, 198, 188, 0.75);
+    }
+
+    .wu-fields {
+        display: grid;
+        gap: 10px;
+    }
+    .wu-fields :global(.m3-container) {
+        width: 100%;
+        height: 54px;
+        --m3v-background: rgba(15, 20, 17, 0.85);
+        --m3-field-outlined-shape: 0.85rem;
+    }
+    .wu-fields :global(input) {
+        color: #e8eee9 !important;
+    }
+    .wu-fields :global(label),
+    .wu-fields :global(.leading),
+    .wu-fields :global(.trailing) {
+        color: rgba(180, 198, 188, 0.7) !important;
+    }
+    .wu-fields :global(.layer) {
+        border-color: rgba(255, 255, 255, 0.12) !important;
+    }
+
+    .wu-row-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .wu-remember {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+        color: rgba(200, 214, 205, 0.85);
+    }
+
+    .wu-error {
+        margin: 0;
+        color: #f87171;
+        font-size: 0.88rem;
+        text-align: center;
+    }
+
+    .wu-btn-inner {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 13px 0;
+        font-weight: 750;
+    }
+
+    .wu-auth-panel :global(.m3-container),
+    .wu-dialog-panel :global(.m3-container),
+    .mobile-cta :global(.m3-container) {
+        width: 100%;
+    }
+
+    /* Primary filled CTA green */
+    .wu-auth-panel :global(.m3-button.filled),
+    .wu-dialog-panel :global(.m3-button.filled),
+    .mobile-cta :global(.m3-button.filled) {
+        background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%) !important;
+        color: #052e16 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35) !important;
+    }
+    .wu-auth-panel :global(.m3-button.outlined),
+    .wu-dialog-panel :global(.m3-button.outlined) {
+        border-color: rgba(255, 255, 255, 0.14) !important;
+        border-radius: 14px !important;
+        background: rgba(255, 255, 255, 0.03) !important;
+    }
+
+    .wu-or {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: rgba(160, 180, 168, 0.65);
+        font-size: 0.75rem;
+    }
+    .wu-or::before,
+    .wu-or::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .g-icon {
+        width: 18px;
+        height: 18px;
+        object-fit: contain;
+    }
+
+    .wu-switch {
+        margin: 0;
+        text-align: center;
+        font-size: 0.88rem;
+        color: rgba(180, 198, 188, 0.75);
+    }
+    .wu-link {
+        border: 0;
+        background: none;
+        color: #4ade80;
+        font: inherit;
+        font-weight: 750;
+        cursor: pointer;
+        padding: 0;
+    }
+
+    .wu-guest {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: rgba(180, 198, 188, 0.7);
+        font: inherit;
+        font-size: 0.88rem;
+        font-weight: 650;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 10px;
+        transition: color 0.15s, background 0.15s;
+    }
+    .wu-guest:hover {
+        color: #4ade80;
+        background: rgba(34, 197, 94, 0.08);
+    }
+
+    .mobile-cta {
+        display: grid;
+        gap: 12px;
+        padding: 4px 0 0;
+    }
+    .desktop-auth {
+        display: none;
+    }
+
+    .wu-dialog {
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        display: grid;
+        place-items: end center;
+    }
+    .wu-dialog-scrim {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+    }
+    .wu-dialog-panel {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-height: 92dvh;
+        overflow: auto;
+        border-radius: 24px 24px 0 0;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
+    .wu-dialog-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+    .wu-dialog-close {
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+    }
+    .wu-link-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
     @media (min-width: 900px) {
-        .wu-root { display: grid; place-items: center; padding: 28px; }
-        .wu-shell { grid-template-columns: minmax(0, 1.15fr) minmax(340px, 420px); gap: 40px; align-items: center; }
-        .wu-showcase { max-height: 260px; }
-        .wu-shot { height: 260px; }
-        .desktop-auth { display: grid; }
-        .mobile-cta { display: none; }
-        .wu-dialog { place-items: center; padding: 16px; }
-        .wu-dialog-panel { width: min(440px, 100%); border-radius: 20px; max-height: 90dvh; }
+        .wu-root {
+            padding: 28px;
+        }
+        .wu-shell {
+            grid-template-columns: minmax(0, 1.2fr) minmax(360px, 400px);
+            gap: 36px 48px;
+            padding: 36px 40px;
+            align-items: center;
+        }
+        .wu-title {
+            font-size: clamp(2.2rem, 3.2vw, 2.9rem);
+        }
+        .wu-stage {
+            min-height: 200px;
+        }
+        .stage-main,
+        .stage-side {
+            height: 190px;
+        }
+        .desktop-auth {
+            display: grid;
+            align-self: center;
+        }
+        .mobile-cta {
+            display: none;
+        }
+        .wu-dialog {
+            place-items: center;
+            padding: 16px;
+        }
+        .wu-dialog-panel {
+            width: min(420px, 100%);
+            border-radius: 22px;
+            max-height: 90dvh;
+        }
+    }
+
+    @media (max-width: 899px) {
+        .wu-frame {
+            border-radius: 20px;
+        }
+        .wu-stage-plate {
+            grid-template-columns: 1fr;
+        }
+        .stage-side {
+            display: none;
+        }
+        .stage-main {
+            height: 140px;
+        }
     }
 </style>
