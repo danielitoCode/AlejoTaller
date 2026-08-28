@@ -36,6 +36,7 @@
   "dependencies": {
     "appwrite": "^22.4.0",
     "dexie": "^4.3.0",
+    "gsap": "^3.13.0",
     "lucide-svelte": "^0.577.0",
     "pusher-js": "^8.4.0",
     "qrcode": "^1.5.4"
