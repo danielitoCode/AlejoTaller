@@ -1,1 +1,65 @@
-PLACEHOLDER
+@import '@fontsource-variable/google-sans-flex';
+@import 'm3-svelte/etc/styles.css';
+@import 'm3-svelte/etc/recommended-styles.css';
+
+:root {
+  color-scheme: light dark;
+  --m3-font: 'Google Sans Flex', system-ui, sans-serif;
+
+  /* Brand */
+  --m3c-primary: light-dark(#2e7d32, #81c784);
+  --m3c-on-primary: light-dark(#ffffff, #0c1f10);
+  --m3c-primary-container: light-dark(#c8e6c9, #1b4332);
+  --m3c-on-primary-container: light-dark(#0d2818, #b7e4c7);
+  --m3c-secondary: light-dark(#388e3c, #a5d6a7);
+  --m3c-on-secondary: light-dark(#ffffff, #0f2414);
+
+  /* Canvas & text */
+  --m3c-background: light-dark(#eef2ec, #0b0d0b);
+  --m3c-on-background: light-dark(#141814, #e8ebe6);
+  --m3c-surface: light-dark(#ffffff, #131613);
+  --m3c-on-surface: light-dark(#141814, #e8ebe6);
+  --m3c-on-surface-variant: light-dark(#3d453c, #b4bbb2);
+
+  /* Elevation ladder */
+  --m3c-surface-container-lowest: light-dark(#f7faf5, #0e100e);
+  --m3c-surface-container-low: light-dark(#f0f4ee, #181b18);
+  --m3c-surface-container: light-dark(#e6ebe4, #1f231f);
+  --m3c-surface-container-high: light-dark(#dce3da, #2a2f2a);
+  --m3c-surface-container-highest: light-dark(#d0d9ce, #353b35);
+
+  /* Borders */
+  --m3c-outline: light-dark(#6f776c, #8b9388);
+  --m3c-outline-variant: light-dark(#b8c0b4, #3d453c);
+
+  --m3c-error: light-dark(#ba1a1a, #ffb4ab);
+  --m3c-on-error: light-dark(#ffffff, #690005);
+
+  --shadow-soft: light-dark(
+    0 18px 40px rgb(20 40 24 / 0.1),
+    0 22px 48px rgb(0 0 0 / 0.45)
+  );
+
+  /* Bridge md-sys ↔ m3c */
+  --md-sys-color-primary: var(--m3c-primary);
+  --md-sys-color-on-primary: var(--m3c-on-primary);
+  --md-sys-color-primary-container: var(--m3c-primary-container);
+  --md-sys-color-on-primary-container: var(--m3c-on-primary-container);
+  --md-sys-color-secondary: var(--m3c-secondary);
+  --md-sys-color-on-secondary: var(--m3c-on-secondary);
+  --md-sys-color-background: var(--m3c-background);
+  --md-sys-color-on-background: var(--m3c-on-background);
+  --md-sys-color-surface: var(--m3c-surface);
+  --md-sys-color-on-surface: var(--m3c-on-surface);
+  --md-sys-color-on-surface-variant: var(--m3c-on-surface-variant);
+  --md-sys-color-surface-variant: var(--m3c-surface-container);
+  --md-sys-color-surface-container-lowest: var(--m3c-surface-container-lowest);
+  --md-sys-color-surface-container-low: var(--m3c-surface-container-low);
+  --md-sys-color-surface-container: var(--m3c-surface-container);
+  --md-sys-color-surface-container-high: var(--m3c-surface-container-high);
+  --md-sys-color-surface-container-highest: var(--m3c-surface-container-highest);
+  --md-sys-color-outline: var(--m3c-outline);
+  --md-sys-color-outline-variant: var(--m3c-outline-variant);
+  --md-sys-color-error: var(--m3c-error);
+  --md-sys-color-on-error: var(--m3c-on-error);
+}
