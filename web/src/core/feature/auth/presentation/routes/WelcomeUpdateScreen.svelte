@@ -4,12 +4,7 @@
     import type { GoogleIdTokenProfile } from "../util/google-id-token";
     import { ENV } from "../../../../infrastructure/env";
     import { registerStore } from "../viewmodel/register.store";
-    import { Button, TextFieldOutlined } from "m3-svelte";
-    import MailOutlineRounded from "@ktibow/iconset-material-symbols/mail-outline-rounded";
-    import LockOutline from "@ktibow/iconset-material-symbols/lock-outline";
-    import PersonRounded from "@ktibow/iconset-material-symbols/person-rounded";
-    import VisibilityRounded from "@ktibow/iconset-material-symbols/visibility-rounded";
-    import VisibilityOffRounded from "@ktibow/iconset-material-symbols/visibility-off-rounded";
+    import { Button } from "m3-svelte";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { parseGoogleIdToken } from "../util/google-id-token";
@@ -25,7 +20,20 @@
         shouldOfferAdminChoice
     } from "../util/admin-redirect";
     import { sessionStore } from "../viewmodel/session.store";
-    import { Package, Truck, Headphones, ShieldCheck, ArrowRight, Eye, X, Star } from "lucide-svelte";
+    import {
+        Package,
+        Truck,
+        Headphones,
+        ShieldCheck,
+        ArrowRight,
+        Eye,
+        EyeOff,
+        X,
+        Star,
+        Mail,
+        Lock,
+        User
+    } from "lucide-svelte";
 
     export let navController: NavController;
 
@@ -77,6 +85,13 @@
     function switchMode(mode: AuthMode) {
         authMode = mode;
         error = null;
+    }
+
+    function onFieldKey(e: KeyboardEvent, action: () => void) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            action();
+        }
     }
 
     function restorePendingHashIfNeeded() {
@@ -410,11 +425,9 @@
         { icon: ShieldCheck, label: "Pagos 100%\nseguros" }
     ];
 
-    /** Gancho visual único — tienda de electrónica (Unsplash, libre uso) */
     const heroImageUrl =
         "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=80";
 
-    /** Avatares de muestra (pravatar) — no leen usuarios reales fuera de sesión */
     const sampleAvatars = [
         "https://i.pravatar.cc/64?img=12",
         "https://i.pravatar.cc/64?img=32",
@@ -502,65 +515,115 @@
                     <p class="wu-auth-sub">Regístrate para comprar y reservar</p>
                 {/if}
 
-                <div class="wu-fields">
+                <form
+                    class="wu-fields"
+                    on:submit|preventDefault={authMode === "login" ? signIn : submitRegister}
+                >
                     {#if authMode === "register"}
-                        <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submitRegister} />
+                        <label class="wu-field">
+                            <span class="wu-field-label">Nombre</span>
+                            <div class="wu-field-box">
+                                <span class="wu-field-icon"><User size={18} /></span>
+                                <input
+                                    type="text"
+                                    bind:value={name}
+                                    placeholder="Tu nombre"
+                                    autocomplete="name"
+                                    on:keydown={(e) => onFieldKey(e, submitRegister)}
+                                />
+                            </div>
+                        </label>
                     {/if}
-                    <TextFieldOutlined
-                        label="Correo electrónico"
-                        bind:value={email}
-                        type="email"
-                        leadingIcon={MailOutlineRounded}
-                        enter={authMode === "login" ? signIn : submitRegister}
-                    />
-                    <TextFieldOutlined
-                        label="Contraseña"
-                        bind:value={password}
-                        type={showPassword ? "text" : "password"}
-                        leadingIcon={LockOutline}
-                        trailing={{
-                            icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
-                            onclick: () => (showPassword = !showPassword),
-                            "aria-label": "Toggle password",
-                            title: "Toggle"
-                        }}
-                        enter={authMode === "login" ? signIn : submitRegister}
-                    />
+
+                    <label class="wu-field">
+                        <span class="wu-field-label">Correo electrónico</span>
+                        <div class="wu-field-box">
+                            <span class="wu-field-icon"><Mail size={18} /></span>
+                            <input
+                                type="email"
+                                bind:value={email}
+                                placeholder="tu@correo.com"
+                                autocomplete="email"
+                                on:keydown={(e) =>
+                                    onFieldKey(e, authMode === "login" ? signIn : submitRegister)}
+                            />
+                        </div>
+                    </label>
+
+                    <label class="wu-field">
+                        <span class="wu-field-label">Contraseña</span>
+                        <div class="wu-field-box">
+                            <span class="wu-field-icon"><Lock size={18} /></span>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                bind:value={password}
+                                placeholder="••••••••"
+                                autocomplete={authMode === "login" ? "current-password" : "new-password"}
+                                on:keydown={(e) =>
+                                    onFieldKey(e, authMode === "login" ? signIn : submitRegister)}
+                            />
+                            <button
+                                type="button"
+                                class="wu-field-toggle"
+                                aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                on:click={() => (showPassword = !showPassword)}
+                            >
+                                {#if showPassword}<EyeOff size={18} />{:else}<Eye size={18} />{/if}
+                            </button>
+                        </div>
+                    </label>
+
                     {#if authMode === "register"}
-                        <TextFieldOutlined
-                            label="Confirmar contraseña"
-                            bind:value={confirmPassword}
-                            type={showConfirmPassword ? "text" : "password"}
-                            leadingIcon={LockOutline}
-                            trailing={{
-                                icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
-                                onclick: () => (showConfirmPassword = !showConfirmPassword),
-                                "aria-label": "Toggle",
-                                title: "Toggle"
-                            }}
-                            enter={submitRegister}
-                        />
+                        <label class="wu-field">
+                            <span class="wu-field-label">Confirmar contraseña</span>
+                            <div class="wu-field-box">
+                                <span class="wu-field-icon"><Lock size={18} /></span>
+                                <input
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    bind:value={confirmPassword}
+                                    placeholder="••••••••"
+                                    autocomplete="new-password"
+                                    on:keydown={(e) => onFieldKey(e, submitRegister)}
+                                />
+                                <button
+                                    type="button"
+                                    class="wu-field-toggle"
+                                    aria-label={showConfirmPassword
+                                        ? "Ocultar contraseña"
+                                        : "Mostrar contraseña"}
+                                    on:click={() => (showConfirmPassword = !showConfirmPassword)}
+                                >
+                                    {#if showConfirmPassword}<EyeOff size={18} />{:else}<Eye size={18} />{/if}
+                                </button>
+                            </div>
+                        </label>
                     {/if}
-                </div>
+
+                    {#if authMode === "login"}
+                        <div class="wu-row-between">
+                            <label class="wu-remember">
+                                <input type="checkbox" bind:checked={rememberMe} />
+                                Recordarme
+                            </label>
+                        </div>
+                    {/if}
+
+                    {#if error}<p class="wu-error">{error}</p>{/if}
+
+                    {#if authMode === "login"}
+                        <button type="submit" class="wu-cta" disabled={!canLogin}>
+                            Iniciar sesión <ArrowRight size={18} />
+                        </button>
+                    {:else}
+                        <button type="submit" class="wu-cta" disabled={!canRegister}>Registrarse</button>
+                    {/if}
+                </form>
 
                 {#if authMode === "login"}
-                    <div class="wu-row-between">
-                        <label class="wu-remember"><input type="checkbox" bind:checked={rememberMe} /> Recordarme</label>
-                    </div>
-                {/if}
-
-                {#if error}<p class="wu-error">{error}</p>{/if}
-
-                {#if authMode === "login"}
-                    <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}>
-                        <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
-                    </Button>
                     <div class="wu-or"><span>o continúa con</span></div>
-                    <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}>
-                        <span class="wu-btn-inner"
-                            ><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span
-                        >
-                    </Button>
+                    <button type="button" class="wu-google" disabled={loading} on:click={continueWithGoogle}>
+                        <img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google
+                    </button>
                     <p class="wu-switch">
                         ¿No tienes cuenta?
                         <button type="button" class="wu-link" on:click={() => switchMode("register")}
@@ -568,9 +631,6 @@
                         >
                     </p>
                 {:else}
-                    <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}>
-                        <span class="wu-btn-inner">Registrarse</span>
-                    </Button>
                     <p class="wu-switch">
                         ¿Ya tienes cuenta?
                         <button type="button" class="wu-link" on:click={() => switchMode("login")}
@@ -585,9 +645,9 @@
             </aside>
 
             <div class="mobile-cta">
-                <Button variant="filled" size="m" onclick={() => openMobileAuth("login")}>
-                    <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
-                </Button>
+                <button type="button" class="wu-cta" on:click={() => openMobileAuth("login")}>
+                    Iniciar sesión <ArrowRight size={18} />
+                </button>
                 <p class="wu-switch">
                     ¿No tienes cuenta?
                     <button type="button" class="wu-link" on:click={() => openMobileAuth("register")}
@@ -615,65 +675,91 @@
             <p class="wu-auth-sub">
                 {authMode === "login" ? "Inicia sesión para continuar" : "Regístrate para comprar y reservar"}
             </p>
-            <div class="wu-fields">
+
+            <form
+                class="wu-fields"
+                on:submit|preventDefault={authMode === "login" ? signIn : submitRegister}
+            >
                 {#if authMode === "register"}
-                    <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submitRegister} />
+                    <label class="wu-field">
+                        <span class="wu-field-label">Nombre</span>
+                        <div class="wu-field-box">
+                            <span class="wu-field-icon"><User size={18} /></span>
+                            <input type="text" bind:value={name} placeholder="Tu nombre" autocomplete="name" />
+                        </div>
+                    </label>
                 {/if}
-                <TextFieldOutlined
-                    label="Correo electrónico"
-                    bind:value={email}
-                    type="email"
-                    leadingIcon={MailOutlineRounded}
-                    enter={authMode === "login" ? signIn : submitRegister}
-                />
-                <TextFieldOutlined
-                    label="Contraseña"
-                    bind:value={password}
-                    type={showPassword ? "text" : "password"}
-                    leadingIcon={LockOutline}
-                    trailing={{
-                        icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
-                        onclick: () => (showPassword = !showPassword),
-                        "aria-label": "Toggle",
-                        title: "Toggle"
-                    }}
-                    enter={authMode === "login" ? signIn : submitRegister}
-                />
+                <label class="wu-field">
+                    <span class="wu-field-label">Correo electrónico</span>
+                    <div class="wu-field-box">
+                        <span class="wu-field-icon"><Mail size={18} /></span>
+                        <input type="email" bind:value={email} placeholder="tu@correo.com" autocomplete="email" />
+                    </div>
+                </label>
+                <label class="wu-field">
+                    <span class="wu-field-label">Contraseña</span>
+                    <div class="wu-field-box">
+                        <span class="wu-field-icon"><Lock size={18} /></span>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            bind:value={password}
+                            placeholder="••••••••"
+                            autocomplete={authMode === "login" ? "current-password" : "new-password"}
+                        />
+                        <button
+                            type="button"
+                            class="wu-field-toggle"
+                            aria-label="Toggle password"
+                            on:click={() => (showPassword = !showPassword)}
+                        >
+                            {#if showPassword}<EyeOff size={18} />{:else}<Eye size={18} />{/if}
+                        </button>
+                    </div>
+                </label>
                 {#if authMode === "register"}
-                    <TextFieldOutlined
-                        label="Confirmar contraseña"
-                        bind:value={confirmPassword}
-                        type={showConfirmPassword ? "text" : "password"}
-                        leadingIcon={LockOutline}
-                        trailing={{
-                            icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
-                            onclick: () => (showConfirmPassword = !showConfirmPassword),
-                            "aria-label": "Toggle",
-                            title: "Toggle"
-                        }}
-                        enter={submitRegister}
-                    />
+                    <label class="wu-field">
+                        <span class="wu-field-label">Confirmar contraseña</span>
+                        <div class="wu-field-box">
+                            <span class="wu-field-icon"><Lock size={18} /></span>
+                            <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                bind:value={confirmPassword}
+                                placeholder="••••••••"
+                                autocomplete="new-password"
+                            />
+                            <button
+                                type="button"
+                                class="wu-field-toggle"
+                                aria-label="Toggle"
+                                on:click={() => (showConfirmPassword = !showConfirmPassword)}
+                            >
+                                {#if showConfirmPassword}<EyeOff size={18} />{:else}<Eye size={18} />{/if}
+                            </button>
+                        </div>
+                    </label>
                 {/if}
-            </div>
-            {#if error}<p class="wu-error">{error}</p>{/if}
+
+                {#if error}<p class="wu-error">{error}</p>{/if}
+
+                {#if authMode === "login"}
+                    <button type="submit" class="wu-cta" disabled={!canLogin}>
+                        Iniciar sesión <ArrowRight size={18} />
+                    </button>
+                {:else}
+                    <button type="submit" class="wu-cta" disabled={!canRegister}>Registrarse</button>
+                {/if}
+            </form>
+
             {#if authMode === "login"}
-                <Button variant="filled" size="m" disabled={!canLogin} onclick={signIn}>
-                    <span class="wu-btn-inner">Iniciar sesión <ArrowRight size={18} /></span>
-                </Button>
                 <div class="wu-or"><span>o continúa con</span></div>
-                <Button variant="outlined" size="m" disabled={loading} onclick={continueWithGoogle}>
-                    <span class="wu-btn-inner"
-                        ><img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google</span
-                    >
-                </Button>
+                <button type="button" class="wu-google" disabled={loading} on:click={continueWithGoogle}>
+                    <img class="g-icon" src="/icon/googleIcon.png" alt="" /> Google
+                </button>
                 <p class="wu-switch">
                     ¿No tienes cuenta?
                     <button type="button" class="wu-link" on:click={() => switchMode("register")}>Crear cuenta</button>
                 </p>
             {:else}
-                <Button variant="filled" size="m" disabled={!canRegister} onclick={submitRegister}>
-                    <span class="wu-btn-inner">Registrarse</span>
-                </Button>
                 <p class="wu-switch">
                     ¿Ya tienes cuenta?
                     <button type="button" class="wu-link" on:click={() => switchMode("login")}>Inicia sesión</button>
@@ -710,21 +796,27 @@
         <div class="wu-dialog-panel">
             <h3>Confirma tu contraseña</h3>
             <p class="wu-auth-sub">Esta cuenta ya existe. Usa tu password actual para vincular Google.</p>
-            <TextFieldOutlined
-                label="Contraseña actual"
-                bind:value={linkPassword}
-                type="password"
-                leadingIcon={LockOutline}
-                enter={linkGoogleAccount}
-            />
+            <label class="wu-field">
+                <span class="wu-field-label">Contraseña actual</span>
+                <div class="wu-field-box">
+                    <span class="wu-field-icon"><Lock size={18} /></span>
+                    <input
+                        type="password"
+                        bind:value={linkPassword}
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        on:keydown={(e) => onFieldKey(e, linkGoogleAccount)}
+                    />
+                </div>
+            </label>
             {#if linkError}<p class="wu-error">{linkError}</p>{/if}
             <div class="wu-link-actions">
-                <Button variant="text" size="m" onclick={() => (linkOpen = false)}>Cancelar</Button>
-                <Button
-                    variant="filled"
-                    size="m"
+                <button type="button" class="wu-btn-text" on:click={() => (linkOpen = false)}>Cancelar</button>
+                <button
+                    type="button"
+                    class="wu-cta wu-cta-sm"
                     disabled={loading || !linkPassword.trim()}
-                    onclick={linkGoogleAccount}>Vincular y entrar</Button
+                    on:click={linkGoogleAccount}>Vincular y entrar</button
                 >
             </div>
         </div>
@@ -885,7 +977,6 @@
         color: rgba(210, 222, 214, 0.88);
     }
 
-    /* Un solo gancho visual — sin carrusel */
     .wu-stage {
         position: relative;
         margin-top: 6px;
@@ -953,8 +1044,8 @@
     .wu-auth-panel,
     .wu-dialog-panel {
         display: grid;
-        gap: 12px;
-        padding: 24px 22px;
+        gap: 14px;
+        padding: 26px 24px;
         border-radius: 22px;
         background: linear-gradient(165deg, rgba(28, 36, 31, 0.92), rgba(18, 24, 20, 0.96));
         border: 1px solid rgba(255, 255, 255, 0.08);
@@ -964,7 +1055,8 @@
         backdrop-filter: blur(16px);
     }
     .wu-auth-panel h2,
-    .wu-dialog-head h2 {
+    .wu-dialog-head h2,
+    .wu-dialog-panel h3 {
         margin: 0;
         font-size: 1.3rem;
         font-weight: 800;
@@ -972,31 +1064,89 @@
         color: #f4f7f5;
     }
     .wu-auth-sub {
-        margin: -4px 0 4px;
+        margin: -6px 0 2px;
         font-size: 0.88rem;
         color: rgba(180, 198, 188, 0.75);
     }
 
+    /* ——— Modern form fields ——— */
     .wu-fields {
         display: grid;
+        gap: 14px;
+        margin: 0;
+    }
+    .wu-field {
+        display: grid;
+        gap: 6px;
+    }
+    .wu-field-label {
+        font-size: 0.78rem;
+        font-weight: 650;
+        letter-spacing: 0.01em;
+        color: rgba(200, 214, 205, 0.7);
+        padding-left: 2px;
+    }
+    .wu-field-box {
+        display: flex;
+        align-items: center;
         gap: 10px;
+        height: 48px;
+        padding: 0 14px;
+        border-radius: 12px;
+        background: rgba(8, 12, 10, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        transition:
+            border-color 0.15s ease,
+            box-shadow 0.15s ease,
+            background 0.15s ease;
     }
-    .wu-fields :global(.m3-container) {
-        width: 100%;
-        height: 54px;
-        --m3v-background: rgba(15, 20, 17, 0.85);
-        --m3-field-outlined-shape: 0.85rem;
+    .wu-field-box:focus-within {
+        border-color: rgba(74, 222, 128, 0.55);
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        background: rgba(10, 16, 12, 0.85);
     }
-    .wu-fields :global(input) {
-        color: #e8eee9 !important;
+    .wu-field-icon {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        color: rgba(160, 180, 168, 0.65);
     }
-    .wu-fields :global(label),
-    .wu-fields :global(.leading),
-    .wu-fields :global(.trailing) {
-        color: rgba(180, 198, 188, 0.7) !important;
+    .wu-field-box:focus-within .wu-field-icon {
+        color: #4ade80;
     }
-    .wu-fields :global(.layer) {
-        border-color: rgba(255, 255, 255, 0.12) !important;
+    .wu-field-box input {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: #f0f4f1;
+        font: inherit;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    .wu-field-box input::placeholder {
+        color: rgba(160, 180, 168, 0.4);
+        font-weight: 450;
+    }
+    .wu-field-toggle {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        margin-right: -6px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: rgba(160, 180, 168, 0.65);
+        cursor: pointer;
+        transition: color 0.15s, background 0.15s;
+    }
+    .wu-field-toggle:hover {
+        color: #e8eee9;
+        background: rgba(255, 255, 255, 0.06);
     }
 
     .wu-row-between {
@@ -1012,6 +1162,13 @@
         font-weight: 600;
         cursor: pointer;
         color: rgba(200, 214, 205, 0.85);
+        user-select: none;
+    }
+    .wu-remember input {
+        width: 15px;
+        height: 15px;
+        accent-color: #22c55e;
+        cursor: pointer;
     }
 
     .wu-error {
@@ -1021,35 +1178,65 @@
         text-align: center;
     }
 
-    .wu-btn-inner {
+    .wu-cta {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
         width: 100%;
-        padding: 13px 0;
+        height: 48px;
+        border: 0;
+        border-radius: 12px;
+        font: inherit;
+        font-size: 0.95rem;
         font-weight: 750;
+        cursor: pointer;
+        color: #052e16;
+        background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+        transition: filter 0.15s, transform 0.1s, opacity 0.15s;
+    }
+    .wu-cta:hover:not(:disabled) {
+        filter: brightness(1.06);
+    }
+    .wu-cta:active:not(:disabled) {
+        transform: scale(0.985);
+    }
+    .wu-cta:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+    .wu-cta-sm {
+        width: auto;
+        height: 42px;
+        padding: 0 18px;
     }
 
-    .wu-auth-panel :global(.m3-container),
-    .wu-dialog-panel :global(.m3-container),
-    .mobile-cta :global(.m3-container) {
+    .wu-google {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
         width: 100%;
+        height: 48px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        color: #e8eee9;
+        font: inherit;
+        font-size: 0.92rem;
+        font-weight: 650;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
     }
-
-    .wu-auth-panel :global(.m3-button.filled),
-    .wu-dialog-panel :global(.m3-button.filled),
-    .mobile-cta :global(.m3-button.filled) {
-        background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%) !important;
-        color: #052e16 !important;
-        border-radius: 14px !important;
-        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35) !important;
+    .wu-google:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(255, 255, 255, 0.18);
     }
-    .wu-auth-panel :global(.m3-button.outlined),
-    .wu-dialog-panel :global(.m3-button.outlined) {
-        border-color: rgba(255, 255, 255, 0.14) !important;
-        border-radius: 14px !important;
-        background: rgba(255, 255, 255, 0.03) !important;
+    .wu-google:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .wu-or {
@@ -1111,6 +1298,20 @@
         background: rgba(34, 197, 94, 0.08);
     }
 
+    .wu-btn-text {
+        border: 0;
+        background: transparent;
+        color: rgba(180, 198, 188, 0.85);
+        font: inherit;
+        font-weight: 650;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 10px;
+    }
+    .wu-btn-text:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
     .mobile-cta {
         display: grid;
         gap: 12px;
@@ -1165,9 +1366,9 @@
         justify-content: flex-end;
         gap: 8px;
         flex-wrap: wrap;
+        align-items: center;
     }
 
-    /* Desktop / laptop: aprovecha ancho y altura */
     @media (min-width: 900px) {
         .wu-root {
             padding: 16px 20px;
