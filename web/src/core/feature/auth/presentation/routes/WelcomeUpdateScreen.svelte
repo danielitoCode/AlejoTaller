@@ -4,7 +4,6 @@
     import type { GoogleIdTokenProfile } from "../util/google-id-token";
     import { ENV } from "../../../../infrastructure/env";
     import { registerStore } from "../viewmodel/register.store";
-    import { Button } from "m3-svelte";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { parseGoogleIdToken } from "../util/google-id-token";
@@ -831,607 +830,336 @@
         display: grid;
         place-items: center;
         padding: max(8px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+        color: var(--md-sys-color-on-background);
         background:
-            radial-gradient(ellipse 80% 60% at 18% 28%, rgba(34, 197, 94, 0.16), transparent 55%),
-            radial-gradient(ellipse 70% 50% at 88% 78%, rgba(16, 185, 129, 0.1), transparent 50%),
-            linear-gradient(165deg, #0a0f0c 0%, #0d1210 40%, #0a0e0c 100%);
-        color: #e8eee9;
+            radial-gradient(
+                ellipse 80% 60% at 18% 28%,
+                color-mix(in srgb, var(--md-sys-color-primary) 16%, transparent),
+                transparent 55%
+            ),
+            radial-gradient(
+                ellipse 70% 50% at 88% 78%,
+                color-mix(in srgb, var(--md-sys-color-primary) 10%, transparent),
+                transparent 50%
+            ),
+            linear-gradient(
+                165deg,
+                color-mix(in srgb, var(--md-sys-color-primary-container) 14%, var(--md-sys-color-background)) 0%,
+                var(--md-sys-color-background) 45%,
+                var(--md-sys-color-background) 100%
+            );
     }
 
     .wu-frame {
         width: min(1480px, 98vw);
         border-radius: 28px;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
         background:
-            radial-gradient(ellipse 55% 45% at 22% 35%, rgba(34, 197, 94, 0.12), transparent 60%),
-            linear-gradient(145deg, rgba(18, 24, 20, 0.95) 0%, rgba(12, 16, 14, 0.98) 100%);
+            radial-gradient(
+                ellipse 55% 45% at 22% 35%,
+                color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent),
+                transparent 60%
+            ),
+            linear-gradient(
+                145deg,
+                color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, var(--md-sys-color-background)) 0%,
+                color-mix(in srgb, var(--md-sys-color-surface-container) 88%, var(--md-sys-color-background)) 100%
+            );
         box-shadow:
-            0 0 0 1px rgba(34, 197, 94, 0.04),
-            0 32px 80px rgba(0, 0, 0, 0.55),
-            inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            0 0 0 1px color-mix(in srgb, var(--md-sys-color-primary) 6%, transparent),
+            0 32px 80px color-mix(in srgb, black 22%, transparent),
+            inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
         overflow: hidden;
     }
 
-    .wu-shell {
-        display: grid;
-        gap: 16px;
-        padding: 18px 16px 20px;
-    }
-
-    .wu-hero {
-        display: grid;
-        gap: 12px;
-        align-content: start;
-    }
-
-    .wu-brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
+    .wu-shell { display: grid; gap: 16px; padding: 18px 16px 20px; }
+    .wu-hero { display: grid; gap: 12px; align-content: start; }
+    .wu-brand { display: flex; align-items: center; gap: 12px; }
     .wu-logo-wrap {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(145deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.08));
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.15);
+        width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center;
+        background: color-mix(in srgb, var(--md-sys-color-primary) 18%, var(--md-sys-color-surface));
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
+        box-shadow: 0 8px 24px color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
     }
-    .wu-logo {
-        width: 32px;
-        height: 32px;
-        object-fit: contain;
-    }
+    .wu-logo { width: 32px; height: 32px; object-fit: contain; }
     .wu-brand-text strong {
-        display: block;
-        font-size: 1.05rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        display: block; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em;
+        color: var(--md-sys-color-on-surface);
     }
     .wu-brand-text span {
-        font-size: 0.72rem;
-        font-weight: 600;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: rgba(134, 239, 172, 0.75);
+        font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase;
+        color: var(--md-sys-color-primary);
     }
 
     .wu-badge {
-        margin: 2px 0 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        width: fit-content;
-        padding: 5px 12px 5px 10px;
-        border-radius: 999px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        color: #86efac;
-        background: rgba(34, 197, 94, 0.12);
-        border: 1px solid rgba(34, 197, 94, 0.28);
+        margin: 2px 0 0; display: inline-flex; align-items: center; gap: 8px; width: fit-content;
+        padding: 5px 12px 5px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;
+        color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 28%, transparent);
     }
     .wu-badge-dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: #22c55e;
-        box-shadow: 0 0 10px #22c55e;
+        width: 7px; height: 7px; border-radius: 50%; background: var(--md-sys-color-primary);
+        box-shadow: 0 0 10px color-mix(in srgb, var(--md-sys-color-primary) 70%, transparent);
     }
 
     .wu-title {
-        margin: 0;
-        font-size: clamp(1.85rem, 4.8vw, 2.85rem);
-        font-weight: 850;
-        letter-spacing: -0.035em;
-        line-height: 1.08;
-        color: #f4f7f5;
+        margin: 0; font-size: clamp(1.85rem, 4.8vw, 2.85rem); font-weight: 850;
+        letter-spacing: -0.035em; line-height: 1.08; color: var(--md-sys-color-on-background);
     }
-    .wu-title em {
-        font-style: normal;
-        background: linear-gradient(90deg, #4ade80, #22c55e 60%, #86efac);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-    }
+    .wu-title em { font-style: normal; color: var(--md-sys-color-primary); }
 
     .wu-lead {
-        margin: 0;
-        max-width: 36rem;
-        font-size: 0.95rem;
-        line-height: 1.55;
-        color: rgba(200, 214, 205, 0.78);
+        margin: 0; max-width: 36rem; font-size: 0.95rem; line-height: 1.55;
+        color: var(--md-sys-color-on-surface-variant);
     }
 
     .wu-trust {
-        list-style: none;
-        margin: 4px 0 0;
-        padding: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px 18px;
+        list-style: none; margin: 4px 0 0; padding: 0;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px 18px;
     }
-    .wu-trust li {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    .wu-trust li { display: flex; align-items: center; gap: 10px; }
     .wu-trust-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        color: #4ade80;
-        background: rgba(34, 197, 94, 0.1);
-        border: 1px solid rgba(34, 197, 94, 0.22);
+        width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0;
+        color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 22%, transparent);
     }
     .wu-trust-label {
-        font-size: 0.78rem;
-        font-weight: 650;
-        line-height: 1.25;
-        white-space: pre-line;
-        color: rgba(210, 222, 214, 0.88);
+        font-size: 0.78rem; font-weight: 650; line-height: 1.25; white-space: pre-line;
+        color: var(--md-sys-color-on-surface-variant);
     }
 
-    .wu-stage {
-        position: relative;
-        margin-top: 6px;
-    }
+    .wu-stage { position: relative; margin-top: 6px; }
     .wu-stage-glow {
-        position: absolute;
-        inset: 15% 8% -8%;
-        background: radial-gradient(ellipse at 50% 70%, rgba(34, 197, 94, 0.32), transparent 65%);
-        filter: blur(32px);
-        pointer-events: none;
+        position: absolute; inset: 15% 8% -8%;
+        background: radial-gradient(
+            ellipse at 50% 70%,
+            color-mix(in srgb, var(--md-sys-color-primary) 28%, transparent),
+            transparent 65%
+        );
+        filter: blur(32px); pointer-events: none;
     }
     .wu-stage-plate {
-        position: relative;
-        border-radius: 20px;
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow:
-            0 28px 56px rgba(0, 0, 0, 0.5),
-            inset 0 1px 0 rgba(255, 255, 255, 0.06);
-        background: #0a0e0c;
+        position: relative; border-radius: 20px; overflow: hidden;
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 80%, transparent);
+        box-shadow: 0 28px 56px color-mix(in srgb, black 18%, transparent);
+        background: var(--md-sys-color-surface-container-lowest, var(--md-sys-color-surface));
     }
-    .wu-shot {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        object-position: center;
-        display: block;
-    }
+    .wu-shot { width: 100%; height: 200px; object-fit: cover; object-position: center; display: block; }
 
-    .wu-social-proof {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-top: 2px;
-    }
-    .wu-avatars {
-        display: flex;
-        align-items: center;
-    }
+    .wu-social-proof { display: flex; align-items: center; gap: 12px; margin-top: 2px; }
+    .wu-avatars { display: flex; align-items: center; }
     .av {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        border: 2px solid #0d1210;
-        margin-left: -10px;
-        object-fit: cover;
-        background: #1a2e22;
+        width: 32px; height: 32px; border-radius: 50%;
+        border: 2px solid var(--md-sys-color-background);
+        margin-left: -10px; object-fit: cover;
+        background: var(--md-sys-color-primary-container);
     }
-    .av:first-child {
-        margin-left: 0;
-    }
+    .av:first-child { margin-left: 0; }
     .wu-social-meta {
-        display: grid;
-        gap: 2px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: rgba(200, 214, 205, 0.75);
+        display: grid; gap: 2px; font-size: 0.78rem; font-weight: 600;
+        color: var(--md-sys-color-on-surface-variant);
     }
-    .wu-stars {
-        display: inline-flex;
-        gap: 2px;
-        color: #facc15;
-    }
+    .wu-stars { display: inline-flex; gap: 2px; color: #e8a82f; }
 
     .wu-auth-panel,
     .wu-dialog-panel {
-        display: grid;
-        gap: 14px;
-        padding: 26px 24px;
-        border-radius: 22px;
-        background: linear-gradient(165deg, rgba(28, 36, 31, 0.92), rgba(18, 24, 20, 0.96));
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow:
-            0 20px 50px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        display: grid; gap: 14px; padding: 26px 24px; border-radius: 22px;
+        background: var(--md-sys-color-surface-container-high);
+        border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 75%, transparent);
+        box-shadow: 0 20px 50px color-mix(in srgb, black 14%, transparent);
         backdrop-filter: blur(16px);
     }
     .wu-auth-panel h2,
     .wu-dialog-head h2,
     .wu-dialog-panel h3 {
-        margin: 0;
-        font-size: 1.3rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        color: #f4f7f5;
+        margin: 0; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.02em;
+        color: var(--md-sys-color-on-surface);
     }
     .wu-auth-sub {
-        margin: -6px 0 2px;
-        font-size: 0.88rem;
-        color: rgba(180, 198, 188, 0.75);
+        margin: -6px 0 2px; font-size: 0.88rem; color: var(--md-sys-color-on-surface-variant);
     }
 
-    /* ——— Modern form fields ——— */
-    .wu-fields {
-        display: grid;
-        gap: 14px;
-        margin: 0;
-    }
-    .wu-field {
-        display: grid;
-        gap: 6px;
-    }
+    .wu-fields { display: grid; gap: 14px; margin: 0; }
+    .wu-field { display: grid; gap: 6px; }
     .wu-field-label {
-        font-size: 0.78rem;
-        font-weight: 650;
-        letter-spacing: 0.01em;
-        color: rgba(200, 214, 205, 0.7);
-        padding-left: 2px;
+        font-size: 0.78rem; font-weight: 650; letter-spacing: 0.01em;
+        color: var(--md-sys-color-on-surface-variant); padding-left: 2px;
     }
     .wu-field-box {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        height: 48px;
-        padding: 0 14px;
+        display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px;
         border-radius: 12px;
-        background: rgba(8, 12, 10, 0.65);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        transition:
-            border-color 0.15s ease,
-            box-shadow 0.15s ease,
-            background 0.15s ease;
+        background: var(--md-sys-color-surface-container);
+        border: 1px solid var(--md-sys-color-outline-variant);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
     }
     .wu-field-box:focus-within {
-        border-color: rgba(74, 222, 128, 0.55);
-        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
-        background: rgba(10, 16, 12, 0.85);
+        border-color: var(--md-sys-color-primary);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--md-sys-color-primary) 18%, transparent);
+        background: var(--md-sys-color-surface);
     }
     .wu-field-icon {
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        color: rgba(160, 180, 168, 0.65);
+        display: grid; place-items: center; flex-shrink: 0;
+        color: var(--md-sys-color-on-surface-variant);
     }
-    .wu-field-box:focus-within .wu-field-icon {
-        color: #4ade80;
-    }
+    .wu-field-box:focus-within .wu-field-icon { color: var(--md-sys-color-primary); }
     .wu-field-box input {
-        flex: 1;
-        min-width: 0;
-        height: 100%;
-        border: 0;
-        outline: none;
-        background: transparent;
-        color: #f0f4f1;
-        font: inherit;
-        font-size: 0.95rem;
-        font-weight: 500;
+        flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent;
+        color: var(--md-sys-color-on-surface); font: inherit; font-size: 0.95rem; font-weight: 500;
     }
     .wu-field-box input::placeholder {
-        color: rgba(160, 180, 168, 0.4);
+        color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 55%, transparent);
         font-weight: 450;
     }
     .wu-field-toggle {
-        display: grid;
-        place-items: center;
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
-        margin-right: -6px;
-        border: 0;
-        border-radius: 8px;
-        background: transparent;
-        color: rgba(160, 180, 168, 0.65);
-        cursor: pointer;
+        display: grid; place-items: center; flex-shrink: 0; width: 36px; height: 36px;
+        margin-right: -6px; border: 0; border-radius: 8px; background: transparent;
+        color: var(--md-sys-color-on-surface-variant); cursor: pointer;
         transition: color 0.15s, background 0.15s;
     }
     .wu-field-toggle:hover {
-        color: #e8eee9;
-        background: rgba(255, 255, 255, 0.06);
+        color: var(--md-sys-color-on-surface);
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
     }
 
-    .wu-row-between {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+    .wu-row-between { display: flex; justify-content: space-between; align-items: center; }
     .wu-remember {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.84rem;
-        font-weight: 600;
-        cursor: pointer;
-        color: rgba(200, 214, 205, 0.85);
-        user-select: none;
+        display: flex; align-items: center; gap: 8px; font-size: 0.84rem; font-weight: 600;
+        cursor: pointer; color: var(--md-sys-color-on-surface-variant); user-select: none;
     }
     .wu-remember input {
-        width: 15px;
-        height: 15px;
-        accent-color: #22c55e;
-        cursor: pointer;
+        width: 15px; height: 15px; accent-color: var(--md-sys-color-primary); cursor: pointer;
     }
 
-    .wu-error {
-        margin: 0;
-        color: #f87171;
-        font-size: 0.88rem;
-        text-align: center;
-    }
+    .wu-error { margin: 0; color: var(--md-sys-color-error); font-size: 0.88rem; text-align: center; }
 
     .wu-cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        height: 48px;
-        border: 0;
-        border-radius: 12px;
-        font: inherit;
-        font-size: 0.95rem;
-        font-weight: 750;
-        cursor: pointer;
-        color: #052e16;
-        background: linear-gradient(180deg, #4ade80 0%, #22c55e 100%);
-        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; height: 48px; border: 0; border-radius: 12px;
+        font: inherit; font-size: 0.95rem; font-weight: 750; cursor: pointer;
+        color: var(--md-sys-color-on-primary);
+        background: var(--md-sys-color-primary);
+        box-shadow: 0 8px 24px color-mix(in srgb, var(--md-sys-color-primary) 32%, transparent);
         transition: filter 0.15s, transform 0.1s, opacity 0.15s;
     }
-    .wu-cta:hover:not(:disabled) {
-        filter: brightness(1.06);
-    }
-    .wu-cta:active:not(:disabled) {
-        transform: scale(0.985);
-    }
-    .wu-cta:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-        box-shadow: none;
-    }
-    .wu-cta-sm {
-        width: auto;
-        height: 42px;
-        padding: 0 18px;
-    }
+    .wu-cta:hover:not(:disabled) { filter: brightness(1.06); }
+    .wu-cta:active:not(:disabled) { transform: scale(0.985); }
+    .wu-cta:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+    .wu-cta-sm { width: auto; height: 42px; padding: 0 18px; }
 
     .wu-google {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        height: 48px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.03);
-        color: #e8eee9;
-        font: inherit;
-        font-size: 0.92rem;
-        font-weight: 650;
-        cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+        width: 100%; height: 48px; border-radius: 12px;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        background: var(--md-sys-color-surface);
+        color: var(--md-sys-color-on-surface);
+        font: inherit; font-size: 0.92rem; font-weight: 650; cursor: pointer;
         transition: background 0.15s, border-color 0.15s;
     }
     .wu-google:hover:not(:disabled) {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.18);
+        background: var(--md-sys-color-surface-container-high);
+        border-color: color-mix(in srgb, var(--md-sys-color-primary) 30%, var(--md-sys-color-outline-variant));
     }
-    .wu-google:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+    .wu-google:disabled { opacity: 0.5; cursor: not-allowed; }
 
     .wu-or {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: rgba(160, 180, 168, 0.65);
-        font-size: 0.75rem;
+        display: flex; align-items: center; gap: 10px;
+        color: var(--md-sys-color-on-surface-variant); font-size: 0.75rem;
     }
     .wu-or::before,
     .wu-or::after {
-        content: "";
-        flex: 1;
-        height: 1px;
-        background: rgba(255, 255, 255, 0.1);
+        content: ""; flex: 1; height: 1px; background: var(--md-sys-color-outline-variant);
     }
 
-    .g-icon {
-        width: 18px;
-        height: 18px;
-        object-fit: contain;
-    }
+    .g-icon { width: 18px; height: 18px; object-fit: contain; }
 
     .wu-switch {
-        margin: 0;
-        text-align: center;
-        font-size: 0.88rem;
-        color: rgba(180, 198, 188, 0.75);
+        margin: 0; text-align: center; font-size: 0.88rem;
+        color: var(--md-sys-color-on-surface-variant);
     }
     .wu-link {
-        border: 0;
-        background: none;
-        color: #4ade80;
-        font: inherit;
-        font-weight: 750;
-        cursor: pointer;
-        padding: 0;
+        border: 0; background: none; color: var(--md-sys-color-primary);
+        font: inherit; font-weight: 750; cursor: pointer; padding: 0;
     }
 
     .wu-guest {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        border: 0;
-        background: transparent;
-        color: rgba(180, 198, 188, 0.7);
-        font: inherit;
-        font-size: 0.88rem;
-        font-weight: 650;
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; border: 0; background: transparent;
+        color: var(--md-sys-color-on-surface-variant);
+        font: inherit; font-size: 0.88rem; font-weight: 650; cursor: pointer;
+        padding: 8px; border-radius: 10px;
         transition: color 0.15s, background 0.15s;
     }
     .wu-guest:hover {
-        color: #4ade80;
-        background: rgba(34, 197, 94, 0.08);
+        color: var(--md-sys-color-primary);
+        background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
     }
 
     .wu-btn-text {
-        border: 0;
-        background: transparent;
-        color: rgba(180, 198, 188, 0.85);
-        font: inherit;
-        font-weight: 650;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 10px;
+        border: 0; background: transparent; color: var(--md-sys-color-on-surface-variant);
+        font: inherit; font-weight: 650; cursor: pointer; padding: 8px 12px; border-radius: 10px;
     }
     .wu-btn-text:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 6%, transparent);
     }
 
-    .mobile-cta {
-        display: grid;
-        gap: 12px;
-        padding: 4px 0 0;
-    }
-    .desktop-auth {
-        display: none;
-    }
+    .mobile-cta { display: grid; gap: 12px; padding: 4px 0 0; }
+    .desktop-auth { display: none; }
 
     .wu-dialog {
-        position: fixed;
-        inset: 0;
-        z-index: 1100;
-        display: grid;
-        place-items: end center;
+        position: fixed; inset: 0; z-index: 1100; display: grid; place-items: end center;
     }
     .wu-dialog-scrim {
-        position: absolute;
-        inset: 0;
-        border: 0;
-        background: rgba(0, 0, 0, 0.55);
+        position: absolute; inset: 0; border: 0;
+        background: color-mix(in srgb, black 48%, transparent);
         backdrop-filter: blur(8px);
     }
     .wu-dialog-panel {
-        position: relative;
-        z-index: 1;
-        width: 100%;
-        max-height: 92dvh;
-        overflow: auto;
+        position: relative; z-index: 1; width: 100%; max-height: 92dvh; overflow: auto;
         border-radius: 24px 24px 0 0;
         padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
     .wu-dialog-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
     }
     .wu-dialog-close {
-        width: 40px;
-        height: 40px;
-        border: 0;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.06);
-        color: inherit;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
+        width: 40px; height: 40px; border: 0; border-radius: 12px;
+        background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+        color: inherit; display: grid; place-items: center; cursor: pointer;
     }
     .wu-link-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
+        display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; align-items: center;
     }
 
     @media (min-width: 900px) {
-        .wu-root {
-            padding: 16px 20px;
-        }
-        .wu-frame {
-            width: min(1520px, 96vw);
-            min-height: min(860px, 92dvh);
-        }
+        .wu-root { padding: 16px 20px; }
+        .wu-frame { width: min(1520px, 96vw); min-height: min(860px, 92dvh); }
         .wu-shell {
             grid-template-columns: minmax(0, 1.35fr) minmax(380px, 440px);
-            gap: 28px 56px;
-            padding: 32px 40px 36px;
-            align-items: center;
+            gap: 28px 56px; padding: 32px 40px 36px; align-items: center;
             min-height: min(860px, 92dvh);
         }
-        .wu-title {
-            font-size: clamp(2.35rem, 3.4vw, 3.15rem);
-        }
-        .wu-lead {
-            font-size: 1rem;
-            max-width: 40rem;
-        }
-        .wu-shot {
-            height: min(280px, 32vh);
-        }
-        .desktop-auth {
-            display: grid;
-            align-self: center;
-        }
-        .mobile-cta {
-            display: none;
-        }
-        .wu-dialog {
-            place-items: center;
-            padding: 16px;
-        }
-        .wu-dialog-panel {
-            width: min(420px, 100%);
-            border-radius: 22px;
-            max-height: 90dvh;
-        }
+        .wu-title { font-size: clamp(2.35rem, 3.4vw, 3.15rem); }
+        .wu-lead { font-size: 1rem; max-width: 40rem; }
+        .wu-shot { height: min(280px, 32vh); }
+        .desktop-auth { display: grid; align-self: center; }
+        .mobile-cta { display: none; }
+        .wu-dialog { place-items: center; padding: 16px; }
+        .wu-dialog-panel { width: min(420px, 100%); border-radius: 22px; max-height: 90dvh; }
     }
 
     @media (min-width: 1280px) {
         .wu-shell {
             grid-template-columns: minmax(0, 1.45fr) minmax(400px, 460px);
-            gap: 36px 64px;
-            padding: 40px 48px 44px;
+            gap: 36px 64px; padding: 40px 48px 44px;
         }
-        .wu-shot {
-            height: min(320px, 36vh);
-        }
-        .wu-title {
-            font-size: clamp(2.6rem, 3.2vw, 3.35rem);
-        }
+        .wu-shot { height: min(320px, 36vh); }
+        .wu-title { font-size: clamp(2.6rem, 3.2vw, 3.35rem); }
     }
 
     @media (max-width: 899px) {
-        .wu-frame {
-            border-radius: 20px;
-        }
-        .wu-shot {
-            height: 160px;
-        }
+        .wu-frame { border-radius: 20px; }
+        .wu-shot { height: 160px; }
     }
 </style>
