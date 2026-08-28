@@ -158,16 +158,12 @@
     .product-screen {
         width: 100%;
         height: 100%;
-        min-height: 100%;
+        min-height: 0;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        background: linear-gradient(
-            180deg,
-            var(--md-sys-color-surface-container-low) 0%,
-            var(--md-sys-color-background) 25%
-        );
+        background: var(--md-sys-color-background);
     }
 
     .screen-content {
@@ -212,7 +208,7 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        background: color-mix(in srgb, var(--md-sys-color-secondary-container) 78%, transparent);
+        background: color-mix(in srgb, var(--md-sys-color-secondary-container, var(--md-sys-color-surface-container)) 78%, transparent);
         border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
     }
 
@@ -257,7 +253,8 @@
         overflow-x: hidden;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 0 16px calc(96px + env(safe-area-inset-bottom, 0px));
+        overscroll-behavior: contain;
+        padding: 0 16px 24px;
     }
 
     .featured-strip {
@@ -300,13 +297,14 @@
         grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
         gap: 16px;
         align-content: start;
+        padding-bottom: 8px;
     }
 
     .products-grid > div {
         min-width: 0;
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 840px) {
         .top-row {
             padding: 10px 12px 0;
         }
@@ -317,7 +315,7 @@
             margin: 0 12px;
         }
         .products-region {
-            padding: 0 12px calc(128px + env(safe-area-inset-bottom, 0px));
+            padding: 0 12px max(96px, calc(72px + env(safe-area-inset-bottom, 0px)));
         }
         .products-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -333,7 +331,7 @@
             padding: 0 8px;
         }
         .products-region {
-            padding: 0 8px calc(128px + env(safe-area-inset-bottom, 0px));
+            padding: 0 8px max(96px, calc(72px + env(safe-area-inset-bottom, 0px)));
         }
         .products-grid {
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
