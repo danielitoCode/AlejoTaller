@@ -1,8 +1,25 @@
-import { home, login, register, splash, welcome } from "./router";
+import { home, login, register, splash, welcome, welcomeUpdate } from "./router";
 import { agent, buy, buyConfirm, dashboard, productDetail, profile, reservation, reservationDetail, settings, support, supportDetail } from "./nested.router";
 
-type TopLevelPath = typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path | typeof home.path;
-type NestedPath = typeof dashboard.path | typeof buy.path | typeof buyConfirm.path | typeof reservation.path | typeof reservationDetail.path | typeof profile.path | typeof settings.path | typeof productDetail.path | typeof support.path | typeof supportDetail.path | typeof agent.path;
+type TopLevelPath =
+    | typeof splash.path
+    | typeof welcome.path
+    | typeof welcomeUpdate.path
+    | typeof login.path
+    | typeof register.path
+    | typeof home.path;
+type NestedPath =
+    | typeof dashboard.path
+    | typeof buy.path
+    | typeof buyConfirm.path
+    | typeof reservation.path
+    | typeof reservationDetail.path
+    | typeof profile.path
+    | typeof settings.path
+    | typeof productDetail.path
+    | typeof support.path
+    | typeof supportDetail.path
+    | typeof agent.path;
 
 export type ParsedDeepLink = {
     top: TopLevelPath;
@@ -10,8 +27,27 @@ export type ParsedDeepLink = {
     args?: Record<string, string>;
 };
 
-const topPaths = new Set<TopLevelPath>([splash.path, welcome.path, login.path, register.path, home.path]);
-const nestedPaths = new Set<NestedPath>([dashboard.path, buy.path, buyConfirm.path, reservation.path, reservationDetail.path, profile.path, settings.path, productDetail.path, support.path, supportDetail.path, agent.path]);
+const topPaths = new Set<TopLevelPath>([
+    splash.path,
+    welcome.path,
+    welcomeUpdate.path,
+    login.path,
+    register.path,
+    home.path,
+]);
+const nestedPaths = new Set<NestedPath>([
+    dashboard.path,
+    buy.path,
+    buyConfirm.path,
+    reservation.path,
+    reservationDetail.path,
+    profile.path,
+    settings.path,
+    productDetail.path,
+    support.path,
+    supportDetail.path,
+    agent.path,
+]);
 
 export function parseDeepLinkHash(hash: string): ParsedDeepLink | null {
     const raw = hash.startsWith("#") ? hash.slice(1) : hash;
@@ -35,11 +71,14 @@ export function parseDeepLinkHash(hash: string): ParsedDeepLink | null {
     return {
         top: home.path,
         nested: nested as NestedPath,
-        args
+        args,
     };
 }
 
-export function buildTopLevelHash(top: TopLevelPath, args?: Record<string, string | undefined | null>): string {
+export function buildTopLevelHash(
+    top: TopLevelPath,
+    args?: Record<string, string | undefined | null>
+): string {
     const params = new URLSearchParams();
     Object.entries(args ?? {}).forEach(([key, value]) => {
         if (value) params.set(key, value);
@@ -48,7 +87,10 @@ export function buildTopLevelHash(top: TopLevelPath, args?: Record<string, strin
     return `#/${top}${query ? `?${query}` : ""}`;
 }
 
-export function buildHomeHash(nested: NestedPath, args?: Record<string, string | undefined | null>): string {
+export function buildHomeHash(
+    nested: NestedPath,
+    args?: Record<string, string | undefined | null>
+): string {
     const params = new URLSearchParams();
     Object.entries(args ?? {}).forEach(([key, value]) => {
         if (value) params.set(key, value);
