@@ -1,12 +1,13 @@
 <script lang="ts">
     import { onDestroy, onMount } from "svelte";
     import {rememberNavController} from "../../../../lib/navigation/rememberNavController";
-    import {home, login, register, splash, welcome} from "./router";
+    import {home, login, register, splash, welcome, welcomeUpdate} from "./router";
     import NavHost from "../../../../lib/navigation/NavHost.svelte";
     import {composable} from "../../../../lib/navigation/composable";
     import Splash from "../../../feature/auth/presentation/routes/Splash.svelte";
     import Login from "../../../feature/auth/presentation/routes/Login.svelte";
     import Register from "../../../feature/auth/presentation/routes/Register.svelte";
+    import WelcomeUpdateScreen from "../../../feature/auth/presentation/routes/WelcomeUpdateScreen.svelte";
     import WelcomeScreen from "../routes/WelcomeScreen.svelte";
     import NestedNavigationWrapper from "./NestedNavigationWrapper.svelte";
     import { buildTopLevelHash, parseDeepLinkHash } from "./deeplink";
@@ -52,7 +53,12 @@
     }
 
     function maybeRememberPendingDeepLinkForAuthRedirect(path: string) {
-        if ((path === welcome.path || path === login.path) && isProductDeepLinkHash(window.location.hash)) {
+        if (
+            (path === welcome.path ||
+                path === welcomeUpdate.path ||
+                path === login.path) &&
+            isProductDeepLinkHash(window.location.hash)
+        ) {
             rememberPendingDeepLink(window.location.hash);
         }
     }
@@ -76,9 +82,6 @@
         if (hashToApply) {
             const parsed = parseDeepLinkHash(hashToApply);
             if (parsed && parsed.top === home.path) {
-                // Only touch the hash if the deeplink is actionable immediately.
-                // Otherwise (non-authenticated + product deeplink), leave the
-                // original hash alone so Splash/Login can consume it later.
                 const isActionableImmediately = false; // Splash owns all home deeplinks
                 if (isActionableImmediately) {
                     window.history.replaceState({}, "", hashToApply);
@@ -104,7 +107,14 @@
     $: if (!suppressHashSync && typeof window !== "undefined" && currentPath && currentPath !== home.path) {
         maybeRememberPendingDeepLinkForAuthRedirect(currentPath);
         if (!window.location.hash.startsWith("#/home/")) {
-            const nextHash = buildTopLevelHash(currentPath as typeof splash.path | typeof welcome.path | typeof login.path | typeof register.path);
+            const nextHash = buildTopLevelHash(
+                currentPath as
+                    | typeof splash.path
+                    | typeof welcome.path
+                    | typeof welcomeUpdate.path
+                    | typeof login.path
+                    | typeof register.path
+            );
             if (window.location.hash !== nextHash) {
                 window.history.replaceState({}, "", nextHash);
             }
@@ -118,6 +128,7 @@
         routes={[
                 composable(splash, () => Splash),
                 composable(welcome, () => WelcomeScreen),
+                composable(welcomeUpdate, () => WelcomeUpdateScreen),
                 composable(login, () => Login),
                 composable(register, () => Register),
                 composable(home, () => NestedNavigationWrapper)
