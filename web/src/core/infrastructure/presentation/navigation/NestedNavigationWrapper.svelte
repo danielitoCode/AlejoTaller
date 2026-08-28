@@ -197,14 +197,14 @@
 
     async function logout() {
         try { await authContainer.useCases.sessions.closeSession.execute(); }
-        finally { clearSessionBoundState({ clearCart: true }); navController.resetTo("login"); }
+        finally { clearSessionBoundState({ clearCart: true }); navController.resetTo("welcome-update"); }
     }
 
     function handleRequestLogin() {
         if (import.meta.env.DEV) logNavAuthCheck(false, false, "redirect-login");
         guestAuthOverlayOpen = false;
         clearSessionBoundState({ clearCart: true });
-        navController.resetTo("login");
+        navController.resetTo("welcome-update");
     }
 
     function continueAsClient() { rememberAdminChoice("client"); adminChoicePending = false; }
