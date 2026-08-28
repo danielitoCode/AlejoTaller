@@ -142,7 +142,8 @@
         } catch (e) {
             if (import.meta.env.DEV) logNavError("autoCreateGuestSession failed", e);
             await holdStatus("first-visit");
-            navController.resetTo("welcome");
+            // Validación UI: ruta fusionada en lugar de welcome legacy
+            navController.resetTo("welcome-update");
         }
     }
 
@@ -229,9 +230,10 @@
                 if (import.meta.env.DEV) logNavRoute("home", { reason: "returning-visitor-auto-guest" });
                 await autoCreateGuestSession(false);
             } else {
-                if (import.meta.env.DEV) logNavRoute("welcome", { reason: "first-visit-no-deeplink" });
+                if (import.meta.env.DEV) logNavRoute("welcome-update", { reason: "first-visit-no-deeplink" });
                 await holdStatus("first-visit");
-                navController.resetTo("welcome");
+                // Solo cambia el destino: mismas políticas, UI fusionada
+                navController.resetTo("welcome-update");
             }
         } finally {
             loading = false;
