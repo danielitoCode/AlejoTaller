@@ -410,15 +410,17 @@
         { icon: ShieldCheck, label: "Pagos 100%\nseguros" }
     ];
 
-    const stageImages = [
-        {
-            src: "https://commons.wikimedia.org/wiki/Special:FilePath/Electronic_components_(8370189100).jpg",
-            className: "stage-main"
-        },
-        {
-            src: "https://commons.wikimedia.org/wiki/Special:FilePath/Liion-18650-AA-battery.jpg",
-            className: "stage-side"
-        }
+    /** Gancho visual único — tienda de electrónica (Unsplash, libre uso) */
+    const heroImageUrl =
+        "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=80";
+
+    /** Avatares de muestra (pravatar) — no leen usuarios reales fuera de sesión */
+    const sampleAvatars = [
+        "https://i.pravatar.cc/64?img=12",
+        "https://i.pravatar.cc/64?img=32",
+        "https://i.pravatar.cc/64?img=47",
+        "https://i.pravatar.cc/64?img=5",
+        "https://i.pravatar.cc/64?img=68"
     ];
 </script>
 
@@ -466,16 +468,21 @@
                 <div class="wu-stage" aria-hidden="true">
                     <div class="wu-stage-glow"></div>
                     <div class="wu-stage-plate">
-                        <img class="wu-shot stage-main" src={stageImages[0].src} alt="" />
-                        <img class="wu-shot stage-side" src={stageImages[1].src} alt="" />
+                        <img
+                            class="wu-shot"
+                            src={heroImageUrl}
+                            alt="Componentes y circuitos electrónicos"
+                            loading="eager"
+                            decoding="async"
+                        />
                     </div>
                 </div>
 
                 <div class="wu-social-proof">
                     <div class="wu-avatars" aria-hidden="true">
-                        <span class="av a1"></span>
-                        <span class="av a2"></span>
-                        <span class="av a3"></span>
+                        {#each sampleAvatars as src, i}
+                            <img class="av" src={src} alt="" style="z-index: {sampleAvatars.length - i}" />
+                        {/each}
                     </div>
                     <div class="wu-social-meta">
                         <span class="wu-stars" aria-hidden="true">
@@ -731,7 +738,7 @@
         box-sizing: border-box;
         display: grid;
         place-items: center;
-        padding: max(12px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom));
+        padding: max(8px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
         background:
             radial-gradient(ellipse 80% 60% at 18% 28%, rgba(34, 197, 94, 0.16), transparent 55%),
             radial-gradient(ellipse 70% 50% at 88% 78%, rgba(16, 185, 129, 0.1), transparent 50%),
@@ -740,7 +747,7 @@
     }
 
     .wu-frame {
-        width: min(1180px, 100%);
+        width: min(1480px, 98vw);
         border-radius: 28px;
         border: 1px solid rgba(255, 255, 255, 0.06);
         background:
@@ -755,13 +762,13 @@
 
     .wu-shell {
         display: grid;
-        gap: 20px;
-        padding: 22px 18px 24px;
+        gap: 16px;
+        padding: 18px 16px 20px;
     }
 
     .wu-hero {
         display: grid;
-        gap: 14px;
+        gap: 12px;
         align-content: start;
     }
 
@@ -800,7 +807,7 @@
     }
 
     .wu-badge {
-        margin: 4px 0 0;
+        margin: 2px 0 0;
         display: inline-flex;
         align-items: center;
         gap: 8px;
@@ -840,19 +847,19 @@
 
     .wu-lead {
         margin: 0;
-        max-width: 32rem;
-        font-size: 0.92rem;
+        max-width: 36rem;
+        font-size: 0.95rem;
         line-height: 1.55;
         color: rgba(200, 214, 205, 0.78);
     }
 
     .wu-trust {
         list-style: none;
-        margin: 6px 0 0;
+        margin: 4px 0 0;
         padding: 0;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 12px 16px;
+        gap: 12px 18px;
     }
     .wu-trust li {
         display: flex;
@@ -878,71 +885,57 @@
         color: rgba(210, 222, 214, 0.88);
     }
 
+    /* Un solo gancho visual — sin carrusel */
     .wu-stage {
         position: relative;
-        margin-top: 8px;
-        min-height: 160px;
+        margin-top: 6px;
     }
     .wu-stage-glow {
         position: absolute;
-        inset: 20% 10% -10%;
-        background: radial-gradient(ellipse at 50% 70%, rgba(34, 197, 94, 0.28), transparent 65%);
-        filter: blur(28px);
+        inset: 15% 8% -8%;
+        background: radial-gradient(ellipse at 50% 70%, rgba(34, 197, 94, 0.32), transparent 65%);
+        filter: blur(32px);
         pointer-events: none;
     }
     .wu-stage-plate {
         position: relative;
-        display: grid;
-        grid-template-columns: 1.4fr 0.85fr;
-        gap: 10px;
-        padding: 10px;
-        border-radius: 22px;
-        background: linear-gradient(160deg, rgba(30, 41, 34, 0.9), rgba(15, 20, 17, 0.95));
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 20px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.08);
         box-shadow:
-            0 24px 48px rgba(0, 0, 0, 0.45),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            0 28px 56px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        background: #0a0e0c;
     }
     .wu-shot {
         width: 100%;
+        height: 200px;
         object-fit: cover;
-        display: block;
-        border-radius: 14px;
-    }
-    .stage-main {
-        height: 150px;
-    }
-    .stage-side {
-        height: 150px;
         object-position: center;
+        display: block;
     }
 
     .wu-social-proof {
         display: flex;
         align-items: center;
         gap: 12px;
-        margin-top: 4px;
+        margin-top: 2px;
     }
     .wu-avatars {
         display: flex;
         align-items: center;
     }
     .av {
-        width: 28px;
-        height: 28px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         border: 2px solid #0d1210;
-        margin-left: -8px;
-        background: linear-gradient(135deg, #4ade80, #166534);
+        margin-left: -10px;
+        object-fit: cover;
+        background: #1a2e22;
     }
     .av:first-child {
         margin-left: 0;
-    }
-    .a2 {
-        background: linear-gradient(135deg, #86efac, #15803d);
-    }
-    .a3 {
-        background: linear-gradient(135deg, #22c55e, #14532d);
     }
     .wu-social-meta {
         display: grid;
@@ -1044,7 +1037,6 @@
         width: 100%;
     }
 
-    /* Primary filled CTA green */
     .wu-auth-panel :global(.m3-button.filled),
     .wu-dialog-panel :global(.m3-button.filled),
     .mobile-cta :global(.m3-button.filled) {
@@ -1175,25 +1167,31 @@
         flex-wrap: wrap;
     }
 
+    /* Desktop / laptop: aprovecha ancho y altura */
     @media (min-width: 900px) {
         .wu-root {
-            padding: 28px;
+            padding: 16px 20px;
+        }
+        .wu-frame {
+            width: min(1520px, 96vw);
+            min-height: min(860px, 92dvh);
         }
         .wu-shell {
-            grid-template-columns: minmax(0, 1.2fr) minmax(360px, 400px);
-            gap: 36px 48px;
-            padding: 36px 40px;
+            grid-template-columns: minmax(0, 1.35fr) minmax(380px, 440px);
+            gap: 28px 56px;
+            padding: 32px 40px 36px;
             align-items: center;
+            min-height: min(860px, 92dvh);
         }
         .wu-title {
-            font-size: clamp(2.2rem, 3.2vw, 2.9rem);
+            font-size: clamp(2.35rem, 3.4vw, 3.15rem);
         }
-        .wu-stage {
-            min-height: 200px;
+        .wu-lead {
+            font-size: 1rem;
+            max-width: 40rem;
         }
-        .stage-main,
-        .stage-side {
-            height: 190px;
+        .wu-shot {
+            height: min(280px, 32vh);
         }
         .desktop-auth {
             display: grid;
@@ -1213,18 +1211,26 @@
         }
     }
 
+    @media (min-width: 1280px) {
+        .wu-shell {
+            grid-template-columns: minmax(0, 1.45fr) minmax(400px, 460px);
+            gap: 36px 64px;
+            padding: 40px 48px 44px;
+        }
+        .wu-shot {
+            height: min(320px, 36vh);
+        }
+        .wu-title {
+            font-size: clamp(2.6rem, 3.2vw, 3.35rem);
+        }
+    }
+
     @media (max-width: 899px) {
         .wu-frame {
             border-radius: 20px;
         }
-        .wu-stage-plate {
-            grid-template-columns: 1fr;
-        }
-        .stage-side {
-            display: none;
-        }
-        .stage-main {
-            height: 140px;
+        .wu-shot {
+            height: 160px;
         }
     }
 </style>
