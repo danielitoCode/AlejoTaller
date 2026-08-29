@@ -1,8 +1,8 @@
 # Core 3 — Checklist (AlejoTaller · espejo)
 
-**Última actualización:** 2026-08-28  
+**Última actualización:** 2026-08-29  
 **Rama:** `Core3`  
-**Orden canónico:** mismo que [dash CORE3_UNIFIED_CHECKLIST](https://github.com/danielitoCode/dash_alejo_taller/blob/Core3/.roadmap/Core3/CORE3_UNIFIED_CHECKLIST.md)
+**Orden canónico:** mismo que dash CORE3_UNIFIED_CHECKLIST.
 
 Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo del panel.
 
@@ -11,39 +11,27 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 ## B0 — Baseline y política
 
 - [x] **BOTH** Core 2 en `master` verificado (operador salida_venta + finance)
-- [x] **BOTH** Política de compras Core 3 leída/aceptada (origen dash README Core3)
-- [x] **AT** Carpeta `.roadmap/Core3/` completa (este checklist + README + STATUS)
-- [ ] **AT** Si aplica: nota en `.policies/warehouse` o doc enlace “entradas solo panel”
+- [x] **BOTH** Política de compras Core 3 leída/aceptada
+- [x] **AT** Carpeta `.roadmap/Core3/` completa
+- [x] **AT** Entradas de compras/abastecimiento exclusivamente desde el panel; cliente B2C y operador no registran entradas.
 
-**DASH B0:** consola índices / `entry_id` / permisos cliente **verificada 2026-08-28**.
-
----
+**B0 AT cerrado 2026-08-29:** frontera de entradas exclusivamente panel documentada; no quedan tareas B0 AT pendientes.
 
 ## B1 — Proveedores
 
-- [ ] **AT** Verificar (consola o doc): rol cliente **sin** create/update en `supplier`
-- [ ] **AT** Sin UI ni case use de supplier en web/app/mcp
-
-**DASH B1 (panel):** smoke UI OK 2026-08-27.
-
----
+- [x] **AT** Verificar rol cliente sin create/update en `supplier` — verificado previamente.
+- [x] **AT** Sin UI ni case use de supplier en web/app/mcp — verificado previamente.
 
 ## B2 — Historial compras
 
-- [ ] **AT** Confirmar que operador/web **no** listan `purchase_entry`
+- [x] **AT** Confirmar que operador/web no listan `purchase_entry` — verificado previamente.
 - [ ] **AT** (opcional) Test o nota: lectura `last_unit_cost` en flujo COGS intacta
-
-**DASH B2 (panel):** completo — listado, detalle, filtros, movements `entry_id`, filtro producto. Código verificado 2026-08-28.
-
----
 
 ## B3 — Anulación / corrección
 
 - [ ] **BOTH** Política de anulación aceptada (no dejar `existence < reserved`)
-- [ ] **AT** **DEP DASH B3:** si el panel cambia costos o stock por anulación, re-smoke confirm operador
-- [ ] **AT** Sin endpoint cliente para anular entradas
-
----
+- [ ] **AT** DEP DASH B3: si el panel cambia costos o stock por anulación, re-smoke confirm operador
+- [x] **AT** Sin endpoint cliente para anular entradas — verificado previamente.
 
 ## B4 — Permisos y smoke cruzado
 
@@ -51,23 +39,17 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 - [ ] **AT** Smoke operador: tras entrada dash, confirm VERIFIED → `salida_venta` + finance OK
 - [ ] **AT** MCP health / tools: sin supplier/purchase
 
-**2026-08-28:** B4 en curso (panel + frontera AT).
-
----
-
 ## B5 — Cierre espejo AT
 
-- [ ] **AT** README monorepo / roadmap mencionan Core 3 en rama `Core3` (sin marcar cerrado)
+- [ ] **AT** README monorepo / roadmap mencionan Core 3 en rama `Core3`
 - [ ] **AT** CI de módulos tocados verde
 - [ ] **AT** Checklist AT marcado en paralelo al dash
-
----
 
 ## B6 — Merge
 
 - [ ] **AT** PR `Core3` → `master` solo con cambios reales de este núcleo
-- [ ] **AT** **DEP:** no adelantar merge que dependa de B3 dash incompleto
-- [ ] **BOTH** Coordinar con merge del panel (release parcial B1+B2+B4 o completo con B3)
+- [ ] **AT** DEP: no adelantar merge que dependa de B3 dash incompleto
+- [ ] **BOTH** Coordinar con merge del panel
 
 ---
 
@@ -75,3 +57,4 @@ Solo se marcan ítems **AT** / **BOTH** aquí. Los **DASH** se marcan en el repo
 |-------|------|
 | 2026-08-27 | Apertura rama `Core3` + checklist espejo |
 | 2026-08-28 | Dash B0 consola + B2 completo reflejados aquí |
+| 2026-08-29 | AT B0 cerrado; permisos/frontera B1 y ausencia de endpoint B3 verificados previamente |
