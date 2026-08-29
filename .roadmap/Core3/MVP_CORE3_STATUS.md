@@ -1,23 +1,28 @@
 # MVP Core 3 — Estado vivo (AlejoTaller)
 
-**Última actualización:** 2026-08-28  
+**Última actualización:** 2026-08-29  
 **Rama:** `Core3`  
 **Core 3 cerrado:** **NO**  
 **Superficie:** secundaria (docs, permisos, no regresión operador/cliente)
 
 | Bloque AT | Estado |
 |-----------|--------|
-| B0 | **Dash cerrado** (política + consola). Espejo AT docs parcial |
-| B1 (solo permisos frontera) | pendiente (DASH B1 smoke UI OK) |
-| B2 (solo verificación) | pendiente (DASH B2 completo en código + UI) |
-| B3 (smoke post-dash) | pendiente |
-| B4 smoke cruzado | **En curso** |
-| B5 | pendiente |
+| B0 Baseline / política / frontera entradas | **Hecho** |
+| B1 Permisos frontera supplier | **Hecho** (sin UI/write cliente) |
+| B2 Sin listado purchase_entry en cliente/operador | **Hecho** |
+| B3 Política + sin endpoint anular | **Hecho.** Smoke post-anulación **DEP UI dash** |
+| B3 opcional test `last_unit_cost` COGS | **Pendiente** (no bloquea; código operador ya lee el campo) |
+| B4/B5 smokes runtime | **Por verificar** — lista en `CORE3_UNIFIED_CHECKLIST.md` |
 | B6 merge | no |
+
+### Código ya verificado (no es smoke de dispositivo)
+
+- MCP: scope B2C; `purchase_entry` en `notInScope`; sin tools de abastecimiento
+- Operador: COGS `last_unit_cost × qty` al VERIFIED (`ApplyOperatorStockDecisionCaseUse`)
+- Cliente: sin pantallas de compras/proveedores
 
 ### Referencia panel (`dash_alejo_taller` / `Core3`)
 
-- B0 consola: índices `purchase_entry`, `stock_movements.entry_id`, permisos cliente — **hecho 2026-08-28**
-- B1+B2: Proveedores, factura, Compras listado→detalle + filtro producto — **hecho**
-
-Panel: `dash_alejo_taller` rama `Core3`.
+- B0–B2 + B4 panel: hechos
+- `purchase_entry.status` ACTIVE\|CANCELLED: **provisionado 2026-08-29**
+- B3.1 núcleo transaccional: hecho; **falta UI anular**
