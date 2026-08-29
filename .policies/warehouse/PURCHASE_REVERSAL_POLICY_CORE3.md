@@ -1,88 +1,76 @@
 # Core 3 — Política de anulación y corrección de entradas
 
 **Fecha:** 2026-08-29  
-**Estado:** propuesta aceptada para diseño B3; no implica implementación todavía.
+**Estado:** aceptada para implementación B3 en back-office.
 
 ## 1. Alcance
-
-Esta política define cómo se revertirán entradas de compras/abastecimiento que ya hayan afectado el inventario.
 
 La anulación pertenece al back-office y queda restringida a **owner/admin**. El cliente B2C y el operador no anulan ni corrigen entradas.
 
 ## 2. Inmutabilidad y trazabilidad
 
-- Una entrada confirmada **no se elimina físicamente**.
-- Una entrada confirmada no se edita línea a línea para alterar retrospectivamente el movimiento original.
-- La anulación cambia el estado de la entrada a `CANCELLED` (o equivalente definido por el contrato B3).
-- La reversión de stock se registra mediante **movimientos compensatorios**, conservando la referencia `entry_id` de la entrada original.
-- El historial debe permitir reconstruir la entrada original y su reversión.
+- Una entrada confirmada no se elimina físicamente.
+- No se edita retrospectivamente la entrada original.
+- El contrato B3 usa `purchase_entry.status`: `ACTIVE` → `CANCELLED`.
+- Entradas legacy sin `status` se interpretan como `ACTIVE` hasta que sean anuladas.
+- La reversión conserva `entry_id`.
+- Se usa el tipo existente `ajuste` con `reason = purchase_entry_reversal`.
 
-## 3. Regla de integridad de inventario
+## 3. Integridad de inventario
 
-Toda anulación debe preservar la invariante Core 1:
+Para cada línea:
 
-`existence >= reserved`
+`new_existence = existence - quantity_to_reverse`
 
-Para cada línea afectada, antes de modificar el stock debe comprobarse que:
+Debe cumplirse:
 
-`existence - quantity_to_reverse >= reserved`
+`new_existence >= reserved`
 
-Si una sola línea incumple la condición, **se rechaza la operación completa**. No se permite una anulación parcial accidental.
+Si una línea incumple la condición, se rechaza la operación completa.
 
-## 4. Atomicidad
+## 4. Atomicidad — Appwrite Client SDK
 
-La anulación debe ejecutarse como una única operación atómica:
+B3 se ejecuta desde el **Client SDK TypeScript del back-office**, sin Function serverless adicional.
 
-1. Verificar que la entrada está activa/no anulada.
-2. Obtener todas sus líneas y el stock actual.
-3. Validar `existence >= reserved` después de la reversión para todas las líneas.
-4. Aplicar los decrementos de stock.
-5. Crear los movimientos compensatorios.
-6. Marcar la entrada como anulada.
-7. Confirmar la transacción.
+La implementación usa `Databases.createTransaction()`, propaga `transactionId` a las lecturas/escrituras y finaliza con `updateTransaction({ commit: true })` o rollback ante error.
 
-Si cualquier paso falla, **ningún cambio de stock, movement o estado debe quedar persistido**.
+Orden:
 
-## 5. Idempotencia
+1. Leer entrada dentro de la transacción.
+2. Verificar `ACTIVE`.
+3. Leer líneas y productos.
+4. Validar todas las reversas.
+5. Decrementar `existence`.
+6. Crear movements compensatorios.
+7. Marcar `CANCELLED`.
+8. Commit.
 
-Una entrada ya anulada no puede volver a generar movimientos compensatorios ni volver a decrementar stock.
+Si falla cualquier paso, ningún cambio parcial debe quedar persistido.
 
-La primera transición válida es:
+El mismo runner se reutiliza para el registro de entradas para evitar el anterior `soft-fail` de movements.
 
-`ACTIVE → CANCELLED`
+## 5. Idempotencia y concurrencia
 
-Una solicitud posterior sobre una entrada `CANCELLED` debe ser rechazada o tratada como operación ya completada, sin efectos adicionales.
+Una entrada `CANCELLED` no puede generar otra reversión. Las operaciones se ejecutan dentro de una misma transacción para permitir que Appwrite detecte conflictos concurrentes al commit.
 
-## 6. Anulación completa vs corrección parcial
+## 6. Alcance B3
 
-### B3.1 — Anulación completa
+**B3.1:** anulación completa. El caso de uso transaccional está implementado en el back-office.
 
-Es el primer alcance de implementación. Revierte todas las líneas de la entrada original.
-
-### B3.2 — Corrección parcial
-
-Queda separada de B3.1. No se debe editar retrospectivamente la entrada original; preferentemente se modelará como un ajuste/movimiento compensatorio auditable.
+**B3.2:** corrección parcial queda separada; no se editará retrospectivamente la entrada original.
 
 ## 7. `last_unit_cost`
 
-La anulación **no debe establecer `last_unit_cost` a cero ni inventar un costo nuevo**.
-
-Antes de implementar cualquier reversión que afecte este campo se debe auditar el contrato Core 2 y determinar cómo recuperar, si corresponde, el último costo válido anterior.
-
-La semántica existente de COGS (`last_unit_cost × qty` al `VERIFIED`) no debe romperse.
+La anulación no modifica `last_unit_cost`. No se establece a cero ni se inventa un costo anterior. El operador continúa usando el valor existente para COGS.
 
 ## 8. UX y autorización
 
-La acción de anulación:
+La acción de anulación solo aparece para `owner/admin`, requiere confirmación, explica el impacto en stock y queda inactiva una vez cancelada.
 
-- solo aparece para roles `owner/admin`;
-- requiere confirmación explícita;
-- muestra que revertirá el stock;
-- informa claramente cuando no puede ejecutarse por unidades reservadas;
-- desaparece o queda inactiva una vez anulada la entrada.
+## 9. Requisito de schema
 
-## 9. Regla de diseño
+Para habilitar la operación debe existir en Appwrite `purchase_entry.status` como atributo compatible con `ACTIVE` / `CANCELLED`. La creación/modificación del schema es una operación administrativa separada del Client SDK y de la transacción B3.
 
-B3 debe reutilizar el modelo de inventario existente. No se debe introducir un segundo almacén lógico ni una segunda fuente de verdad para `existence`, `reserved`, `available` o COGS.
+## 10. Frontera AlejoTaller
 
-**Antes de implementar:** auditar el contrato real de Core 2 y los casos de uso/repositorios de stock, movements, entradas y `last_unit_cost` en ambos repositorios.
+Este repositorio no registra compras ni implementa la UI/caso de uso de anulación. Solo debe preservar `existence`, `reserved`, COGS y la frontera de permisos definida por esta política.
