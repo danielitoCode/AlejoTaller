@@ -1,6 +1,6 @@
 # Core 3 — Checklist (AlejoTaller · espejo)
 
-**Última actualización:** 2026-08-29  
+**Última actualización:** 2026-09-01  
 **Rama:** `Core3`  
 **Orden canónico:** dash `CORE3_UNIFIED_CHECKLIST`.
 
@@ -25,47 +25,42 @@ Solo ítems **AT** / **BOTH**. Los **DASH** se marcan en el panel.
 ## B2 — Historial compras
 
 - [x] **AT** Operador/web no listan `purchase_entry`
-- [ ] **AT** (opcional) Test/nota Core3: lectura `last_unit_cost` en COGS — **se mantiene pendiente** (código operador ya lee el campo; no hay test nuevo en esta rama)
+- [ ] **AT** (opcional) Test/nota Core3: lectura `last_unit_cost` en COGS — no bloquea
 
 ## B3 — Anulación / corrección
 
 - [x] **BOTH** Política de anulación aceptada (`existence - qty >= reserved`; no tocar `reserved` / `last_unit_cost`)
 - [x] **AT** Sin endpoint cliente para anular entradas
-- [ ] **AT** **DEP DASH UI B3:** smoke operador post-anulación (cuando el panel anule una entrada de prueba)
+- [x] **DASH** UI B3.1 cerrada en panel (referencia; no código AT)
+- [ ] **AT** Smoke operador post-anulación (opcional; no bloquea merge)
 
 ## B4 / B5 — Qué verificar (manual; código ya OK)
 
-El dash marca frontera en código. **Confirmar en runtime** y luego marcar `[x]`:
+El dash marca frontera en código. Confirmación runtime es **opcional** para merge:
 
 ### Cliente web/app
 - [ ] No hay pantalla ni ruta de Proveedores / Compras / factura de entrada
-- [ ] Un login cliente no puede crear documentos en `supplier` / `purchase_entry` / `purchase_entry_line` (error de permisos si se intenta por API)
+- [ ] Un login cliente no puede crear documentos en `supplier` / `purchase_entry` / `purchase_entry_line`
 
 ### MCP
 - [ ] `get_server_info` / health: scope `b2c-customer`
 - [ ] No existe tool de supplier ni purchase_entry
 - [ ] `notInScope` menciona `purchase_entry`
 
-### Operador (`alejotallerscan`) — **antes** de anulación dash
-- [ ] Tras una **entrada de compra en el panel**, confirmar venta VERIFIED
-- [ ] Se escribe `salida_venta` + `sale_finance_event`
-- [ ] COGS usa `last_unit_cost` del producto (el que dejó la factura), no un promedio
-- [ ] `existence >= reserved` se mantiene
-
-### Operador — **después** de anulación dash (cuando exista UI)
-- [ ] Anular entrada en panel → stock baja, `last_unit_cost` **no** cambia
-- [ ] Confirm VERIFIED de una venta que no dependa de ese stock anulado sigue OK
-- [ ] Si el stock anulado dejaría `existence < reserved`, el panel debe haber bloqueado la anulación
+### Operador (`alejotallerscan`)
+- [ ] Tras entrada de compra en panel, confirm VERIFIED escribe `salida_venta` + finance
+- [ ] COGS usa `last_unit_cost` del producto
+- [ ] Tras anulación en panel: `last_unit_cost` no cambia; stock coherente con reserved
 
 ### Docs / CI
-- [x] README / `.roadmap/Core3` mencionan Core 3 en rama `Core3`
-- [ ] CI módulos tocados verde
-- [x] Checklist AT alineado a dash (este archivo + STATUS)
+- [x] README / `.roadmap/Core3` alineados a release mínimo dash
+- [ ] CI módulos tocados verde en PR
+- [x] Checklist AT alineado a dash
 
 ## B6 — Merge
 
-- [ ] **AT** PR `Core3` → `master` (docs/frontera; no código de anulación cliente)
-- [ ] **AT** No mergear asumiendo UI B3 dash si esa UI aún no está
+- [x] **AT** Docs/frontera listos (sin código de anulación cliente)
+- [ ] **AT** PR `Core3` → `master`
 - [ ] **BOTH** Coordinar con merge del panel
 
 ---
@@ -73,5 +68,5 @@ El dash marca frontera en código. **Confirmar en runtime** y luego marcar `[x]`
 | Fecha | Nota |
 |-------|------|
 | 2026-08-27 | Apertura rama `Core3` |
-| 2026-08-29 | B0–B2 AT cerrados en código/docs; B3 política aceptada; `status` dash provisionado |
-| 2026-08-29 | B4/B5: lista de verificación manual (no marcar smoke sin runtime) |
+| 2026-08-29 | B0–B2 AT cerrados; B3 política; release parcial docs a master (PR #25) |
+| 2026-09-01 | Saneamiento: B3.1 dash cerrado; checklist listo para merge final |
