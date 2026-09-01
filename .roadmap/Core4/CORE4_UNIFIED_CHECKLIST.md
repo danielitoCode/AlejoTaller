@@ -22,20 +22,21 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 ## B3 — Confirm operador (bloque principal AT)
 
-- [ ] `ApplyOperatorStockDecisionCaseUse` (o sucesor) escribe finance con snapshot por línea al `confirmed=true`
-- [ ] `createIdempotent` no duplica ni recalcula si ya existe event para `sale_id`
-- [ ] `confirmed=false` (DELETED): sin finance
-- [ ] Costo ausente → snapshot 0 sin tumbar el flujo de stock
+- [x] `ApplyOperatorStockDecisionCaseUse` escribe finance con snapshot por línea al `confirmed=true`
+- [x] `createIdempotent` no duplica ni recalcula si ya existe event para `sale_id` (unit)
+- [x] `confirmed=false` (DELETED): sin finance (unit)
+- [x] Costo ausente → snapshot 0 sin tumbar el flujo de stock (unit)
+- [ ] Smoke runtime dispositivo/emulador (opcional)
 
 ## B4 — Estabilidad
 
 - [ ] Tras crear event, un cambio de `last_unit_cost` en producto **no** se refleja en el event existente
-- [ ] Reintento de confirm no crea segundo documento
+- [ ] Reintento de confirm no crea segundo documento (cubierto en unit; smoke opcional)
 
 ## B5 — Tests
 
-- [ ] Unit/instrumented: COGS con varias líneas y costos
-- [ ] Unit/instrumented: idempotencia por `sale_id`
+- [x] Unit: COGS con varias líneas, snapshots y costo ausente
+- [x] Unit: idempotencia por `sale_id`
 
 ## B6 — Frontera, smoke, cierre
 
@@ -51,5 +52,5 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 | Fecha | Nota |
 |---|---|
-| 2026-09-01 | Apertura rama `Core4`; docs espejo iniciales |
-| 2026-09-01 | B0 cerrado; B1 tipos + repo `lines_json`; falta poblar lines en case use (B3) |
+| 2026-09-01 | Apertura rama `Core4`; docs espejo |
+| 2026-09-01 | B0+B1; B3 case use + unit tests (lines/snapshot); smoke dispositivo pendiente |
