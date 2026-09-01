@@ -33,9 +33,17 @@ class ApplyOperatorStockDecisionCaseUseTest {
         userId = "client-1"
     )
 
+    private fun costTriple(existence: Int, reserved: Int, cost: Double?): Triple<Int, Int, Double?> =
+        Triple(existence, reserved, cost)
+
     @Test
     fun verified_writes_salida_venta_and_finance_with_lines() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to Triple(10, 2, 5.0), "p2" to Triple(20, 1, 3.0)))
+        val stock = FakeStockRepo(
+            mapOf(
+                "p1" to costTriple(10, 2, 5.0),
+                "p2" to costTriple(20, 1, 3.0)
+            )
+        )
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
         val useCase = ApplyOperatorStockDecisionCaseUse(
@@ -78,7 +86,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun deleted_only_releases_reserved_no_movement_no_finance() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to Triple(10, 2, 5.0)))
+        val stock = FakeStockRepo(mapOf("p1" to costTriple(10, 2, 5.0)))
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
         val useCase = ApplyOperatorStockDecisionCaseUse(
@@ -99,7 +107,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun verified_idempotent_skips_existing_movement_and_finance() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to Triple(10, 1, 4.0)))
+        val stock = FakeStockRepo(mapOf("p1" to costTriple(10, 1, 4.0)))
         val movements = FakeMovementRepo(
             existing = listOf(
                 StockMovementRecord("m1", "p1", "salida_venta", 1, 9, "sale-1")
@@ -122,7 +130,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun verified_missing_cost_uses_zero_snapshot() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to Triple(5, 1, null)))
+        val stock = FakeStockRepo(mapOf("p1" to costTriple(5, 1, null)))
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
         val useCase = ApplyOperatorStockDecisionCaseUse(
