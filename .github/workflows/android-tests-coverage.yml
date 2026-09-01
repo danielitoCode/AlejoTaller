@@ -7,12 +7,16 @@ on:
       - master
       - develop
       - Core2
+      - Core3
+      - Core4
   pull_request:
     branches:
       - main
       - master
       - develop
       - Core2
+      - Core3
+      - Core4
   workflow_dispatch:
 
 permissions:
