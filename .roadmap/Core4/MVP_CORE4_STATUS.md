@@ -2,28 +2,23 @@
 
 **Última actualización:** 2026-09-01  
 **Rama:** `Core4`  
-**Core 4 en este monorepo:** en implementación (B1 tipos OK)
+**Core 4 en este monorepo:** B0–B3 código OK; smoke dispositivo y B4 pendientes
 
 | Bloque | Estado |
 |--------|--------|
 | B0 Docs / baseline | **Cerrado** |
 | B1 Tipos contrato líneas/snapshot + repo | **Hecho** |
-| B3 Write operador con snapshot en case use | pendiente |
-| B4 Idempotencia / no reescritura | base Core2; validar con lines |
-| B5 Tests | pendiente |
+| B3 Write operador con snapshot en case use | **Hecho** (unit tests); smoke dispositivo pendiente |
+| B4 Idempotencia / no reescritura | **Siguiente** (base Core2; formalizar con lines) |
+| B5 Tests | unit B3 OK |
 | B6 Frontera + smoke + PR | pendiente |
 
-### Heredado Core 2
+### B3 entregado
 
-- `ApplyOperatorStockDecisionCaseUse`: VERIFIED → stock + `salida_venta` + finance agregado
-- DELETED → solo libera `reserved`
-- `createIdempotent` por `sale_id`
+- `ApplyOperatorStockDecisionCaseUse` construye `SaleFinanceLineWrite` con `unitCostSnapshot`
+- `SaleFinanceWrite.lines` → repo `lines_json`
+- Unit: multi-línea, costo null → 0, DELETED sin finance, idempotencia
 
-### B1 entregado
+### Siguiente en ecosistema
 
-- `SaleFinanceLineWrite` + `SaleFinanceWrite.lines`
-- Repo escribe/lee `lines_json` (paridad dash Opción A)
-
-### Siguiente
-
-B3: en `ApplyOperatorStockDecisionCaseUse`, construir `lines` con `unitCostSnapshot` al confirmar (no solo totales).
+Coordinado con dash: **B4** (estabilidad histórica / no recalcular). Smoke operador cuando haya dispositivo.
