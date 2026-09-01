@@ -1,12 +1,12 @@
 # Core 3 — Compras y Abastecimiento (AlejoTaller)
 
-**Estado:** en preparación · rama `Core3`  
+**Estado:** listo para merge · rama `Core3`  
 **Dependencia:** Core 2 cerrado  
 **Canónico de orden / UI:** [dash_alejo_taller/.roadmap/Core3](https://github.com/danielitoCode/dash_alejo_taller/tree/Core3/.roadmap/Core3)
 
 ## Rol de este monorepo
 
-Core 3 es **panel-first**. Aquí **no** se implementa UI de proveedores ni facturas de compra.
+Core 3 es **panel-first**. Aquí **no** se implementa UI de proveedores ni facturas de compra ni anulación.
 
 | Superficie | Qué hacer en Core 3 |
 |------------|---------------------|
@@ -32,8 +32,6 @@ Ver [`CORE3_UNIFIED_CHECKLIST.md`](./CORE3_UNIFIED_CHECKLIST.md) (alineado al da
 
 ## Criterio de merge a `master`
 
-- Si solo hubo docs: merge docs cuando el checklist AT esté marcado y no haya contradicción con dash.
-- Si hubo código (permisos, tests operador): merge **después** de que dash tenga B1+B2 estables en su `Core3` o ya en `master`, y CI verde.
-- **No** mergear cambios que asuman anulación de entradas (B3 dash) hasta que la política B3 esté implementada o explícitamente no usada.
-
-Recomendación operativa: trabajar en `Core3`; abrir PR a `master` solo cuando el dash indique B6 o release parcial (B1+B2+B4) listo.
+- Docs + frontera de permisos: merge cuando el checklist AT esté marcado y el dash tenga B3.1 listo (ya cumplido).
+- **No** hay código de anulación en cliente/operador — la anulación vive solo en el panel.
+- Coordinar con el PR de `dash_alejo_taller` `Core3` → `master`.
