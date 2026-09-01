@@ -10,14 +10,15 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 ## B0 — Baseline
 
-- [X] Core 2 operador: finance al VERIFIED verificado en código
-- [X] Política del dash leída; sin contradicciones locales
-- [X] Docs `.roadmap/Core4/` presentes en esta rama
+- [x] Core 2 operador: finance al VERIFIED verificado en código
+- [x] Política del dash leída; sin contradicciones locales
+- [x] Docs `.roadmap/Core4/` presentes en esta rama
 
 ## B1 — Contrato
 
-- [ ] Tipos / `SaleFinanceWrite` (o equivalente) listos para detalle de líneas + `unitCostSnapshot`
-- [ ] Alineación de nombres de campos con el panel (documentada)
+- [x] Tipos / `SaleFinanceWrite` + `SaleFinanceLineWrite` con `unitCostSnapshot`
+- [x] Alineación de nombres con el panel (`productId`, `unitCostSnapshot`, `lines_json`)
+- [x] Repo `AppwriteOperatorSaleFinanceRepository` serializa/parsea `lines_json`
 
 ## B3 — Confirm operador (bloque principal AT)
 
@@ -51,3 +52,4 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 | Fecha | Nota |
 |---|---|
 | 2026-09-01 | Apertura rama `Core4`; docs espejo iniciales |
+| 2026-09-01 | B0 cerrado; B1 tipos + repo `lines_json`; falta poblar lines en case use (B3) |
