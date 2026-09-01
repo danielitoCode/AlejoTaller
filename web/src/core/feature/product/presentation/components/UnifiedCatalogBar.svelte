@@ -19,14 +19,16 @@
     $: currency = $exchangeStore.selectedCurrency;
     $: exchangeRate = $exchangeStore.exchange?.usdReference ?? null;
     $: activeFilterCount = (query.trim() ? 1 : 0) + (selectedCategoryId ? 1 : 0) + (minPrice !== null || maxPrice !== null ? 1 : 0);
+    $: cupPriceRangeUnavailable = currency === "CUP" && (draftMin.trim() !== "" || draftMax.trim() !== "") && (!exchangeRate || exchangeRate <= 0);
 
     function displayAmount(value: number | null): string {
-        if (value === null || !exchangeRate || currency === "USD") return value === null ? "" : String(Math.round(value));
+        if (value === null) return "";
+        if (currency === "USD" || !exchangeRate) return String(Math.round(value));
         return String(Math.round(value * exchangeRate));
     }
 
     function toUsd(value: string): number | null {
-        const parsed = Number(value.replace(/[^0-9.,-]/g, "").replace(/,/g, ""));
+        const parsed = Number(value);
         if (!Number.isFinite(parsed) || parsed < 0) return null;
         if (currency === "CUP") {
             if (!exchangeRate || exchangeRate <= 0) return null;
@@ -43,10 +45,12 @@
     }
 
     function applyFilters() {
+        if (cupPriceRangeUnavailable) return;
         const nextMin = draftMin.trim() ? toUsd(draftMin) : null;
         const nextMax = draftMax.trim() ? toUsd(draftMax) : null;
         const validMin = nextMin !== null && nextMin >= 0 ? nextMin : null;
         const validMax = nextMax !== null && nextMax >= 0 ? nextMax : null;
+        if (validMin !== null && validMax !== null && validMin > validMax) return;
 
         onCategorySelected(draftCategoryId);
         onPriceRangeChanged(validMin, validMax);
@@ -60,6 +64,7 @@
         draftCategoryId = null;
         draftMin = "";
         draftMax = "";
+        filtersOpen = false;
     }
 
     function categoryName(): string {
@@ -72,6 +77,9 @@
         const max = maxPrice !== null ? displayAmount(maxPrice) : "∞";
         return `${min}–${max}`;
     }
+
+    function setDraftMin(value: string) { draftMin = value; }
+    function setDraftMax(value: string) { draftMax = value; }
 </script>
 
 <div class="catalog-search">
@@ -116,7 +124,7 @@
     </div>
 
     {#if filtersOpen}
-        <div class="filter-backdrop" role="presentation" on:click={() => (filtersOpen = false)}></div>
+        <button class="filter-backdrop" type="button" aria-label="Cerrar filtros" on:click={() => (filtersOpen = false)}></button>
         <section class="filter-panel" role="dialog" aria-modal="true" aria-label="Filtros de productos">
             <div class="panel-header">
                 <div>
@@ -142,22 +150,25 @@
                     <div class="price-inputs">
                         <label>
                             <span>Desde</span>
-                            <input type="number" min="0" bind:value={draftMin} placeholder="Sin mínimo" />
+                            <input type="number" min="0" value={draftMin} placeholder="Sin mínimo" on:input={(event) => setDraftMin((event.currentTarget as HTMLInputElement).value)} />
                         </label>
                         <label>
                             <span>Hasta</span>
-                            <input type="number" min="0" bind:value={draftMax} placeholder="Sin máximo" />
+                            <input type="number" min="0" value={draftMax} placeholder="Sin máximo" on:input={(event) => setDraftMax((event.currentTarget as HTMLInputElement).value)} />
                         </label>
                     </div>
-                    {#if currency === "CUP" && !exchangeRate}
-                        <small class="exchange-warning">La tasa de cambio aún no está disponible; el rango en CUP se aplicará cuando exista una tasa.</small>
+                    {#if cupPriceRangeUnavailable}
+                        <small class="exchange-warning">Necesitamos la tasa de cambio para filtrar por precio en CUP.</small>
+                    {/if}
+                    {#if draftMin && draftMax && Number(draftMin) > Number(draftMax)}
+                        <small class="exchange-warning">El mínimo no puede ser mayor que el máximo.</small>
                     {/if}
                 </div>
             </div>
 
             <div class="panel-actions">
                 <button type="button" class="reset" on:click={resetFilters}>Restablecer</button>
-                <button type="button" class="apply" on:click={applyFilters}>Aplicar filtros</button>
+                <button type="button" class="apply" disabled={cupPriceRangeUnavailable || (!!draftMin && !!draftMax && Number(draftMin) > Number(draftMax))} on:click={applyFilters}>Aplicar filtros</button>
             </div>
         </section>
     {/if}
@@ -165,12 +176,7 @@
 
 <style>
     .catalog-search { position: relative; width: 100%; z-index: 30; }
-    .bar {
-        min-height: 64px; display: flex; align-items: center; width: 100%; box-sizing: border-box;
-        border: 1px solid var(--md-sys-color-outline-variant); border-radius: 32px;
-        background: var(--md-sys-color-surface); box-shadow: 0 8px 24px color-mix(in srgb, black 8%, transparent);
-        overflow: hidden;
-    }
+    .bar { min-height: 64px; display: flex; align-items: center; width: 100%; box-sizing: border-box; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 32px; background: var(--md-sys-color-surface); box-shadow: 0 8px 24px color-mix(in srgb, black 8%, transparent); overflow: hidden; }
     .search-field { flex: 1.35 1 280px; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0 18px 0 20px; }
     .search-icon { font-size: 25px; line-height: 1; color: var(--md-sys-color-on-surface-variant); }
     .search-field input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--md-sys-color-on-surface); font: inherit; font-size: .92rem; }
@@ -187,7 +193,7 @@
     .currency-button { border: 0; background: transparent; padding: 2px 0; cursor: pointer; color: var(--md-sys-color-on-surface); font-size: .8rem; font-weight: 800; display: flex; gap: 6px; align-items: center; }
     .filter-button { display: none; }
     .search-submit { width: 48px; height: 48px; margin-right: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); display: grid; place-items: center; font-size: 25px; }
-    .filter-backdrop { position: fixed; inset: 0; background: color-mix(in srgb, black 38%, transparent); backdrop-filter: blur(3px); z-index: 40; }
+    .filter-backdrop { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: color-mix(in srgb, black 38%, transparent); backdrop-filter: blur(3px); z-index: 40; cursor: default; }
     .filter-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(460px, calc(100vw - 24px)); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 24px; background: var(--md-sys-color-surface); box-shadow: 0 24px 70px color-mix(in srgb, black 22%, transparent); z-index: 41; overflow: hidden; }
     .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 12px; }
     .panel-header h2 { margin: 3px 0 0; font-size: 1.2rem; }
@@ -207,6 +213,7 @@
     .reset, .apply { border: 0; border-radius: 20px; padding: 10px 16px; cursor: pointer; font-weight: 750; }
     .reset { background: transparent; color: var(--md-sys-color-on-surface-variant); }
     .apply { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+    .apply:disabled { cursor: not-allowed; opacity: .5; }
 
     @media (max-width: 840px) {
         .bar { min-height: 58px; border-radius: 29px; }
@@ -220,7 +227,6 @@
         .filter-panel { position: fixed; left: 12px; right: 12px; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; border-radius: 24px; }
         .panel-body { max-height: 58vh; }
     }
-
     @media (max-width: 480px) {
         .bar { min-height: 54px; }
         .search-field { padding-left: 13px; }
