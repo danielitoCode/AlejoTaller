@@ -1,6 +1,7 @@
 package com.elitec.alejotallerscan.feature.product.domain.caseuse
 
 import android.util.Log
+import com.elitec.alejotallerscan.feature.finance.domain.entity.SaleFinanceLineWrite
 import com.elitec.alejotallerscan.feature.finance.domain.entity.SaleFinanceWrite
 import com.elitec.alejotallerscan.feature.finance.domain.repository.OperatorSaleFinanceRepository
 import com.elitec.alejotallerscan.feature.inventory.domain.entity.StockMovementWrite
@@ -11,12 +12,12 @@ import com.elitec.shared.sale.feature.sale.domain.entity.Sale
 import java.time.Instant
 
 /**
- * WAREHOUSE_POLICY + Core 2 B2 — soft-hold y traza al decidir el operador.
+ * WAREHOUSE_POLICY + Core 2 B2 + Core 4 B3 — soft-hold, traza y finance al decidir el operador.
  *
  * VERIFIED:
  *  - existence -= qty, reserved -= qty
  *  - stock_movements tipo salida_venta (balance_after, sale_id, user_id)
- *  - sale_finance_event (revenue, cogs = Σ last_unit_cost×qty, margin)
+ *  - sale_finance_event (revenue, cogs, margin + lines con unitCostSnapshot)
  *
  * DELETED:
  *  - reserved -= qty
@@ -52,6 +53,7 @@ class ApplyOperatorStockDecisionCaseUse(
             .toSet()
 
         var totalCogs = 0.0
+        val financeLines = mutableListOf<SaleFinanceLineWrite>()
 
         for (item in sale.products) {
             val qty = item.quantity.coerceAtLeast(0)
@@ -76,7 +78,19 @@ class ApplyOperatorStockDecisionCaseUse(
             if (!confirmed) continue
 
             val unitCost = snapshot.lastUnitCost?.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
-            totalCogs += unitCost * qty
+            val unitPrice = item.unitPrice?.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+            val lineRevenue = unitPrice * qty
+            val lineCogs = unitCost * qty
+            totalCogs += lineCogs
+            financeLines += SaleFinanceLineWrite(
+                productId = item.productId,
+                quantity = qty,
+                unitPrice = unitPrice,
+                unitCostSnapshot = unitCost,
+                lineRevenue = lineRevenue,
+                lineCogs = lineCogs,
+                lineMargin = lineRevenue - lineCogs
+            )
 
             if (item.productId in alreadyMovedProductIds) {
                 Log.i(
@@ -111,12 +125,14 @@ class ApplyOperatorStockDecisionCaseUse(
                     margin = margin,
                     userId = operatorUserId,
                     atIso = Instant.now().toString(),
-                    currency = sale.currency.name
+                    currency = sale.currency.name,
+                    lines = financeLines
                 )
             )
             Log.i(
                 TAG,
-                "event=operator_finance_done saleId=${sale.id} revenue=$revenue cogs=$cogs margin=$margin"
+                "event=operator_finance_done saleId=${sale.id} revenue=$revenue cogs=$cogs " +
+                    "margin=$margin lines=${financeLines.size}"
             )
         }
     }
