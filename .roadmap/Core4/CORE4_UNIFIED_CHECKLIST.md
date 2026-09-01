@@ -10,9 +10,9 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 ## B0 — Baseline
 
-- [ ] Core 2 operador: finance al VERIFIED verificado en código
-- [ ] Política del dash leída; sin contradicciones locales
-- [ ] Docs `.roadmap/Core4/` presentes en esta rama
+- [X] Core 2 operador: finance al VERIFIED verificado en código
+- [X] Política del dash leída; sin contradicciones locales
+- [X] Docs `.roadmap/Core4/` presentes en esta rama
 
 ## B1 — Contrato
 
