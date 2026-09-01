@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { onDestroy } from "svelte";
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import type { Category } from "../../../category/domain/entity/Category";
 
@@ -15,6 +16,10 @@
     let draftCategoryId: string | null = null;
     let draftMin = "";
     let draftMax = "";
+    let barEl: HTMLElement | null = null;
+    let panelTop = 0;
+    let panelRight = 16;
+    let isMobileLayout = false;
 
     $: currency = $exchangeStore.selectedCurrency;
     $: exchangeRate = $exchangeStore.exchange?.usdReference ?? null;
@@ -37,11 +42,25 @@
         return parsed;
     }
 
+    function measurePanelAnchor() {
+        if (typeof window === "undefined") return;
+        isMobileLayout = window.matchMedia("(max-width: 840px)").matches;
+        if (!barEl) return;
+        const rect = barEl.getBoundingClientRect();
+        panelTop = Math.round(rect.bottom + 10);
+        panelRight = Math.max(12, Math.round(window.innerWidth - rect.right));
+    }
+
     function openFilters() {
         draftCategoryId = selectedCategoryId;
         draftMin = displayAmount(minPrice);
         draftMax = displayAmount(maxPrice);
+        measurePanelAnchor();
         filtersOpen = true;
+    }
+
+    function closeFilters() {
+        filtersOpen = false;
     }
 
     function applyFilters() {
@@ -54,7 +73,7 @@
 
         onCategorySelected(draftCategoryId);
         onPriceRangeChanged(validMin, validMax);
-        filtersOpen = false;
+        closeFilters();
     }
 
     function resetFilters() {
@@ -64,7 +83,7 @@
         draftCategoryId = null;
         draftMin = "";
         draftMax = "";
-        filtersOpen = false;
+        closeFilters();
     }
 
     function categoryName(): string {
@@ -80,10 +99,27 @@
 
     function setDraftMin(value: string) { draftMin = value; }
     function setDraftMax(value: string) { draftMax = value; }
+
+    function handleViewportChange() {
+        if (!filtersOpen) return;
+        measurePanelAnchor();
+    }
+
+    if (typeof window !== "undefined") {
+        window.addEventListener("resize", handleViewportChange);
+        window.addEventListener("scroll", handleViewportChange, true);
+    }
+
+    onDestroy(() => {
+        if (typeof window !== "undefined") {
+            window.removeEventListener("resize", handleViewportChange);
+            window.removeEventListener("scroll", handleViewportChange, true);
+        }
+    });
 </script>
 
 <div class="catalog-search">
-    <div class="bar">
+    <div class="bar" bind:this={barEl}>
         <div class="search-field">
             <span class="search-icon" aria-hidden="true">⌕</span>
             <input
@@ -124,14 +160,23 @@
     </div>
 
     {#if filtersOpen}
-        <button class="filter-backdrop" type="button" aria-label="Cerrar filtros" on:click={() => (filtersOpen = false)}></button>
-        <section class="filter-panel" role="dialog" aria-modal="true" aria-label="Filtros de productos">
+        <button class="filter-backdrop" type="button" aria-label="Cerrar filtros" on:click={closeFilters}></button>
+        <section
+            class="filter-panel"
+            class:mobile-sheet={isMobileLayout}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filtros de productos"
+            style={isMobileLayout
+                ? undefined
+                : `top: ${panelTop}px; right: ${panelRight}px;`}
+        >
             <div class="panel-header">
                 <div>
                     <span class="eyebrow">Catálogo</span>
                     <h2>Filtros</h2>
                 </div>
-                <button type="button" class="close" aria-label="Cerrar filtros" on:click={() => (filtersOpen = false)}>×</button>
+                <button type="button" class="close" aria-label="Cerrar filtros" on:click={closeFilters}>×</button>
             </div>
 
             <div class="panel-body">
@@ -193,12 +238,48 @@
     .currency-button { border: 0; background: transparent; padding: 2px 0; cursor: pointer; color: var(--md-sys-color-on-surface); font-size: .8rem; font-weight: 800; display: flex; gap: 6px; align-items: center; }
     .filter-button { display: none; }
     .search-submit { width: 48px; height: 48px; margin-right: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); display: grid; place-items: center; font-size: 25px; }
-    .filter-backdrop { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: color-mix(in srgb, black 38%, transparent); backdrop-filter: blur(3px); z-index: 40; cursor: default; }
-    .filter-panel { position: absolute; right: 0; top: calc(100% + 10px); width: min(460px, calc(100vw - 24px)); border: 1px solid var(--md-sys-color-outline-variant); border-radius: 24px; background: var(--md-sys-color-surface); box-shadow: 0 24px 70px color-mix(in srgb, black 22%, transparent); z-index: 41; overflow: hidden; }
-    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 12px; }
+
+    /* Backdrop + panel siempre fixed: evita recorte por overflow:hidden de product-screen / list-layer / route-stage */
+    .filter-backdrop {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        padding: 0;
+        background: color-mix(in srgb, black 38%, transparent);
+        backdrop-filter: blur(3px);
+        z-index: 1200;
+        cursor: default;
+    }
+
+    .filter-panel {
+        position: fixed;
+        width: min(460px, calc(100vw - 24px));
+        max-height: min(70vh, calc(100dvh - 24px));
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--md-sys-color-outline-variant);
+        border-radius: 24px;
+        background: var(--md-sys-color-surface);
+        box-shadow: 0 24px 70px color-mix(in srgb, black 22%, transparent);
+        z-index: 1201;
+        overflow: hidden;
+    }
+
+    .filter-panel.mobile-sheet {
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: auto;
+        max-height: min(72vh, calc(100dvh - 24px));
+    }
+
+    .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 22px 12px; flex-shrink: 0; }
     .panel-header h2 { margin: 3px 0 0; font-size: 1.2rem; }
     .close { font-size: 28px; }
-    .panel-body { display: grid; gap: 24px; padding: 10px 22px 24px; max-height: 55vh; overflow: auto; }
+    .panel-body { display: grid; gap: 24px; padding: 10px 22px 24px; overflow: auto; min-height: 0; flex: 1 1 auto; }
     .filter-group > label { display: block; margin-bottom: 10px; font-size: .82rem; font-weight: 800; }
     .category-options { display: flex; flex-wrap: wrap; gap: 8px; }
     .category-options button { border: 1px solid var(--md-sys-color-outline-variant); border-radius: 18px; padding: 8px 13px; background: var(--md-sys-color-surface); color: var(--md-sys-color-on-surface); cursor: pointer; font-size: .8rem; }
@@ -209,7 +290,7 @@
     .price-inputs input { width: 100%; box-sizing: border-box; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 12px; padding: 11px 12px; background: var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); outline: none; }
     .price-inputs input:focus { border-color: var(--md-sys-color-primary); }
     .exchange-warning { color: var(--md-sys-color-error); font-size: .72rem; display: block; margin-top: 8px; }
-    .panel-actions { border-top: 1px solid var(--md-sys-color-outline-variant); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 22px; }
+    .panel-actions { border-top: 1px solid var(--md-sys-color-outline-variant); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 22px; flex-shrink: 0; }
     .reset, .apply { border: 0; border-radius: 20px; padding: 10px 16px; cursor: pointer; font-weight: 750; }
     .reset { background: transparent; color: var(--md-sys-color-on-surface-variant); }
     .apply { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
@@ -224,8 +305,6 @@
         .filter-button { display: grid; position: relative; place-items: center; width: 42px; height: 42px; margin-right: 3px; border: 0; border-radius: 50%; background: transparent; color: var(--md-sys-color-on-surface); cursor: pointer; font-size: 17px; }
         .filter-button small { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; border-radius: 9px; display: grid; place-items: center; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-size: .6rem; }
         .search-submit { display: none; }
-        .filter-panel { position: fixed; left: 12px; right: 12px; top: auto; bottom: max(12px, env(safe-area-inset-bottom)); width: auto; border-radius: 24px; }
-        .panel-body { max-height: 58vh; }
     }
     @media (max-width: 480px) {
         .bar { min-height: 54px; }
@@ -234,7 +313,7 @@
         .search-field input { font-size: .84rem; }
         .currency-wrap { min-width: 50px; }
         .currency-button { font-size: .75rem; }
-        .filter-panel { left: 8px; right: 8px; }
+        .filter-panel.mobile-sheet { left: 8px; right: 8px; }
         .panel-header { padding: 18px 18px 10px; }
         .panel-body { padding: 8px 18px 20px; }
         .panel-actions { padding: 12px 18px; }
