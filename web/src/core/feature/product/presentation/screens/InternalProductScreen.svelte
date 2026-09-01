@@ -22,6 +22,8 @@
 
     let searchQuery = "";
     let selectedCategoryId: string | null = null;
+    let minPrice: number | null = null;
+    let maxPrice: number | null = null;
     let selectedProduct: any = null;
     let pendingProductId: string | null = null;
     let resolvingPendingProductId: string | null = null;
@@ -106,6 +108,10 @@
     const handleCategorySelected = (categoryId: string | null) => {
         selectedCategoryId = categoryId;
     };
+    const handlePriceRangeChanged = (min: number | null, max: number | null) => {
+        minPrice = min;
+        maxPrice = max;
+    };
     const handleProductClick = (productId: string) => {
         const product = products.find((p) => p.id === productId);
         if (product) selectedProduct = product;
@@ -162,12 +168,15 @@
             {categories}
             {searchQuery}
             {selectedCategoryId}
+            {minPrice}
+            {maxPrice}
             loading={isLoading}
             {stockSyncing}
             {realtimeUpdating}
             {syncMessage}
             onSearchQueryChanged={handleSearchQueryChanged}
             onCategorySelected={handleCategorySelected}
+            onPriceRangeChanged={handlePriceRangeChanged}
             onProductClick={handleProductClick}
             onFavoriteClick={handleFavoriteClick}
         />
@@ -175,12 +184,7 @@
 
     {#if selectedProduct}
         <div class="detail-layer" transition:fly={{ x: 24, duration: 220 }}>
-            <button
-                type="button"
-                class="detail-scrim"
-                aria-label="Cerrar detalle"
-                on:click={closeProductDetail}
-            ></button>
+            <button type="button" class="detail-scrim" aria-label="Cerrar detalle" on:click={closeProductDetail}></button>
             <div class="detail-panel" role="dialog" aria-modal="true" aria-label="Detalle del producto">
                 <ProductDetailScreen
                     product={selectedProduct}
@@ -207,146 +211,23 @@
 </div>
 
 <style>
-    .internal-product-host {
-        width: 100%;
-        height: 100%;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        box-sizing: border-box;
-        position: relative;
-    }
-
-    .list-layer {
-        flex: 1 1 auto;
-        min-height: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        box-sizing: border-box;
-    }
-
-    .list-layer :global(.product-screen) {
-        flex: 1 1 auto;
-        min-height: 0;
-        height: 100%;
-    }
-
-    .detail-layer {
-        position: absolute;
-        inset: 0;
-        z-index: 40;
-        display: flex;
-        align-items: stretch;
-        justify-content: stretch;
-        box-sizing: border-box;
-    }
-
-    .detail-scrim {
-        display: none;
-        border: none;
-        padding: 0;
-        cursor: pointer;
-    }
-
-    .detail-panel {
-        flex: 1 1 auto;
-        min-height: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        background: var(--md-sys-color-surface);
-        box-sizing: border-box;
-    }
-
-    .detail-panel :global(.product-detail-screen) {
-        flex: 1 1 auto;
-        min-height: 0;
-        height: 100%;
-    }
-
+    .internal-product-host { width: 100%; height: 100%; min-height: 0; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box; position: relative; }
+    .list-layer { flex: 1 1 auto; min-height: 0; width: 100%; height: 100%; overflow: hidden; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
+    .list-layer :global(.product-screen) { flex: 1 1 auto; min-height: 0; height: 100%; }
+    .detail-layer { position: absolute; inset: 0; z-index: 40; display: flex; align-items: stretch; justify-content: stretch; box-sizing: border-box; }
+    .detail-scrim { display: none; border: none; padding: 0; cursor: pointer; }
+    .detail-panel { flex: 1 1 auto; min-height: 0; width: 100%; height: 100%; overflow: hidden; display: flex; flex-direction: column; background: var(--md-sys-color-surface); box-sizing: border-box; }
+    .detail-panel :global(.product-detail-screen) { flex: 1 1 auto; min-height: 0; height: 100%; }
     @media (max-width: 840px) {
-        .list-hidden-mobile {
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .detail-layer {
-            background: var(--md-sys-color-surface);
-        }
+        .list-hidden-mobile { visibility: hidden; pointer-events: none; }
+        .detail-layer { background: var(--md-sys-color-surface); }
     }
-
     @media (min-width: 841px) {
-        .detail-layer {
-            align-items: center;
-            justify-content: center;
-            padding: max(16px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom));
-            background: transparent;
-        }
-
-        .detail-scrim {
-            display: block;
-            position: absolute;
-            inset: 0;
-            background: color-mix(in srgb, black 88%, transparent);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            z-index: 0;
-        }
-
-        .detail-panel {
-            position: relative;
-            z-index: 1;
-            flex: 0 1 auto;
-            width: min(960px, 100%);
-            height: min(820px, calc(100dvh - 48px));
-            max-height: calc(100dvh - 48px);
-            border-radius: 28px;
-            overflow: hidden;
-            isolation: isolate;
-            background: var(--md-sys-color-surface);
-            background-image: linear-gradient(
-                var(--md-sys-color-surface),
-                var(--md-sys-color-surface)
-            );
-            box-shadow:
-                0 28px 72px color-mix(in srgb, black 50%, transparent),
-                0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
-        }
-
-        .detail-panel :global(.product-detail-screen),
-        .detail-panel :global(.detail-copy-card),
-        .detail-panel :global(.bottom-bar),
-        .detail-panel :global(.product-info-section),
-        .detail-panel :global(.description-section) {
-            background: var(--md-sys-color-surface) !important;
-            background-image: linear-gradient(
-                var(--md-sys-color-surface),
-                var(--md-sys-color-surface)
-            ) !important;
-        }
-
-        .detail-panel :global(.bottom-bar) {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            background: var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)) !important;
-            background-image: linear-gradient(
-                var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)),
-                var(--md-sys-color-surface-container-low, var(--md-sys-color-surface))
-            ) !important;
-        }
+        .detail-layer { align-items: center; justify-content: center; padding: max(16px, env(safe-area-inset-top)) 24px max(16px, env(safe-area-inset-bottom)); background: transparent; }
+        .detail-scrim { display: block; position: absolute; inset: 0; background: color-mix(in srgb, black 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 0; }
+        .detail-panel { position: relative; z-index: 1; flex: 0 1 auto; width: min(960px, 100%); height: min(820px, calc(100dvh - 48px)); max-height: calc(100dvh - 48px); border-radius: 28px; overflow: hidden; isolation: isolate; background: var(--md-sys-color-surface); background-image: linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface)); box-shadow: 0 28px 72px color-mix(in srgb, black 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent); }
+        .detail-panel :global(.product-detail-screen), .detail-panel :global(.detail-copy-card), .detail-panel :global(.bottom-bar), .detail-panel :global(.product-info-section), .detail-panel :global(.description-section) { background: var(--md-sys-color-surface) !important; background-image: linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface)) !important; }
+        .detail-panel :global(.bottom-bar) { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)) !important; background-image: linear-gradient(var(--md-sys-color-surface-container-low, var(--md-sys-color-surface)), var(--md-sys-color-surface-container-low, var(--md-sys-color-surface))) !important; }
     }
-
-    @media (min-width: 841px) and (max-width: 1100px) {
-        .detail-panel {
-            width: min(720px, 100%);
-            height: min(760px, calc(100dvh - 40px));
-        }
-    }
+    @media (min-width: 841px) and (max-width: 1100px) { .detail-panel { width: min(720px, 100%); height: min(760px, calc(100dvh - 40px)); } }
 </style>
