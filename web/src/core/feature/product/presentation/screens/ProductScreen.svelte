@@ -30,8 +30,8 @@
     $: promos = $promotionStore.items;
     $: nowMs = Date.now();
 
-    // Product prices are stored in USD. The range is therefore kept normalized in USD
-    // while UnifiedCatalogBar presents/collects it in the selected display currency.
+    // The price filter is normalized to USD internally because Product.price is USD.
+    // The bar presents and collects the range in the selected display currency.
     $: filteredProducts = products
         .filter((product) => {
             const name = String(product?.name ?? "");
@@ -39,7 +39,7 @@
             const q = searchQuery.toLowerCase().trim();
             const matchesSearch = !q || name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
             const matchesCategory = !selectedCategoryId || product.categoryId === selectedCategoryId;
-            const price = Number(product.price);
+            const price = effectivePrice(product.price, product.id, promos, nowMs);
             const matchesMinPrice = minPrice === null || price >= minPrice;
             const matchesMaxPrice = maxPrice === null || price <= maxPrice;
             return matchesSearch && matchesCategory && matchesMinPrice && matchesMaxPrice;
@@ -83,13 +83,7 @@
             <div class="stock-sync-banner" class:realtime={realtimeUpdating} role="status" aria-live="polite" transition:fly={{ y: -12, duration: 200 }}>
                 <span class="stock-sync-spinner" aria-hidden="true"></span>
                 <div class="stock-sync-copy">
-                    <strong>
-                        {#if realtimeUpdating}
-                            Hemos recibido actualizaciones de productos
-                        {:else}
-                            Sincronizando catálogo
-                        {/if}
-                    </strong>
+                    <strong>{realtimeUpdating ? "Hemos recibido actualizaciones de productos" : "Sincronizando catálogo"}</strong>
                     <small>{syncMessage || "Actualizando disponibilidad…"}</small>
                 </div>
             </div>
@@ -105,11 +99,7 @@
                 <div class="empty-state">
                     <div class="empty-icon">🔍</div>
                     <h3>Sin resultados</h3>
-                    <p>
-                        {hasActiveFilters
-                            ? "Prueba con otros términos o filtros"
-                            : "No hay productos disponibles"}
-                    </p>
+                    <p>{hasActiveFilters ? "Prueba con otros términos o filtros" : "No hay productos disponibles"}</p>
                 </div>
             {:else}
                 <div class="featured-strip">
