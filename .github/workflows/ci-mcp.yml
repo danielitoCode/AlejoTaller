@@ -3,13 +3,13 @@ name: CI MCP
 
 on:
   push:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "mcp/**"
       - ".github/workflows/ci-mcp.yml"
       - ".github/workflows/ci-gate.yml"
   pull_request:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "mcp/**"
       - ".github/workflows/ci-mcp.yml"
@@ -79,5 +79,3 @@ jobs:
           MCP_SMOKE_URL: https://alejotaller-mcp.daniel-imbert96.workers.dev
           MCP_SMOKE_TIMEOUT_MS: "20000"
         run: node scripts/smoke-health.mjs
-        # If deploy lags behind master, this can fail until wrangler deploy runs.
-        # workflow_dispatch allows re-run after deploy.
