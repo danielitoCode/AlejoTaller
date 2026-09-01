@@ -34,7 +34,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
     )
 
     @Test
-    fun verified_writes_salida_venta_and_finance() = runBlocking {
+    fun verified_writes_salida_venta_and_finance_with_lines() = runBlocking {
         val stock = FakeStockRepo(mapOf("p1" to Triple(10, 2, 5.0), "p2" to Triple(20, 1, 3.0)))
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
@@ -63,6 +63,17 @@ class ApplyOperatorStockDecisionCaseUseTest {
         assertEquals(13.0, fin.cogs, 0.001)
         assertEquals(87.0, fin.margin, 0.001)
         assertEquals("sale-1", fin.saleId)
+        assertEquals(2, fin.lines.size)
+        val lineP1 = fin.lines.first { it.productId == "p1" }
+        assertEquals(2, lineP1.quantity)
+        assertEquals(40.0, lineP1.unitPrice, 0.001)
+        assertEquals(5.0, lineP1.unitCostSnapshot, 0.001)
+        assertEquals(80.0, lineP1.lineRevenue, 0.001)
+        assertEquals(10.0, lineP1.lineCogs, 0.001)
+        assertEquals(70.0, lineP1.lineMargin, 0.001)
+        val lineP2 = fin.lines.first { it.productId == "p2" }
+        assertEquals(3.0, lineP2.unitCostSnapshot, 0.001)
+        assertEquals(3.0, lineP2.lineCogs, 0.001)
     }
 
     @Test
@@ -109,10 +120,29 @@ class ApplyOperatorStockDecisionCaseUseTest {
         assertEquals(0, finance.created.size)
     }
 
+    @Test
+    fun verified_missing_cost_uses_zero_snapshot() = runBlocking {
+        val stock = FakeStockRepo(mapOf("p1" to Triple(5, 1, null)))
+        val movements = FakeMovementRepo()
+        val finance = FakeFinanceRepo()
+        val useCase = ApplyOperatorStockDecisionCaseUse(
+            stock, movements, finance, FakeAccountRepo("op-1")
+        )
+
+        val result = useCase(
+            sale(listOf(SaleItem("p1", 1, unitPrice = 30.0)), amount = 30.0),
+            confirmed = true
+        )
+
+        assertTrue(result.isSuccess)
+        val fin = finance.created.single()
+        assertEquals(0.0, fin.cogs, 0.001)
+        assertEquals(0.0, fin.lines.single().unitCostSnapshot, 0.001)
+        assertEquals(30.0, fin.margin, 0.001)
+    }
+
     private class FakeStockRepo(
-        // Triple es invariante: mapOf(... to Triple(..., 5.0)) infiere Triple<Int,Int,Double>
-        // y no es asignable a Triple<Int,Int,Double?> → CompilationErrorException en CI
-        private val state: Map<String, Triple<Int, Int, Double>>
+        private val state: Map<String, Triple<Int, Int, Double?>>
     ) : OperatorStockRepository {
         val lastExistence = mutableMapOf<String, Int>()
         val lastReserved = mutableMapOf<String, Int>()
@@ -122,7 +152,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
             existenceDelta: Int,
             reservedDelta: Int
         ): OperatorStockSnapshot {
-            val (ex, res, cost) = state[productId] ?: Triple(0, 0, 0.0)
+            val (ex, res, cost) = state[productId] ?: Triple(0, 0, null as Double?)
             val nextEx = (ex + existenceDelta).coerceAtLeast(0)
             val nextRes = (res + reservedDelta).coerceAtLeast(0)
             lastExistence[productId] = nextEx
@@ -134,7 +164,6 @@ class ApplyOperatorStockDecisionCaseUseTest {
     private class FakeMovementRepo(
         existing: List<StockMovementRecord> = emptyList()
     ) : OperatorStockMovementRepository {
-        // mapValues → Map inmutable; getOrPut requiere MutableMap
         private val bySale = existing
             .groupBy { it.saleId.orEmpty() }
             .mapValues { it.value.toMutableList() }
@@ -173,7 +202,14 @@ class ApplyOperatorStockDecisionCaseUseTest {
             val found = getBySaleId(event.saleId)
             if (found != null) return found
             created += event
-            return SaleFinanceRecord("new", event.saleId, event.revenue, event.cogs, event.margin)
+            return SaleFinanceRecord(
+                "new",
+                event.saleId,
+                event.revenue,
+                event.cogs,
+                event.margin,
+                event.lines
+            )
         }
     }
 
