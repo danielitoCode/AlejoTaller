@@ -1,6 +1,6 @@
 # Core 4 — Checklist (AlejoTaller)
 
-**Última actualización:** 2026-09-01  
+**Última actualización:** 2026-09-02  
 **Rama:** `Core4`  
 **Canónico completo:** [dash CORE4_UNIFIED_CHECKLIST](https://github.com/danielitoCode/dash_alejo_taller/blob/Core4/.roadmap/Core4/CORE4_UNIFIED_CHECKLIST.md)
 
@@ -30,13 +30,14 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 ## B4 — Estabilidad
 
-- [ ] Tras crear event, un cambio de `last_unit_cost` en producto **no** se refleja en el event existente
-- [ ] Reintento de confirm no crea segundo documento (cubierto en unit; smoke opcional)
+- [x] Tras crear event, un cambio de `last_unit_cost` en producto **no** se refleja en el event existente *(unit 2026-09-02)*
+- [x] Reintento de confirm no crea segundo documento; `createIdempotent` conserva lines/snapshot *(unit)*
 
 ## B5 — Tests
 
 - [x] Unit: COGS con varias líneas, snapshots y costo ausente
 - [x] Unit: idempotencia por `sale_id`
+- [x] Unit B4: no-reescritura con costo vivo distinto + payload createIdempotent ignorado
 
 ## B6 — Frontera, smoke, cierre
 
@@ -54,3 +55,4 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 |---|---|
 | 2026-09-01 | Apertura rama `Core4`; docs espejo |
 | 2026-09-01 | B0+B1; B3 case use + unit tests (lines/snapshot); smoke dispositivo pendiente |
+| 2026-09-02 | B4 unit: 2º confirm + createIdempotent no reescribe histórico (FakeFinanceRepo paridad Appwrite) |
