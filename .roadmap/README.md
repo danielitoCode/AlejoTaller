@@ -1,25 +1,16 @@
 # Roadmap AlejoTaller
 
-Estructura por núcleo de entrega:
-
 | Directorio | Alcance | Estado |
 |------------|---------|--------|
-| [`Core1/`](./Core1/) | Auth visitante, Sale UNVERIFIED + soft-hold, Warehouse, operador confirm/reject, QA | **Cerrado** (2026-08-12) |
-| [`Core2/`](./Core2/) | `salida_venta` + finance al VERIFIED (operador); factura/movements/COGS/reservas en **dash** | **Cerrado** (2026-08-24) |
-| [`Core3/`](./Core3/) | Compras y abastecimiento (espejo; UI en dash) | **Listo para merge** · rama `Core3` |
-| [`Core4/`](./Core4/) | Finanzas de ventas — paridad operador (snapshot COGS / líneas) + frontera cliente | **Abierto** · rama `Core4` |
+| [`Core1/`](./Core1/) | Auth visitante, Sale UNVERIFIED + soft-hold, operador | **Cerrado** (2026-08-12) |
+| [`Core2/`](./Core2/) | `salida_venta` + finance base al VERIFIED | **Cerrado** (2026-08-24) |
+| [`Core3/`](./Core3/) | Compras (espejo; UI en dash) | **Cerrado / listo merge** |
+| [`Core4/`](./Core4/) | Finanzas snapshot / líneas + frontera cliente | **Cerrado** (2026-09-02) · PR [#28](https://github.com/danielitoCode/AlejoTaller/pull/28) |
 
 **Cómo usar**
-- Marca checkboxes `[x]` cuando verifiques.
-- Core 1 y Core 2 cerrados a nivel ecosistema.
-- **Core 3:** release mínimo del panel (B3.1) listo; este monorepo solo docs/frontera — PR `Core3` → `master`.
-- **Core 4:** trabajo en `Core4`; canónico de política/checklist en dash; aquí B3 operador + frontera.
+- Core 1–4 cerrados a nivel producto (Core 4 merge pendiente de CI en PRs).
+- Canónico Core 4: dash [PR #21](https://github.com/danielitoCode/dash_alejo_taller/pull/21).
 
-**Políticas de producto:** [`.policies/`](../.policies/)
+**Siguiente:** Core 5 — reportes sobre `sale_finance_event`.
 
-### Post–Core 2 / Core 3 (no bloqueante)
-
-- Ajuste de inventario (UI) — futura implementación
-- B3.2 corrección parcial de entradas (solo dash)
-- Reserva taller desde cliente web (E2E)
-- Smoke opcional en dispositivo físico operador
+**Políticas:** [`.policies/`](../.policies/)
