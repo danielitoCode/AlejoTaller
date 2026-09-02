@@ -1,11 +1,11 @@
 # MVP Core 5 — Estado vivo (AlejoTaller)
 
-**Rama:** `Core5` · **2026-09-02**  
-**Checklist:** [AT_IMPLEMENTATION_CHECKLIST.md](./AT_IMPLEMENTATION_CHECKLIST.md)
+**Rama:** `Core5` · **2026-09-02**
 
 | Bloque | Estado |
 |--------|--------|
-| B0 Docs / baseline | **Siguiente** (marcar al verificar) |
+| **B0** Docs / baseline | **Cerrado** |
 | B1–B4 | N/A (dash) |
-| B5 Frontera | pendiente al cierre |
-| CI Core5 | workflows con rama Core5 |
+| B5 Frontera | pendiente al cierre producto |
+
+Política de reportes: solo dash. Este monorepo no redefine sale/warehouse.

@@ -1,70 +1,33 @@
 # Core 5 — Checklist de implementación · **AlejoTaller**
 
-**Rama:** `Core5`  
-**Última actualización:** 2026-09-02  
-**Canónico de producto (KPIs/UI):** [dash DASH_IMPLEMENTATION_CHECKLIST](https://github.com/danielitoCode/dash_alejo_taller/blob/Core5/.roadmap/Core5/DASH_IMPLEMENTATION_CHECKLIST.md)
-
-Este monorepo **no** implementa el panel de reportes. Solo asegura **frontera** y que Core 4 (write finance operador) no se rompa.
+**Rama:** `Core5` · **Actualizado:** 2026-09-02  
+**Canónico reportes:** [dash DASH checklist](https://github.com/danielitoCode/dash_alejo_taller/blob/Core5/.roadmap/Core5/DASH_IMPLEMENTATION_CHECKLIST.md)
 
 ---
 
-## B0 — Baseline
+## B0 — Baseline — **CERRADO** (2026-09-02)
 
-- [ ] Docs `.roadmap/Core5/` presentes en esta rama
-- [ ] Leer política dash: reportes = **lectura**; write finance solo al confirm
-- [ ] Confirmar que operador en esta base sigue con `createIdempotent` + lines (Core 4)
+- [x] Docs `.roadmap/Core5/` presentes
+- [x] Política dash Core 5 **aceptada** (lectura-only; no redefine `.policies/sale` ni warehouse)
+- [x] Core 4 write operador sigue siendo la fuente que el panel lee (sin cambios de dominio aquí)
 
-**Salida:** docs OK; sin código de KPIs staff.
-
----
-
-## B1–B4 — No aplican (dash)
-
-No abrir issues de agregados/UI de reportes en:
-
-- `web/` (cliente B2C)
-- `mcp/`
-- `alejotallerscan/` (salvo bugfix de write Core 4)
-
-Si en el futuro se pide un indicador local en el operador (“última confirmación”), documentarlo como **extras** fuera del MVP Core 5 y no como KPI de panel.
+**Evaluación políticas AT:** Core 5 no exige editar `SALE_POLICY` / `WAREHOUSE_POLICY` ni rehacer tests de confirm/reject. B2C y MCP siguen sin KPIs staff.
 
 ---
 
-## B5 — Frontera y cierre espejo
-
-### web
-
-- [ ] No hay store/pantalla de resumen `sale_finance_event` global staff
-- [ ] No hay create/update a colección finance desde cliente
-
-### mcp
-
-- [ ] `sale_finance_event` sigue en colecciones prohibidas / notInScope
-- [ ] No hay tool de “reporte financiero staff”
-
-### alejotallerscan
-
-- [ ] Confirm sigue escribiendo finance solo vía path Core 4 (`createIdempotent`)
-- [ ] Reject / DELETED sigue **sin** finance
-- [ ] CI operador verde en cambios de esta rama
-
-### Cierre
-
-- [ ] [MVP_CORE5_STATUS.md](./MVP_CORE5_STATUS.md) actualizado
-- [ ] PR docs/frontera coordinado con dash `Core5` → `master` (si solo docs, un PR de docs basta)
-
-**Salida:** frontera verificada; sin regresión Core 4 write.
+## B1–B4 — N/A (dash)
 
 ---
 
-## Orden de trabajo (AT)
+## B5 — Frontera (al cierre Core 5)
 
-```text
-B0 (ahora) → … esperar dash B1–B4 … → B5 frontera al cerrar Core 5
-```
+- [ ] web: sin KPIs staff / create finance
+- [ ] mcp: `sale_finance_event` prohibido
+- [ ] scan: createIdempotent Core 4 intacto; DELETED sin finance
+- [ ] STATUS + PR coordinado con dash
 
 ## Registro
 
 | Fecha | Nota |
 |-------|------|
-| 2026-09-02 | Checklist AT de implementación (frontera) |
+| 2026-09-02 | B0 cerrado (espejo) |
