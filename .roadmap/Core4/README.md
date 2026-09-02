@@ -1,42 +1,25 @@
 # Core 4 — Finanzas de Ventas (AlejoTaller)
 
-**Estado:** abierto · rama `Core4`  
-**Dependencia:** Core 2 cerrado · Core 3 (espejo / costos en panel)  
-**Canónico de orden / política:** [dash_alejo_taller/.roadmap/Core4](https://github.com/danielitoCode/dash_alejo_taller/tree/Core4/.roadmap/Core4)
+**Estado:** **CERRADO** (2026-09-02) · rama `Core4` · PR [#28](https://github.com/danielitoCode/AlejoTaller/pull/28) → `master`  
+**Canónico:** [dash Core4](https://github.com/danielitoCode/dash_alejo_taller/tree/Core4/.roadmap/Core4) · PR [#21](https://github.com/danielitoCode/dash_alejo_taller/pull/21)
 
-## Rol de este monorepo
+## Rol cumplido
 
-Core 4 es **paridad financiera** al confirmar ventas. El contrato lo define el panel; aquí se implementa el **write del operador** y se protege la frontera B2C.
-
-| Superficie | Qué hacer en Core 4 |
-|------------|---------------------|
-| **alejotallerscan (operador)** | Al VERIFIED: `sale_finance_event` con **snapshot por línea** (mismo contrato que el panel); idempotente por `sale_id` |
-| **web / app (cliente)** | **Nada** de write finance; solo crea `UNVERIFIED` |
-| **mcp** | Sin tools que escriban `sale_finance_event` |
-| **docs / policies** | Espejo de checklist y notas de paridad |
-
-## Qué ya resolvió Core 2 (no repetir desde cero)
-
-- Operador: `salida_venta` + `sale_finance_event` agregado (revenue / cogs / margin) al confirm
-- COGS = Σ `last_unit_cost × qty` leído en el momento del confirm
-- Idempotencia básica por `sale_id`
-- DELETED sin finance
-
-## Objetivo de este espejo
-
-1. Alinear el write del operador al contrato Core 4 (líneas + `unit_cost_snapshot`)
-2. Garantizar que un reintento o un cambio posterior de `last_unit_cost` **no** duplique ni reescriba el evento
-3. Mantener cliente/MCP sin capacidad de crear ingresos
+| Superficie | Entrega |
+|------------|---------|
+| **alejotallerscan** | VERIFIED → `sale_finance_event` con líneas + `unitCostSnapshot`; idempotente |
+| **web / app** | Sin write finance |
+| **mcp** | Sin tools de `sale_finance_event` |
+| **docs** | Checklist, STATUS, paridad |
 
 ## Documentos
 
 | Doc | Rol |
 |------|-----|
-| [CORE4_UNIFIED_CHECKLIST.md](./CORE4_UNIFIED_CHECKLIST.md) | Ítems **AT** del orden B0–B6 |
-| [MVP_CORE4_STATUS.md](./MVP_CORE4_STATUS.md) | Estado vivo de este monorepo |
+| [CORE4_UNIFIED_CHECKLIST.md](./CORE4_UNIFIED_CHECKLIST.md) | B0–B6 AT **cerrado** |
+| [MVP_CORE4_STATUS.md](./MVP_CORE4_STATUS.md) | Estado final |
+| [PARITY_PANEL_OPERATOR.md](./PARITY_PANEL_OPERATOR.md) | Espejo de campos |
 
-## Criterio de merge a `master`
+## Merge
 
-- Código operador + frontera + docs alineados al checklist AT.
-- Coordinar con el PR de `dash_alejo_taller` `Core4` → `master`.
-- No merge a producción hasta CI verde en ambos.
+PR #28 con CI verde, coordinado con dash #21.
