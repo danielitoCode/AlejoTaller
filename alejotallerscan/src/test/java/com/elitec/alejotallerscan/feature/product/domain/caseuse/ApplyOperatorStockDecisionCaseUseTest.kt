@@ -40,7 +40,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
     @Test
     fun verified_writes_salida_venta_and_finance_with_lines() = runBlocking {
         val stock = FakeStockRepo(
-            mapOf(
+            mutableMapOf(
                 "p1" to costTriple(10, 2, 5.0),
                 "p2" to costTriple(20, 1, 3.0)
             )
@@ -87,7 +87,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun deleted_only_releases_reserved_no_movement_no_finance() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to costTriple(10, 2, 5.0)))
+        val stock = FakeStockRepo(mutableMapOf("p1" to costTriple(10, 2, 5.0)))
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
         val useCase = ApplyOperatorStockDecisionCaseUse(
@@ -108,7 +108,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun verified_idempotent_skips_existing_movement_and_finance() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to costTriple(10, 1, 4.0)))
+        val stock = FakeStockRepo(mutableMapOf("p1" to costTriple(10, 1, 4.0)))
         val movements = FakeMovementRepo(
             existing = listOf(
                 StockMovementRecord("m1", "p1", "salida_venta", 1, 9, "sale-1")
@@ -151,7 +151,7 @@ class ApplyOperatorStockDecisionCaseUseTest {
 
     @Test
     fun verified_missing_cost_uses_zero_snapshot() = runBlocking {
-        val stock = FakeStockRepo(mapOf("p1" to costTriple(5, 1, null)))
+        val stock = FakeStockRepo(mutableMapOf("p1" to costTriple(5, 1, null)))
         val movements = FakeMovementRepo()
         val finance = FakeFinanceRepo()
         val useCase = ApplyOperatorStockDecisionCaseUse(
@@ -257,11 +257,10 @@ class ApplyOperatorStockDecisionCaseUseTest {
         assertEquals(10.0, rewritten.lines.single().unitCostSnapshot, 0.001)
     }
 
+    /** Un solo constructor primario: evita platform declaration clash Map/MutableMap en JVM. */
     private class FakeStockRepo(
         val state: MutableMap<String, Triple<Int, Int, Double?>>
     ) : OperatorStockRepository {
-        constructor(state: Map<String, Triple<Int, Int, Double?>>) : this(state.toMutableMap())
-
         val lastExistence = mutableMapOf<String, Int>()
         val lastReserved = mutableMapOf<String, Int>()
 
@@ -273,7 +272,6 @@ class ApplyOperatorStockDecisionCaseUseTest {
             val (ex, res, cost) = state[productId] ?: Triple(0, 0, null as Double?)
             val nextEx = (ex + existenceDelta).coerceAtLeast(0)
             val nextRes = (res + reservedDelta).coerceAtLeast(0)
-            // Persistir stock para reintentos (simula Appwrite)
             state[productId] = Triple(nextEx, nextRes, cost)
             lastExistence[productId] = nextEx
             lastReserved[productId] = nextRes
