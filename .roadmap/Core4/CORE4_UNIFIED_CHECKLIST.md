@@ -4,8 +4,6 @@
 **Rama:** `Core4`  
 **Canónico completo:** [dash CORE4_UNIFIED_CHECKLIST](https://github.com/danielitoCode/dash_alejo_taller/blob/Core4/.roadmap/Core4/CORE4_UNIFIED_CHECKLIST.md)
 
-Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0→B6 en el dash.
-
 ---
 
 ## B0 — Baseline
@@ -20,7 +18,7 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 - [x] Alineación de nombres con el panel (`productId`, `unitCostSnapshot`, `lines_json`)
 - [x] Repo `AppwriteOperatorSaleFinanceRepository` serializa/parsea `lines_json`
 
-## B3 — Confirm operador (bloque principal AT)
+## B3 — Confirm operador
 
 - [x] `ApplyOperatorStockDecisionCaseUse` escribe finance con snapshot por línea al `confirmed=true`
 - [x] `createIdempotent` no duplica ni recalcula si ya existe event para `sale_id` (unit)
@@ -30,14 +28,14 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 
 ## B4 — Estabilidad
 
-- [x] Tras crear event, un cambio de `last_unit_cost` en producto **no** se refleja en el event existente *(unit 2026-09-02)*
+- [x] Tras crear event, un cambio de `last_unit_cost` en producto **no** se refleja en el event existente *(unit)*
 - [x] Reintento de confirm no crea segundo documento; `createIdempotent` conserva lines/snapshot *(unit)*
 
-## B5 — Tests
+## B5 — Tests / paridad
 
 - [x] Unit: COGS con varias líneas, snapshots y costo ausente
-- [x] Unit: idempotencia por `sale_id`
-- [x] Unit B4: no-reescritura con costo vivo distinto + payload createIdempotent ignorado
+- [x] Unit: idempotencia por `sale_id` + B4 no-reescritura
+- [x] Nota paridad: [PARITY_PANEL_OPERATOR.md](./PARITY_PANEL_OPERATOR.md) (espejo dash 2026-09-02)
 
 ## B6 — Frontera, smoke, cierre
 
@@ -54,5 +52,6 @@ Este archivo lista solo lo que **toca a este monorepo**. El orden global es B0�
 | Fecha | Nota |
 |---|---|
 | 2026-09-01 | Apertura rama `Core4`; docs espejo |
-| 2026-09-01 | B0+B1; B3 case use + unit tests (lines/snapshot); smoke dispositivo pendiente |
-| 2026-09-02 | B4 unit: 2º confirm + createIdempotent no reescribe histórico (FakeFinanceRepo paridad Appwrite) |
+| 2026-09-01 | B0+B1; B3 case use + unit tests |
+| 2026-09-02 | B4 unit no-reescritura; fix CI FakeStockRepo |
+| 2026-09-02 | B5 espejo: PARITY_PANEL_OPERATOR |
