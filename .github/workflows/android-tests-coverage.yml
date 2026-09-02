@@ -9,6 +9,7 @@ on:
       - Core2
       - Core3
       - Core4
+      - Core5
   pull_request:
     branches:
       - main
@@ -17,6 +18,7 @@ on:
       - Core2
       - Core3
       - Core4
+      - Core5
   workflow_dispatch:
 
 permissions:
