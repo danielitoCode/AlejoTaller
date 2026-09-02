@@ -24,6 +24,7 @@
     $: currency = $exchangeStore.selectedCurrency;
     $: exchangeRate = $exchangeStore.exchange?.usdReference ?? null;
     $: activeFilterCount = (query.trim() ? 1 : 0) + (selectedCategoryId ? 1 : 0) + (minPrice !== null || maxPrice !== null ? 1 : 0);
+    $: hasPriceFilter = minPrice !== null || maxPrice !== null;
     $: cupPriceRangeUnavailable = currency === "CUP" && (draftMin.trim() !== "" || draftMax.trim() !== "") && (!exchangeRate || exchangeRate <= 0);
 
     function displayAmount(value: number | null): string {
@@ -86,8 +87,13 @@
         closeFilters();
     }
 
-    function categoryName(): string {
-        return categories.find((category) => category.id === selectedCategoryId)?.name ?? "Todas";
+    /** Texto del segmento Categoría: nombre concreto, «Filtros» si hay precio, o «Todas». */
+    function categorySummary(): string {
+        if (selectedCategoryId) {
+            return categories.find((category) => category.id === selectedCategoryId)?.name ?? "Filtro";
+        }
+        if (hasPriceFilter) return "Filtros";
+        return "Todas";
     }
 
     function priceSummary(): string {
@@ -136,7 +142,7 @@
 
         <button class="desktop-segment" type="button" on:click={openFilters} aria-label="Seleccionar categoría">
             <span class="segment-label">Categoría</span>
-            <strong>{categoryName()}</strong>
+            <strong>{categorySummary()}</strong>
         </button>
 
         <button class="desktop-segment price-segment" type="button" on:click={openFilters} aria-label="Filtrar por precio">
@@ -239,7 +245,6 @@
     .filter-button { display: none; }
     .search-submit { width: 48px; height: 48px; margin-right: 7px; flex: 0 0 auto; border-radius: 50%; background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); display: grid; place-items: center; font-size: 25px; }
 
-    /* Backdrop + panel siempre fixed: evita recorte por overflow:hidden de product-screen / list-layer / route-stage */
     .filter-backdrop {
         position: fixed;
         inset: 0;
