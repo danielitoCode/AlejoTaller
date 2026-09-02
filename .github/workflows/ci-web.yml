@@ -3,12 +3,12 @@ name: CI Web
 
 on:
   push:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "web/**"
       - ".github/workflows/ci-web.yml"
   pull_request:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "web/**"
       - ".github/workflows/ci-web.yml"
@@ -39,8 +39,6 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
 
-      # npm ci requires package-lock in sync with package.json.
-      # Use npm install if lock is stale (still installs deterministic-enough for CI).
       - name: Install dependencies
         run: |
           if npm ci; then

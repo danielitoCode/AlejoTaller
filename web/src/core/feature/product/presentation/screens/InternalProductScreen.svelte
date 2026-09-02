@@ -22,6 +22,8 @@
 
     let searchQuery = "";
     let selectedCategoryId: string | null = null;
+    let minPrice: number | null = null;
+    let maxPrice: number | null = null;
     let selectedProduct: any = null;
     let pendingProductId: string | null = null;
     let resolvingPendingProductId: string | null = null;
@@ -106,6 +108,10 @@
     const handleCategorySelected = (categoryId: string | null) => {
         selectedCategoryId = categoryId;
     };
+    const handlePriceRangeChanged = (min: number | null, max: number | null) => {
+        minPrice = min;
+        maxPrice = max;
+    };
     const handleProductClick = (productId: string) => {
         const product = products.find((p) => p.id === productId);
         if (product) selectedProduct = product;
@@ -162,12 +168,15 @@
             {categories}
             {searchQuery}
             {selectedCategoryId}
+            {minPrice}
+            {maxPrice}
             loading={isLoading}
             {stockSyncing}
             {realtimeUpdating}
             {syncMessage}
             onSearchQueryChanged={handleSearchQueryChanged}
             onCategorySelected={handleCategorySelected}
+            onPriceRangeChanged={handlePriceRangeChanged}
             onProductClick={handleProductClick}
             onFavoriteClick={handleFavoriteClick}
         />
@@ -175,12 +184,7 @@
 
     {#if selectedProduct}
         <div class="detail-layer" transition:fly={{ x: 24, duration: 220 }}>
-            <button
-                type="button"
-                class="detail-scrim"
-                aria-label="Cerrar detalle"
-                on:click={closeProductDetail}
-            ></button>
+            <button type="button" class="detail-scrim" aria-label="Cerrar detalle" on:click={closeProductDetail}></button>
             <div class="detail-panel" role="dialog" aria-modal="true" aria-label="Detalle del producto">
                 <ProductDetailScreen
                     product={selectedProduct}
@@ -236,10 +240,16 @@
         height: 100%;
     }
 
+    /*
+     * Overlay del detalle anclado al viewport (fixed).
+     * Evita el desplazamiento vertical que aparecía tras aplicar filtros:
+     * el listado reflujo y el antiguo position:absolute heredaba un
+     * containing block con altura/scroll inconsistente.
+     */
     .detail-layer {
-        position: absolute;
+        position: fixed;
         inset: 0;
-        z-index: 40;
+        z-index: 80;
         display: flex;
         align-items: stretch;
         justify-content: stretch;
@@ -311,10 +321,7 @@
             overflow: hidden;
             isolation: isolate;
             background: var(--md-sys-color-surface);
-            background-image: linear-gradient(
-                var(--md-sys-color-surface),
-                var(--md-sys-color-surface)
-            );
+            background-image: linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface));
             box-shadow:
                 0 28px 72px color-mix(in srgb, black 50%, transparent),
                 0 0 0 1px color-mix(in srgb, var(--md-sys-color-outline-variant) 60%, transparent);
@@ -326,10 +333,7 @@
         .detail-panel :global(.product-info-section),
         .detail-panel :global(.description-section) {
             background: var(--md-sys-color-surface) !important;
-            background-image: linear-gradient(
-                var(--md-sys-color-surface),
-                var(--md-sys-color-surface)
-            ) !important;
+            background-image: linear-gradient(var(--md-sys-color-surface), var(--md-sys-color-surface)) !important;
         }
 
         .detail-panel :global(.bottom-bar) {
@@ -347,6 +351,7 @@
         .detail-panel {
             width: min(720px, 100%);
             height: min(760px, calc(100dvh - 40px));
+            max-height: calc(100dvh - 40px);
         }
     }
 </style>

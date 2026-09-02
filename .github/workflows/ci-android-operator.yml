@@ -3,7 +3,7 @@ name: CI Android Operador
 
 on:
   push:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "alejotallerscan/**"
       - "shared-*/**"
@@ -16,7 +16,7 @@ on:
       - "gradle.properties"
       - ".github/workflows/ci-android-operator.yml"
   pull_request:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "alejotallerscan/**"
       - "shared-*/**"

@@ -3,7 +3,7 @@ name: CI Android Cliente
 
 on:
   push:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "app/**"
       - "shared-*/**"
@@ -16,7 +16,7 @@ on:
       - "gradle.properties"
       - ".github/workflows/ci-android-client.yml"
   pull_request:
-    branches: [master, main, Core2, Core3]
+    branches: [master, main, Core2, Core3, Core4]
     paths:
       - "app/**"
       - "shared-*/**"
@@ -32,7 +32,6 @@ on:
 
 concurrency:
   group: ci-android-client-${{ github.ref }}
-  # false: pushes rápidos ya no cancelan el job a mitad (mensaje «operación cancelada»)
   cancel-in-progress: false
 
 permissions:
@@ -65,7 +64,6 @@ jobs:
       - name: Placeholder local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          # Agent keys opcionales (vacías en CI; BuildConfig las inyecta como "")
           echo "MISTRAL_API_KEY=" >> local.properties
           echo "MISTRAL_AGENT_ID=" >> local.properties
           echo "MISTRAL_MODEL_ID=mistral-medium-latest" >> local.properties
