@@ -2,17 +2,16 @@
 
 **Última actualización:** 2026-09-02  
 **Rama:** `Core4`  
-**Core 4 en este monorepo:** B0–B5 unit/docs OK; B6 (smoke/CI/PR) pendiente
+**PR:** https://github.com/danielitoCode/AlejoTaller/pull/28  
+**Core 4:** B0–B5 hecho; B6 código/frontera OK — CI + merge pendientes
 
 | Bloque | Estado |
 |--------|--------|
-| B0 Docs / baseline | **Cerrado** |
-| B1 Tipos contrato líneas/snapshot + repo | **Hecho** |
-| B3 Write operador con snapshot en case use | **Hecho** |
-| B4 Idempotencia / no reescritura | **Hecho** |
-| B5 Tests + paridad | **Hecho** (espejo dash) |
-| B6 Frontera + smoke + PR | **Siguiente** |
+| B0–B5 | **Cerrado** |
+| B6 frontera (MCP/web sin write finance) | **Documentado** |
+| B6 smoke device | Opcional |
+| B6 CI + merge | **Pendiente** PR #28 |
 
-### Siguiente
+### Acción
 
-B6: smoke operador, frontera cliente/MCP, CI verde, PR coordinado con dash.
+Esperar CI verde en PR #28 y coordinar merge con dash PR #21.
