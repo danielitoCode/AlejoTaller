@@ -9,7 +9,11 @@ Core 6 **producto de agenda/staff** vive en **dash**. Aquí:
 
 1. **Frontera** — cliente/operador no confunden reserva con venta ni escriben finance/stock por citas.
 2. **Solicitud B2C (opcional en release)** — web (y luego Android) pueden **pedir** cita `REQUESTED` si se decide incluirlo.
-3. **Operador scan** — sin gestionar agenda completa (eso es panel); como máximo lectura/aviso si se acuerda.
+3. **Operador scan** — sin gestionar agenda completa (eso es panel).
+
+## Plataforma
+
+Migración desacoplada: [../PLATFORM_MIGRATION.md](../PLATFORM_MIGRATION.md) (Auth0 → R2 → Turso → cortar Appwrite).
 
 ## Canónico
 
