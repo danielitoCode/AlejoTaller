@@ -3,6 +3,8 @@
     import { get } from "svelte/store";
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import {authContainer} from "../../di/auth.container";
+    import { getAuthPort } from "../../di/authPort.factory";
+    import { userLikeFromAuthSession } from "../../domain/util/authSessionBridge";
     import alejoIcon from "/alejoicon_clean.svg";
     import { consumePendingDeepLink, rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
     import { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
@@ -31,10 +33,8 @@
     let adminUser: any = null;
     let loading = true;
     let redirecting = false;
-    /** The hash captured before Svelte could touch it, used on cold boot */
     const capturedHash = getCapturedHash();
 
-    /** UX status under the logo (same language as AuthBusyOverlay orbit) */
     type SplashStatus = "loading" | "authenticated" | "visitor" | "first-visit";
     let status: SplashStatus = "loading";
     let displayName = "";
@@ -59,7 +59,6 @@
         await sleep(STATUS_HOLD_MS);
     }
 
-    /** Any actionable deeplink into the shell (home/*). */
     function isHomeDeepLink(hash: string): boolean {
         const parsed = parseDeepLinkHash(hash);
         return parsed?.top === "home";
@@ -73,7 +72,6 @@
         return pendingHash;
     }
 
-    /** Clear authenticated client → home with full privileges */
     async function continueAsAuthenticatedClient(user: any) {
         await holdStatus("authenticated", resolveDisplayName(user));
         sessionStore.setAuthenticatedSession();
@@ -93,10 +91,6 @@
         navController.resetTo("home", { id: userId ?? undefined });
     }
 
-    /**
-     * Visitor path: mark local guest flag + guest provider.
-     * Reuses existing anonymous Appwrite session when possible (caller already has user).
-     */
     async function continueAsVisitor(user?: any, firstVisit = false) {
         await holdStatus(firstVisit ? "first-visit" : "visitor");
         sessionStore.setGuestSession();
@@ -142,7 +136,6 @@
         } catch (e) {
             if (import.meta.env.DEV) logNavError("autoCreateGuestSession failed", e);
             await holdStatus("first-visit");
-            // Validación UI: ruta fusionada en lugar de welcome legacy
             navController.resetTo("welcome-update");
         }
     }
@@ -187,10 +180,41 @@
         }
         try {
             await exchangeStore.refreshForSplash();
+
+            // Fase 1 Auth0: callback + sesión IdP (web :5174)
+            const authPort = getAuthPort();
+            if (authPort) {
+                try {
+                    await authPort.init();
+                    await authPort.handleRedirectCallback();
+                    const session = await authPort.getSession();
+                    if (session) {
+                        const user = userLikeFromAuthSession(session);
+                        if (shouldOfferAdminChoice(user)) {
+                            const choice = getStoredAdminChoice();
+                            if (choice === "admin") {
+                                await chooseAdmin();
+                                return;
+                            }
+                            if (choice !== "client") {
+                                adminUser = user;
+                                displayName = resolveDisplayName(user);
+                                status = "authenticated";
+                                loading = false;
+                                return;
+                            }
+                        }
+                        await continueAsAuthenticatedClient(user);
+                        return;
+                    }
+                } catch (e) {
+                    if (import.meta.env.DEV) logNavError("Auth0 splash path", e);
+                }
+            }
+
             const user = await authContainer.useCases.accounts.getCurrentUser();
             const mode = classifySessionMode(user);
 
-            // Only offer admin choice for CLEAR authenticated admin profiles
             if (mode === "authenticated" && shouldOfferAdminChoice(user)) {
                 const choice = getStoredAdminChoice();
                 if (choice === "admin") {
@@ -211,7 +235,6 @@
                 saveHomeDeepLinkIfPresent();
             }
 
-            // POLICY: unclear / anonymous / empty-email profile → visitor
             if (mode === "visitor" || !hasClearAuthenticatedProfile(user)) {
                 if (import.meta.env.DEV) {
                     logNavRoute("home", { reason: "unclear-profile-as-visitor", email: user?.email ?? null });
@@ -222,7 +245,6 @@
 
             await continueAsAuthenticatedClient(user);
         } catch {
-            // No Appwrite session at all
             if (hasDeeplink) {
                 saveHomeDeepLinkIfPresent();
                 await autoCreateGuestSession(false);
@@ -232,7 +254,6 @@
             } else {
                 if (import.meta.env.DEV) logNavRoute("welcome-update", { reason: "first-visit-no-deeplink" });
                 await holdStatus("first-visit");
-                // Solo cambia el destino: mismas políticas, UI fusionada
                 navController.resetTo("welcome-update");
             }
         } finally {
@@ -257,7 +278,6 @@
               : "Para una mejor experiencia te recomendamos registrarte";
 
     $: showOrbit = loading || status === "loading" || (!adminUser && status !== "authenticated");
-    // Keep soft orbit while showing welcome lines; stop hard spin feel only when admin card is up
     $: orbitActive = !adminUser;
 </script>
 
