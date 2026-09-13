@@ -21,7 +21,6 @@ function requireConfig() {
     if (!domain || !clientId) {
         throw new Error("Auth0: faltan VITE_AUTH0_DOMAIN / VITE_AUTH0_CLIENT_ID");
     }
-    // Web cliente: Auth0 Application apunta a http://localhost:5174/
     const origin =
         typeof window !== "undefined" ? window.location.origin : "http://localhost:5174";
     return {
@@ -66,15 +65,16 @@ export class Auth0AuthAdapter implements AuthPort {
         return this.client;
     }
 
-    async loginWithRedirect(appState?: { returnTo?: string }): Promise<void> {
+    async loginWithRedirect(appState?: { returnTo?: string; connection?: string }): Promise<void> {
         const client = await this.ensure();
         const cfg = requireConfig();
         const options: RedirectLoginOptions = {
             authorizationParams: {
                 redirect_uri: cfg.redirectUri,
                 ...(cfg.audience ? { audience: cfg.audience } : {}),
+                ...(appState?.connection ? { connection: appState.connection } : {}),
             },
-            appState: appState ?? undefined,
+            appState: appState?.returnTo ? { returnTo: appState.returnTo } : undefined,
         };
         await client.loginWithRedirect(options);
     }
