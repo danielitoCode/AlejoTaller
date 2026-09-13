@@ -21,8 +21,9 @@ function requireConfig() {
     if (!domain || !clientId) {
         throw new Error("Auth0: faltan VITE_AUTH0_DOMAIN / VITE_AUTH0_CLIENT_ID");
     }
+    // Web cliente: Auth0 Application apunta a http://localhost:5174/
     const origin =
-        typeof window !== "undefined" ? window.location.origin : "http://localhost:5173";
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:5174";
     return {
         domain,
         clientId,
