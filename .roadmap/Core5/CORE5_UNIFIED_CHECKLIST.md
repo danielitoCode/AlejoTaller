@@ -1,10 +1,10 @@
 # Core 5 — Índice (AlejoTaller)
 
-**Canónico de implementación de reportes:** dash.  
-**Este repo:** [AT_IMPLEMENTATION_CHECKLIST.md](./AT_IMPLEMENTATION_CHECKLIST.md)
+**Rama:** `Core5` · **Actualizado:** 2026-09-13
 
-| Bloque | ¿AT? |
-|--------|------|
-| B0 | Sí — docs + baseline |
-| B1–B4 | No — solo dash |
-| B5 | Sí — frontera web/MCP/scan |
+| Repo | Rol |
+|------|-----|
+| **dash** | Producto reportes/ops — **mergeado** a `master` |
+| **AT (este)** | Espejo frontera + CI — PR → `master` |
+
+Checklist local: [AT_IMPLEMENTATION_CHECKLIST.md](./AT_IMPLEMENTATION_CHECKLIST.md)
