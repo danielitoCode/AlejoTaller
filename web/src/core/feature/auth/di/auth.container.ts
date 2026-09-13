@@ -25,25 +25,17 @@ import { ExchangeGoogleCredentialCaseUse } from "../domain/caseuse/ExchangeGoogl
 import { PasswordResetNetRepositoryImpl } from "../data/repository/password-reset.repository";
 import { RequestPasswordResetCodeCaseUse } from "../domain/caseuse/RequestPasswordResetCodeCaseUse";
 import { ConfirmPasswordResetCodeCaseUse } from "../domain/caseuse/ConfirmPasswordResetCodeCaseUse";
+import { getAuthPort, resolveAuthProvider } from "./authPort.factory";
 
-// Infraestructura Appwrite activa para el flujo MVP.
 const accounts = infrastructureContainer.appwrite.account
 const functions = infrastructureContainer.appwrite.functions
 
-// Repositorios activos del MVP.
 const authNetRepository = new UserNetRepositoryImpl(accounts)
 const sessionNetManager = new SessionNetManagerImpl(accounts)
 const adminNetRepository = new AdminNetManagerImpl(functions)
-
-// Infraestructura futura:
-// este repositorio HTTP permite volver a un flujo server-assisted para Google
-// sin tocar la API pública del contenedor. Hoy el login/registro MVP no lo usa.
 const googleAuthNetRepository = new GoogleAuthNetRepositoryImpl()
-
-// Servicio activo para reset de contraseña externo.
 const passwordResetNetRepository = new PasswordResetNetRepositoryImpl()
 
-// Casos de uso del dominio.
 const createAccountCaseUse = new CreateAccountCaseUse(authNetRepository)
 const updateNameCaseUse = new UpdateNameCaseUse(authNetRepository)
 const updatePasswordCaseUse = new UpdatePasswordCaseUse(authNetRepository)
@@ -65,6 +57,9 @@ const updateManagedUserStatusCaseUse = new UpdateManagedUserStatusCaseUse(adminN
 const updateManagedUserPasswordCaseUse = new UpdateManagedUserPasswordCaseUse(adminNetRepository)
 
 export const authContainer = {
+    /** Fase 1: Auth0 si VITE_AUTH_PROVIDER=auth0 */
+    authPort: getAuthPort(),
+    authProvider: resolveAuthProvider(),
     repositories: {
         accounts: authNetRepository,
         sessions: sessionNetManager,
