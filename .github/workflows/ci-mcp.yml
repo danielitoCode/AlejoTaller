@@ -3,13 +3,13 @@ name: CI MCP
 
 on:
   push:
-    branches: [master, main, Core2, Core3, Core4]
+    branches: [master, main, Core2, Core3, Core4, Core5]
     paths:
       - "mcp/**"
       - ".github/workflows/ci-mcp.yml"
       - ".github/workflows/ci-gate.yml"
   pull_request:
-    branches: [master, main, Core2, Core3, Core4]
+    branches: [master, main, Core2, Core3, Core4, Core5]
     paths:
       - "mcp/**"
       - ".github/workflows/ci-mcp.yml"
