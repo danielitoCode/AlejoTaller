@@ -51,6 +51,11 @@ function createPromotionStore() {
 
     function ensureAppwriteSubscription(): void {
         if (appwriteUnsub) return
+        const auth0 = String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0"
+        if (auth0) {
+            logger.log("[PromotionStore] Auth0 mode — skip Appwrite RT promotions")
+            return
+        }
         logger.log("[PromotionStore] Activating Appwrite RT promotions")
         appwriteUnsub = subscribeAppwritePromotions((signal) => {
             handleAppwriteSignal(signal)
@@ -105,6 +110,12 @@ function createPromotionStore() {
     }
 
     async function syncAllInner(): Promise<void> {
+        const auth0 = String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0"
+        if (auth0) {
+            logger.log("[PromotionStore] Auth0 mode — skip Appwrite promo sync")
+            update((state) => ({ ...state, items: [] }))
+            return
+        }
         await runLoading(async () => {
             const items = await notificationContainer.useCases.promo.getAll()
             update((state) => ({ ...state, items }))
