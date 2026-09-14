@@ -8,11 +8,44 @@ import { AUTH_ROLES_CLAIM, type AuthSession } from "../domain/entity/AuthSession
 import { ENV } from "../../../infrastructure/env";
 import { logAuth0 } from "../../../infrastructure/presentation/navigation/debug-logger";
 
-function parseRoles(claims: Record<string, unknown> | undefined): string[] {
-    if (!claims) return [];
-    const raw = claims[AUTH_ROLES_CLAIM] ?? claims["roles"];
-    if (Array.isArray(raw)) return raw.map(String);
+/**
+ * Roles solo desde claim namespaced del JWT (Action ← app_metadata).
+ * Nunca app_metadata ni "roles" genérico en el cliente.
+ * @see .roadmap/Core6/AUTH0_ROLES_ACTION.md
+ */
+function parseNamespacedRoles(raw: unknown): string[] {
+    if (Array.isArray(raw)) return raw.map(String).map((s) => s.trim()).filter(Boolean);
     if (typeof raw === "string") return raw.split(/[\s,]+/).filter(Boolean);
+    return [];
+}
+
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+    try {
+        const parts = token.split(".");
+        if (parts.length < 2) return null;
+        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const pad = b64.length % 4 === 0 ? "" : "=".repeat(4 - (b64.length % 4));
+        const json = atob(b64 + pad);
+        const payload = JSON.parse(json) as Record<string, unknown>;
+        return payload && typeof payload === "object" ? payload : null;
+    } catch {
+        return null;
+    }
+}
+
+function resolveRolesFromTokens(
+    accessToken: string,
+    idTokenUser: Record<string, unknown> | undefined,
+): string[] {
+    const fromAccess = decodeJwtPayload(accessToken);
+    if (fromAccess && AUTH_ROLES_CLAIM in fromAccess) {
+        const roles = parseNamespacedRoles(fromAccess[AUTH_ROLES_CLAIM]);
+        if (roles.length > 0) return [...new Set(roles)];
+    }
+    if (idTokenUser && AUTH_ROLES_CLAIM in idTokenUser) {
+        const roles = parseNamespacedRoles(idTokenUser[AUTH_ROLES_CLAIM]);
+        if (roles.length > 0) return [...new Set(roles)];
+    }
     return [];
 }
 
@@ -177,10 +210,11 @@ export class Auth0AuthAdapter implements AuthPort {
             logAuth0("warn", `getSession token: ${e instanceof Error ? e.message : String(e)}`, e);
             return null;
         }
-        const roles = parseRoles(user as Record<string, unknown>);
+
+        const roles = resolveRolesFromTokens(accessToken, user as Record<string, unknown>);
         logAuth0(
             "info",
-            `session sub=${mask(user.sub, 12)} email=${user.email ?? "—"} roles=[${roles.join(",") || "viewer"}]`,
+            `session sub=${mask(user.sub, 12)} email=${user.email ?? "—"} roles=[${roles.join(",") || "(none)"}] claim=${AUTH_ROLES_CLAIM}`,
         );
         return {
             subject: user.sub,
