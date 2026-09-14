@@ -2,6 +2,7 @@
     import { getAuthPort } from "../../di/authPort.factory";
     import { Button } from "m3-svelte";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
+    import { logAuth0 } from "../../../../infrastructure/presentation/navigation/debug-logger";
 
     export let disabled = false;
 
@@ -10,18 +11,25 @@
     async function login(opts?: { connection?: string }) {
         const auth = getAuthPort();
         if (!auth) {
+            logAuth0("warn", "Login: Auth0 inactivo (VITE_AUTH_PROVIDER≠auth0)");
             toastStore.error("Auth0 no está activo (VITE_AUTH_PROVIDER=auth0)");
             return;
         }
         loading = true;
         try {
+            logAuth0(
+                "info",
+                `Login UI click connection=${opts?.connection ?? "universal"}`,
+            );
             await auth.init();
             await auth.loginWithRedirect({
                 returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
                 connection: opts?.connection,
             });
         } catch (e) {
-            toastStore.error(e instanceof Error ? e.message : "No se pudo iniciar Auth0");
+            const msg = e instanceof Error ? e.message : "No se pudo iniciar Auth0";
+            logAuth0("error", `Login UI falló: ${msg}`, e);
+            toastStore.error(msg);
             loading = false;
         }
     }
@@ -39,7 +47,7 @@
     >
         Continuar con Google
     </Button>
-    <p class="hint">Google vía Auth0 Social · puerto 5174</p>
+    <p class="hint">Google vía Auth0 Social · logs solo en local (panel Logs)</p>
 </div>
 
 <style>
