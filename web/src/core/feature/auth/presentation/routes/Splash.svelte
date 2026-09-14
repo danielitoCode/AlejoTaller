@@ -1,34 +1,45 @@
 <script lang="ts">
-    import {onMount} from "svelte";
+    import { onMount } from "svelte";
     import { get } from "svelte/store";
     import type { NavController } from "../../../../../lib/navigation/NavController";
-    import {authContainer} from "../../di/auth.container";
-    import { getAuthPort } from "../../di/authPort.factory";
+    import { authContainer } from "../../di/auth.container";
+    import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
     import { userLikeFromAuthSession } from "../../domain/util/authSessionBridge";
     import alejoIcon from "/alejoicon_clean.svg";
-    import { consumePendingDeepLink, rememberPendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
+    import {
+        consumePendingDeepLink,
+        rememberPendingDeepLink,
+    } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
     import { parseDeepLinkHash } from "../../../../infrastructure/presentation/navigation/deeplink";
     import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
     import { exchangeStore } from "../../../exchange/presentation/viewmodels/exchanges.store";
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
-    import { getCapturedHash, getCapturedParsedDeeplink } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
-    import { logNavAuthCheck, logNavRoute, logNavError } from "../../../../infrastructure/presentation/navigation/debug-logger";
-    import { hasCompletedWelcome, markWelcomeCompleted } from "../../../../infrastructure/presentation/navigation/first-visit";
+    import { getCapturedHash } from "../../../../infrastructure/presentation/navigation/initial-deep-link";
+    import {
+        logNavAuthCheck,
+        logNavRoute,
+        logNavError,
+    } from "../../../../infrastructure/presentation/navigation/debug-logger";
+    import {
+        hasCompletedWelcome,
+        markWelcomeCompleted,
+    } from "../../../../infrastructure/presentation/navigation/first-visit";
     import {
         classifySessionMode,
         hasClearAuthenticatedProfile,
-        resolveUserId
+        resolveUserId,
     } from "../util/profile-classification";
-
     import {
         getStoredAdminChoice,
         goToAdminDashboard,
         rememberAdminChoice,
-        shouldOfferAdminChoice
+        shouldOfferAdminChoice,
     } from "../util/admin-redirect";
 
     export let navController: NavController;
+
+    const useAuth0 = resolveAuthProvider() === "auth0";
 
     let adminUser: any = null;
     let loading = true;
@@ -39,7 +50,7 @@
     let status: SplashStatus = "loading";
     let displayName = "";
 
-    const STATUS_HOLD_MS = 1100;
+    const STATUS_HOLD_MS = 900;
 
     function sleep(ms: number) {
         return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -72,72 +83,39 @@
         return pendingHash;
     }
 
-    async function continueAsAuthenticatedClient(user: any) {
+    async function continueAsAuthenticatedClient(user: any, provider = "auth0") {
         await holdStatus("authenticated", resolveDisplayName(user));
         sessionStore.setAuthenticatedSession();
         const userId = resolveUserId(user);
         authFlowStore.setSuccess({
             userId,
             email: typeof user?.email === "string" ? user.email : null,
-            provider: "password"
+            provider,
         });
         markWelcomeCompleted();
-        const pendingHash = applyPendingDeepLink();
+        applyPendingDeepLink();
         if (import.meta.env.DEV) {
-            logNavAuthCheck(true, false, "continue");
-            const parsed = parseDeepLinkHash(pendingHash || window.location.hash);
-            logNavRoute("home", { id: userId, productId: parsed?.args?.productId, mode: "authenticated" });
+            logNavAuthCheck(true, false, `auth-${provider}`);
+            logNavRoute("home", { id: userId, mode: "authenticated", provider });
         }
         navController.resetTo("home", { id: userId ?? undefined });
     }
 
-    async function continueAsVisitor(user?: any, firstVisit = false) {
+    /** Guest 100% local — no Appwrite (billing bloqueado / Auth0 mode). */
+    async function continueAsLocalGuest(firstVisit = false) {
+        if (import.meta.env.DEV) {
+            logNavAuthCheck(false, true, useAuth0 ? "auth0-local-guest" : "local-guest");
+        }
         await holdStatus(firstVisit ? "first-visit" : "visitor");
         sessionStore.setGuestSession();
-        const userId = resolveUserId(user);
         authFlowStore.setSuccess({
-            userId,
+            userId: "guest-local",
             email: null,
-            provider: "guest"
+            provider: "guest",
         });
         markWelcomeCompleted();
-        const pendingHash = applyPendingDeepLink();
-        if (import.meta.env.DEV) {
-            logNavAuthCheck(false, true, "continue");
-            logNavRoute("home", {
-                id: userId,
-                productId: parseDeepLinkHash(pendingHash || window.location.hash)?.args?.productId,
-                mode: "visitor"
-            });
-        }
-        navController.resetTo("home", userId ? { id: userId } : undefined);
-    }
-
-    async function autoCreateGuestSession(firstVisit = false) {
-        if (import.meta.env.DEV) {
-            logNavAuthCheck(false, false, "auto-guest");
-        }
-        try {
-            status = firstVisit ? "first-visit" : "visitor";
-            const userId = await authContainer.useCases.sessions.openSession.openGuestSession();
-            await holdStatus(firstVisit ? "first-visit" : "visitor");
-            sessionStore.setGuestSession();
-            authFlowStore.setSuccess({
-                userId,
-                email: null,
-                provider: "guest"
-            });
-            markWelcomeCompleted();
-            const pendingHash = applyPendingDeepLink();
-            if (pendingHash && import.meta.env.DEV) {
-                logNavRoute("home", { productId: parseDeepLinkHash(pendingHash)?.args?.productId, mode: "visitor" });
-            }
-            navController.resetTo("home");
-        } catch (e) {
-            if (import.meta.env.DEV) logNavError("autoCreateGuestSession failed", e);
-            await holdStatus("first-visit");
-            navController.resetTo("welcome-update");
-        }
+        applyPendingDeepLink();
+        navController.resetTo("home");
     }
 
     async function chooseClient() {
@@ -149,20 +127,18 @@
     async function chooseAdmin() {
         redirecting = true;
         rememberAdminChoice("admin");
-        const redirected = await goToAdminDashboard(
-            async () => await authContainer.useCases.sessions.closeSession.execute()
-        );
-        if (!redirected) {
-            redirecting = false;
-        }
+        const redirected = await goToAdminDashboard(async () => {
+            const auth = getAuthPort();
+            if (auth) await auth.logout();
+            else await authContainer.useCases.sessions.closeSession.execute();
+        });
+        if (!redirected) redirecting = false;
     }
 
     function saveHomeDeepLinkIfPresent() {
         if (typeof window === "undefined") return;
         const raw = capturedHash ?? window.location.hash;
-        if (isHomeDeepLink(raw)) {
-            rememberPendingDeepLink(raw);
-        }
+        if (isHomeDeepLink(raw)) rememberPendingDeepLink(raw);
     }
 
     onMount(async () => {
@@ -175,50 +151,67 @@
             logNavAuthCheck(
                 false,
                 get(sessionStore).isGuest,
-                hasDeeplink ? "deeplink" : returningVisitor ? "returning-direct-home" : "first-visit-welcome"
+                hasDeeplink
+                    ? "deeplink"
+                    : returningVisitor
+                      ? "returning-direct-home"
+                      : "first-visit-welcome",
             );
+            logNavRoute("splash", { provider: resolveAuthProvider() });
         }
-        try {
-            await exchangeStore.refreshForSplash();
 
-            // Fase 1 Auth0: callback + sesión IdP (web :5174)
-            const authPort = getAuthPort();
-            if (authPort) {
-                try {
-                    await authPort.init();
-                    await authPort.handleRedirectCallback();
-                    const session = await authPort.getSession();
-                    if (session) {
-                        const user = userLikeFromAuthSession(session);
-                        if (shouldOfferAdminChoice(user)) {
-                            const choice = getStoredAdminChoice();
-                            if (choice === "admin") {
-                                await chooseAdmin();
-                                return;
+        try {
+            await exchangeStore.refreshForSplash().catch(() => {});
+
+            // ── Auth0 path (no Appwrite) ──────────────────────────
+            if (useAuth0) {
+                const authPort = getAuthPort();
+                if (authPort) {
+                    try {
+                        await authPort.init();
+                        await authPort.handleRedirectCallback();
+                        const session = await authPort.getSession();
+                        if (session) {
+                            const user = userLikeFromAuthSession(session);
+                            if (shouldOfferAdminChoice(user)) {
+                                const choice = getStoredAdminChoice();
+                                if (choice === "admin") {
+                                    await chooseAdmin();
+                                    return;
+                                }
+                                if (choice !== "client") {
+                                    adminUser = user;
+                                    displayName = resolveDisplayName(user);
+                                    status = "authenticated";
+                                    loading = false;
+                                    return;
+                                }
                             }
-                            if (choice !== "client") {
-                                adminUser = user;
-                                displayName = resolveDisplayName(user);
-                                status = "authenticated";
-                                loading = false;
-                                return;
-                            }
+                            await continueAsAuthenticatedClient(user, "auth0");
+                            return;
                         }
-                        await continueAsAuthenticatedClient(user);
-                        return;
+                    } catch (e) {
+                        if (import.meta.env.DEV) logNavError("Auth0 splash", e);
                     }
-                } catch (e) {
-                    if (import.meta.env.DEV) logNavError("Auth0 splash path", e);
                 }
+                // Sin sesión Auth0: guest local o welcome — NUNCA Appwrite
+                if (hasDeeplink) saveHomeDeepLinkIfPresent();
+                if (returningVisitor || hasDeeplink) {
+                    await continueAsLocalGuest(false);
+                } else {
+                    await holdStatus("first-visit");
+                    navController.resetTo("welcome-update");
+                }
+                return;
             }
 
+            // ── Legacy Appwrite ───────────────────────────────────
             const user = await authContainer.useCases.accounts.getCurrentUser();
             const mode = classifySessionMode(user);
 
             if (mode === "authenticated" && shouldOfferAdminChoice(user)) {
                 const choice = getStoredAdminChoice();
                 if (choice === "admin") {
-                    if (import.meta.env.DEV) logNavRoute("admin");
                     await chooseAdmin();
                     return;
                 }
@@ -231,28 +224,21 @@
                 }
             }
 
-            if (hasDeeplink) {
-                saveHomeDeepLinkIfPresent();
-            }
+            if (hasDeeplink) saveHomeDeepLinkIfPresent();
 
             if (mode === "visitor" || !hasClearAuthenticatedProfile(user)) {
-                if (import.meta.env.DEV) {
-                    logNavRoute("home", { reason: "unclear-profile-as-visitor", email: user?.email ?? null });
-                }
-                await continueAsVisitor(user, !returningVisitor && !hasDeeplink);
+                await continueAsLocalGuest(!returningVisitor && !hasDeeplink);
                 return;
             }
 
-            await continueAsAuthenticatedClient(user);
-        } catch {
-            if (hasDeeplink) {
-                saveHomeDeepLinkIfPresent();
-                await autoCreateGuestSession(false);
-            } else if (returningVisitor) {
-                if (import.meta.env.DEV) logNavRoute("home", { reason: "returning-visitor-auto-guest" });
-                await autoCreateGuestSession(false);
+            await continueAsAuthenticatedClient(user, "appwrite");
+        } catch (e) {
+            if (import.meta.env.DEV) logNavError("Splash catch", e);
+            if (hasDeeplink) saveHomeDeepLinkIfPresent();
+            // Auth0 o Appwrite caído: guest local, sin openGuestSession Appwrite
+            if (returningVisitor || hasDeeplink || useAuth0) {
+                await continueAsLocalGuest(false);
             } else {
-                if (import.meta.env.DEV) logNavRoute("welcome-update", { reason: "first-visit-no-deeplink" });
                 await holdStatus("first-visit");
                 navController.resetTo("welcome-update");
             }
@@ -272,12 +258,13 @@
 
     $: statusSubtitle =
         status === "loading"
-            ? "Preparando tu experiencia en la tienda"
+            ? useAuth0
+                ? "Auth0 · sin Appwrite"
+                : "Preparando tu experiencia en la tienda"
             : status === "authenticated"
               ? "Entrando a tu espacio de compras"
               : "Para una mejor experiencia te recomendamos registrarte";
 
-    $: showOrbit = loading || status === "loading" || (!adminUser && status !== "authenticated");
     $: orbitActive = !adminUser;
 </script>
 
@@ -329,18 +316,15 @@
             ),
             var(--md-sys-color-background);
         color: var(--md-sys-color-on-background);
-        position: relative;
         padding: 24px;
         box-sizing: border-box;
     }
-
     .splash-stage {
         display: grid;
         justify-items: center;
         gap: 28px;
         width: min(100%, 420px);
     }
-
     .logo-orbit {
         position: relative;
         width: 220px;
@@ -348,95 +332,66 @@
         display: grid;
         place-items: center;
     }
-
     .app-icon {
         width: 180px;
         height: 180px;
         object-fit: contain;
-        color: var(--md-sys-color-on-background);
-        position: relative;
         z-index: 1;
-        filter: drop-shadow(0 12px 28px color-mix(in srgb, black 22%, transparent));
     }
-
     .ring {
         position: absolute;
         border-radius: 50%;
         border: 2px solid transparent;
         pointer-events: none;
-        opacity: 0.95;
     }
-
     .ring-a {
         inset: 0;
         border-top-color: var(--md-sys-color-primary);
-        border-right-color: color-mix(in srgb, var(--md-sys-color-primary) 35%, transparent);
     }
-
     .ring-b {
         inset: 14px;
         border-bottom-color: var(--md-sys-color-tertiary, #c9a227);
-        border-left-color: color-mix(in srgb, var(--md-sys-color-tertiary, #c9a227) 40%, transparent);
     }
-
     .ring-c {
         inset: 28px;
         border-top-color: color-mix(in srgb, var(--md-sys-color-primary) 45%, transparent);
-        border-left-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
         opacity: 0.7;
     }
-
     .logo-orbit.active .ring-a {
         animation: spin 1.15s linear infinite;
     }
-
     .logo-orbit.active .ring-b {
         animation: spin 1.7s linear infinite reverse;
     }
-
     .logo-orbit.active .ring-c {
         animation: spin 2.4s linear infinite;
     }
-
     .status-block {
         display: grid;
         gap: 8px;
         text-align: center;
         max-width: 22rem;
-        animation: fade-up 0.35s ease both;
     }
-
     .status-title {
         margin: 0;
-        font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+        font-size: 1.15rem;
         font-weight: 800;
-        letter-spacing: -0.02em;
-        color: var(--md-sys-color-on-surface);
-        line-height: 1.3;
     }
-
     .status-lead {
         margin: 0;
-        font-size: 0.98rem;
         font-weight: 650;
-        color: var(--md-sys-color-on-surface);
-        line-height: 1.35;
     }
-
     .status-subtitle {
         margin: 0;
         font-size: 0.84rem;
-        line-height: 1.45;
         color: var(--md-sys-color-on-surface-variant);
     }
-
     .dots {
         display: flex;
         justify-content: center;
         gap: 6px;
         margin-top: 6px;
     }
-
     .dots span {
         width: 7px;
         height: 7px;
@@ -445,54 +400,24 @@
         opacity: 0.35;
         animation: pulse 1.2s ease-in-out infinite;
     }
-
     .dots span:nth-child(2) {
         animation-delay: 0.18s;
     }
-
     .dots span:nth-child(3) {
         animation-delay: 0.36s;
     }
-
     @keyframes spin {
         to {
             transform: rotate(360deg);
         }
     }
-
     @keyframes pulse {
         0%,
         100% {
             opacity: 0.3;
-            transform: translateY(0);
         }
         50% {
             opacity: 1;
-            transform: translateY(-3px);
-        }
-    }
-
-    @keyframes fade-up {
-        from {
-            opacity: 0;
-            transform: translateY(8px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .logo-orbit.active .ring-a,
-        .logo-orbit.active .ring-b,
-        .logo-orbit.active .ring-c,
-        .dots span {
-            animation: none !important;
-        }
-
-        .status-block {
-            animation: none !important;
         }
     }
 </style>
