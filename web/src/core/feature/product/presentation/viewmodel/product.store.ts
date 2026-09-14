@@ -281,6 +281,13 @@ function createProductStore() {
     function startStockRealtime(): void {
         startLocalStockListeners()
 
+        // Fase Auth0 / Appwrite billing: no abrir canales RT de Appwrite
+        const authProvider = (import.meta as any).env?.VITE_AUTH_PROVIDER
+        if (String(authProvider || "").toLowerCase() === "auth0") {
+            console.info("[stock-rt] Auth0 mode — skip Appwrite product realtime")
+            return
+        }
+
         if (appwriteUnsub) {
             console.info("[stock-rt] Appwrite RT ya activo, skip")
             startAppwriteProductRealtime((signal) => {
