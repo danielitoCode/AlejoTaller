@@ -44,4 +44,10 @@ export const ENV = {
     auth0Audience: import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined,
     auth0RedirectUri: import.meta.env.VITE_AUTH0_REDIRECT_URI as string | undefined,
     auth0LogoutReturnTo: import.meta.env.VITE_AUTH0_LOGOUT_RETURN_TO as string | undefined,
+
+    // Fase 2 Turso (DB)
+    /** appwrite | turso — catálogo lee de Turso si turso */
+    dataProvider: import.meta.env.VITE_DATA_PROVIDER as string | undefined,
+    tursoUrl: import.meta.env.VITE_TURSO_URL as string | undefined,
+    tursoAuthToken: import.meta.env.VITE_TURSO_AUTH_TOKEN as string | undefined,
 }

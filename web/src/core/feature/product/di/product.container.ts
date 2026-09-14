@@ -1,5 +1,6 @@
 import {infrastructureContainer} from "../../../infrastructure/di/infrastructure.container";
 import ProductNetRepository from "../data/repository/product.net.repository";
+import {ProductTursoRepository} from "../data/repository/product.turso.repository";
 import {ProductOfflineFirstRepository} from "../data/repository/product.offline-first.repository";
 import {GetAllProductCaseUse} from "../domain/caseuse/GetAllProductCaseUse";
 import {GetProductByIdCaseUse} from "../domain/caseuse/GetProductByIdCaseUse";
@@ -10,10 +11,14 @@ import {CheckAProductExistenceCaseUse} from "../domain/caseuse/CheckAProductExis
 import {ReleaseSoftHoldCaseUse} from "../domain/caseuse/ReleaseSoftHoldCaseUse";
 import {RefreshProductsByIdsCaseUse} from "../domain/caseuse/RefreshProductsByIdsCaseUse";
 import {ApplyProductRealtimeSnapshotsCaseUse} from "../domain/caseuse/ApplyProductRealtimeSnapshotsCaseUse";
+import {isTursoDataProvider} from "../../../infrastructure/turso/turso.client";
 
 const database = infrastructureContainer.appwrite.databases
 
-const productNetRepository = new ProductNetRepository(database)
+const productNetRepository = isTursoDataProvider()
+    ? (new ProductTursoRepository() as unknown as ProductNetRepository)
+    : new ProductNetRepository(database)
+
 const productOfflineFirstRepository = new ProductOfflineFirstRepository(productNetRepository)
 
 const getAllProductsCaseUse = new GetAllProductCaseUse(productOfflineFirstRepository)
