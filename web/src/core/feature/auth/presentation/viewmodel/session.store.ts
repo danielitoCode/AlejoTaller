@@ -1,5 +1,7 @@
 import { derived, writable } from "svelte/store";
 import { infrastructureContainer } from "../../../../infrastructure/di/infrastructure.container";
+import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
+import { userLikeFromAuthSession } from "../../domain/util/authSessionBridge";
 
 const GUEST_SESSION_STORAGE_KEY = "talleralejo.session.isGuest";
 
@@ -28,7 +30,7 @@ const initialState: SessionState = {
     loading: false,
     error: null,
     lastAction: null,
-    isGuest: readStoredGuestState()
+    isGuest: readStoredGuestState(),
 };
 
 function normalizeError(error: unknown): string {
@@ -52,20 +54,46 @@ function createSessionStore() {
         }
     }
 
-    async function getCurrentUser() {
-        return runAction("getCurrentUser", async () => infrastructureContainer.appwrite.account.get());
+    /**
+     * Usuario actual: Auth0 session (nunca Account Appwrite si provider=auth0).
+     * Forma compatible con callers que esperan $id.
+     */
+    async function getCurrentUser(): Promise<Record<string, unknown>> {
+        return runAction("getCurrentUser", async () => {
+            if (resolveAuthProvider() === "auth0") {
+                const auth = getAuthPort();
+                if (!auth) throw new Error("Auth0 no configurado");
+                await auth.init();
+                const session = await auth.getSession();
+                if (!session) throw new Error("No hay sesión Auth0");
+                const u = userLikeFromAuthSession(session);
+                return {
+                    ...u,
+                    $id: u.id,
+                    id: u.id,
+                    prefs: { picture: (u as { photo_url?: string }).photo_url },
+                };
+            }
+            return infrastructureContainer.appwrite.account.get() as Promise<
+                Record<string, unknown>
+            >;
+        });
     }
 
     function setGuestSession(): void {
         persistGuestState(true);
-        update((state) => ({ ...state, isGuest: true, error: null, lastAction: "openGuestSession" }));
+        update((state) => ({
+            ...state,
+            isGuest: true,
+            error: null,
+            lastAction: "openGuestSession",
+        }));
     }
 
     function setAuthenticatedSession(): void {
         persistGuestState(false);
         update((state) => ({ ...state, isGuest: false, error: null }));
     }
-
 
     function clearError(): void {
         update((state) => ({ ...state, error: null }));
@@ -87,7 +115,7 @@ function createSessionStore() {
         setGuestSession,
         setAuthenticatedSession,
         clearError,
-        reset
+        reset,
     };
 }
 

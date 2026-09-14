@@ -4,9 +4,17 @@ import { ENV } from "../../../infrastructure/env";
 
 export type AuthProviderId = "auth0" | "appwrite";
 
+/**
+ * Auth0 si VITE_AUTH_PROVIDER=auth0.
+ * Si solo hay Turso y no se fijó provider, preferir auth0 (migración Core6).
+ */
 export function resolveAuthProvider(): AuthProviderId {
-    const p = (ENV.authProvider ?? "appwrite").toLowerCase().trim();
-    return p === "auth0" ? "auth0" : "appwrite";
+    const p = (ENV.authProvider ?? "").toLowerCase().trim();
+    if (p === "auth0") return "auth0";
+    if (p === "appwrite") return "appwrite";
+    const data = String(ENV.dataProvider ?? "").toLowerCase().trim();
+    if (data === "turso") return "auth0";
+    return "appwrite";
 }
 
 export function createAuthPort(): AuthPort | null {
