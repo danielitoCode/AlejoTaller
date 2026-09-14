@@ -45,23 +45,22 @@ function createSaleStore() {
     let isSubscriptionPending = false;
     let subscribedUserId: string | null = null;
 
-    /**
-     * Appwrite Realtime sobre colección `sale` (sin Pusher ni secret de publish).
-     * Se mantiene suscripción mientras haya sesión (no solo UNVERIFIED) para
-     * no perder el update del operador si el timing es justo tras el create.
-     */
     async function manageSaleRealtimeSubscription(): Promise<void> {
         if (isSubscriptionPending) return;
         isSubscriptionPending = true;
 
         try {
+            if (String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0") {
+                stopSaleRealtime();
+                return;
+            }
             if (get(sessionStore).isGuest) {
                 stopSaleRealtime();
                 return;
             }
 
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
-            const currentUserId = currentUser?.$id ?? null;
+            const currentUserId = (currentUser as any)?.$id ?? null;
 
             if (!currentUserId) {
                 stopSaleRealtime();
@@ -81,7 +80,6 @@ function createSaleStore() {
                 });
                 subscribedUserId = currentUserId;
             } else {
-                // re-bind handler con userId actual
                 startAppwriteSaleRealtime((signal) => {
                     void handleAppwriteSaleSignal(signal, currentUserId);
                 });
@@ -92,7 +90,6 @@ function createSaleStore() {
         }
     }
 
-    /** Alias de compatibilidad con callers antiguos */
     async function managePusherSubscription(): Promise<void> {
         return manageSaleRealtimeSubscription();
     }
@@ -110,24 +107,17 @@ function createSaleStore() {
         signal: AppwriteSaleChangeSignal,
         currentUserId: string
     ): Promise<void> {
+        if (String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0") return;
         const snap = signal.snapshot;
         const ownerId = String(snap.user_id ?? "");
         const buyState = String(snap.buy_state ?? "");
 
-        // Solo ventas del usuario autenticado
         if (ownerId && ownerId !== currentUserId) {
-            console.info(
-                `[SaleStore] Appwrite sale ignorada (otro user) saleId=${signal.saleId} owner=${ownerId}`
-            );
             return;
         }
 
         const decision = decisionFromBuyState(buyState);
         if (!decision) {
-            // create / update aún UNVERIFIED: solo sincroniza cache local
-            console.info(
-                `[SaleStore] Appwrite sale snapshot sin decisión final saleId=${signal.saleId} buy_state=${buyState}`
-            );
             try {
                 const sale = await saleContainer.useCases.applyRealtimeSnapshot.execute(snap);
                 if (sale) {
@@ -141,23 +131,19 @@ function createSaleStore() {
                         };
                     });
                 }
-            } catch (e) {
-                console.warn("[SaleStore] apply snapshot UNVERIFIED falló", e);
+            } catch {
+                /* ignore */
             }
             return;
         }
-
-        console.info(
-            `[SaleStore] Appwrite decisión saleId=${signal.saleId} decision=${decision} buy_state=${buyState}`
-        );
 
         toastStore.info("Se está actualizando el estado de tu pedido…", 2200);
 
         let applied: Sale | null = null;
         try {
             applied = await saleContainer.useCases.applyRealtimeSnapshot.execute(snap);
-        } catch (e) {
-            console.error("[SaleStore] applyRealtimeSnapshot FAIL", e);
+        } catch {
+            /* ignore */
         }
 
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
@@ -204,11 +190,6 @@ function createSaleStore() {
         } else {
             toastStore.error(`Tu pedido ${shortId} fue rechazado`, 4200);
         }
-
-        // Stock se actualiza por Appwrite Realtime de product; no forzar syncAll
-        console.info(
-            `[SaleStore] decisión aplicada vía Appwrite RT (sin Pusher) saleId=${signal.saleId}`
-        );
     }
 
     async function syncAll(): Promise<void> {
@@ -216,6 +197,12 @@ function createSaleStore() {
 
         update((state) => ({ ...state, loading: true, error: null }));
         try {
+            if (String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0") {
+                stopSaleRealtime();
+                update((state) => ({ ...state, items: [] }));
+                if (import.meta.env.DEV) console.info("[SaleStore] Auth0 mode — skip Appwrite sales sync");
+                return;
+            }
             if (get(sessionStore).isGuest) {
                 stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
@@ -223,13 +210,13 @@ function createSaleStore() {
             }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
 
-            if (!currentUser?.$id) {
+            if (!(currentUser as any)?.$id) {
                 stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
                 return;
             }
 
-            const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUser.$id);
+            const sales = await saleContainer.repositories.offlineFirst.getByUser((currentUser as any).$id);
             update((state) => ({ ...state, items: sales }));
             await manageSaleRealtimeSubscription();
         } catch (error) {
@@ -261,43 +248,20 @@ function createSaleStore() {
 
     async function create(sale: Sale): Promise<Sale> {
         productStore.startStockRealtime();
-
-        update((state) => ({
-            ...state,
-            loading: true,
-            error: null
-        }));
-
+        update((state) => ({ ...state, loading: true, error: null }));
         try {
             await productContainer.useCases.checkAProductExistence.execute(sale);
-
             const created = await saleContainer.useCases.create.execute(sale);
-
-            update((state) => ({
-                ...state,
-                items: [created, ...state.items]
-            }));
-
+            update((state) => ({ ...state, items: [created, ...state.items] }));
             const ids = created.products.map((p) => p.productId).filter(Boolean);
-            console.info(
-                `[SaleStore] create OK saleId=${created.id} hold=${created.stockHoldApplied} ids=${ids.join(",")}`
-            );
-
             const softHoldError = (created as Sale & { softHoldError?: string }).softHoldError;
             if (softHoldError) {
-                toastStore.warning(
-                    `Pedido creado, pero no se pudo reservar stock: ${softHoldError}`
-                );
+                toastStore.warning(`Pedido creado, pero no se pudo reservar stock: ${softHoldError}`);
             } else if (created.stockHoldApplied) {
-                toastStore.info(
-                    "Pedido registrado. Actualizando disponibilidad de productos…",
-                    3000
-                );
+                toastStore.info("Pedido registrado. Actualizando disponibilidad de productos…", 3000);
             } else {
                 toastStore.success("Pedido registrado");
             }
-
-            // Stock: Appwrite product RT aplicará snapshot; refresh local opcional
             if (ids.length) {
                 try {
                     await productStore.refreshByIdsVisible(ids, "hold");
@@ -305,24 +269,14 @@ function createSaleStore() {
                     void productStore.syncAll().catch(() => {});
                 }
             }
-
             await manageSaleRealtimeSubscription();
-
             return created;
         } catch (error: any) {
             logger.error(error?.message ?? error, error?.stack);
-
-            update((state) => ({
-                ...state,
-                error: normalizeError(error)
-            }));
-
+            update((state) => ({ ...state, error: normalizeError(error) }));
             throw error;
         } finally {
-            update((state) => ({
-                ...state,
-                loading: false
-            }));
+            update((state) => ({ ...state, loading: false }));
         }
     }
 
