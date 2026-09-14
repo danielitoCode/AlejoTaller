@@ -9,13 +9,16 @@ import { ENV } from "../../../infrastructure/env";
 import { logAuth0 } from "../../../infrastructure/presentation/navigation/debug-logger";
 
 /**
- * Roles solo desde claim namespaced del JWT (Action ← app_metadata).
- * Nunca app_metadata ni "roles" genérico en el cliente.
+ * Un solo rol (app_metadata.role → claim string o array[0]).
+ * Nunca app_metadata en el cliente.
  * @see .roadmap/Core6/AUTH0_ROLES_ACTION.md
  */
-function parseNamespacedRoles(raw: unknown): string[] {
-    if (Array.isArray(raw)) return raw.map(String).map((s) => s.trim()).filter(Boolean);
-    if (typeof raw === "string") return raw.split(/[\s,]+/).filter(Boolean);
+function parseRoleClaim(raw: unknown): string[] {
+    if (typeof raw === "string" && raw.trim()) return [raw.trim()];
+    if (Array.isArray(raw) && raw.length > 0) {
+        const first = String(raw[0] ?? "").trim();
+        return first ? [first] : [];
+    }
     return [];
 }
 
@@ -39,12 +42,12 @@ function resolveRolesFromTokens(
 ): string[] {
     const fromAccess = decodeJwtPayload(accessToken);
     if (fromAccess && AUTH_ROLES_CLAIM in fromAccess) {
-        const roles = parseNamespacedRoles(fromAccess[AUTH_ROLES_CLAIM]);
-        if (roles.length > 0) return [...new Set(roles)];
+        const roles = parseRoleClaim(fromAccess[AUTH_ROLES_CLAIM]);
+        if (roles.length > 0) return roles;
     }
     if (idTokenUser && AUTH_ROLES_CLAIM in idTokenUser) {
-        const roles = parseNamespacedRoles(idTokenUser[AUTH_ROLES_CLAIM]);
-        if (roles.length > 0) return [...new Set(roles)];
+        const roles = parseRoleClaim(idTokenUser[AUTH_ROLES_CLAIM]);
+        if (roles.length > 0) return roles;
     }
     return [];
 }
@@ -214,7 +217,7 @@ export class Auth0AuthAdapter implements AuthPort {
         const roles = resolveRolesFromTokens(accessToken, user as Record<string, unknown>);
         logAuth0(
             "info",
-            `session sub=${mask(user.sub, 12)} email=${user.email ?? "—"} roles=[${roles.join(",") || "(none)"}] claim=${AUTH_ROLES_CLAIM}`,
+            `session sub=${mask(user.sub, 12)} email=${user.email ?? "—"} role=${roles[0] ?? "(none)"} claim=${AUTH_ROLES_CLAIM}`,
         );
         return {
             subject: user.sub,
