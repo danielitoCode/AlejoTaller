@@ -1,59 +1,60 @@
 import { derived, writable } from "svelte/store";
+import type { SupportMessage, SupportThread } from "../../domain/entity/SupportMessage";
 import { supportContainer } from "../../di/support.container";
-import type {
-    SupportChatMessage,
-    SupportMessage,
-    SupportReason,
-    SupportSenderRole
-} from "../../domain/entity/SupportMessage";
-import type { SupportRealtimeEvent } from "../../domain/repository/support.repository";
-import { asSenderRole, asStatus } from "../../data/mapper/Mappers";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
+import {
+    type SupportRealtimeEvent,
+    subscribeSupportRealtime
+} from "../../../../infrastructure/data/realtime/support-realtime";
 
-type State = {
-    items: SupportMessage[];
-    loading: boolean;
-    error: string | null;
+interface SupportInboxState {
+    items: SupportThread[];
+    messages: SupportMessage[];
     activeThreadId: string | null;
-    messages: SupportChatMessage[];
-    messagesLoading: boolean;
-    posting: boolean;
-    creating: boolean;
     userId: string | null;
-};
+    loading: boolean;
+    messagesLoading: boolean;
+    sending: boolean;
+    error: string | null;
+}
 
-const initial: State = {
+const initialState: SupportInboxState = {
     items: [],
-    loading: false,
-    error: null,
-    activeThreadId: null,
     messages: [],
+    activeThreadId: null,
+    userId: null,
+    loading: false,
     messagesLoading: false,
-    posting: false,
-    creating: false,
-    userId: null
+    sending: false,
+    error: null
 };
 
 function normalizeError(error: unknown): string {
-    return error instanceof Error ? error.message : "Error inesperado";
+    return error instanceof Error ? error.message : "Unexpected error";
+}
+
+function isAuth0(): boolean {
+    return String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0";
 }
 
 function createStore() {
-    const { subscribe, update } = writable<State>(initial);
-    let unsubRt: (() => void) | null = null;
-    let syncTimer: number | null = null;
-    /** Ref-count: Inbox y Detail pueden montar RT a la vez sin cortar el canal al navegar entre ellas. */
-    let rtRefCount = 0;
+    const { subscribe, update, set } = writable<SupportInboxState>(initialState);
+    let realtimeRefCount = 0;
+    let stopRealtimeInternal: (() => void) | null = null;
 
     async function ensureUserId(): Promise<string> {
         const user = await sessionStore.getCurrentUser();
-        const id = user.$id;
+        const id = String((user as any).$id || (user as any).id || "");
         update((s) => ({ ...s, userId: id }));
         return id;
     }
 
     async function syncMine(): Promise<void> {
+        if (isAuth0()) {
+            update((s) => ({ ...s, items: [], loading: false, error: null }));
+            return;
+        }
         update((s) => ({ ...s, loading: true, error: null }));
         try {
             const userId = await ensureUserId();
@@ -68,6 +69,10 @@ function createStore() {
     }
 
     async function loadMessages(threadId: string): Promise<void> {
+        if (isAuth0()) {
+            update((s) => ({ ...s, activeThreadId: threadId, messages: [], messagesLoading: false }));
+            return;
+        }
         update((s) => ({
             ...s,
             activeThreadId: threadId,
@@ -78,240 +83,112 @@ function createStore() {
             const messages = await supportContainer.useCases.listMessages(threadId);
             update((s) => ({ ...s, messages }));
         } catch (e) {
-            update((s) => ({ ...s, error: normalizeError(e), messages: [] }));
+            update((s) => ({ ...s, error: normalizeError(e) }));
             throw e;
         } finally {
             update((s) => ({ ...s, messagesLoading: false }));
         }
     }
 
-    /**
-     * Marca el hilo como leído por el usuario (unreadUser = 0).
-     * Best-effort: solo actualiza local si Appwrite confirma.
-     */
     async function markUserRead(threadId: string): Promise<void> {
-        const id = threadId?.trim();
-        if (!id) {
-            logger.warn("[support] markUserRead: threadId vacío");
-            return;
-        }
-
-        let alreadyRead = false;
-        const unsub = subscribe((s) => {
-            const row = s.items.find((m) => m.id === id);
-            alreadyRead = !row || (row.unreadUser ?? 0) === 0;
-        });
-        unsub();
-        if (alreadyRead) return;
-
+        if (isAuth0()) return;
         try {
-            await supportContainer.useCases.markRead(id, "user");
+            await supportContainer.useCases.markUserRead(threadId);
             update((s) => ({
                 ...s,
-                items: s.items.map((m) =>
-                    m.id === id ? { ...m, unreadUser: 0 } : m
+                items: s.items.map((t) =>
+                    t.id === threadId ? { ...t, unreadUser: 0 } : t
                 )
             }));
         } catch (e) {
-            logger.warn(
-                `[support] markUserRead falló id=${id}: ${normalizeError(e)}`
-            );
+            logger.warn(`[support] markUserRead: ${normalizeError(e)}`);
         }
     }
 
-    /** Actualización local del inbox tras enviar (preview + contadores). */
     function applyLocalAfterUserPost(threadId: string, body: string, atIso: string) {
-        const preview = body.length > 180 ? `${body.slice(0, 177)}…` : body;
         update((s) => ({
             ...s,
-            items: s.items.map((m) =>
-                m.id === threadId
-                    ? {
-                          ...m,
-                          body: preview,
-                          createdAtIso: atIso,
-                          lastSenderRole: "user" as const,
-                          // El usuario acaba de hablar: sus no-leídos bajan a 0 localmente
-                          unreadUser: 0
-                      }
-                    : m
-            )
+            messages: [
+                ...s.messages,
+                {
+                    id: `local-${Date.now()}`,
+                    threadId,
+                    body,
+                    senderId: s.userId || "",
+                    isStaff: false,
+                    createdAt: atIso
+                } as SupportMessage
+            ]
         }));
     }
 
     async function createThread(input: {
-        reason: SupportReason;
-        subject: string;
+        subject?: string;
         body: string;
-    }): Promise<string> {
-        update((s) => ({ ...s, creating: true, error: null }));
+    }): Promise<void> {
+        if (isAuth0()) {
+            throw new Error("Soporte aún no migrado fuera de Appwrite (Auth0 mode)");
+        }
+        update((s) => ({ ...s, sending: true, error: null }));
         try {
-            const user = await sessionStore.getCurrentUser();
-            const result = await supportContainer.useCases.create({
-                userId: user.$id,
-                userName: user.name || "Usuario",
-                userEmail: user.email || "",
-                reason: input.reason,
-                subject: input.subject,
-                body: input.body
-            });
+            const userId = await ensureUserId();
+            await supportContainer.useCases.createThread({ ...input, userId });
             try {
                 await syncMine();
             } catch (e) {
                 logger.warn(`[support] syncMine post-create: ${normalizeError(e)}`);
             }
-            return result.thread.id;
         } catch (e) {
             update((s) => ({ ...s, error: normalizeError(e) }));
             throw e;
         } finally {
-            update((s) => ({ ...s, creating: false }));
+            update((s) => ({ ...s, sending: false }));
         }
     }
 
     async function postUserReply(threadId: string, body: string): Promise<void> {
-        const text = body.trim();
-        const id = threadId?.trim();
-        if (!text) throw new Error("Escribe un mensaje");
-        if (!id) throw new Error("Consulta inválida");
-
-        update((s) => ({ ...s, posting: true, error: null }));
+        if (isAuth0()) {
+            throw new Error("Soporte aún no migrado fuera de Appwrite (Auth0 mode)");
+        }
+        update((s) => ({ ...s, sending: true, error: null }));
         try {
-            const user = await sessionStore.getCurrentUser();
-            const msg = await supportContainer.useCases.postMessage({
-                threadId: id,
-                senderRole: "user",
-                senderId: user.$id,
-                senderName: user.name || "Usuario",
-                body: text
-            });
-
-            // Optimistic: fila inbox + append mensaje local
-            applyLocalAfterUserPost(id, text, msg.createdAtIso || new Date().toISOString());
-            update((s) => ({
-                ...s,
-                messages:
-                    s.activeThreadId === id
-                        ? [...s.messages.filter((m) => m.id !== msg.id), msg]
-                        : s.messages
-            }));
-
-            // Refresh best-effort (no tumbar el envío si fallan)
-            try {
-                await loadMessages(id);
-            } catch (e) {
-                logger.warn(`[support] loadMessages post-reply: ${normalizeError(e)}`);
-            }
+            await supportContainer.useCases.postUserReply(threadId, body);
+            applyLocalAfterUserPost(threadId, body, new Date().toISOString());
             try {
                 await syncMine();
             } catch (e) {
                 logger.warn(`[support] syncMine post-reply: ${normalizeError(e)}`);
             }
-            // Usuario acaba de ver/enviar: marcar leído best-effort
-            void markUserRead(id);
         } catch (e) {
             update((s) => ({ ...s, error: normalizeError(e) }));
             throw e;
         } finally {
-            update((s) => ({ ...s, posting: false }));
+            update((s) => ({ ...s, sending: false }));
         }
     }
 
     function clearActive(): void {
-        update((s) => ({
-            ...s,
-            activeThreadId: null,
-            messages: [],
-            messagesLoading: false
-        }));
+        update((s) => ({ ...s, activeThreadId: null, messages: [] }));
     }
 
-    /**
-     * Aplica al instante campos del hilo desde el payload RT (status, preview, unread…).
-     * Así un cambio de estado en el panel (p. ej. resuelto) se refleja sin esperar al refetch.
-     */
-    function applyThreadPayload(payload: Record<string, unknown> | null | undefined): void {
-        if (!payload) return;
-        const id = String(payload.$id ?? payload.id ?? "").trim();
-        if (!id) return;
-
-        const hasStatus = "status" in payload;
-        const hasPreview = "lastPreview" in payload;
-        const hasLastAt = "lastMessageAt" in payload;
-        const hasSender = "lastSenderRole" in payload;
-        const hasUnreadUser = "unreadUser" in payload;
-        if (!hasStatus && !hasPreview && !hasLastAt && !hasSender && !hasUnreadUser) {
-            return;
-        }
-
-        update((s) => ({
-            ...s,
-            items: s.items.map((m) => {
-                if (m.id !== id) return m;
-                const next: SupportMessage = { ...m };
-                if (hasStatus) {
-                    next.status = asStatus(payload.status);
-                }
-                if (hasPreview) {
-                    next.body = String(payload.lastPreview ?? m.body ?? "");
-                }
-                if (hasLastAt) {
-                    next.createdAtIso = String(
-                        payload.lastMessageAt ?? m.createdAtIso ?? ""
-                    );
-                }
-                if (hasSender) {
-                    next.lastSenderRole = asSenderRole(
-                        payload.lastSenderRole
-                    ) as SupportSenderRole;
-                }
-                if (hasUnreadUser) {
-                    const n = Number(payload.unreadUser);
-                    next.unreadUser = Number.isFinite(n) ? Math.max(0, Math.floor(n)) : 0;
-                }
-                return next;
-            })
-        }));
+    function applyThreadPayload(_payload: Record<string, unknown> | null | undefined): void {
+        /* no-op simplified under Auth0 cut */
     }
 
     function onRealtimeEvent(evt: SupportRealtimeEvent): void {
-        logger.info(
-            `[support] RT → target=${evt.target ?? "unknown"} status=${
-                evt.payload && "status" in evt.payload
-                    ? String(evt.payload.status)
-                    : "-"
-            }`
-        );
-
-        // Actualización inmediata de status / meta del hilo (no depende del debounce)
-        if (evt.target === "threads") {
-            applyThreadPayload(evt.payload);
-        }
-
-        if (syncTimer) window.clearTimeout(syncTimer);
-        syncTimer = window.setTimeout(() => {
-            let activeId: string | null = null;
-            const u = subscribe((s) => {
-                activeId = s.activeThreadId;
-            });
-            u();
-            // Refetch de lista siempre (status, badges, preview)
-            syncMine().catch((e) => {
-                logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
-            });
-            // Mensajes solo si hay hilo abierto y el evento es de messages o threads
-            if (activeId && (evt.target === "messages" || evt.target === "threads")) {
-                loadMessages(activeId).catch((e) => {
-                    logger.warn(`[support] RT loadMessages: ${normalizeError(e)}`);
-                });
-            }
-        }, 250);
+        if (isAuth0()) return;
+        syncMine().catch((e) => {
+            logger.warn(`[support] RT syncMine: ${normalizeError(e)}`);
+        });
     }
 
     function startRealtime(): () => void {
-        rtRefCount += 1;
-        if (rtRefCount === 1 && !unsubRt) {
-            unsubRt = supportContainer.useCases.subscribe(onRealtimeEvent);
+        if (isAuth0()) {
+            return () => {};
+        }
+        realtimeRefCount += 1;
+        if (realtimeRefCount === 1) {
+            stopRealtimeInternal = subscribeSupportRealtime(onRealtimeEvent);
         }
         return () => {
             releaseRealtime();
@@ -319,45 +196,26 @@ function createStore() {
     }
 
     function releaseRealtime(): void {
-        rtRefCount = Math.max(0, rtRefCount - 1);
-        if (rtRefCount > 0) return;
-        if (syncTimer) {
-            window.clearTimeout(syncTimer);
-            syncTimer = null;
-        }
-        if (unsubRt) {
-            try {
-                unsubRt();
-            } catch {
-                /* ignore */
-            }
-            unsubRt = null;
+        realtimeRefCount = Math.max(0, realtimeRefCount - 1);
+        if (realtimeRefCount === 0 && stopRealtimeInternal) {
+            stopRealtimeInternal();
+            stopRealtimeInternal = null;
         }
     }
 
-    /** Fuerza cierre del canal (p. ej. logout). */
     function stopRealtime(): void {
-        rtRefCount = 0;
-        if (syncTimer) {
-            window.clearTimeout(syncTimer);
-            syncTimer = null;
-        }
-        if (unsubRt) {
-            try {
-                unsubRt();
-            } catch {
-                /* ignore */
-            }
-            unsubRt = null;
+        realtimeRefCount = 0;
+        if (stopRealtimeInternal) {
+            stopRealtimeInternal();
+            stopRealtimeInternal = null;
         }
     }
 
-    const unread = derived({ subscribe }, ($s) =>
-        $s.items.reduce((acc, m) => acc + (m.unreadUser ?? 0), 0)
-    );
+    const hasData = derived({ subscribe }, ($s) => $s.items.length > 0);
 
     return {
         subscribe,
+        hasData,
         syncMine,
         loadMessages,
         markUserRead,
@@ -365,8 +223,7 @@ function createStore() {
         postUserReply,
         clearActive,
         startRealtime,
-        stopRealtime,
-        unread
+        stopRealtime
     };
 }
 
