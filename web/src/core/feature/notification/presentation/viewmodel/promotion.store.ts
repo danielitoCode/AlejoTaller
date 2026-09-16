@@ -4,6 +4,7 @@ import { notificationContainer } from "../../di/notification.container"
 import { logger } from "../../../../infrastructure/presentation/util/logger.service"
 import { promotionFromDTO } from "../../data/mapper/Mappers"
 import { isAppwritePermissionError } from "../../../../infrastructure/data/appwrite/public-data-contract"
+import { isAppwriteDataStackDisabled, isAuth0Provider } from "../../../../infrastructure/platform.flags"
 import {
     subscribeAppwritePromotions,
     unsubscribeAppwritePromotions,
@@ -51,7 +52,7 @@ function createPromotionStore() {
 
     function ensureAppwriteSubscription(): void {
         if (appwriteUnsub) return
-        const auth0 = String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0"
+        const auth0 = isAppwriteDataStackDisabled() || isAuth0Provider()
         if (auth0) {
             logger.log("[PromotionStore] Auth0 mode — skip Appwrite RT promotions")
             return
@@ -110,7 +111,7 @@ function createPromotionStore() {
     }
 
     async function syncAllInner(): Promise<void> {
-        const auth0 = String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0"
+        const auth0 = isAppwriteDataStackDisabled() || isAuth0Provider()
         if (auth0) {
             logger.log("[PromotionStore] Auth0 mode — skip Appwrite promo sync")
             update((state) => ({ ...state, items: [] }))
