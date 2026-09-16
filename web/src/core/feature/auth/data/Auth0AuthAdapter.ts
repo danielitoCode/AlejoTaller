@@ -8,11 +8,6 @@ import { AUTH_ROLES_CLAIM, type AuthSession } from "../domain/entity/AuthSession
 import { ENV } from "../../../infrastructure/env";
 import { logAuth0 } from "../../../infrastructure/presentation/navigation/debug-logger";
 
-/**
- * Un solo rol (app_metadata.role → claim string o array[0]).
- * Nunca app_metadata en el cliente.
- * @see .roadmap/Core6/AUTH0_ROLES_ACTION.md
- */
 function parseRoleClaim(raw: unknown): string[] {
     if (typeof raw === "string" && raw.trim()) return [raw.trim()];
     if (Array.isArray(raw) && raw.length > 0) {
@@ -120,19 +115,30 @@ export class Auth0AuthAdapter implements AuthPort {
         return this.client;
     }
 
-    async loginWithRedirect(appState?: { returnTo?: string; connection?: string }): Promise<void> {
+    async loginWithRedirect(
+        appState?: {
+            returnTo?: string;
+            connection?: string;
+            screenHint?: "signup" | "login";
+            loginHint?: string;
+        },
+    ): Promise<void> {
         const client = await this.ensure();
         const cfg = requireConfig();
         const connection = appState?.connection;
+        const screenHint = appState?.screenHint;
+        const loginHint = appState?.loginHint?.trim();
         logAuth0(
             "info",
-            `loginWithRedirect connection=${connection ?? "universal"} returnTo=${appState?.returnTo ?? cfg.redirectUri}`,
+            `loginWithRedirect connection=${connection ?? "universal"} screen=${screenHint ?? "login"} returnTo=${appState?.returnTo ?? cfg.redirectUri}`,
         );
         const options: RedirectLoginOptions = {
             authorizationParams: {
                 redirect_uri: cfg.redirectUri,
                 ...(cfg.audience ? { audience: cfg.audience } : {}),
                 ...(connection ? { connection } : {}),
+                ...(screenHint ? { screen_hint: screenHint } : {}),
+                ...(loginHint ? { login_hint: loginHint } : {}),
             },
             appState: appState?.returnTo ? { returnTo: appState.returnTo } : undefined,
         };
