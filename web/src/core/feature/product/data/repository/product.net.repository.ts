@@ -5,9 +5,16 @@ import {type Databases, ID, Query} from "appwrite";
 import type { ProductWriteDTO } from "../mapper/Mappers";
 import { ENV } from "../../../../infrastructure/env";
 import { APPWRITE_COLLECTIONS } from "../../../../infrastructure/data/appwrite/public-data-contract";
+import { isAppwriteDataStackDisabled } from "../../../../infrastructure/platform.flags";
 
 const PAGE_SIZE = 100;
 const COLLECTION_ID = APPWRITE_COLLECTIONS.product;
+
+function assertAppwriteAllowed(op: string): void {
+    if (isAppwriteDataStackDisabled()) {
+        throw new Error(`[product.net] Appwrite deshabilitado (${op}) — usa Turso o cache local`);
+    }
+}
 
 class ProductNetRepository {
     constructor(private readonly databases: Databases) {}
@@ -19,6 +26,7 @@ class ProductNetRepository {
     }
 
     private async listAll(queries: string[] = []): Promise<ProductDTO[]> {
+        assertAppwriteAllowed("listAll");
         const documents: ProductDTO[] = []
         let cursor: string | null = null
 
@@ -50,6 +58,7 @@ class ProductNetRepository {
     }
 
     async getById(id: string): Promise<ProductDTO> {
+        assertAppwriteAllowed("getById");
         return await this.databases.getDocument<ProductDTO>(
             this.databaseId,
             COLLECTION_ID,
@@ -57,15 +66,12 @@ class ProductNetRepository {
         )
     }
 
-    /**
-     * Core 1: reserved se incrementa en Appwrite sin read-modify-write.
-     * max=existence evita que la reserva supere el stock observado por el cliente.
-     */
     async incrementReserved(
         id: string,
         quantity: number,
         maxReserved: number
     ): Promise<ProductDTO> {
+        assertAppwriteAllowed("incrementReserved");
         if (quantity <= 0) throw new Error("quantity debe ser > 0")
         if (maxReserved < 0) throw new Error("maxReserved debe ser >= 0")
 
@@ -79,8 +85,8 @@ class ProductNetRepository {
         )
     }
 
-    /** Core 1: reserved se decrementa atómicamente y nunca baja de 0. */
     async decrementReserved(id: string, quantity: number): Promise<ProductDTO> {
+        assertAppwriteAllowed("decrementReserved");
         if (quantity <= 0) throw new Error("quantity debe ser > 0")
 
         return await this.databases.decrementDocumentAttribute<ProductDTO>(
@@ -94,7 +100,7 @@ class ProductNetRepository {
     }
 
     async update(id: string, data: Partial<ProductWriteDTO> | Record<string, unknown>): Promise<ProductDTO> {
-        // Nunca enviar $id / meta Appwrite en el body
+        assertAppwriteAllowed("update");
         const clean: Record<string, unknown> = {}
         for (const [key, value] of Object.entries(data ?? {})) {
             if (key.startsWith("$")) continue
@@ -110,6 +116,7 @@ class ProductNetRepository {
     }
 
     async getByCategory(categoryId: string): Promise<ProductDTO[]> {
+        assertAppwriteAllowed("getByCategory");
         const response = await this.databases.listDocuments<ProductDTO>(
             this.databaseId,
             COLLECTION_ID,
@@ -120,6 +127,7 @@ class ProductNetRepository {
     }
 
     async create(product: ProductWriteDTO, id?: string): Promise<ProductDTO> {
+        assertAppwriteAllowed("create");
         return await this.databases.createDocument<ProductDTO>(
             this.databaseId,
             COLLECTION_ID,
@@ -129,6 +137,7 @@ class ProductNetRepository {
     }
 
     async delete(id: string): Promise<void> {
+        assertAppwriteAllowed("delete");
         await this.databases.deleteDocument(
             this.databaseId,
             COLLECTION_ID,
