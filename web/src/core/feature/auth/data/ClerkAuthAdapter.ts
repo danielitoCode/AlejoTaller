@@ -20,9 +20,12 @@ function parseRole(raw: unknown): string[] {
 }
 
 /** Lee role desde publicMetadata o claims del session token. */
-function resolveRoles(user: {
-    publicMetadata?: Record<string, unknown> | null;
-}, sessionClaims?: Record<string, unknown> | null): string[] {
+function resolveRoles(
+    user: {
+        publicMetadata?: Record<string, unknown> | null;
+    },
+    sessionClaims?: Record<string, unknown> | null,
+): string[] {
     const fromMeta = parseRole(user.publicMetadata?.role);
     if (fromMeta.length) return fromMeta;
     if (sessionClaims) {
@@ -34,7 +37,8 @@ function resolveRoles(user: {
             if (nested.length) return nested;
         }
     }
-    return [];
+    // Cliente B2C por defecto (registro Google/email sin metadata)
+    return ["user"];
 }
 
 export class ClerkAuthAdapter implements AuthPort {
@@ -59,7 +63,6 @@ export class ClerkAuthAdapter implements AuthPort {
             const origin =
                 typeof window !== "undefined" ? window.location.origin : "http://localhost:5174";
             await clerk.load({
-                // Tras login/signup volvemos al origen de la SPA (hash router)
                 signInForceRedirectUrl: origin,
                 signUpForceRedirectUrl: origin,
                 afterSignOutUrl: origin,
@@ -91,16 +94,13 @@ export class ClerkAuthAdapter implements AuthPort {
             (typeof window !== "undefined" ? window.location.origin : "http://localhost:5174");
 
         const isSignup = appState?.screenHint === "signup";
-        const isGoogle =
-            (appState?.connection ?? "").toLowerCase().includes("google");
+        const isGoogle = (appState?.connection ?? "").toLowerCase().includes("google");
 
         logAuth(
             "info",
             `Clerk login redirect mode=${isSignup ? "signup" : "signin"} google=${isGoogle} returnTo=${returnTo}`,
         );
 
-        // Clerk Hosted: Google se elige en la UI de Clerk si la connection está activa.
-        // connection/loginHint se usan como hints cuando el SDK lo permite.
         if (isSignup) {
             await clerk.redirectToSignUp({
                 signUpForceRedirectUrl: returnTo,
@@ -116,10 +116,10 @@ export class ClerkAuthAdapter implements AuthPort {
     }
 
     async handleRedirectCallback(): Promise<void> {
-        // Clerk completa la sesión en clerk.load() vía cookie FAPI; no-op seguro.
         const clerk = await this.ensure();
-        if (clerk.user) {
-            logAuth("info", `Clerk callback: sesión activa user=${mask(clerk.user.id, 12)}`);
+        const user = await this.waitForUser(clerk);
+        if (user) {
+            logAuth("info", `Clerk callback: sesión activa user=${mask(user.id, 12)}`);
         } else {
             logAuth("log", "Clerk callback: sin sesión (no-op)");
         }
@@ -135,7 +135,8 @@ export class ClerkAuthAdapter implements AuthPort {
 
     async isAuthenticated(): Promise<boolean> {
         const clerk = await this.ensure();
-        const ok = Boolean(clerk.user);
+        const user = await this.waitForUser(clerk);
+        const ok = Boolean(user);
         logAuth("log", `Clerk isAuthenticated=${ok}`);
         return ok;
     }
@@ -157,9 +158,18 @@ export class ClerkAuthAdapter implements AuthPort {
         return (await this.getSession())?.subject ?? null;
     }
 
+    /** Tras redirect OAuth, a veces user llega unos ms después de load(). */
+    private async waitForUser(clerk: Clerk, attempts = 10): Promise<typeof clerk.user> {
+        for (let i = 0; i < attempts; i++) {
+            if (clerk.user) return clerk.user;
+            await new Promise((r) => setTimeout(r, 120));
+        }
+        return clerk.user;
+    }
+
     async getSession(): Promise<AuthSession | null> {
         const clerk = await this.ensure();
-        const user = clerk.user;
+        const user = await this.waitForUser(clerk);
         if (!user) {
             logAuth("log", "Clerk getSession: no autenticado");
             return null;
@@ -174,7 +184,6 @@ export class ClerkAuthAdapter implements AuthPort {
                 return null;
             }
             accessToken = token;
-            // Decodificar payload solo para role claim (no verifica firma; UI only)
             try {
                 const parts = token.split(".");
                 if (parts.length >= 2) {
@@ -205,7 +214,7 @@ export class ClerkAuthAdapter implements AuthPort {
 
         logAuth(
             "info",
-            `Clerk session sub=${mask(user.id, 12)} email=${email ?? "—"} role=${roles[0] ?? "(none)"}`,
+            `Clerk session sub=${mask(user.id, 12)} email=${email ?? "—"} role=${roles[0] ?? "user"}`,
         );
 
         return {
