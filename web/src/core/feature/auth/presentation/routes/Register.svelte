@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+    import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import { Button, Card, TextFieldOutlined } from "m3-svelte";
     import AuthBusyOverlay from "../components/AuthBusyOverlay.svelte";
@@ -22,6 +24,23 @@
     let submitting = false;
     let localError: string | null = null;
 
+    const useAuth0 = resolveAuthProvider() === "auth0";
+
+    onMount(() => {
+        if (!useAuth0) return;
+        const auth = getAuthPort();
+        if (!auth) return;
+        void auth
+            .init()
+            .then(() =>
+                auth.loginWithRedirect({
+                    returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
+                    screenHint: "signup",
+                }),
+            )
+            .catch(() => {});
+    });
+
     $: canSubmit =
         name.trim().length > 1 &&
         email.trim().length > 3 &&
@@ -35,6 +54,29 @@
     async function submit() {
         if (submitting) return;
         localError = null;
+
+        if (useAuth0) {
+            const auth = getAuthPort();
+            if (!auth) {
+                localError = "Auth0 no configurado";
+                toastStore.error(localError);
+                return;
+            }
+            submitting = true;
+            try {
+                await auth.init();
+                await auth.loginWithRedirect({
+                    returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
+                    screenHint: "signup",
+                    loginHint: normalizedEmail || undefined,
+                });
+            } catch (e) {
+                localError = e instanceof Error ? e.message : "No se pudo abrir registro Auth0";
+                toastStore.error(localError);
+                submitting = false;
+            }
+            return;
+        }
 
         if (password !== confirmPassword) {
             localError = "Las contrasenas no coinciden";
@@ -51,7 +93,7 @@
                 phone: "",
                 photo_url: "",
                 role: "viewer",
-                verification: false
+                verification: false,
             });
             toastStore.success("Cuenta creada. Ya puedes iniciar sesion.");
             navController.navigate("login");
@@ -86,73 +128,66 @@
             <section class="register-card-wrap">
                 <Card variant="filled">
                     <div class="register-card-content">
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Nombre"
-                                bind:value={name}
-                                leadingIcon={PersonRounded}
-                                enter={submit}
-                            />
-                        </div>
-
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Correo"
-                                bind:value={email}
-                                type="email"
-                                leadingIcon={MailOutlineRounded}
-                                enter={submit}
-                            />
-                        </div>
-
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Contrasena"
-                                bind:value={password}
-                                type={showPassword ? "text" : "password"}
-                                leadingIcon={LockOutline}
-                                trailing={{
-                                    icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
-                                    onclick: () => {
-                                        showPassword = !showPassword;
-                                    },
-                                    "aria-label": showPassword ? "Ocultar contrasena" : "Mostrar contrasena",
-                                    title: showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
-                                }}
-                                enter={submit}
-                            />
-                        </div>
-
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Confirmar contrasena"
-                                bind:value={confirmPassword}
-                                type={showConfirmPassword ? "text" : "password"}
-                                leadingIcon={LockOutline}
-                                trailing={{
-                                    icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
-                                    onclick: () => {
-                                        showConfirmPassword = !showConfirmPassword;
-                                    },
-                                    "aria-label": showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena",
-                                    title: showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena"
-                                }}
-                                enter={submit}
-                            />
-                        </div>
-
-                        <div class="action-row">
-                            <Button variant="filled" size="m" disabled={!canSubmit} onclick={submit}>
-                                <span class="btn-content">Registrarse</span>
-                            </Button>
-                        </div>
-
-                        <div class="action-row">
-                            <Button variant="text" size="m" onclick={goToLogin}>
-                                Ya tienes cuenta? Inicia sesion
-                            </Button>
-                        </div>
-
+                        {#if useAuth0}
+                            <p class="auth0-hint">Registro con Auth0 (email o Google). Redirigiendo…</p>
+                            <div class="action-row">
+                                <Button variant="filled" size="m" disabled={submitting} onclick={submit}>
+                                    Continuar registro en Auth0
+                                </Button>
+                            </div>
+                            <div class="action-row">
+                                <Button variant="text" size="m" onclick={goToLogin}>Ya tienes cuenta? Inicia sesion</Button>
+                            </div>
+                        {:else}
+                            <div class="field-wrap">
+                                <TextFieldOutlined label="Nombre" bind:value={name} leadingIcon={PersonRounded} enter={submit} />
+                            </div>
+                            <div class="field-wrap">
+                                <TextFieldOutlined label="Correo" bind:value={email} type="email" leadingIcon={MailOutlineRounded} enter={submit} />
+                            </div>
+                            <div class="field-wrap">
+                                <TextFieldOutlined
+                                    label="Contrasena"
+                                    bind:value={password}
+                                    type={showPassword ? "text" : "password"}
+                                    leadingIcon={LockOutline}
+                                    trailing={{
+                                        icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
+                                        onclick: () => {
+                                            showPassword = !showPassword;
+                                        },
+                                        "aria-label": showPassword ? "Ocultar contrasena" : "Mostrar contrasena",
+                                        title: showPassword ? "Ocultar contrasena" : "Mostrar contrasena",
+                                    }}
+                                    enter={submit}
+                                />
+                            </div>
+                            <div class="field-wrap">
+                                <TextFieldOutlined
+                                    label="Confirmar contrasena"
+                                    bind:value={confirmPassword}
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    leadingIcon={LockOutline}
+                                    trailing={{
+                                        icon: showConfirmPassword ? VisibilityOffRounded : VisibilityRounded,
+                                        onclick: () => {
+                                            showConfirmPassword = !showConfirmPassword;
+                                        },
+                                        "aria-label": showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena",
+                                        title: showConfirmPassword ? "Ocultar contrasena" : "Mostrar contrasena",
+                                    }}
+                                    enter={submit}
+                                />
+                            </div>
+                            <div class="action-row">
+                                <Button variant="filled" size="m" disabled={!canSubmit} onclick={submit}>
+                                    <span class="btn-content">Registrarse</span>
+                                </Button>
+                            </div>
+                            <div class="action-row">
+                                <Button variant="text" size="m" onclick={goToLogin}>Ya tienes cuenta? Inicia sesion</Button>
+                            </div>
+                        {/if}
                         {#if localError || $registerStore.error}
                             <p class="error-copy">{localError ?? $registerStore.error}</p>
                         {/if}
@@ -172,26 +207,20 @@
         padding: 0;
         margin: 0;
     }
-
     .register-screen {
         width: 100%;
         height: 100%;
         max-height: 100%;
-        padding:
-            max(14px, calc(env(safe-area-inset-top) + 8px))
-            16px
-            max(16px, calc(env(safe-area-inset-bottom) + 10px));
+        padding: max(14px, calc(env(safe-area-inset-top) + 8px)) 16px max(16px, calc(env(safe-area-inset-bottom) + 10px));
         box-sizing: border-box;
         color: var(--md-sys-color-on-background);
-        background:
-            linear-gradient(
-                color-mix(in srgb, var(--md-sys-color-primary-container) 16%, var(--md-sys-color-background)),
-                color-mix(in srgb, var(--md-sys-color-background) 88%, var(--md-sys-color-surface-container-low))
-            );
+        background: linear-gradient(
+            color-mix(in srgb, var(--md-sys-color-primary-container) 16%, var(--md-sys-color-background)),
+            color-mix(in srgb, var(--md-sys-color-background) 88%, var(--md-sys-color-surface-container-low))
+        );
         overflow-x: hidden;
         overflow-y: auto;
     }
-
     .register-shell {
         width: 100%;
         max-width: 480px;
@@ -200,56 +229,34 @@
         gap: 18px;
         align-content: start;
     }
-
     .register-brand {
         display: grid;
         justify-items: center;
         text-align: center;
         gap: 8px;
     }
-
     .register-logo {
         width: 64px;
         height: 64px;
         object-fit: contain;
     }
-
-    .register-brand h2 {
-        margin: 0;
-        font-size: 1.6rem;
-        font-weight: 800;
-    }
-
-    .register-brand p {
-        margin: 0;
-        color: var(--md-sys-color-on-surface-variant);
-    }
-
     .register-card-content {
         padding: 16px;
         display: grid;
         gap: 12px;
     }
-
-    .field-wrap :global(.m3-container) {
-        width: 100%;
-        height: 56px;
+    .action-row {
+        display: grid;
     }
-
-    .action-row :global(.m3-container) {
-        width: 100%;
-    }
-
-    .btn-content {
-        display: inline-flex;
-        padding: 12px 0;
-        font-weight: 600;
-    }
-
-    .error-copy {
+    .auth0-hint {
         margin: 0;
-        color: var(--md-sys-color-error);
         text-align: center;
+        color: var(--md-sys-color-on-surface-variant);
         font-size: 0.9rem;
+    }
+    .error-copy {
+        color: var(--md-sys-color-error);
+        margin: 0;
+        font-size: 0.85rem;
     }
 </style>
