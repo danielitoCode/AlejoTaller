@@ -8,23 +8,29 @@
 
     let loading = false;
 
-    async function login(opts?: { connection?: string }) {
+    async function login(opts?: {
+        connection?: string;
+        screenHint?: "signup" | "login";
+        loginHint?: string;
+    }) {
         const auth = getAuthPort();
         if (!auth) {
-            logAuth0("warn", "Login: Auth0 inactivo (VITE_AUTH_PROVIDER≠auth0)");
-            toastStore.error("Auth0 no está activo (VITE_AUTH_PROVIDER=auth0)");
+            logAuth0("warn", "Login: Auth0 inactivo");
+            toastStore.error("Auth0 no está activo. Revisa VITE_AUTH0_DOMAIN / CLIENT_ID.");
             return;
         }
         loading = true;
         try {
             logAuth0(
                 "info",
-                `Login UI click connection=${opts?.connection ?? "universal"}`,
+                `Login UI connection=${opts?.connection ?? "universal"} screen=${opts?.screenHint ?? "login"}`,
             );
             await auth.init();
             await auth.loginWithRedirect({
                 returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
                 connection: opts?.connection,
+                screenHint: opts?.screenHint,
+                loginHint: opts?.loginHint,
             });
         } catch (e) {
             const msg = e instanceof Error ? e.message : "No se pudo iniciar Auth0";
@@ -36,8 +42,13 @@
 </script>
 
 <div class="auth0-block">
-    <Button variant="filled" size="m" disabled={disabled || loading} onclick={() => login()}>
-        {#if loading}Redirigiendo…{:else}Continuar con Auth0{/if}
+    <Button
+        variant="filled"
+        size="m"
+        disabled={disabled || loading}
+        onclick={() => login({ screenHint: "login" })}
+    >
+        {#if loading}Redirigiendo…{:else}Entrar con email / contraseña{/if}
     </Button>
     <Button
         variant="outlined"
@@ -47,7 +58,17 @@
     >
         Continuar con Google
     </Button>
-    <p class="hint">Google vía Auth0 Social · logs solo en local (panel Logs)</p>
+    <Button
+        variant="text"
+        size="m"
+        disabled={disabled || loading}
+        onclick={() => login({ screenHint: "signup" })}
+    >
+        Crear cuenta (Auth0)
+    </Button>
+    <p class="hint">
+        Email y Google vía Auth0 Universal Login. Appwrite auth desconectado.
+    </p>
 </div>
 
 <style>
