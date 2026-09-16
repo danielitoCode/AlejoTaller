@@ -2,8 +2,12 @@ import type { AuthSession } from "./entity/AuthSession";
 
 export type AuthLoginOptions = {
     returnTo?: string;
-    /** e.g. `google-oauth2` — Auth0 free plan social */
+    /** e.g. `google-oauth2` — Auth0 Social (plan free) */
     connection?: string;
+    /** Auth0 Universal Login: "signup" | "login" */
+    screenHint?: "signup" | "login";
+    /** Pre-rellena email en Universal Login */
+    loginHint?: string;
 };
 
 export interface AuthPort {
