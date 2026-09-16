@@ -3,7 +3,7 @@
     import { get } from "svelte/store";
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import { authContainer } from "../../di/auth.container";
-    import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
+    import { getAuthPort, isExternalAuthProvider, resolveAuthProvider } from "../../di/authPort.factory";
     import { userLikeFromAuthSession } from "../../domain/util/authSessionBridge";
     import alejoIcon from "/alejoicon_clean.svg";
     import {
@@ -39,7 +39,8 @@
 
     export let navController: NavController;
 
-    const useAuth0 = resolveAuthProvider() === "auth0";
+    /** Clerk o Auth0 — no Appwrite */
+    const useExternalAuth = isExternalAuthProvider();
 
     let adminUser: any = null;
     let loading = true;
@@ -83,7 +84,7 @@
         return pendingHash;
     }
 
-    async function continueAsAuthenticatedClient(user: any, provider = "auth0") {
+    async function continueAsAuthenticatedClient(user: any, provider = "clerk") {
         await holdStatus("authenticated", resolveDisplayName(user));
         sessionStore.setAuthenticatedSession();
         const userId = resolveUserId(user);
@@ -101,10 +102,9 @@
         navController.resetTo("home", { id: userId ?? undefined });
     }
 
-    /** Guest 100% local — no Appwrite (billing bloqueado / Auth0 mode). */
     async function continueAsLocalGuest(firstVisit = false) {
         if (import.meta.env.DEV) {
-            logNavAuthCheck(false, true, useAuth0 ? "auth0-local-guest" : "local-guest");
+            logNavAuthCheck(false, true, useExternalAuth ? "idp-local-guest" : "local-guest");
         }
         await holdStatus(firstVisit ? "first-visit" : "visitor");
         sessionStore.setGuestSession();
@@ -163,8 +163,8 @@
         try {
             await exchangeStore.refreshForSplash().catch(() => {});
 
-            // ── Auth0 path (no Appwrite) ──────────────────────────
-            if (useAuth0) {
+            // ── Clerk / Auth0 (no Appwrite) ───────────────────────
+            if (useExternalAuth) {
                 const authPort = getAuthPort();
                 if (authPort) {
                     try {
@@ -187,14 +187,13 @@
                                     return;
                                 }
                             }
-                            await continueAsAuthenticatedClient(user, "auth0");
+                            await continueAsAuthenticatedClient(user, resolveAuthProvider());
                             return;
                         }
                     } catch (e) {
-                        if (import.meta.env.DEV) logNavError("Auth0 splash", e);
+                        if (import.meta.env.DEV) logNavError("IdP splash", e);
                     }
                 }
-                // Sin sesión Auth0: guest local o welcome — NUNCA Appwrite
                 if (hasDeeplink) saveHomeDeepLinkIfPresent();
                 if (returningVisitor || hasDeeplink) {
                     await continueAsLocalGuest(false);
@@ -235,8 +234,7 @@
         } catch (e) {
             if (import.meta.env.DEV) logNavError("Splash catch", e);
             if (hasDeeplink) saveHomeDeepLinkIfPresent();
-            // Auth0 o Appwrite caído: guest local, sin openGuestSession Appwrite
-            if (returningVisitor || hasDeeplink || useAuth0) {
+            if (returningVisitor || hasDeeplink || useExternalAuth) {
                 await continueAsLocalGuest(false);
             } else {
                 await holdStatus("first-visit");
@@ -258,8 +256,8 @@
 
     $: statusSubtitle =
         status === "loading"
-            ? useAuth0
-                ? "Auth0 · sin Appwrite"
+            ? useExternalAuth
+                ? "Clerk · sin Appwrite"
                 : "Preparando tu experiencia en la tienda"
             : status === "authenticated"
               ? "Entrando a tu espacio de compras"
