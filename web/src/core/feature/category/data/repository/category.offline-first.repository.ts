@@ -4,18 +4,29 @@ import type {Category} from "../../domain/entity/Category";
 import {db} from "../../../../infrastructure/di/dexie.db";
 import {categoryFromDTO, categoryToDTO} from "../mapper/Mappers";
 import {logger} from "../../../../infrastructure/presentation/util/logger.service";
+import { isAppwriteDataStackDisabled, isTursoDataProvider } from "../../../../infrastructure/platform.flags";
 import {ID} from "appwrite";
 
 export class CategoryOfflineFirstRepository implements CategoryRepository {
     constructor(private readonly net: CategoryNetRepository) {}
 
     async getAll(): Promise<Category[]> {
+        if (isAppwriteDataStackDisabled() && !isTursoDataProvider()) {
+            logger.info("[category] getAll: Appwrite data off — solo cache local")
+            const local = await db.categories.toArray()
+            return local.map(categoryFromDTO)
+        }
         try {
             const remote = await this.net.getAll()
             await db.categories.bulkPut(remote)
             return remote.map(categoryFromDTO)
         } catch(error: any) {
-            logger.error("Error al cargar categorias", error.stack)
+            const msg = String(error?.message ?? error ?? "")
+            if (/billing|resource limit|402/i.test(msg)) {
+                logger.warn(`[category] Appwrite limit — fallback local: ${msg}`)
+            } else {
+                logger.error("Error al cargar categorias", error?.stack)
+            }
             const local = await db.categories.toArray()
             return local.map(categoryFromDTO)
         }
@@ -73,11 +84,9 @@ export class CategoryOfflineFirstRepository implements CategoryRepository {
     async create(category: Category): Promise<Category> {
         try {
             const created = await this.net.create({
-                name: category.name,
-                description: category.description,
-                photo_url: category.photoUrl ?? "",
-                status: category.status
-            })
+                ...categoryToDTO(category),
+                $id: category.id || ID.unique()
+            } as any)
             await db.categories.put(created)
             return categoryFromDTO(created)
         } catch (error: any) {
@@ -87,11 +96,5 @@ export class CategoryOfflineFirstRepository implements CategoryRepository {
             );
             throw error;
         }
-    }
-
-    async sync(): Promise<void> {
-        const remote = await this.net.getAll()
-        await db.categories.clear()
-        await db.categories.bulkPut(remote)
     }
 }
