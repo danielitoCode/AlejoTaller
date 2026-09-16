@@ -11,6 +11,7 @@ import {
     stopAppwriteProductRealtime,
     type AppwriteProductChangeSignal
 } from "../../../../infrastructure/data/appwrite/appwrite-product-realtime";
+import { isAppwriteDataStackDisabled, isAuth0Provider } from "../../../../infrastructure/platform.flags";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
 interface ProductState {
@@ -88,33 +89,19 @@ function createProductStore() {
         return sortNewestFirst([...map.values()])
     }
 
-    /** Appwrite Realtime: aplicar snapshots del evento a Dexie + UI (sin red). */
     async function handleAppwriteSignal(signal: AppwriteProductChangeSignal): Promise<void> {
         const count = signal.productIds.length
         const t0 = performance.now()
-
-        console.info(
-            `[stock-rt] Appwrite snapshot apply start count=${count} ids=${signal.productIds.join(",")}`
-        )
-
-        toastStore.info("Se están actualizando los datos de productos…", 2800)
-
+        console.info(`[stock-rt] Appwrite snapshot apply start count=${count}`)
+        toastStore.info("Se estan actualizando los datos de productos…", 2800)
         update((state) => ({
             ...state,
             stockSyncing: true,
             realtimeUpdating: true,
-            syncMessage:
-                count === 1
-                    ? "Actualizando producto…"
-                    : `Actualizando ${count} productos…`
+            syncMessage: count === 1 ? "Actualizando producto…" : `Actualizando ${count} productos…`
         }))
-
         try {
-            const applied = await productContainer.useCases.applyRealtimeSnapshots.execute(
-                signal.snapshots
-            )
-            const ms = Math.round(performance.now() - t0)
-
+            const applied = await productContainer.useCases.applyRealtimeSnapshots.execute(signal.snapshots)
             update((state) => ({
                 ...state,
                 items: mergeProducts(state.items, applied),
@@ -126,32 +113,19 @@ function createProductStore() {
                 realtimeUpdating: false,
                 syncMessage: null
             }))
-
-            console.info(
-                `[stock-rt] Appwrite snapshot merge done applied=${applied.length}/${count} in ${ms}ms`
-            )
-
-            toastStore.success(
-                applied.length > 0
-                    ? `Datos actualizados (${applied.length})`
-                    : "Sincronización local completada",
-                2400
-            )
+            toastStore.success(applied.length > 0 ? `Datos actualizados (${applied.length})` : "Sincronización local completada", 2400)
         } catch (error) {
-            const msg = normalizeError(error)
-            console.error(`[stock-rt] Appwrite snapshot FAIL: ${msg}`, error)
             update((state) => ({
                 ...state,
                 stockSyncing: false,
                 realtimeUpdating: false,
                 syncMessage: null,
-                error: msg
+                error: normalizeError(error)
             }))
             toastStore.warning("No se pudieron aplicar todas las actualizaciones")
         }
     }
 
-    /** Fallback local / refreshByIds (puede ir a red). */
     async function handleStockChanged(
         payload: StockChangedPayload,
         options: { silent?: boolean; fromRealtime?: boolean; source?: string } = {}
@@ -160,33 +134,17 @@ function createProductStore() {
         const silent = options.silent === true
         const source = options.source ?? "local"
         const count = payload.productIds.length
-        const t0 = performance.now()
-
-        console.info(
-            `[stock-rt] UI handle start source=${source} realtime=${fromRealtime} silent=${silent} ` +
-                `reason=${payload.reason} count=${count} ids=${payload.productIds.join(",")}`
-        )
-
         if (fromRealtime && !silent) {
-            toastStore.info(
-                `Hemos recibido actualizaciones de productos (${reasonLabel(payload.reason)}). Actualizando…`,
-                3200
-            )
+            toastStore.info(`Hemos recibido actualizaciones de productos (${reasonLabel(payload.reason)}). Actualizando…`, 3200)
         }
-
         update((state) => ({
             ...state,
             stockSyncing: true,
             realtimeUpdating: fromRealtime,
-            syncMessage: fromRealtime
-                ? `Actualizando ${count} producto${count === 1 ? "" : "s"}…`
-                : "Sincronizando stock…"
+            syncMessage: fromRealtime ? `Actualizando ${count} producto${count === 1 ? "" : "s"}…` : "Sincronizando stock…"
         }))
-
         try {
             const refreshed = await productContainer.useCases.refreshByIds.execute(payload.productIds)
-            const ms = Math.round(performance.now() - t0)
-
             update((state) => ({
                 ...state,
                 items: mergeProducts(state.items, refreshed),
@@ -198,28 +156,16 @@ function createProductStore() {
                 realtimeUpdating: false,
                 syncMessage: null
             }))
-
-            console.info(
-                `[stock-rt] UI merge done source=${source} refreshed=${refreshed.length}/${count} in ${ms}ms`
-            )
-
             if (fromRealtime && !silent) {
-                toastStore.success(
-                    refreshed.length > 0
-                        ? `Catálogo actualizado (${refreshed.length})`
-                        : "Sincronización de stock completada",
-                    2800
-                )
+                toastStore.success(refreshed.length > 0 ? `Catálogo actualizado (${refreshed.length})` : "Sincronización de stock completada", 2800)
             }
         } catch (error) {
-            const msg = normalizeError(error)
-            console.error(`[stock-rt] UI handle FAIL source=${source}: ${msg}`, error)
             update((state) => ({
                 ...state,
                 stockSyncing: false,
                 realtimeUpdating: false,
                 syncMessage: null,
-                error: msg
+                error: normalizeError(error)
             }))
             if (fromRealtime && !silent) {
                 toastStore.warning("No se pudieron aplicar todas las actualizaciones de stock")
@@ -230,37 +176,25 @@ function createProductStore() {
     function onLocalStockEvent(ev: Event): void {
         const detail = (ev as CustomEvent).detail
         if (!isStockPayload(detail)) return
-        void handleStockChanged(detail, {
-            fromRealtime: true,
-            silent: true,
-            source: "custom-event"
-        })
+        void handleStockChanged(detail, { fromRealtime: true, silent: true, source: "custom-event" })
     }
 
     function onBroadcastMessage(ev: MessageEvent): void {
         const msg = ev.data
         if (!msg || msg.type !== "stock:changed" || !isStockPayload(msg.data)) return
-        void handleStockChanged(msg.data, {
-            fromRealtime: true,
-            silent: true,
-            source: "broadcast"
-        })
+        void handleStockChanged(msg.data, { fromRealtime: true, silent: true, source: "broadcast" })
     }
 
     function startLocalStockListeners(): void {
         if (typeof window === "undefined") return
-
         if (!localEventBound) {
             window.addEventListener(STOCK_CHANGED_EVENT, onLocalStockEvent)
             localEventBound = true
-            console.info(`[stock-rt] listener CustomEvent ${STOCK_CHANGED_EVENT} (fallback)`)
         }
-
         if (!broadcast && typeof BroadcastChannel !== "undefined") {
             try {
                 broadcast = new BroadcastChannel(STOCK_BROADCAST_NAME)
                 broadcast.onmessage = onBroadcastMessage
-                console.info(`[stock-rt] listener BroadcastChannel ${STOCK_BROADCAST_NAME} (fallback)`)
             } catch {
                 /* ignore */
             }
@@ -280,27 +214,20 @@ function createProductStore() {
 
     function startStockRealtime(): void {
         startLocalStockListeners()
-
-        // Fase Auth0 / Appwrite billing: no abrir canales RT de Appwrite
-        const authProvider = (import.meta as any).env?.VITE_AUTH_PROVIDER
-        if (String(authProvider || "").toLowerCase() === "auth0") {
-            console.info("[stock-rt] Auth0 mode — skip Appwrite product realtime")
+        // Auth0 / Turso: no abrir canales RT de Appwrite (billing / Core6)
+        if (isAppwriteDataStackDisabled() || isAuth0Provider()) {
+            console.info("[stock-rt] Auth0/Turso mode — skip Appwrite product realtime")
             return
         }
-
         if (appwriteUnsub) {
-            console.info("[stock-rt] Appwrite RT ya activo, skip")
             startAppwriteProductRealtime((signal) => {
                 void handleAppwriteSignal(signal)
             })
             return
         }
-
-        console.info("[stock-rt] suscribiendo Appwrite Realtime (snapshots → local)…")
         appwriteUnsub = startAppwriteProductRealtime((signal) => {
             void handleAppwriteSignal(signal)
         })
-        console.info("[stock-rt] Appwrite product realtime cableado a applyRealtimeSnapshots")
     }
 
     function stopStockRealtime(): void {
@@ -314,7 +241,6 @@ function createProductStore() {
 
     async function syncAll(): Promise<void> {
         startStockRealtime()
-
         update((state) => ({
             ...state,
             error: null,
@@ -323,24 +249,18 @@ function createProductStore() {
             syncMessage: "Sincronizando catálogo…",
             loading: state.items.length === 0
         }))
-
         try {
             const offline = productContainer.repositories.offlineFirst
             if (typeof offline.getLocalAll === "function") {
                 try {
                     const local = await offline.getLocalAll()
                     if (local.length > 0) {
-                        update((state) => ({
-                            ...state,
-                            items: sortNewestFirst(local),
-                            loading: false
-                        }))
+                        update((state) => ({ ...state, items: sortNewestFirst(local), loading: false }))
                     }
                 } catch {
                     /* ignore */
                 }
             }
-
             const products = await productContainer.useCases.getAll.execute()
             update((state) => ({
                 ...state,
@@ -363,12 +283,7 @@ function createProductStore() {
     }
 
     async function syncById(id: string): Promise<Product | null> {
-        update((state) => ({
-            ...state,
-            stockSyncing: true,
-            syncMessage: "Actualizando producto…",
-            error: null
-        }))
+        update((state) => ({ ...state, stockSyncing: true, syncMessage: "Actualizando producto…", error: null }))
         try {
             const product = await productContainer.useCases.getById.execute(id)
             update((state) => ({
@@ -380,23 +295,14 @@ function createProductStore() {
             }))
             return product
         } catch (error) {
-            update((state) => ({
-                ...state,
-                error: normalizeError(error),
-                stockSyncing: false,
-                syncMessage: null
-            }))
+            update((state) => ({ ...state, error: normalizeError(error), stockSyncing: false, syncMessage: null }))
             throw error
         }
     }
 
     async function refreshByIds(productIds: string[]): Promise<void> {
         await handleStockChanged(
-            {
-                productIds,
-                reason: "hold",
-                timestamp: new Date().toISOString()
-            },
+            { productIds, reason: "hold", timestamp: new Date().toISOString() },
             { silent: true, fromRealtime: false, source: "refreshByIds" }
         )
     }
@@ -406,11 +312,7 @@ function createProductStore() {
         reason: StockChangedPayload["reason"] = "hold"
     ): Promise<void> {
         await handleStockChanged(
-            {
-                productIds,
-                reason,
-                timestamp: new Date().toISOString()
-            },
+            { productIds, reason, timestamp: new Date().toISOString() },
             { silent: false, fromRealtime: true, source: "refreshByIdsVisible" }
         )
     }
