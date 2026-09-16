@@ -37,8 +37,13 @@ export const ENV = {
     mistralModelId: import.meta.env.VITE_MISTRAL_MODEL_ID,
     mcpBaseUrl: import.meta.env.VITE_MCP_BASE_URL,
 
-    // Fase 1 Auth0 (web-spa client distinto del panel)
+    // Core6 auth provider: clerk | auth0 | appwrite
     authProvider: import.meta.env.VITE_AUTH_PROVIDER as string | undefined,
+
+    // Clerk (preferido: no bloquea Cuba)
+    clerkPublishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined,
+
+    // Auth0 (legacy / bloquea Cuba — no usar en producción CU)
     auth0Domain: import.meta.env.VITE_AUTH0_DOMAIN as string | undefined,
     auth0ClientId: import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined,
     auth0Audience: import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined,
@@ -46,7 +51,6 @@ export const ENV = {
     auth0LogoutReturnTo: import.meta.env.VITE_AUTH0_LOGOUT_RETURN_TO as string | undefined,
 
     // Fase 2 Turso (DB)
-    /** appwrite | turso — catálogo lee de Turso si turso */
     dataProvider: import.meta.env.VITE_DATA_PROVIDER as string | undefined,
     tursoUrl: import.meta.env.VITE_TURSO_URL as string | undefined,
     tursoAuthToken: import.meta.env.VITE_TURSO_AUTH_TOKEN as string | undefined,
