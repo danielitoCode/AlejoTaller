@@ -14,7 +14,8 @@ export function userLikeFromAuthSession(session: AuthSession): {
         session.displayName?.trim() ||
         (email.includes("@") ? email.split("@")[0] : "") ||
         "cliente";
-    const role = session.roles[0] ?? "viewer";
+    // Cliente B2C por defecto; admin solo si publicMetadata.role === "admin"
+    const role = session.roles[0] ?? "user";
     return {
         id: session.subject,
         name,
