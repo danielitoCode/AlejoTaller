@@ -7,13 +7,13 @@
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
-    import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
+    import { getAuthPort, isExternalAuthProvider } from "../../di/authPort.factory";
     import LoginAuth0Actions from "../components/LoginAuth0Actions.svelte";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navController: NavController;
 
-    const useAuth0 = resolveAuthProvider() === "auth0";
+    const useExternalAuth = isExternalAuthProvider();
 
     let loading = false;
     let error: string | null = null;
@@ -46,7 +46,7 @@
     function goToRegister() {
         const auth = getAuthPort();
         if (!auth) {
-            error = "Auth0 no configurado (faltan VITE_AUTH0_DOMAIN / CLIENT_ID)";
+            error = "Clerk/Auth0 no configurado (falta VITE_CLERK_PUBLISHABLE_KEY)";
             toastStore.error(error);
             return;
         }
@@ -55,12 +55,11 @@
             .then(() =>
                 auth.loginWithRedirect({
                     returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
-                    connection: "Username-Password-Authentication",
                     screenHint: "signup",
                 }),
             )
             .catch((e) => {
-                error = e instanceof Error ? e.message : "No se pudo abrir registro Auth0";
+                error = e instanceof Error ? e.message : "No se pudo abrir registro";
                 toastStore.error(error);
             });
     }
@@ -80,17 +79,17 @@
                 <img class="login-logo" src="/alejoicon_clean.svg" alt="Logo de la aplicacion" />
             </div>
             <h2>Alejo Taller</h2>
-            <p>Accede con Auth0 (email o Google)</p>
+            <p>Accede con Clerk (email o Google)</p>
         </section>
 
         <div class="login-card">
             <Card variant="filled">
                 <div class="login-card-content">
-                    {#if useAuth0}
+                    {#if useExternalAuth}
                         <LoginAuth0Actions disabled={loading} />
                     {:else}
                         <p class="error-copy">
-                            Faltan VITE_AUTH0_DOMAIN / VITE_AUTH0_CLIENT_ID. No hay login Appwrite en Core6.
+                            Falta VITE_CLERK_PUBLISHABLE_KEY. No hay login Appwrite en Core6.
                         </p>
                     {/if}
 
@@ -101,7 +100,7 @@
                     </div>
                     <div class="action-row">
                         <Button variant="text" size="m" onclick={goToRegister}>
-                            No tienes cuenta? Registrate en Auth0
+                            No tienes cuenta? Registrate
                         </Button>
                     </div>
                     {#if error}<p class="error-copy">{error}</p>{/if}
