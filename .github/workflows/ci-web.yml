@@ -25,7 +25,7 @@ jobs:
   web:
     name: Web install + build + tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     defaults:
       run:
         working-directory: web
@@ -36,19 +36,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: web/package-lock.json
+          # sin cache de lock hasta regenerar package-lock completo en local
 
       - name: Install dependencies
         run: |
-          # lock puede estar incompleto tras añadir @clerk/clerk-js;
-          # npm install resuelve el árbol. Cuando regeneres el lock local, se puede volver a npm ci.
-          if npm ci; then
-            echo "npm ci OK"
-          else
-            echo "::warning::package-lock out of sync — npm install"
-            npm install --no-audit --no-fund
-          fi
+          # El lock mínimo/roto provoca: Cannot read properties of null (reading 'edgesOut')
+          # Regenerar árbol desde package.json. Cuando commits un lock completo, se puede volver a npm ci.
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
 
       - name: Production build
         run: npm run build
