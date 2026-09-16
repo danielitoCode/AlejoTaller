@@ -15,7 +15,7 @@
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
     import LoginAuth0Actions from "../components/LoginAuth0Actions.svelte";
-    import { restorePendingHashIfNeeded } from "../../../../infrastructure/presentation/navigation/deep-link";
+    import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navController: NavController;
 
@@ -30,10 +30,18 @@
     $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
     $: normalizedEmail = email.trim().toLowerCase();
 
+    /** Igual que Splash: restaura hash pendiente tras login/guest. */
+    function applyPendingDeepLink(): void {
+        const pendingHash = consumePendingDeepLink();
+        if (pendingHash && typeof window !== "undefined") {
+            window.history.replaceState({}, "", pendingHash);
+        }
+    }
+
     function completeClientLogin(context: { userId: string; email: string; provider: "password" | "google" }) {
         sessionStore.setAuthenticatedSession();
         authFlowStore.setSuccess(context);
-        restorePendingHashIfNeeded();
+        applyPendingDeepLink();
         navController.resetTo("home", context);
     }
 
@@ -46,7 +54,7 @@
             sessionStore.setGuestSession();
             const guestContext = { userId: "guest-local", email: null, provider: "guest" as const };
             authFlowStore.setSuccess(guestContext);
-            restorePendingHashIfNeeded();
+            applyPendingDeepLink();
             navController.resetTo("home", guestContext);
         } catch (e) {
             authFlowStore.setError(e, { provider: "guest" });
