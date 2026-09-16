@@ -1,15 +1,9 @@
 <script lang="ts">
     import type { NavController } from "../../../../../lib/navigation/NavController";
-    import { authContainer } from "../../di/auth.container";
-    import { Button, Card, TextFieldOutlined } from "m3-svelte";
+    import { Button, Card } from "m3-svelte";
     import AuthBusyOverlay from "../components/AuthBusyOverlay.svelte";
     import Screen from "../../../../infrastructure/presentation/components/Screen.svelte";
     import LoadingSpinner from "../../../../infrastructure/presentation/components/LoadingSpinner.svelte";
-    import MailOutlineRounded from "@ktibow/iconset-material-symbols/mail-outline-rounded";
-    import LockOutline from "@ktibow/iconset-material-symbols/lock-outline";
-    import VisibilityRounded from "@ktibow/iconset-material-symbols/visibility-rounded";
-    import VisibilityOffRounded from "@ktibow/iconset-material-symbols/visibility-off-rounded";
-    import { ArrowRightToLine } from "lucide-svelte";
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
@@ -21,16 +15,9 @@
 
     const useAuth0 = resolveAuthProvider() === "auth0";
 
-    let email = "";
-    let password = "";
-    let showPassword = false;
     let loading = false;
     let error: string | null = null;
 
-    $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
-    $: normalizedEmail = email.trim().toLowerCase();
-
-    /** Igual que Splash: restaura hash pendiente tras login/guest. */
     function applyPendingDeepLink(): void {
         const pendingHash = consumePendingDeepLink();
         if (pendingHash && typeof window !== "undefined") {
@@ -38,19 +25,11 @@
         }
     }
 
-    function completeClientLogin(context: { userId: string; email: string; provider: "password" | "google" }) {
-        sessionStore.setAuthenticatedSession();
-        authFlowStore.setSuccess(context);
-        applyPendingDeepLink();
-        navController.resetTo("home", context);
-    }
-
     async function continueAsGuest() {
         if (loading) return;
         loading = true;
         error = null;
         try {
-            // Auth0 / Core6: guest 100% local — nunca Appwrite openGuestSession
             sessionStore.setGuestSession();
             const guestContext = { userId: "guest-local", email: null, provider: "guest" as const };
             authFlowStore.setSuccess(guestContext);
@@ -65,49 +44,25 @@
     }
 
     function goToRegister() {
-        if (useAuth0) {
-            const auth = getAuthPort();
-            if (auth) {
-                void auth
-                    .init()
-                    .then(() =>
-                        auth.loginWithRedirect({
-                            returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
-                            screenHint: "signup",
-                        }),
-                    )
-                    .catch((e) => {
-                        error = e instanceof Error ? e.message : "No se pudo abrir registro Auth0";
-                        toastStore.error(error);
-                    });
-                return;
-            }
-        }
-        navController.navigate("register");
-    }
-
-    // Legacy Appwrite — solo si Auth0 está apagado (UI oculta con useAuth0)
-    async function signIn() {
-        if (!canSubmit || useAuth0) return;
-        loading = true;
-        error = null;
-        try {
-            try {
-                await authContainer.useCases.sessions.closeSession.execute();
-            } catch {}
-            const userId = await authContainer.useCases.sessions.openSession.openCustomSession(
-                normalizedEmail,
-                password,
-            );
-            const authContext = { userId, email: normalizedEmail, provider: "password" as const };
-            completeClientLogin(authContext);
-        } catch (e) {
-            error = e instanceof Error ? e.message : "No se pudo iniciar sesion";
-            authFlowStore.setError(error, { email: normalizedEmail, provider: "password" });
+        const auth = getAuthPort();
+        if (!auth) {
+            error = "Auth0 no configurado (faltan VITE_AUTH0_DOMAIN / CLIENT_ID)";
             toastStore.error(error);
-        } finally {
-            loading = false;
+            return;
         }
+        void auth
+            .init()
+            .then(() =>
+                auth.loginWithRedirect({
+                    returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
+                    connection: "Username-Password-Authentication",
+                    screenHint: "signup",
+                }),
+            )
+            .catch((e) => {
+                error = e instanceof Error ? e.message : "No se pudo abrir registro Auth0";
+                toastStore.error(error);
+            });
     }
 </script>
 
@@ -125,7 +80,7 @@
                 <img class="login-logo" src="/alejoicon_clean.svg" alt="Logo de la aplicacion" />
             </div>
             <h2>Alejo Taller</h2>
-            <p>Accede con tu cuenta para continuar</p>
+            <p>Accede con Auth0 (email o Google)</p>
         </section>
 
         <div class="login-card">
@@ -133,39 +88,10 @@
                 <div class="login-card-content">
                     {#if useAuth0}
                         <LoginAuth0Actions disabled={loading} />
-                        <p class="auth0-hint">Acceso con Auth0 (email o Google). Sin Appwrite.</p>
                     {:else}
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Correo"
-                                bind:value={email}
-                                leadingIcon={MailOutlineRounded}
-                                type="email"
-                                enter={signIn}
-                            />
-                        </div>
-                        <div class="field-wrap">
-                            <TextFieldOutlined
-                                label="Contrasena"
-                                bind:value={password}
-                                type={showPassword ? "text" : "password"}
-                                leadingIcon={LockOutline}
-                                trailing={{
-                                    icon: showPassword ? VisibilityOffRounded : VisibilityRounded,
-                                    onclick: () => {
-                                        showPassword = !showPassword;
-                                    },
-                                    "aria-label": showPassword ? "Ocultar contrasena" : "Mostrar contrasena",
-                                    title: showPassword ? "Ocultar contrasena" : "Mostrar contrasena",
-                                }}
-                                enter={signIn}
-                            />
-                        </div>
-                        <div class="action-row">
-                            <Button variant="filled" size="m" disabled={!canSubmit} onclick={signIn}>
-                                <span class="btn-content"><span>Entrar</span><ArrowRightToLine size={18} /></span>
-                            </Button>
-                        </div>
+                        <p class="error-copy">
+                            Faltan VITE_AUTH0_DOMAIN / VITE_AUTH0_CLIENT_ID. No hay login Appwrite en Core6.
+                        </p>
                     {/if}
 
                     <div class="action-row">
@@ -175,7 +101,7 @@
                     </div>
                     <div class="action-row">
                         <Button variant="text" size="m" onclick={goToRegister}>
-                            No tienes cuenta? Registrate
+                            No tienes cuenta? Registrate en Auth0
                         </Button>
                     </div>
                     {#if error}<p class="error-copy">{error}</p>{/if}
@@ -237,20 +163,9 @@
     .action-row {
         display: grid;
     }
-    .auth0-hint {
-        margin: 0;
-        text-align: center;
-        font-size: 0.8rem;
-        color: var(--md-sys-color-on-surface-variant);
-    }
     .error-copy {
         color: var(--md-sys-color-error);
         margin: 0;
         font-size: 0.85rem;
-    }
-    .btn-content {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
     }
 </style>
