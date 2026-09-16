@@ -7,9 +7,6 @@
 
     export let disabled = false;
 
-    /** Auth0 Database connection (default tenant name). */
-    const DB_CONNECTION = "Username-Password-Authentication";
-
     let email = "";
     let loading = false;
 
@@ -22,15 +19,15 @@
     }) {
         const auth = getAuthPort();
         if (!auth) {
-            logAuth0("warn", "Login: Auth0 inactivo");
-            toastStore.error("Auth0 no está activo. Revisa VITE_AUTH0_DOMAIN / CLIENT_ID.");
+            logAuth0("warn", "Login: IdP inactivo");
+            toastStore.error("Auth no activo. Revisa VITE_CLERK_PUBLISHABLE_KEY.");
             return;
         }
         loading = true;
         try {
             logAuth0(
                 "info",
-                `Login UI connection=${opts?.connection ?? "universal"} screen=${opts?.screenHint ?? "login"}`,
+                `Login UI connection=${opts?.connection ?? "hosted"} screen=${opts?.screenHint ?? "login"}`,
             );
             await auth.init();
             await auth.loginWithRedirect({
@@ -39,41 +36,31 @@
                 screenHint: opts?.screenHint,
                 loginHint: opts?.loginHint,
             });
-            // redirect: no vuelve aquí
         } catch (e) {
-            const msg = e instanceof Error ? e.message : "No se pudo iniciar Auth0";
+            const msg = e instanceof Error ? e.message : "No se pudo iniciar sesión";
             logAuth0("error", `Login UI falló: ${msg}`, e);
             toastStore.error(msg);
             loading = false;
         }
     }
 
-    /** Email → Auth0 Universal Login (Database). Google → connection social. */
     function signInEmail() {
-        void login({
-            connection: DB_CONNECTION,
-            screenHint: "login",
-            loginHint: hint || undefined,
-        });
+        void login({ screenHint: "login", loginHint: hint || undefined });
     }
 
     function signInGoogle() {
-        void login({ connection: "google-oauth2", screenHint: "login" });
+        void login({ connection: "google", screenHint: "login" });
     }
 
     function signUp() {
-        void login({
-            connection: DB_CONNECTION,
-            screenHint: "signup",
-            loginHint: hint || undefined,
-        });
+        void login({ screenHint: "signup", loginHint: hint || undefined });
     }
 </script>
 
 <div class="auth0-block">
     <div class="field-wrap">
         <TextFieldOutlined
-            label="Correo (opcional, pre-rellena Auth0)"
+            label="Correo (opcional)"
             bind:value={email}
             type="email"
             leadingIcon={MailOutlineRounded}
@@ -82,7 +69,7 @@
     </div>
 
     <Button variant="filled" size="m" disabled={disabled || loading} onclick={signInEmail}>
-        {#if loading}Redirigiendo a Auth0…{:else}Entrar con email / contraseña{/if}
+        {#if loading}Redirigiendo…{:else}Entrar con email / contraseña{/if}
     </Button>
 
     <Button variant="outlined" size="m" disabled={disabled || loading} onclick={signInGoogle}>
@@ -94,9 +81,8 @@
     </Button>
 
     <p class="hint">
-        Todo el acceso es <strong>Auth0</strong> (no Appwrite). Si ya entraste con Google antes, usa
-        <em>Continuar con Google</em> — Auth0 reconoce la misma cuenta. Una cuenta en Appwrite
-        <strong>no</strong> cuenta como cuenta Auth0.
+        Acceso vía <strong>Clerk</strong> (sin Appwrite ni Auth0). Google y email se configuran en el
+        dashboard de Clerk. Roles: <code>publicMetadata.role</code>.
     </p>
 </div>
 
