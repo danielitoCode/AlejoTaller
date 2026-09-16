@@ -1,9 +1,13 @@
 import { ENV } from "./env";
-import { resolveAuthProvider } from "../feature/auth/di/authPort.factory";
+import { isExternalAuthProvider, resolveAuthProvider } from "../feature/auth/di/authPort.factory";
 
-/** Auth0 activo (incluye auto-detect por domain+clientId). */
+/** @deprecated usar isExternalAuthProvider — true si Clerk o Auth0 */
 export function isAuth0Provider(): boolean {
-    return resolveAuthProvider() === "auth0";
+    return isExternalAuthProvider();
+}
+
+export function isClerkProvider(): boolean {
+    return resolveAuthProvider() === "clerk";
 }
 
 /** Datos en Turso → no Databases Appwrite para catálogo migrado. */
@@ -13,13 +17,13 @@ export function isTursoDataProvider(): boolean {
 
 /** Cualquier uso residual de Appwrite Account debe cortarse. */
 export function isAppwriteAuthDisabled(): boolean {
-    return isAuth0Provider();
+    return isExternalAuthProvider();
 }
 
 /**
  * Features aún no migradas no deben tocar Appwrite
- * mientras el stack operativo sea Auth0 + Turso.
+ * mientras el stack operativo sea Clerk/Auth0 + Turso.
  */
 export function isAppwriteDataStackDisabled(): boolean {
-    return isAuth0Provider() || isTursoDataProvider();
+    return isExternalAuthProvider() || isTursoDataProvider();
 }
