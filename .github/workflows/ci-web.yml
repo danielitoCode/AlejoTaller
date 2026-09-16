@@ -41,11 +41,13 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # lock puede estar incompleto tras añadir @clerk/clerk-js;
+          # npm install resuelve el árbol. Cuando regeneres el lock local, se puede volver a npm ci.
           if npm ci; then
             echo "npm ci OK"
           else
-            echo "::warning::package-lock.json out of sync with package.json — using npm install"
-            npm install
+            echo "::warning::package-lock out of sync — npm install"
+            npm install --no-audit --no-fund
           fi
 
       - name: Production build
