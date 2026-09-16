@@ -2,23 +2,17 @@
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import { authContainer } from "../../di/auth.container";
     import { Button, Card, TextFieldOutlined } from "m3-svelte";
-    import type { GoogleIdTokenProfile } from "../util/google-id-token";
     import AuthBusyOverlay from "../components/AuthBusyOverlay.svelte";
     import Screen from "../../../../infrastructure/presentation/components/Screen.svelte";
-    import LoadingIndicator from "../../../../infrastructure/presentation/components/LoadingIndicator.svelte";
+    import LoadingSpinner from "../../../../infrastructure/presentation/components/LoadingSpinner.svelte";
     import MailOutlineRounded from "@ktibow/iconset-material-symbols/mail-outline-rounded";
     import LockOutline from "@ktibow/iconset-material-symbols/lock-outline";
     import VisibilityRounded from "@ktibow/iconset-material-symbols/visibility-rounded";
     import VisibilityOffRounded from "@ktibow/iconset-material-symbols/visibility-off-rounded";
     import { ArrowRightToLine } from "lucide-svelte";
-    import { parseGoogleIdToken } from "../util/google-id-token";
-    import FrameModal from "../components/FrameModal.svelte";
-    import { ENV } from "../../../../infrastructure/env";
     import { sessionStore } from "../viewmodel/session.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
-    import AdminRoleChoiceCard from "../components/AdminRoleChoiceCard.svelte";
-    import { goToAdminDashboard } from "../util/admin-redirect";
     import { getAuthPort, resolveAuthProvider } from "../../di/authPort.factory";
     import LoginAuth0Actions from "../components/LoginAuth0Actions.svelte";
     import { restorePendingHashIfNeeded } from "../../../../infrastructure/presentation/navigation/deep-link";
@@ -32,8 +26,6 @@
     let showPassword = false;
     let loading = false;
     let error: string | null = null;
-    let pendingAdminUser: Record<string, unknown> | null = null;
-    let pendingAuthContext: { userId: string; email: string; provider: "password" | "google" } | null = null;
 
     $: canSubmit = email.trim().length > 3 && password.trim().length > 3 && !loading;
     $: normalizedEmail = email.trim().toLowerCase();
@@ -86,7 +78,7 @@
         navController.navigate("register");
     }
 
-    // Legacy Appwrite paths only if Auth0 off (kept for rollback; UI oculta con useAuth0)
+    // Legacy Appwrite — solo si Auth0 está apagado (UI oculta con useAuth0)
     async function signIn() {
         if (!canSubmit || useAuth0) return;
         loading = true;
@@ -121,7 +113,7 @@
     <main class="login-screen-mobile">
         <section class="login-brand">
             <div class="login-indicator-wrap">
-                <LoadingIndicator size={132} aria-label="Cargando" />
+                <LoadingSpinner size={132} label="Cargando" />
                 <img class="login-logo" src="/alejoicon_clean.svg" alt="Logo de la aplicacion" />
             </div>
             <h2>Alejo Taller</h2>
