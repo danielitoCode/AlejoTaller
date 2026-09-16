@@ -84,9 +84,11 @@ export class CategoryOfflineFirstRepository implements CategoryRepository {
     async create(category: Category): Promise<Category> {
         try {
             const created = await this.net.create({
-                ...categoryToDTO(category),
-                $id: category.id || ID.unique()
-            } as any)
+                name: category.name,
+                description: category.description,
+                photo_url: category.photoUrl ?? "",
+                status: category.status
+            })
             await db.categories.put(created)
             return categoryFromDTO(created)
         } catch (error: any) {
@@ -96,5 +98,11 @@ export class CategoryOfflineFirstRepository implements CategoryRepository {
             );
             throw error;
         }
+    }
+
+    async sync(): Promise<void> {
+        const remote = await this.net.getAll()
+        await db.categories.clear()
+        await db.categories.bulkPut(remote)
     }
 }
