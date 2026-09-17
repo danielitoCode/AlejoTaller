@@ -45,8 +45,8 @@ const SELECT_COLS = `id, name, description, existence, reserved, price, photo_ur
     category_id, rating, status, created_at, updated_at`;
 
 /**
- * Fuente remota Turso para productos (lectura).
- * Soft-hold atómico / writes → fase siguiente.
+ * Fuente remota Turso para productos (lectura + soft-hold).
+ * CRUD de catálogo lo hace el backoffice; cliente solo reserved++/--.
  */
 export class ProductTursoRepository {
     async getAll(): Promise<ProductDTO[]> {
@@ -85,22 +85,82 @@ export class ProductTursoRepository {
     }
 
     async create(_product: ProductWriteDTO, _id?: string): Promise<ProductDTO> {
-        throw new Error("Turso product.create: escritura pendiente");
+        throw new Error("Turso product.create: escritura pendiente (solo dash)");
     }
 
     async update(_id: string, _data: Partial<ProductWriteDTO> | Record<string, unknown>): Promise<ProductDTO> {
-        throw new Error("Turso product.update: escritura pendiente");
+        throw new Error("Turso product.update: escritura pendiente (solo dash)");
     }
 
     async delete(_id: string): Promise<void> {
-        throw new Error("Turso product.delete: escritura pendiente");
+        throw new Error("Turso product.delete: escritura pendiente (solo dash)");
     }
 
-    async incrementReserved(_id: string, _quantity: number, _maxReserved: number): Promise<ProductDTO> {
-        throw new Error("Turso product.incrementReserved: pendiente (fase stock)");
+    /**
+     * Soft-hold atómico: reserved += qty solo si reserved + qty <= maxReserved
+     * (maxReserved = existence del producto, pasado por offline-first).
+     * Compartido con dash vía misma tabla products.
+     */
+    async incrementReserved(
+        id: string,
+        quantity: number,
+        maxReserved: number,
+    ): Promise<ProductDTO> {
+        const qty = Math.floor(Number(quantity));
+        const maxR = Math.floor(Number(maxReserved));
+        if (qty <= 0) throw new Error("quantity debe ser > 0");
+        if (maxR < 0) throw new Error("maxReserved debe ser >= 0");
+
+        const db = getTursoClient();
+        const rs = await db.execute({
+            sql: `UPDATE products
+                  SET reserved = COALESCE(reserved, 0) + ?,
+                      updated_at = datetime('now')
+                  WHERE id = ?
+                    AND COALESCE(reserved, 0) + ? <= ?`,
+            args: [qty, id, qty, maxR],
+        });
+        const affected = Number((rs as { rowsAffected?: number }).rowsAffected ?? 0);
+        if (affected < 1) {
+            try {
+                const current = await this.getById(id);
+                const reserved = Math.max(0, Math.floor(Number(current.reserved ?? 0)));
+                throw new Error(
+                    `Soft-hold insuficiente: product=${id} reserved=${reserved} +qty=${qty} max=${maxR}`,
+                );
+            } catch (e) {
+                if (e instanceof Error && e.message.startsWith("Soft-hold")) throw e;
+                throw new Error(`Product not found: ${id}`);
+            }
+        }
+        const updated = await this.getById(id);
+        logger.info(
+            `[turso] soft-hold +${qty} product=${id.slice(0, 12)}… reserved=${updated.reserved}`,
+        );
+        return updated;
     }
 
-    async decrementReserved(_id: string, _quantity: number): Promise<ProductDTO> {
-        throw new Error("Turso product.decrementReserved: pendiente (fase stock)");
+    /**
+     * Libera soft-hold: reserved = max(0, reserved - qty).
+     */
+    async decrementReserved(id: string, quantity: number): Promise<ProductDTO> {
+        const qty = Math.floor(Number(quantity));
+        if (qty <= 0) throw new Error("quantity debe ser > 0");
+
+        const db = getTursoClient();
+        await this.getById(id);
+
+        await db.execute({
+            sql: `UPDATE products
+                  SET reserved = MAX(0, COALESCE(reserved, 0) - ?),
+                      updated_at = datetime('now')
+                  WHERE id = ?`,
+            args: [qty, id],
+        });
+        const updated = await this.getById(id);
+        logger.info(
+            `[turso] soft-hold -${qty} product=${id.slice(0, 12)}… reserved=${updated.reserved}`,
+        );
+        return updated;
     }
 }
