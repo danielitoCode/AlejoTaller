@@ -8,6 +8,11 @@ import {
     stopAppwriteSaleRealtime,
     type AppwriteSaleChangeSignal
 } from "../../../../infrastructure/data/appwrite/appwrite-sale-realtime";
+import {
+    subscribeSaleVerification,
+    subscribeSaleUpdates,
+    type SalePulsePayload,
+} from "../../../../infrastructure/data/alset-pulse/sale-pulse";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import {productContainer} from "../../../product/di/product.container";
 import { productStore } from "../../../product/presentation/viewmodel/product.store";
@@ -51,18 +56,14 @@ function createSaleStore() {
         isSubscriptionPending = true;
 
         try {
-            if (isAppwriteDataStackDisabled()) {
-                stopSaleRealtime();
-                if (import.meta.env.DEV) console.info("[SaleStore] Clerk/Turso mode — skip Appwrite sale realtime");
-                return;
-            }
             if (get(sessionStore).isGuest) {
                 stopSaleRealtime();
                 return;
             }
 
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
-            const currentUserId = (currentUser as any)?.$id ?? null;
+            const currentUserId =
+                (currentUser as any)?.$id ?? (currentUser as any)?.id ?? null;
 
             if (!currentUserId) {
                 stopSaleRealtime();
@@ -71,6 +72,29 @@ function createSaleStore() {
 
             if (subscribedUserId && subscribedUserId !== currentUserId) {
                 stopSaleRealtime();
+            }
+
+            if (isAppwriteDataStackDisabled()) {
+                if (!realtimeUnsub) {
+                    console.info(
+                        `[SaleStore] Pusher sale RT userId=${String(currentUserId).slice(0, 12)}…`
+                    );
+                    const unsubVerify = subscribeSaleVerification(
+                        String(currentUserId),
+                        (eventName, payload) => {
+                            void handlePusherSaleDecision(eventName, payload, String(currentUserId));
+                        }
+                    );
+                    const unsubUpdates = subscribeSaleUpdates((eventName, payload) => {
+                        void handlePusherSaleDecision(eventName, payload, String(currentUserId));
+                    });
+                    realtimeUnsub = () => {
+                        unsubVerify();
+                        unsubUpdates();
+                    };
+                    subscribedUserId = currentUserId;
+                }
+                return;
             }
 
             if (!realtimeUnsub) {
@@ -103,6 +127,70 @@ function createSaleStore() {
         }
         stopAppwriteSaleRealtime();
         subscribedUserId = null;
+    }
+
+    async function handlePusherSaleDecision(
+        eventName: string,
+        payload: SalePulsePayload,
+        currentUserId: string
+    ): Promise<void> {
+        const name = String(eventName ?? "").toLowerCase();
+        if (name !== "sale:confirmed" && name !== "sale:rejected") return;
+
+        const ownerId = String(payload.userId ?? "").trim();
+        if (ownerId && ownerId !== currentUserId) return;
+
+        const saleId = String(payload.saleId ?? "").trim();
+        if (!saleId) return;
+
+        const decision: "confirmed" | "rejected" =
+            payload.decision === "rejected" || name === "sale:rejected"
+                ? "rejected"
+                : "confirmed";
+
+        toastStore.info("Se está actualizando el estado de tu pedido…", 2200);
+
+        const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
+
+        update((state) => ({
+            ...state,
+            items: state.items.map((sale) =>
+                sale.id === saleId ? { ...sale, verified: newState } : sale
+            ),
+        }));
+
+        try {
+            const sales = await saleContainer.repositories.offlineFirst.getByUser(currentUserId);
+            update((state) => ({ ...state, items: sales }));
+        } catch {
+            /* keep optimistic */
+        }
+
+        saleAlertStore.addAlert({
+            saleId,
+            decision,
+            timestamp: payload.timestamp || new Date().toISOString(),
+            amount: undefined,
+            productCount: payload.productIds?.length,
+        });
+
+        const shortId = saleId.slice(0, 8);
+        if (decision === "confirmed") {
+            toastStore.success(`Tu pedido ${shortId} fue confirmado`, 3600);
+        } else {
+            toastStore.error(`Tu pedido ${shortId} fue rechazado`, 4200);
+        }
+
+        if (payload.productIds?.length) {
+            void productStore
+                .refreshByIdsVisible(
+                    payload.productIds,
+                    decision === "confirmed" ? "consume" : "release"
+                )
+                .catch(() => productStore.syncAll().catch(() => {}));
+        } else {
+            void productStore.syncAll().catch(() => {});
+        }
     }
 
     async function handleAppwriteSaleSignal(
@@ -199,26 +287,21 @@ function createSaleStore() {
 
         update((state) => ({ ...state, loading: true, error: null }));
         try {
-            if (isAppwriteDataStackDisabled()) {
-                stopSaleRealtime();
-                if (import.meta.env.DEV) {
-                    console.info("[SaleStore] Clerk/Turso — sin Appwrite sale RT; sync vía repositorio");
-                }
-            }
             if (get(sessionStore).isGuest) {
                 stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
                 return;
             }
             const currentUser = await sessionStore.getCurrentUser().catch(() => null);
+            const uid = (currentUser as any)?.$id ?? (currentUser as any)?.id ?? null;
 
-            if (!(currentUser as any)?.$id) {
+            if (!uid) {
                 stopSaleRealtime();
                 update((state) => ({ ...state, items: [] }));
                 return;
             }
 
-            const sales = await saleContainer.repositories.offlineFirst.getByUser((currentUser as any).$id);
+            const sales = await saleContainer.repositories.offlineFirst.getByUser(uid);
             update((state) => ({ ...state, items: sales }));
             await manageSaleRealtimeSubscription();
         } catch (error) {
