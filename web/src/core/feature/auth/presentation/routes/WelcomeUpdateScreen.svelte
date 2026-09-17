@@ -2,10 +2,12 @@
     /**
      * Core6: bienvenida + acceso.
      * Iniciar sesión / Crear cuenta → Clerk | Visitante local.
+     * Fondo: GradientWarpBackground (ogl) palette verde brand.
      */
     import { onMount } from "svelte";
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import AuthBusyOverlay from "../components/AuthBusyOverlay.svelte";
+    import GradientWarpBackground from "../components/GradientWarpBackground.svelte";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { sessionStore } from "../viewmodel/session.store";
@@ -114,9 +116,15 @@
 
 <div class="wu-root" class:is-in={entered} aria-label="Bienvenida y acceso">
     <div class="wu-bg" aria-hidden="true">
-        <span class="orb orb-a"></span>
-        <span class="orb orb-b"></span>
-        <span class="orb orb-c"></span>
+        <GradientWarpBackground
+            color1="#86c989"
+            color2="#2e7d32"
+            color3="#0a1c0e"
+            timeSpeed={0.16}
+            contrast={1.2}
+            saturation={0.92}
+            grainAmount={0.05}
+        />
         <span class="vignette"></span>
     </div>
 
@@ -224,7 +232,7 @@
             18px
             max(24px, calc(env(safe-area-inset-bottom) + 12px));
         box-sizing: border-box;
-        background: var(--md-sys-color-background);
+        background: #0a0a0a;
         color: var(--md-sys-color-on-background);
         overflow: hidden;
     }
@@ -232,61 +240,27 @@
     .wu-bg {
         position: absolute;
         inset: 0;
-        z-index: -1;
+        z-index: 0;
         pointer-events: none;
         overflow: hidden;
-    }
-
-    .orb {
-        position: absolute;
-        border-radius: 50%;
-        filter: blur(56px);
-    }
-
-    .orb-a {
-        width: min(78vw, 380px);
-        height: min(78vw, 380px);
-        top: -18%;
-        left: 50%;
-        transform: translateX(-55%);
-        background: color-mix(in srgb, var(--md-sys-color-primary) 38%, transparent);
-        opacity: 0.7;
-    }
-
-    .orb-b {
-        width: min(50vw, 220px);
-        height: min(50vw, 220px);
-        bottom: 12%;
-        right: -8%;
-        background: color-mix(
-            in srgb,
-            var(--md-sys-color-tertiary, var(--md-sys-color-primary)) 26%,
-            transparent
-        );
-        opacity: 0.5;
-    }
-
-    .orb-c {
-        width: min(40vw, 160px);
-        height: min(40vw, 160px);
-        bottom: 28%;
-        left: -10%;
-        background: color-mix(in srgb, var(--md-sys-color-primary-container) 40%, transparent);
-        opacity: 0.45;
     }
 
     .vignette {
         position: absolute;
         inset: 0;
+        z-index: 1;
         background:
             radial-gradient(
-                ellipse 90% 70% at 50% 35%,
-                transparent 20%,
-                color-mix(in srgb, var(--md-sys-color-background) 88%, transparent) 80%
+                ellipse 85% 65% at 50% 40%,
+                transparent 15%,
+                rgba(10, 10, 10, 0.55) 70%,
+                rgba(10, 10, 10, 0.82) 100%
             );
     }
 
     .wu-frame {
+        position: relative;
+        z-index: 2;
         width: min(100%, 420px);
         display: grid;
         gap: clamp(18px, 4vh, 28px);
@@ -379,7 +353,8 @@
         font-size: 1.05rem;
         font-weight: 700;
         letter-spacing: -0.01em;
-        color: color-mix(in srgb, var(--md-sys-color-on-background) 88%, transparent);
+        color: color-mix(in srgb, var(--md-sys-color-on-background) 92%, transparent);
+        text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
     }
 
     .wu-hero {
@@ -392,12 +367,13 @@
         font-weight: 800;
         letter-spacing: -0.035em;
         line-height: 1.15;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
     }
 
     .wu-title em {
         font-style: normal;
         color: var(--md-sys-color-primary);
-        text-shadow: 0 0 28px color-mix(in srgb, var(--md-sys-color-primary) 40%, transparent);
+        text-shadow: 0 0 28px color-mix(in srgb, var(--md-sys-color-primary) 50%, transparent);
     }
 
     .wu-lead {
@@ -405,7 +381,8 @@
         max-width: 32ch;
         font-size: 0.92rem;
         line-height: 1.5;
-        color: color-mix(in srgb, var(--md-sys-color-on-background) 68%, transparent);
+        color: color-mix(in srgb, var(--md-sys-color-on-background) 78%, transparent);
+        text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4);
     }
 
     .wu-trust {
