@@ -10,6 +10,7 @@ import type { SupportRealtimeEvent } from "../../domain/repository/support.repos
 import { asSenderRole, asStatus } from "../../data/mapper/Mappers";
 import { sessionStore } from "../../../auth/presentation/viewmodel/session.store";
 import { logger } from "../../../../infrastructure/presentation/util/logger.service";
+import { isAppwriteDataStackDisabled } from "../../../../infrastructure/platform.flags";
 
 type State = {
     items: SupportMessage[];
@@ -39,8 +40,9 @@ function normalizeError(error: unknown): string {
     return error instanceof Error ? error.message : "Error inesperado";
 }
 
+/** Legacy name: true si el stack Appwrite está desconectado (Clerk + Turso). */
 function isAuth0(): boolean {
-    return String((import.meta as any).env?.VITE_AUTH_PROVIDER || "").toLowerCase() === "auth0";
+    return isAppwriteDataStackDisabled();
 }
 
 function asString(value: unknown, fallback = ""): string {
@@ -53,7 +55,6 @@ function createStore() {
     const { subscribe, update } = writable<State>(initial);
     let unsubRt: (() => void) | null = null;
     let syncTimer: number | null = null;
-    /** Ref-count: Inbox y Detail pueden montar RT a la vez sin cortar el canal al navegar entre ellas. */
     let rtRefCount = 0;
 
     async function ensureUserId(): Promise<string> {
@@ -169,7 +170,7 @@ function createStore() {
         body: string;
     }): Promise<string> {
         if (isAuth0()) {
-            throw new Error("Soporte aún no migrado (Auth0 mode)");
+            throw new Error("Soporte aún no migrado (modo sin Appwrite)");
         }
         update((s) => ({ ...s, creating: true, error: null }));
         try {
@@ -199,7 +200,7 @@ function createStore() {
 
     async function postUserReply(threadId: string, body: string): Promise<void> {
         if (isAuth0()) {
-            throw new Error("Soporte aún no migrado (Auth0 mode)");
+            throw new Error("Soporte aún no migrado (modo sin Appwrite)");
         }
 
         const text = body.trim();
