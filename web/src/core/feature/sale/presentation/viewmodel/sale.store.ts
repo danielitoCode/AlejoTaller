@@ -50,6 +50,9 @@ function createSaleStore() {
     let realtimeUnsub: (() => void) | null = null;
     let isSubscriptionPending = false;
     let subscribedUserId: string | null = null;
+    /** Fallback cuando Pusher REST no puede publicar desde el browser (CORS). */
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let lastVerifiedMap: Record<string, string> = {};
 
     async function manageSaleRealtimeSubscription(): Promise<void> {
         if (isSubscriptionPending) return;
@@ -94,6 +97,7 @@ function createSaleStore() {
                     };
                     subscribedUserId = currentUserId;
                 }
+                startSaleStatusPolling(String(currentUserId));
                 return;
             }
 
@@ -120,7 +124,76 @@ function createSaleStore() {
         return manageSaleRealtimeSubscription();
     }
 
+    function stopSaleStatusPolling(): void {
+        if (pollTimer != null) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+        }
+    }
+
+    function startSaleStatusPolling(userId: string): void {
+        stopSaleStatusPolling();
+        const uid = String(userId || "").trim();
+        if (!uid) return;
+
+        const tick = async () => {
+            try {
+                const sales = await saleContainer.repositories.offlineFirst.getByUser(uid);
+                for (const sale of sales) {
+                    const prev = lastVerifiedMap[sale.id];
+                    const now = String(sale.verified ?? "");
+                    if (prev !== undefined && prev !== now) {
+                        const decision =
+                            now === BuyState.VERIFIED || now === "VERIFIED"
+                                ? "confirmed"
+                                : now === BuyState.DELETED || now === "DELETED"
+                                  ? "rejected"
+                                  : null;
+                        if (decision) {
+                            console.info(
+                                `[SaleStore] poll detect ${decision} saleId=${sale.id.slice(0, 8)}…`
+                            );
+                            await handlePusherSaleDecision(
+                                decision === "confirmed" ? "sale:confirmed" : "sale:rejected",
+                                {
+                                    saleId: sale.id,
+                                    userId: uid,
+                                    decision,
+                                    productIds: (sale.products ?? []).map((p) => p.productId).filter(Boolean),
+                                    timestamp: new Date().toISOString(),
+                                },
+                                uid
+                            );
+                        }
+                    }
+                    lastVerifiedMap[sale.id] = now;
+                }
+                update((state) => ({ ...state, items: sales }));
+            } catch (e) {
+                console.warn(
+                    `[SaleStore] poll failed: ${e instanceof Error ? e.message : String(e)}`
+                );
+            }
+        };
+
+        void (async () => {
+            try {
+                const sales = await saleContainer.repositories.offlineFirst.getByUser(uid);
+                for (const sale of sales) {
+                    lastVerifiedMap[sale.id] = String(sale.verified ?? "");
+                }
+                update((state) => ({ ...state, items: sales }));
+            } catch { /* */ }
+        })();
+
+        pollTimer = setInterval(() => {
+            void tick();
+        }, 3500);
+        console.info(`[SaleStore] poll Turso cada 3.5s userId=${uid.slice(0, 12)}…`);
+    }
+
     function stopSaleRealtime(): void {
+        stopSaleStatusPolling();
         if (realtimeUnsub) {
             realtimeUnsub();
             realtimeUnsub = null;
@@ -148,9 +221,15 @@ function createSaleStore() {
                 ? "rejected"
                 : "confirmed";
 
+        const expected = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
+        if (lastVerifiedMap[saleId] === String(expected)) {
+            return;
+        }
+
         toastStore.info("Se está actualizando el estado de tu pedido…", 2200);
 
         const newState = decision === "confirmed" ? BuyState.VERIFIED : BuyState.DELETED;
+        lastVerifiedMap[saleId] = String(newState);
 
         update((state) => ({
             ...state,
@@ -302,6 +381,9 @@ function createSaleStore() {
             }
 
             const sales = await saleContainer.repositories.offlineFirst.getByUser(uid);
+            for (const sale of sales) {
+                lastVerifiedMap[sale.id] = String(sale.verified ?? "");
+            }
             update((state) => ({ ...state, items: sales }));
             await manageSaleRealtimeSubscription();
         } catch (error) {
