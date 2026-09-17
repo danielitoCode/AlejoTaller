@@ -63,13 +63,22 @@ export function logNavError(msg: string, err?: any) {
     logStore.add(`  [Error] ${msg}${err ? " :: " + String(err) : ""}`, "error", stack);
 }
 
-/** Logs Auth0 (solo local / import.meta.env.DEV). */
+/** @deprecated usar logClerk — alias histórico Auth0. */
 export function logAuth0(
+    level: "log" | "info" | "warn" | "error",
+    message: string,
+    err?: unknown
+) {
+    logClerk(level, message, err);
+}
+
+/** Logs Clerk / IdP externo (solo local / import.meta.env.DEV). */
+export function logClerk(
     level: "log" | "info" | "warn" | "error",
     message: string,
     err?: unknown
 ) {
     if (!isDev()) return;
     const stack = err instanceof Error ? err.stack : undefined;
-    logStore.add(`  [Auth0] ${message}`, level, stack);
+    logStore.add(`  [Clerk] ${message}`, level, stack);
 }
