@@ -58,7 +58,9 @@ export async function publishSaleEvent(
     if (body.userId && (event === "sale:confirmed" || event === "sale:rejected")) {
         await triggerPusherEvent(`sale-verification-${body.userId}`, event, {
             saleId: body.saleId,
+            userId: body.userId,
             decision: event === "sale:confirmed" ? "confirmed" : "rejected",
+            productIds: body.productIds ?? [],
             timestamp: body.timestamp,
         });
     }
@@ -85,6 +87,46 @@ export function subscribeSaleUpdates(
                 verified: p.verified,
                 productIds: Array.isArray(p.productIds) ? p.productIds : [],
                 timestamp: typeof p.timestamp === "string" ? p.timestamp : new Date().toISOString(),
+            });
+        });
+    }
+    return () => {
+        for (const eventName of events) channel.unbind(eventName);
+        pusher.unsubscribe(channelName);
+    };
+}
+
+/**
+ * Canal por usuario: sale-verification-{userId}
+ * Eventos: sale:confirmed | sale:rejected (toast en cliente)
+ */
+export function subscribeSaleVerification(
+    userId: string,
+    handler: (eventName: string, payload: SalePulsePayload) => void,
+): SalePulseUnsubscribe {
+    const uid = String(userId || "").trim();
+    if (!uid) return () => {};
+    const pusher = getPusher();
+    if (!pusher) return () => {};
+    const channelName = `sale-verification-${uid}`;
+    const channel: Channel = pusher.subscribe(channelName);
+    const events = ["sale:confirmed", "sale:rejected"] as const;
+    console.info(`[sale-rt] subscribe verification channel=${channelName}`);
+    for (const eventName of events) {
+        channel.bind(eventName, (payload: unknown) => {
+            const p = (payload ?? {}) as Partial<SalePulsePayload>;
+            handler(eventName, {
+                saleId: String(p.saleId ?? ""),
+                userId: p.userId ?? uid,
+                decision:
+                    p.decision ??
+                    (eventName === "sale:confirmed" ? "confirmed" : "rejected"),
+                verified: p.verified,
+                productIds: Array.isArray(p.productIds) ? p.productIds : [],
+                timestamp:
+                    typeof p.timestamp === "string"
+                        ? p.timestamp
+                        : new Date().toISOString(),
             });
         });
     }
