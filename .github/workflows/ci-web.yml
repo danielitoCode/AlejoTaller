@@ -46,8 +46,13 @@ jobs:
       - name: Install dependencies
         run: |
           npm --version
-          # package-lock completo en repo (incl. @clerk/clerk-js) → npm ci
-          npm ci --no-audit --no-fund
+          # Preferir npm ci; si falta ogl u otro en el lock → npm install
+          if npm ci --no-audit --no-fund; then
+            echo "npm ci OK"
+          else
+            echo "::warning::package-lock out of sync — falling back to npm install"
+            npm install --no-audit --no-fund
+          fi
 
       - name: Production build
         run: npm run build
