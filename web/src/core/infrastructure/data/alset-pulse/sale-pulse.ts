@@ -96,10 +96,6 @@ export function subscribeSaleUpdates(
     };
 }
 
-/**
- * Canal por usuario: sale-verification-{userId}
- * Eventos: sale:confirmed | sale:rejected (toast en cliente)
- */
 export function subscribeSaleVerification(
     userId: string,
     handler: (eventName: string, payload: SalePulsePayload) => void,
