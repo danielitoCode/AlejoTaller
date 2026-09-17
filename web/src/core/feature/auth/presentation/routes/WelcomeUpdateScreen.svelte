@@ -1,12 +1,12 @@
 <script lang="ts">
     /**
-     * Core6: bienvenida + acceso Clerk (AuthPort).
-     * Guest 100% local. Sin Appwrite.
+     * Core6: bienvenida + acceso.
+     * UX mínima: Iniciar sesión → Clerk | Crear cuenta → Clerk | Visitante local.
+     * Sin pantallas intermedias ni LoginAuth0Actions.
      */
     import type { NavController } from "../../../../../lib/navigation/NavController";
     import { Button, Card } from "m3-svelte";
     import AuthBusyOverlay from "../components/AuthBusyOverlay.svelte";
-    import LoginAuth0Actions from "../components/LoginAuth0Actions.svelte";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { sessionStore } from "../viewmodel/session.store";
@@ -21,7 +21,7 @@
 
     let loading = false;
     let error: string | null = null;
-    let showAuth = false;
+    let redirecting = false;
 
     function restorePendingHashIfNeeded() {
         const pendingHash = consumePendingDeepLink();
@@ -31,7 +31,7 @@
     }
 
     async function continueAsGuest() {
-        if (loading) return;
+        if (loading || redirecting) return;
         loading = true;
         error = null;
         try {
@@ -57,35 +57,33 @@
         }
     }
 
-    function openAuth() {
+    /** Un solo toque → Universal Login de Clerk (email + Google en la misma UI). */
+    async function goClerk(mode: "login" | "signup") {
         if (!useExternalAuth) {
             error = "Clerk no configurado (VITE_CLERK_PUBLISHABLE_KEY)";
             toastStore.error(error);
             return;
         }
-        showAuth = true;
-        error = null;
-    }
-
-    function goRegister() {
         const auth = getAuthPort();
         if (!auth) {
             error = "Clerk no configurado";
             toastStore.error(error);
             return;
         }
-        void auth
-            .init()
-            .then(() =>
-                auth.loginWithRedirect({
-                    returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
-                    screenHint: "signup",
-                }),
-            )
-            .catch((e) => {
-                error = e instanceof Error ? e.message : "No se pudo abrir Clerk";
-                toastStore.error(error);
+        redirecting = true;
+        error = null;
+        try {
+            await auth.init();
+            await auth.loginWithRedirect({
+                returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
+                screenHint: mode === "signup" ? "signup" : "login",
             });
+            // redirect: no vuelve aquí
+        } catch (e) {
+            error = e instanceof Error ? e.message : "No se pudo abrir Clerk";
+            toastStore.error(error);
+            redirecting = false;
+        }
     }
 
     const trustItems = [
@@ -96,7 +94,11 @@
     ];
 </script>
 
-<AuthBusyOverlay open={loading} title="Preparando visita…" subtitle="Clerk · sin Appwrite" />
+<AuthBusyOverlay
+    open={loading || redirecting}
+    title={redirecting ? "Abriendo acceso…" : "Preparando visita…"}
+    subtitle={redirecting ? "Te llevamos a la pantalla segura de inicio de sesión" : "Un momento"}
+/>
 
 <div class="wu-root" aria-label="Bienvenida y acceso">
     <div class="wu-frame">
@@ -114,7 +116,7 @@
 
                 <h1 class="wu-title">Componentes para <em>tus ideas</em>.</h1>
                 <p class="wu-lead">
-                    Acceso con Clerk (email o Google). Visitante 100% local — sin Appwrite.
+                    Inicia sesión o crea tu cuenta. También puedes explorar como visitante.
                 </p>
 
                 <ul class="wu-trust" role="list">
@@ -130,24 +132,41 @@
             <section class="wu-actions">
                 <Card variant="filled">
                     <div class="wu-card">
-                        {#if showAuth && useExternalAuth}
-                            <LoginAuth0Actions disabled={loading} />
-                            <Button variant="text" size="m" onclick={() => (showAuth = false)}>Volver</Button>
-                        {:else}
-                            <Button variant="filled" size="m" disabled={loading} onclick={openAuth}>
-                                Entrar / Registrarse (Clerk)
+                        {#if useExternalAuth}
+                            <Button
+                                variant="filled"
+                                size="m"
+                                disabled={loading || redirecting}
+                                onclick={() => goClerk("login")}
+                            >
+                                Iniciar sesión
                             </Button>
+                            <Button
+                                variant="outlined"
+                                size="m"
+                                disabled={loading || redirecting}
+                                onclick={() => goClerk("signup")}
+                            >
+                                Crear cuenta
+                            </Button>
+                            <Button
+                                variant="tonal"
+                                size="m"
+                                disabled={loading || redirecting}
+                                onclick={continueAsGuest}
+                            >
+                                Continuar como visitante
+                            </Button>
+                            <p class="wu-hint">
+                                Email o Google se eligen en la pantalla de acceso segura.
+                            </p>
+                        {:else}
+                            <p class="wu-error">Falta VITE_CLERK_PUBLISHABLE_KEY.</p>
                             <Button variant="tonal" size="m" disabled={loading} onclick={continueAsGuest}>
                                 Continuar como visitante
                             </Button>
-                            <Button variant="text" size="m" disabled={loading} onclick={goRegister}>
-                                Crear cuenta nueva (Clerk)
-                            </Button>
                         {/if}
                         {#if error}<p class="wu-error">{error}</p>{/if}
-                        {#if !useExternalAuth}
-                            <p class="wu-error">Falta VITE_CLERK_PUBLISHABLE_KEY. No hay login Appwrite.</p>
-                        {/if}
                     </div>
                 </Card>
             </section>
@@ -233,6 +252,13 @@
         padding: 16px;
         display: grid;
         gap: 10px;
+    }
+    .wu-hint {
+        margin: 4px 0 0;
+        text-align: center;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        color: var(--md-sys-color-on-surface-variant);
     }
     .wu-error {
         margin: 0;
