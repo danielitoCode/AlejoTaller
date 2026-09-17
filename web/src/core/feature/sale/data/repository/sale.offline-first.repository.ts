@@ -73,10 +73,20 @@ export class SaleOfflineFirstRepository implements SaleRepository {
             return saleFromDTO(created);
         } catch (error: any) {
             logger.error(
-                `Error al crear venta en Appwrite: ${error?.message ?? "desconocido"}`,
+                `Error al crear venta (remoto): ${error?.message ?? "desconocido"}`,
                 error?.stack
             );
-            throw error;
+            try {
+                const dto = saleToDTO(sale);
+                if (!dto.$id) {
+                    (dto as any).$id = `local-${Date.now().toString(36)}`;
+                }
+                await db.sales.put(dto);
+                logger.warn("[sale] create fallback → Dexie local only");
+                return saleFromDTO(dto);
+            } catch {
+                throw error;
+            }
         }
     }
 
@@ -98,7 +108,7 @@ export class SaleOfflineFirstRepository implements SaleRepository {
             return saleFromDTO(updated);
         } catch (error: any) {
             logger.error(
-                `Error al actualizar venta en Appwrite: ${error?.message ?? "desconocido"}`,
+                `Error al actualizar venta (remoto): ${error?.message ?? "desconocido"}`,
                 error?.stack
             );
             throw error;
@@ -112,7 +122,7 @@ export class SaleOfflineFirstRepository implements SaleRepository {
             return saleFromDTO(updated);
         } catch (error: any) {
             logger.error(
-                `Error al actualizar entrega en Appwrite: ${error?.message ?? "desconocido"}`,
+                `Error al actualizar entrega (remoto): ${error?.message ?? "desconocido"}`,
                 error?.stack
             );
             throw error;
@@ -133,7 +143,7 @@ export class SaleOfflineFirstRepository implements SaleRepository {
         }
     }
 
-    /** Realtime: escribe Dexie desde el documento Appwrite (sin red). */
+    /** Realtime: escribe Dexie desde snapshot (sin red). */
     async applyLocalSnapshot(raw: Record<string, unknown>): Promise<Sale | null> {
         try {
             const plain = toPlainSaleDoc(raw);
