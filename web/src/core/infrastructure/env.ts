@@ -20,6 +20,8 @@ export const ENV = {
     pusherKey: import.meta.env.VITE_PUSHER_KEY,
     pusherCluster: import.meta.env.VITE_PUSHER_CLUSTER,
     pusherSupportChannel: import.meta.env.VITE_PUSHER_SUPPORT_CHANNEL,
+    pusherStockChannel: import.meta.env.VITE_PUSHER_STOCK_CHANNEL,
+    pusherSalesChannel: import.meta.env.VITE_PUSHER_SALES_CHANNEL,
     pusherPromoChannel: import.meta.env.VITE_PUSHER_PROMO_CHANNEL,
     pusherNotificationChannel: import.meta.env.VITE_PUSHER_NOTIFICATION_CHANNEL,
     pusherIaChannel: import.meta.env.VITE_PUSHER_IA_CHANNEL,
@@ -37,20 +39,16 @@ export const ENV = {
     mistralModelId: import.meta.env.VITE_MISTRAL_MODEL_ID,
     mcpBaseUrl: import.meta.env.VITE_MCP_BASE_URL,
 
-    // Core6 auth provider: clerk | auth0 | appwrite
     authProvider: import.meta.env.VITE_AUTH_PROVIDER as string | undefined,
 
-    // Clerk (preferido: no bloquea Cuba)
     clerkPublishableKey: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined,
 
-    // Auth0 (legacy / bloquea Cuba — no usar en producción CU)
     auth0Domain: import.meta.env.VITE_AUTH0_DOMAIN as string | undefined,
     auth0ClientId: import.meta.env.VITE_AUTH0_CLIENT_ID as string | undefined,
     auth0Audience: import.meta.env.VITE_AUTH0_AUDIENCE as string | undefined,
     auth0RedirectUri: import.meta.env.VITE_AUTH0_REDIRECT_URI as string | undefined,
     auth0LogoutReturnTo: import.meta.env.VITE_AUTH0_LOGOUT_RETURN_TO as string | undefined,
 
-    // Fase 2 Turso (DB)
     dataProvider: import.meta.env.VITE_DATA_PROVIDER as string | undefined,
     tursoUrl: import.meta.env.VITE_TURSO_URL as string | undefined,
     tursoAuthToken: import.meta.env.VITE_TURSO_AUTH_TOKEN as string | undefined,
