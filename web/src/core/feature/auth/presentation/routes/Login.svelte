@@ -8,7 +8,6 @@
     import { authFlowStore } from "../viewmodel/auth-flow.store";
     import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
     import { getAuthPort, isExternalAuthProvider } from "../../di/authPort.factory";
-    import LoginAuth0Actions from "../components/LoginAuth0Actions.svelte";
     import { consumePendingDeepLink } from "../../../../infrastructure/presentation/navigation/pending-deeplink.store";
 
     export let navController: NavController;
@@ -16,6 +15,7 @@
     const useExternalAuth = isExternalAuthProvider();
 
     let loading = false;
+    let redirecting = false;
     let error: string | null = null;
 
     function applyPendingDeepLink(): void {
@@ -26,7 +26,7 @@
     }
 
     async function continueAsGuest() {
-        if (loading) return;
+        if (loading || redirecting) return;
         loading = true;
         error = null;
         try {
@@ -43,32 +43,40 @@
         }
     }
 
-    function goToRegister() {
-        const auth = getAuthPort();
-        if (!auth) {
-            error = "Clerk/Auth0 no configurado (falta VITE_CLERK_PUBLISHABLE_KEY)";
+    async function goClerk(mode: "login" | "signup") {
+        if (!useExternalAuth) {
+            error = "Clerk no configurado (VITE_CLERK_PUBLISHABLE_KEY)";
             toastStore.error(error);
             return;
         }
-        void auth
-            .init()
-            .then(() =>
-                auth.loginWithRedirect({
-                    returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
-                    screenHint: "signup",
-                }),
-            )
-            .catch((e) => {
-                error = e instanceof Error ? e.message : "No se pudo abrir registro";
-                toastStore.error(error);
+        const auth = getAuthPort();
+        if (!auth) {
+            error = "Clerk no configurado";
+            toastStore.error(error);
+            return;
+        }
+        redirecting = true;
+        error = null;
+        try {
+            await auth.init();
+            await auth.loginWithRedirect({
+                returnTo: typeof window !== "undefined" ? window.location.origin : undefined,
+                screenHint: mode === "signup" ? "signup" : "login",
             });
+        } catch (e) {
+            error = e instanceof Error ? e.message : "No se pudo abrir el acceso";
+            toastStore.error(error);
+            redirecting = false;
+        }
     }
 </script>
 
 <AuthBusyOverlay
-    open={loading}
-    title="Validando acceso…"
-    subtitle="Comprobando tus credenciales. Esto suele tardar solo un momento."
+    open={loading || redirecting}
+    title={redirecting ? "Abriendo acceso…" : "Validando acceso…"}
+    subtitle={redirecting
+        ? "Te llevamos a la pantalla segura de inicio de sesión"
+        : "Comprobando tus credenciales. Esto suele tardar solo un momento."}
 />
 
 <Screen ariaLabel="Login" scrollable={false}>
@@ -79,30 +87,42 @@
                 <img class="login-logo" src="/alejoicon_clean.svg" alt="Logo de la aplicacion" />
             </div>
             <h2>Alejo Taller</h2>
-            <p>Accede con Clerk (email o Google)</p>
+            <p>Inicia sesión o explora como visitante</p>
         </section>
 
         <div class="login-card">
             <Card variant="filled">
                 <div class="login-card-content">
                     {#if useExternalAuth}
-                        <LoginAuth0Actions disabled={loading} />
+                        <Button
+                            variant="filled"
+                            size="m"
+                            disabled={loading || redirecting}
+                            onclick={() => goClerk("login")}
+                        >
+                            Iniciar sesión
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="m"
+                            disabled={loading || redirecting}
+                            onclick={() => goClerk("signup")}
+                        >
+                            Crear cuenta
+                        </Button>
                     {:else}
-                        <p class="error-copy">
-                            Falta VITE_CLERK_PUBLISHABLE_KEY. No hay login Appwrite en Core6.
-                        </p>
+                        <p class="error-copy">Falta VITE_CLERK_PUBLISHABLE_KEY.</p>
                     {/if}
 
-                    <div class="action-row">
-                        <Button variant="tonal" size="m" disabled={loading} onclick={continueAsGuest}>
-                            Entrar como visitante
-                        </Button>
-                    </div>
-                    <div class="action-row">
-                        <Button variant="text" size="m" onclick={goToRegister}>
-                            No tienes cuenta? Registrate
-                        </Button>
-                    </div>
+                    <Button variant="tonal" size="m" disabled={loading || redirecting} onclick={continueAsGuest}>
+                        Entrar como visitante
+                    </Button>
+
+                    {#if useExternalAuth}
+                        <p class="hint">
+                            Email o Google se eligen en la pantalla segura de acceso.
+                        </p>
+                    {/if}
                     {#if error}<p class="error-copy">{error}</p>{/if}
                 </div>
             </Card>
@@ -159,8 +179,12 @@
         display: grid;
         gap: 12px;
     }
-    .action-row {
-        display: grid;
+    .hint {
+        margin: 0;
+        text-align: center;
+        font-size: 0.78rem;
+        line-height: 1.35;
+        color: var(--md-sys-color-on-surface-variant);
     }
     .error-copy {
         color: var(--md-sys-color-error);
