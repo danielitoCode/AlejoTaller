@@ -2,7 +2,7 @@ import { Clerk } from "@clerk/clerk-js";
 import type { AuthPort, AuthLoginOptions } from "../domain/AuthPort";
 import type { AuthSession } from "../domain/entity/AuthSession";
 import { ENV } from "../../../infrastructure/env";
-import { logAuth0 as logAuth } from "../../../infrastructure/presentation/navigation/debug-logger";
+import { logClerk as logAuth } from "../../../infrastructure/presentation/navigation/debug-logger";
 
 function mask(value: string | null | undefined, keep = 6): string {
     if (!value) return "—";
