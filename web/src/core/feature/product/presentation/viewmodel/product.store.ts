@@ -11,6 +11,10 @@ import {
     stopAppwriteProductRealtime,
     type AppwriteProductChangeSignal
 } from "../../../../infrastructure/data/appwrite/appwrite-product-realtime";
+import {
+    subscribeStockUpdates,
+    unsubscribeStockUpdates,
+} from "../../../../infrastructure/data/alset-pulse/pulse.realtime";
 import { isAppwriteDataStackDisabled, isAuth0Provider } from "../../../../infrastructure/platform.flags";
 import { toastStore } from "../../../../infrastructure/presentation/viewmodel/toast.store";
 
@@ -66,6 +70,7 @@ function isStockPayload(value: unknown): value is StockChangedPayload {
 function createProductStore() {
     const {subscribe, update} = writable<ProductState>(initialState)
     let appwriteUnsub: (() => void) | null = null
+    let pusherStockUnsub: (() => void) | null = null
     let localEventBound = false
     let broadcast: BroadcastChannel | null = null
 
@@ -91,8 +96,6 @@ function createProductStore() {
 
     async function handleAppwriteSignal(signal: AppwriteProductChangeSignal): Promise<void> {
         const count = signal.productIds.length
-        const t0 = performance.now()
-        console.info(`[stock-rt] Appwrite snapshot apply start count=${count}`)
         toastStore.info("Se estan actualizando los datos de productos…", 2800)
         update((state) => ({
             ...state,
@@ -132,7 +135,6 @@ function createProductStore() {
     ): Promise<void> {
         const fromRealtime = options.fromRealtime === true
         const silent = options.silent === true
-        const source = options.source ?? "local"
         const count = payload.productIds.length
         if (fromRealtime && !silent) {
             toastStore.info(`Hemos recibido actualizaciones de productos (${reasonLabel(payload.reason)}). Actualizando…`, 3200)
@@ -214,9 +216,17 @@ function createProductStore() {
 
     function startStockRealtime(): void {
         startLocalStockListeners()
-        // Auth0 / Turso: no abrir canales RT de Appwrite (billing / Core6)
         if (isAppwriteDataStackDisabled() || isAuth0Provider()) {
-            console.info("[stock-rt] Auth0/Turso mode — skip Appwrite product realtime")
+            if (!pusherStockUnsub) {
+                console.info("[stock-rt] Pusher mode — subscribe stock-updates")
+                pusherStockUnsub = subscribeStockUpdates((payload) => {
+                    void handleStockChanged(payload, {
+                        fromRealtime: true,
+                        silent: false,
+                        source: "pusher",
+                    })
+                })
+            }
             return
         }
         if (appwriteUnsub) {
@@ -231,6 +241,11 @@ function createProductStore() {
     }
 
     function stopStockRealtime(): void {
+        if (pusherStockUnsub) {
+            pusherStockUnsub()
+            pusherStockUnsub = null
+        }
+        unsubscribeStockUpdates()
         if (appwriteUnsub) {
             appwriteUnsub()
             appwriteUnsub = null
