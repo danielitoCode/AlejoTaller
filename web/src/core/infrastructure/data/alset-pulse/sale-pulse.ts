@@ -2,12 +2,6 @@ import { ENV } from "../../env";
 import { triggerPusherEvent } from "./pusher-trigger";
 import Pusher, { type Channel } from "pusher-js";
 
-/**
- * Canal ventas: sale-updates (o VITE_PUSHER_SALES_CHANNEL)
- * Eventos: sale:created | sale:updated | sale:confirmed | sale:rejected
- * + canal por usuario: sale-verification-{userId}
- */
-
 export type SalePulseDecision = "confirmed" | "rejected";
 
 export interface SalePulsePayload {
@@ -21,6 +15,7 @@ export interface SalePulsePayload {
 
 export function getSalesChannelName(): string {
     return (
+        ENV.pusherSalesChannel?.trim() ||
         (import.meta.env.VITE_PUSHER_SALES_CHANNEL as string | undefined)?.trim() ||
         "sale-updates"
     );
@@ -36,9 +31,6 @@ function getPusher(): Pusher | null {
             cluster: ENV.pusherCluster,
             forceTLS: true,
         });
-        console.info(
-            `[Pusher] sales client key=${ENV.pusherKey.slice(0, 6)}… cluster=${ENV.pusherCluster}`,
-        );
         return pusherSingleton;
     } catch (e) {
         console.error("[Pusher] sales init failed", e);
@@ -58,29 +50,17 @@ export async function publishSaleEvent(
         productIds: payload.productIds ?? [],
         timestamp: payload.timestamp || new Date().toISOString(),
     };
-
     const channel = getSalesChannelName();
     const result = await triggerPusherEvent(channel, event, body);
-    if (result.ok) {
-        console.info(`[sale-rt] publish ${event} via=${result.via} saleId=${body.saleId}`);
-    } else {
-        console.warn(`[sale-rt] publish ${event} omitido: ${result.reason}`);
-    }
+    if (result.ok) console.info(`[sale-rt] publish ${event} via=${result.via} ch=${channel}`);
+    else console.warn(`[sale-rt] publish ${event} omitido: ${result.reason}`);
 
     if (body.userId && (event === "sale:confirmed" || event === "sale:rejected")) {
-        const userChannel = `sale-verification-${body.userId}`;
-        const decision: SalePulseDecision =
-            event === "sale:confirmed" ? "confirmed" : "rejected";
-        const r2 = await triggerPusherEvent(userChannel, event, {
+        await triggerPusherEvent(`sale-verification-${body.userId}`, event, {
             saleId: body.saleId,
-            decision,
+            decision: event === "sale:confirmed" ? "confirmed" : "rejected",
             timestamp: body.timestamp,
         });
-        if (r2.ok) {
-            console.info(
-                `[sale-rt] user notify ${event} via=${r2.via} user=${body.userId.slice(0, 12)}…`,
-            );
-        }
     }
 }
 
@@ -90,15 +70,11 @@ export function subscribeSaleUpdates(
     handler: (eventName: string, payload: SalePulsePayload) => void,
 ): SalePulseUnsubscribe {
     const pusher = getPusher();
-    if (!pusher) {
-        console.warn("[sale-rt] subscribe omitido: Pusher no configurado");
-        return () => {};
-    }
+    if (!pusher) return () => {};
     const channelName = getSalesChannelName();
     const channel: Channel = pusher.subscribe(channelName);
     const events = ["sale:created", "sale:updated", "sale:confirmed", "sale:rejected"];
     console.info(`[sale-rt] subscribe channel=${channelName}`);
-
     for (const eventName of events) {
         channel.bind(eventName, (payload: unknown) => {
             const p = (payload ?? {}) as Partial<SalePulsePayload>;
@@ -108,12 +84,10 @@ export function subscribeSaleUpdates(
                 decision: p.decision,
                 verified: p.verified,
                 productIds: Array.isArray(p.productIds) ? p.productIds : [],
-                timestamp:
-                    typeof p.timestamp === "string" ? p.timestamp : new Date().toISOString(),
+                timestamp: typeof p.timestamp === "string" ? p.timestamp : new Date().toISOString(),
             });
         });
     }
-
     return () => {
         for (const eventName of events) channel.unbind(eventName);
         pusher.unsubscribe(channelName);
